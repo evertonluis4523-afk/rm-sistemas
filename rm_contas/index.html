@@ -1517,6 +1517,42 @@ table.list td.r,table.list th.r{text-align:right}
 .ia:hover{background:#f1f2f4;color:var(--ink)}
 .ia.pay:hover{color:var(--ok);background:var(--ok-soft)}
 .ia.del:hover{color:#C43108;background:var(--red-soft)}
+.ia.cred:hover{color:var(--ok);background:var(--ok-soft)}
+/* crédito em aberto */
+.cred-aviso{display:flex;align-items:flex-start;gap:8px;margin-top:6px;padding:8px 10px;border-radius:9px;background:var(--ok-soft);color:var(--ok);font-size:13px;font-weight:650;cursor:pointer;line-height:1.35}
+.cred-aviso[hidden]{display:none}
+.cred-aviso input{width:auto;margin:1px 0 0;accent-color:var(--ok);flex:none}
+.cred-exp{font-size:13.5px;color:var(--muted);margin:-2px 0 12px;max-width:70ch;font-weight:530}
+.tag-cred{font-size:12px;font-weight:700;color:var(--ok);background:var(--ok-soft);padding:3px 8px;border-radius:6px;white-space:nowrap}
+.cards-cred{grid-template-columns:repeat(3,1fr)}
+.badge.usado{background:#f1f2f4;color:var(--gray)}
+.badge.excedido{background:var(--rm-perigo-suave);color:var(--rm-perigo)}
+.cred-barra{height:5px;border-radius:3px;background:var(--line-2);margin-top:5px;overflow:hidden;min-width:70px}
+.cred-barra i{display:block;height:100%;background:var(--ok);border-radius:3px}
+tr.cred-hist td{background:#fafbfc;font-size:13px;padding-top:7px;padding-bottom:7px}
+tr.cred-hist td:first-child{padding-left:34px}
+@media print{.cred-aviso{display:none!important}}
+.ia.parte:hover{color:var(--ok);background:var(--ok-soft)}
+.pp-modal{max-width:560px}
+.pp-conta{display:flex;justify-content:space-between;gap:12px;align-items:baseline;flex-wrap:wrap;margin-bottom:16px;padding-bottom:14px;border-bottom:1px solid var(--line-2)}
+.pp-conta b{font-size:15px}
+.pp-conta .sub{display:block}
+/* no celular a tabela de créditos fica com fornecedor, saldo e os botões:
+   valor, data e o usado vão para baixo do nome; a situação já está na barra */
+.so-cel{display:none}
+@media(max-width:720px){
+  table.cred-tab th:nth-child(2),table.cred-tab td:nth-child(2),
+  table.cred-tab th:nth-child(3),table.cred-tab td:nth-child(3),
+  table.cred-tab th:nth-child(4),table.cred-tab td:nth-child(4),
+  table.cred-tab th:nth-child(6),table.cred-tab td:nth-child(6){display:none}
+  table.cred-tab tr.cred-hist td[colspan="7"]{display:table-cell}
+  .so-cel{display:inline}
+}
+.pp-conta .val{font-size:18px}
+.pp-resumo{margin:14px 0 0;font-size:13.5px;color:var(--muted);font-weight:560;line-height:1.5}
+.pp-resumo b{color:var(--ink)}
+@media(max-width:840px){.pp-modal .span4{grid-column:span 12}}
+@media(max-width:840px){.cards.cards-cred{grid-template-columns:1fr}.cards.cards-cred .card{border-right:0;border-bottom:1px solid var(--line-2)}}
 .ia svg{width:16px;height:16px}
 .empty{text-align:center;color:var(--muted);padding:40px 20px}
 .empty svg{width:34px;height:34px;color:#cfd4da;margin-bottom:10px}
@@ -2658,6 +2694,7 @@ body:not([data-theme="escuro"]){
     <div class="viewtabs">
       <button class="vtab on" data-view="lanc" onclick="setView('lanc')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M3 12h18M3 18h18"/></svg>Lançamentos</button>
       <button class="vtab" data-view="forn" onclick="setView('forn')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7h18M3 12h18M3 17h10"/><circle cx="18" cy="17" r="3"/></svg>Por fornecedor</button>
+      <button class="vtab" data-view="cred" onclick="setView('cred')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="6" width="20" height="13" rx="2"/><path d="M2 10h20M6 15h5"/></svg>Créditos</button>
     </div>
 
     <!-- ============ VIEW: LANÇAMENTOS ============ -->
@@ -2671,6 +2708,7 @@ body:not([data-theme="escuro"]){
             <span class="lab">Fornecedor / Prestador</span>
             <input id="c_forn" placeholder="ex.: Perfitec" autocomplete="off">
             <div class="sugg" id="fornSugg"></div>
+            <label class="cred-aviso" id="credAviso" hidden><input type="checkbox" id="c_abater" checked onchange="credAvisoAtualiza()"><span id="credAvisoTxt"></span></label>
           </div>
           <div class="f span4">
             <span class="lab">Categoria</span>
@@ -2779,6 +2817,62 @@ body:not([data-theme="escuro"]){
       </div>
     </div>
 
+    <!-- ============ VIEW: CRÉDITOS ============ -->
+    <div class="view" id="view-cred">
+      <div class="cards cards-cred" id="credCards"></div>
+      <div class="addzone">
+        <div class="section-lab"><span id="credFormTitle">Novo crédito</span><span class="ln"></span></div>
+        <p class="cred-exp">Cheque (ou outro pagamento) entregue adiantado a um fornecedor. Cada compra lançada para ele no Contas é abatida do saldo, até acabar.</p>
+        <div class="form-grid">
+          <div class="f span4" style="position:relative">
+            <span class="lab">Fornecedor</span>
+            <input id="cr_forn" placeholder="ex.: Perfitec" autocomplete="off">
+            <div class="sugg" id="crFornSugg"></div>
+          </div>
+          <div class="f span2">
+            <span class="lab">Valor (R$)</span>
+            <input id="cr_valor" class="mono" inputmode="decimal" placeholder="0,00">
+          </div>
+          <div class="f span2">
+            <span class="lab">Entregue em</span>
+            <input id="cr_data" type="date">
+          </div>
+          <div class="f span2">
+            <span class="lab">Forma</span>
+            <select id="cr_forma"></select>
+          </div>
+          <div class="f span2">
+            <span class="lab">Nº do cheque / doc.</span>
+            <input id="cr_doc" placeholder="opcional">
+          </div>
+          <div class="f span12">
+            <span class="lab">Observações</span>
+            <input id="cr_obs" placeholder="opcional — ex.: banco, bom para 15/11…">
+          </div>
+        </div>
+        <div class="addbtns">
+          <button class="btn-act save" onclick="credSalva()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5v14"/></svg><span id="credSaveLabel">Registrar crédito</span></button>
+          <button class="btn-act" id="credCancel" style="display:none" onclick="credLimpa()">Cancelar edição</button>
+        </div>
+      </div>
+      <div class="filters">
+        <div class="fi grow"><span class="lab">Buscar</span><input id="cr_busca" placeholder="fornecedor, cheque, observação…" oninput="renderCred()"></div>
+        <div class="fi"><span class="lab">Mostrar</span>
+          <select id="cr_mostra" onchange="renderCred()">
+            <option value="saldo" selected>Com saldo</option><option value="">Todos</option><option value="usado">Usados</option>
+          </select>
+        </div>
+      </div>
+      <div class="tbl-wrap">
+        <table class="list cred-tab">
+          <thead><tr>
+            <th>Fornecedor</th><th>Entregue</th><th class="r">Valor</th><th class="r">Usado</th><th class="r">Saldo</th><th>Situação</th><th></th>
+          </tr></thead>
+          <tbody id="rowsCred"></tbody>
+        </table>
+      </div>
+    </div>
+
     <div class="sheetfoot">
       <span>RM Estruturas Pré-Fabricadas · Controle interno de contas a pagar</span>
       <span id="footStamp"></span>
@@ -2802,6 +2896,26 @@ body:not([data-theme="escuro"]){
     <div class="mfoot">
       <button class="btn-act" onclick="closeOverlay('setOverlay')">Fechar</button>
       <button class="btn-act save" onclick="saveSettings()">Salvar configurações</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ MODAL: PAGAMENTO PARCIAL ============ -->
+<div class="overlay" id="ppOverlay">
+  <div class="modal pp-modal">
+    <div class="mhead"><h2>Pagar parte da conta</h2><button class="x" onclick="closeOverlay('ppOverlay')">×</button></div>
+    <div class="mbody">
+      <div class="pp-conta" id="ppConta"></div>
+      <div class="form-grid">
+        <div class="f span4"><span class="lab">Valor pago agora (R$)</span><input id="pp_valor" class="mono" inputmode="decimal" oninput="ppResumo()"></div>
+        <div class="f span4"><span class="lab">Pago em</span><input id="pp_data" type="date"></div>
+        <div class="f span4"><span class="lab">Forma</span><select id="pp_forma" onchange="ppResumo()"></select></div>
+      </div>
+      <p class="pp-resumo" id="ppResumo"></p>
+    </div>
+    <div class="mfoot">
+      <button class="btn-act" onclick="closeOverlay('ppOverlay')">Cancelar</button>
+      <button class="btn-act save" onclick="ppConfirma()">Lançar pagamento</button>
     </div>
   </div>
 </div>
@@ -2866,6 +2980,7 @@ const CONFIG = {
    ============================================================ */
 let S = {
   contas: {},   // id -> conta
+  creditos: {}, // id -> crédito em aberto com fornecedor (ver CRÉDITO EM ABERTO)
   empresa: { nome:"RM Estruturas Pré-Fabricadas", cnpj:"", fone:"", endereco:"" },
   categorias: ["Matéria-prima","Mão de obra","Serviço terceirizado","Frete","Aluguel","Energia / Água","Impostos","Manutenção","Outros"],
   formas: ["PIX","Boleto","Transferência","Cartão","Dinheiro","Cheque"]
@@ -3111,6 +3226,7 @@ function startData(){
     fb.db.ref('contas_pagar').on('value', snap=>{
       const v = snap.val() || {};
       S.contas = v.contas || {};
+      S.creditos = v.creditos || {};
       if(v.empresa) S.empresa = Object.assign(S.empresa, v.empresa);
       if(v.categorias) S.categorias = v.categorias;
       if(v.formas) S.formas = v.formas;
@@ -3119,13 +3235,13 @@ function startData(){
     });
   }else{
     try{ const raw=localStorage.getItem(LS_KEY); if(raw){ const v=JSON.parse(raw);
-      S.contas=v.contas||{}; if(v.empresa)S.empresa=Object.assign(S.empresa,v.empresa);
+      S.contas=v.contas||{}; S.creditos=v.creditos||{}; if(v.empresa)S.empresa=Object.assign(S.empresa,v.empresa);
       if(v.categorias)S.categorias=v.categorias; if(v.formas)S.formas=v.formas; } }catch(e){}
     bootUI();
   }
 }
 function saveLocal(){
-  localStorage.setItem(LS_KEY, JSON.stringify({contas:S.contas,empresa:S.empresa,categorias:S.categorias,formas:S.formas}));
+  localStorage.setItem(LS_KEY, JSON.stringify({contas:S.contas,creditos:S.creditos,empresa:S.empresa,categorias:S.categorias,formas:S.formas}));
 }
 // Grava só as contas que de fato mudaram (adicionadas/editadas em `changedIds`,
 // excluídas em `removedIds`) em vez de sobrescrever o nó "contas" inteiro.
@@ -3163,7 +3279,7 @@ let booted=false;
 function bootUI(){
   fillSelectsStatic();
   renderCompany();
-  render(); renderForn();
+  render(); renderForn(); renderCred(); credFormaPadrao();
   $('footStamp').textContent = 'Atualizado em '+new Date().toLocaleString('pt-BR');
   if(!booted){
     if(!$('c_dataserv').value) $('c_dataserv').value=todayISO();
@@ -3218,13 +3334,15 @@ function criarBuscaNome(inputId,boxId,obterItens,montarLinha,aoEscolher){
   });
 }
 function fornecedoresConhecidos(){
-  return [...new Set(Object.values(S.contas).map(c=>c.fornecedor).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'pt-BR'));
+  return [...new Set(Object.values(S.contas).concat(Object.values(S.creditos||{})).map(c=>c.fornecedor).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'pt-BR'));
 }
 function ligarBuscaFornecedor(){
   criarBuscaNome('c_forn','fornSugg',
     q=>{const todos=fornecedoresConhecidos(),alvo=q.toLowerCase();return alvo?todos.filter(f=>f.toLowerCase().includes(alvo)):todos;},
     f=>esc(rmNomePt(f)),
-    f=>{$('c_forn').value=f;});
+    f=>{$('c_forn').value=f; credAvisoAtualiza();});
+  $('c_forn').addEventListener('input',credAvisoAtualiza);
+  $('c_valor').addEventListener('input',credAvisoAtualiza);
 }
 ligarBuscaFornecedor();
 function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m])); }
@@ -3284,6 +3402,7 @@ async function saveConta(){
 
   if(editingId){
     const c=S.contas[editingId];
+    if(c.creditoId) base.forma='Crédito';   /* a lista de formas não tem "Crédito": o select mostraria outra */
     if(anexoState==='new' && pendingAnexo){
       const key=c.anexoKey||editingId;
       try{ await IDB.put(key,pendingAnexo.blob); }catch(e){ toast('Falha ao salvar anexo.','err'); return; }
@@ -3323,14 +3442,15 @@ async function saveConta(){
     }else{
       const id=uid();
       const conta=Object.assign({}, base, {id, pago:false, criadoEm:Date.now()});
+      const abater=credAbaterNoForm();
       if(pendingAnexo){
         try{ await IDB.put(id,pendingAnexo.blob); conta.anexoKey=id; conta.anexoNome=pendingAnexo.nome; conta.anexoTipo=pendingAnexo.tipo; conta.anexoTam=pendingAnexo.tam; conta.anexoNuvem=false;
           sobeDepois.push([id,pendingAnexo.blob,{nome:pendingAnexo.nome,tipo:pendingAnexo.tipo,tam:pendingAnexo.tam}]); }
         catch(e){ toast('Falha ao salvar anexo.','err'); }
       }
       S.contas[id]=conta;
-      persistContas([id]);
-      toast('Conta adicionada.','ok');
+      if(abater){ persistContas(credAbate(id)); }
+      else{ persistContas([id]); toast('Conta adicionada.','ok'); }
     }
   }
   if(!useFirebase) bootUI();
@@ -3350,6 +3470,7 @@ function resetForm(){
   $('formTitle').textContent='Nova conta';
   $('saveLabel').textContent='Adicionar conta';
   $('cancelEdit').style.display='none';
+  $('c_abater').checked=true; credAvisoAtualiza();
 }
 
 function editConta(id){
@@ -3366,11 +3487,16 @@ function editConta(id){
   $('formTitle').textContent='Editando conta';
   $('saveLabel').textContent='Salvar alterações';
   $('cancelEdit').style.display='inline-flex';
+  credAvisoAtualiza();
   document.querySelector('.addzone').scrollIntoView({behavior:'smooth',block:'center'});
 }
 
 function togglePago(id){
   const c=S.contas[id]; if(!c)return;
+  if(c.pago && c.creditoId){
+    if(!confirm(`Esta compra foi paga com o crédito de ${rmNomePt(c.fornecedor)}. Reabrir devolve ${brl(c.valor)} ao saldo do crédito. Reabrir?`)) return;
+    c.creditoId=null; c.forma=c.formaAntes||c.forma; c.formaAntes=null;
+  }
   c.pago=!c.pago; c.dataPagamento = c.pago? todayISO() : '';
   c.pagoPor = c.pago? (($('whoLabel').textContent||'').trim()||null) : null;
   persistContas([id]); if(!useFirebase) bootUI();
@@ -3432,10 +3558,12 @@ function render(){
       <td>${esc(c.categoria||'—')}</td>
       <td class="mono" style="font-size:12px;color:var(--muted)">${fmtDate(c.dataServico)}</td>
       <td class="mono">${fmtDate(c.venc)} ${parc}</td>
-      <td>${esc(c.forma||'—')}</td>
+      <td>${esc(c.forma||'—')}${c.creditoId?`<div class="sub">${esc(credRotulo(c.creditoId))}</div>`:''}</td>
       <td class="r val">${brl(c.valor)}</td>
       <td>${badge(c)}</td>
       <td><div class="rowact">
+        ${!c.pago&&credSaldoForn(c.fornecedor)>0.004?`<button class="ia cred" title="Abater do crédito (saldo ${brl(credSaldoForn(c.fornecedor))})" onclick="credAbateLinha('${c.id}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="6" width="20" height="13" rx="2"/><path d="M2 10h20M7 15h3"/></svg></button>`:''}
+        ${!c.pago?`<button class="ia parte" title="Pagar parte" onclick="ppAbre('${c.id}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 3v9h9"/></svg></button>`:''}
         <button class="ia pay" title="${c.pago?'Reabrir':'Marcar paga'}" onclick="togglePago('${c.id}')">${c.pago
           ?'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 9-9 9.7 9.7 0 0 0-6.7 2.7L3 8"/><path d="M3 3v5h5"/></svg>'
           :'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg>'}</button>
@@ -3490,7 +3618,7 @@ function renderForn(){
     const aberto=arr.filter(c=>!c.pago).reduce((s,c)=>s+(c.valor||0),0);
     const isClosed=collapsed[name];
     html+=`<tr class="grp ${isClosed?'closed':''}" onclick="toggleGrp('${esc(name).replace(/'/g,"\\'")}')">
-      <td colspan="3"><span class="caret">▾</span> ${rmIniciais(rmNomePt(name),'p')} ${esc(rmNomePt(name))} <span class="tag-pg">${arr.length} conta(s)</span></td>
+      <td colspan="3"><span class="caret">▾</span> ${rmIniciais(rmNomePt(name),'p')} ${esc(rmNomePt(name))} <span class="tag-pg">${arr.length} conta(s)</span>${credSaldoForn(name)>0.004?` <span class="tag-cred">crédito ${brl(credSaldoForn(name))}</span>`:''}</td>
       <td>Em aberto</td>
       <td class="r"><span class="gpend">${brl(aberto)}</span></td>
       <td>Total: <span class="gtot">${brl(total)}</span></td>
@@ -3511,6 +3639,252 @@ function renderForn(){
 function toggleGrp(name){ collapsed[name]=!collapsed[name]; renderForn(); }
 
 /* ============================================================
+   CRÉDITO EM ABERTO
+   Às vezes a RM entrega um cheque maior ao fornecedor e ele vai abatendo
+   conforme as compras chegam. O crédito guarda só o que foi entregue
+   (fornecedor, valor, data, cheque). O que já foi usado NÃO é guardado nele:
+   é a soma das compras pagas com ele (conta.creditoId). Assim excluir ou
+   reabrir uma compra devolve o valor ao saldo sozinho, e não há dois números
+   para ficarem diferentes.
+   - Compra nova para um fornecedor com saldo: o formulário avisa e já vem
+     marcado "abater". A compra entra paga, forma "Crédito".
+   - Compra maior que o saldo: divide em duas -- a parte coberta, paga com o
+     crédito, e o resto em aberto, com o mesmo vencimento.
+   - Mais de um crédito com o mesmo fornecedor: usa o mais antigo primeiro.
+   Teste contas-credito-em-aberto.
+   ============================================================ */
+const R2 = n => Math.round((Number(n)||0)*100)/100;
+function credChave(f){ return String(f||'').normalize('NFD').replace(/[̀-ͯ]/g,'').trim().toLowerCase().replace(/\s+/g,' '); }
+function credUsado(id){ return R2(Object.values(S.contas).filter(c=>c.creditoId===id).reduce((s,c)=>s+(Number(c.valor)||0),0)); }
+function credSaldo(cr){ return R2((Number(cr.valor)||0) - credUsado(cr.id)); }
+function credDoForn(f){ const k=credChave(f); return Object.values(S.creditos||{}).filter(cr=>credChave(cr.fornecedor)===k).sort((a,b)=>(a.data||'').localeCompare(b.data||'')||(a.criadoEm||0)-(b.criadoEm||0)); }
+function credSaldoForn(f){ if(!f) return 0; return R2(credDoForn(f).reduce((s,cr)=>s+Math.max(0,credSaldo(cr)),0)); }
+function credRotulo(id){ const cr=(S.creditos||{})[id]; if(!cr) return 'crédito excluído'; return 'crédito '+(cr.documento?cr.documento+' · ':'')+fmtDate(cr.data); }
+
+/* abate a conta `id` dos créditos do fornecedor; devolve os ids que mudaram */
+function credAbate(id){
+  const c=S.contas[id]; if(!c||c.pago) return [id];
+  const mudou=[id]; let resto=R2(c.valor), usado=0, parte=c;
+  for(const cr of credDoForn(c.fornecedor)){
+    const saldo=credSaldo(cr); if(saldo<=0.004||resto<=0.004) continue;
+    const vai=R2(Math.min(saldo,resto));
+    if(vai<resto){
+      /* o crédito cobre só parte: esta parte fica paga e o resto vira uma conta nova */
+      const novo=uid();
+      S.contas[novo]=Object.assign({},parte,{id:novo,valor:R2(resto-vai),pago:false,creditoId:null,formaAntes:null,dataPagamento:'',pagoPor:null,
+        obs:/restante após o crédito/.test(parte.obs||'')?parte.obs:[parte.obs,'restante após o crédito'].filter(Boolean).join(' · '),criadoEm:Date.now()});
+      mudou.push(novo);
+    }
+    Object.assign(parte,{valor:vai,pago:true,dataPagamento:todayISO(),pagoPor:(($('whoLabel').textContent||'').trim()||null),
+      formaAntes:parte.forma||null,forma:'Crédito',creditoId:cr.id,atualizadoEm:Date.now()});
+    usado=R2(usado+vai); resto=R2(resto-vai);
+    if(resto>0.004) parte=S.contas[mudou[mudou.length-1]];
+  }
+  const sobra=credSaldoForn(c.fornecedor);
+  if(!usado) toast('Sem saldo de crédito para este fornecedor.','err');
+  else if(resto>0.004) toast(`Abatido ${brl(usado)} do crédito, que acabou. ${brl(resto)} ficou em aberto.`,'ok');
+  else toast(`Paga com o crédito: ${brl(usado)}. Saldo que sobra: ${brl(sobra)}.`,'ok');
+  return mudou;
+}
+function credAbateLinha(id){
+  const c=S.contas[id]; if(!c) return;
+  const saldo=credSaldoForn(c.fornecedor);
+  if(!confirm(`Abater ${brl(Math.min(saldo,c.valor))} do crédito de ${rmNomePt(c.fornecedor)}?`+(c.valor>saldo+0.004?`\nO saldo (${brl(saldo)}) não cobre tudo: ${brl(c.valor-saldo)} continua em aberto.`:''))) return;
+  persistContas(credAbate(id)); if(!useFirebase) bootUI();
+}
+
+/* formulário de conta: o aviso aparece só para compra nova, à vista, de fornecedor com saldo */
+function credAbaterNoForm(){ return !editingId && Number($('c_parc').value)===1 && !$('credAviso').hidden && $('c_abater').checked; }
+function credAvisoAtualiza(){
+  const box=$('credAviso'); if(!box) return;
+  const f=$('c_forn').value.trim(), saldo=editingId?0:credSaldoForn(f);
+  box.hidden=!(saldo>0.004);
+  if(box.hidden){ $('c_parc').disabled=!!editingId; return; }
+  const v=parseVal($('c_valor').value);
+  $('credAvisoTxt').textContent=`${rmNomePt(f)} tem ${brl(saldo)} de crédito em aberto. Abater desta compra`
+    +(v>saldo+0.004?` (cobre ${brl(saldo)}; ${brl(v-saldo)} fica em aberto)`:'')+'.';
+  /* abatendo, a compra é à vista: parcelar um pagamento já feito não existe */
+  if($('c_abater').checked){ $('c_parc').value='1'; $('parcHint').textContent=''; }
+  $('c_parc').disabled=$('c_abater').checked;
+}
+
+/* ---------- aba Créditos ---------- */
+let credEditando=null;
+const credAbertos={};
+function credFormaPadrao(){
+  const sel=$('cr_forma'); if(!sel) return;
+  const cur=sel.value; fillOptions(sel,S.formas);
+  sel.value = cur && S.formas.includes(cur) ? cur : (S.formas.includes('Cheque') ? 'Cheque' : S.formas[0]);
+  if(!$('cr_data').value) $('cr_data').value=todayISO();
+}
+function credLimpa(){
+  credEditando=null;
+  ['cr_forn','cr_valor','cr_doc','cr_obs'].forEach(i=>$(i).value='');
+  $('cr_data').value=todayISO(); $('cr_forma').value=S.formas.includes('Cheque')?'Cheque':S.formas[0];
+  $('cr_forn').disabled=false;
+  $('credFormTitle').textContent='Novo crédito'; $('credSaveLabel').textContent='Registrar crédito'; $('credCancel').style.display='none';
+}
+function persistCreditos(mudou, apagou){
+  if(useFirebase){
+    const upd={}; (mudou||[]).forEach(id=>{ upd[id]=S.creditos[id]; }); (apagou||[]).forEach(id=>{ upd[id]=null; });
+    if(Object.keys(upd).length) fb.db.ref('contas_pagar/creditos').update(upd).catch(e=>toast('Erro ao salvar: '+rmErroPt(e),'err'));
+  }else saveLocal();
+}
+function credSalva(){
+  const fornecedor=$('cr_forn').value.trim(), valor=R2(parseVal($('cr_valor').value)), data=$('cr_data').value;
+  if(!fornecedor){ toast('Informe o fornecedor.','err'); $('cr_forn').focus(); return; }
+  if(!(valor>0)){ toast('Informe o valor do crédito.','err'); $('cr_valor').focus(); return; }
+  if(!data){ toast('Informe a data em que foi entregue.','err'); $('cr_data').focus(); return; }
+  const dados={fornecedor,valor,data,forma:$('cr_forma').value,documento:$('cr_doc').value.trim(),obs:$('cr_obs').value.trim()};
+  S.creditos=S.creditos||{};
+  if(credEditando && S.creditos[credEditando]){
+    const usado=credUsado(credEditando);
+    if(valor<usado-0.004){ toast(`Já foram abatidos ${brl(usado)} deste crédito: o valor não pode ser menor.`,'err'); return; }
+    Object.assign(S.creditos[credEditando],dados,{atualizadoEm:Date.now()});
+    persistCreditos([credEditando]); toast('Crédito atualizado.','ok');
+  }else{
+    const id='cr'+uid().slice(1);
+    S.creditos[id]=Object.assign({id},dados,{criadoEm:Date.now()});
+    persistCreditos([id]); toast(`Crédito de ${brl(valor)} com ${rmNomePt(fornecedor)} registrado.`,'ok');
+  }
+  credLimpa();
+  if(!useFirebase) bootUI(); else { renderCred(); credAvisoAtualiza(); }
+}
+function credEdita(id){
+  const cr=S.creditos[id]; if(!cr) return;
+  credEditando=id;
+  $('cr_forn').value=cr.fornecedor||''; $('cr_valor').value=String(cr.valor).replace('.',',');
+  $('cr_data').value=cr.data||''; $('cr_forma').value=cr.forma||$('cr_forma').value; $('cr_doc').value=cr.documento||''; $('cr_obs').value=cr.obs||'';
+  /* com compras abatidas, trocar o fornecedor deixaria essas compras presas a outro nome */
+  $('cr_forn').disabled=credUsado(id)>0;
+  $('credFormTitle').textContent='Editando crédito'; $('credSaveLabel').textContent='Salvar alterações'; $('credCancel').style.display='inline-flex';
+  document.querySelector('#view-cred .addzone').scrollIntoView({behavior:'smooth',block:'center'});
+}
+function credExclui(id){
+  const cr=S.creditos[id]; if(!cr) return;
+  const n=Object.values(S.contas).filter(c=>c.creditoId===id).length;
+  if(n){ toast(`Este crédito já pagou ${n} compra(s). Para excluir, reabra essas compras antes.`,'err'); return; }
+  if(!confirm(`Excluir o crédito de ${brl(cr.valor)} com ${rmNomePt(cr.fornecedor)}?`)) return;
+  delete S.creditos[id]; persistCreditos([],[id]);
+  if(!useFirebase) bootUI(); else { renderCred(); credAvisoAtualiza(); }
+  toast('Crédito excluído.','ok');
+}
+function credAlterna(id){ credAbertos[id]=!credAbertos[id]; renderCred(); }
+function renderCred(){
+  const tb=$('rowsCred'); if(!tb) return;
+  const todos=Object.values(S.creditos||{});
+  let saldoTot=0, forns=new Set(), usadoTot=0;
+  todos.forEach(cr=>{ const sd=credSaldo(cr); usadoTot+=credUsado(cr.id); if(sd>0.004){ saldoTot+=sd; forns.add(credChave(cr.fornecedor)); } });
+  $('credCards').innerHTML=`
+    <div class="card pago"><div class="k"><span class="dotk g"></span>Saldo em crédito</div><div class="v">${brl(saldoTot)}</div><div class="s">${forns.size} fornecedor(es) com saldo</div></div>
+    <div class="card"><div class="k"><span class="dotk b"></span>Já abatido</div><div class="v">${brl(usadoTot)}</div><div class="s">compras pagas com crédito</div></div>
+    <div class="card"><div class="k"><span class="dotk w"></span>Créditos</div><div class="v">${todos.length}</div><div class="s">registrados</div></div>`;
+  const q=credChave($('cr_busca').value), mostra=$('cr_mostra').value;
+  const lista=todos.filter(cr=>{
+    const sd=credSaldo(cr);
+    if(mostra==='saldo'&&sd<=0.004) return false;
+    if(mostra==='usado'&&sd>0.004) return false;
+    return !q || credChave(`${cr.fornecedor} ${cr.documento} ${cr.obs}`).includes(q);
+  }).sort((a,b)=>(a.fornecedor||'').localeCompare(b.fornecedor||'','pt-BR')||(a.data||'').localeCompare(b.data||''));
+  if(!lista.length){
+    tb.innerHTML=`<tr><td colspan="7"><div class="empty"><b>${todos.length?'Nenhum crédito neste filtro':'Nenhum crédito registrado'}</b>${todos.length?'Troque o "Mostrar" para ver os usados.':'Registre acima o cheque entregue adiantado ao fornecedor.'}</div></td></tr>`;
+    return;
+  }
+  tb.innerHTML=lista.map(cr=>{
+    const usado=credUsado(cr.id), sd=R2(cr.valor-usado), pct=cr.valor>0?Math.min(100,Math.max(0,usado/cr.valor*100)):0;
+    const compras=Object.values(S.contas).filter(c=>c.creditoId===cr.id).sort((a,b)=>(a.dataPagamento||'').localeCompare(b.dataPagamento||''));
+    const sub=[cr.forma, cr.documento?'nº '+cr.documento:'', cr.obs].filter(Boolean).join(' · ');
+    const sit = sd<-0.004 ? '<span class="badge excedido"><span class="d"></span>Passou do valor</span>'
+              : sd>0.004 ? '<span class="badge pago"><span class="d"></span>Com saldo</span>'
+              : '<span class="badge usado"><span class="d"></span>Usado</span>';
+    let h=`<tr>
+      <td>${rmRegistro(rmNomePt(cr.fornecedor)||'—',esc(sub)+`<span class="so-cel"><br>${brl(cr.valor)} em ${fmtDate(cr.data)} · usado ${brl(usado)}</span>`)}</td>
+      <td class="mono">${fmtDate(cr.data)}</td>
+      <td class="r val">${brl(cr.valor)}</td>
+      <td class="r val" style="color:var(--muted)">${brl(usado)}</td>
+      <td class="r"><span class="val">${brl(sd)}</span><div class="cred-barra" title="${Math.round(pct)}% usado"><i style="width:${(100-pct).toFixed(1)}%"></i></div></td>
+      <td>${sit}</td>
+      <td><div class="rowact">
+        <button class="ia" title="${credAbertos[cr.id]?'Esconder':'Ver'} as compras abatidas (${compras.length})" onclick="credAlterna('${cr.id}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M3 12h18M3 18h12"/></svg></button>
+        <button class="ia" title="Editar" onclick="credEdita('${cr.id}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg></button>
+        <button class="ia del" title="Excluir" onclick="credExclui('${cr.id}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m2 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg></button>
+      </div></td>
+    </tr>`;
+    if(credAbertos[cr.id]){
+      h+= compras.length ? compras.map(c=>`<tr class="cred-hist">
+        <td>${esc(c.documento||c.obs||c.categoria||'compra')}<span class="so-cel"> · ${fmtDate(c.dataPagamento||c.venc)} · − ${brl(c.valor)}</span></td>
+        <td class="mono">${fmtDate(c.dataPagamento||c.venc)}</td>
+        <td></td><td class="r val">− ${brl(c.valor)}</td><td colspan="3"></td></tr>`).join('')
+        : `<tr class="cred-hist"><td colspan="7">Nenhuma compra abatida ainda.</td></tr>`;
+    }
+    return h;
+  }).join('');
+}
+criarBuscaNome('cr_forn','crFornSugg',
+  q=>{const todos=fornecedoresConhecidos(),alvo=q.toLowerCase();return alvo?todos.filter(f=>f.toLowerCase().includes(alvo)):todos;},
+  f=>esc(rmNomePt(f)),
+  f=>{$('cr_forn').value=f;});
+
+/* ============================================================
+   PAGAMENTO PARCIAL
+   Paga parte de uma conta agora e o resto continua em aberto. A conta vira
+   duas: a parte paga (valor pago, data e forma do pagamento) e o restante,
+   com o mesmo vencimento e "restante" na observação -- assim o painel, os
+   filtros e o acompanhamento pelo telefone continuam somando certo, sem
+   nenhum campo novo para entender. A parte pode sair do crédito em aberto do
+   fornecedor (a forma "Crédito" aparece quando há saldo).
+   Teste contas-pagamento-parcial.
+   ============================================================ */
+let ppId=null;
+function ppAbre(id){
+  const c=S.contas[id]; if(!c||c.pago) return;
+  ppId=id;
+  $('ppConta').innerHTML=`<span><b>${esc(rmNomePt(c.fornecedor))}</b><span class="sub">${esc([c.documento,'vence '+fmtDate(c.venc)].filter(Boolean).join(' · '))}</span></span><span class="val">${brl(c.valor)}</span>`;
+  const saldo=credSaldoForn(c.fornecedor);
+  $('pp_forma').innerHTML=(saldo>0.004?`<option value="__cred">Crédito (saldo ${brl(saldo)})</option>`:'')+S.formas.map(f=>`<option>${esc(f)}</option>`).join('');
+  $('pp_forma').value = saldo>0.004 ? '__cred' : (S.formas.includes(c.forma)?c.forma:S.formas[0]);
+  $('pp_valor').value=''; $('pp_data').value=todayISO();
+  ppResumo();
+  $('ppOverlay').classList.add('open');
+  setTimeout(()=>$('pp_valor').focus(),50);
+}
+function ppResumo(){
+  const c=S.contas[ppId]; if(!c) return;
+  const x=R2(parseVal($('pp_valor').value)), cred=$('pp_forma').value==='__cred', saldo=credSaldoForn(c.fornecedor);
+  let t;
+  if(!(x>0)) t=`Digite quanto foi pago agora. O que faltar continua em aberto, com o mesmo vencimento.`;
+  else if(x>c.valor+0.004) t=`O valor pago passa do total da conta (${brl(c.valor)}).`;
+  else if(x>=c.valor-0.004) t=`Paga a conta inteira.`;
+  else t=`Fica paga <b>${brl(x)}</b> e continua em aberto <b>${brl(c.valor-x)}</b>, vencendo ${fmtDate(c.venc)}.`;
+  if(cred && x>saldo+0.004 && x<=c.valor+0.004) t+=` O crédito cobre só ${brl(saldo)}: o resto também fica em aberto.`;
+  $('ppResumo').innerHTML=t;
+}
+function ppConfirma(){
+  const c=S.contas[ppId]; if(!c||c.pago){ closeOverlay('ppOverlay'); return; }
+  const x=R2(parseVal($('pp_valor').value)), data=$('pp_data').value||todayISO(), forma=$('pp_forma').value, cred=forma==='__cred';
+  if(!(x>0)){ toast('Informe o valor pago.','err'); $('pp_valor').focus(); return; }
+  if(x>c.valor+0.004){ toast(`O valor pago passa do total da conta (${brl(c.valor)}).`,'err'); $('pp_valor').focus(); return; }
+  const mudou=[c.id];
+  if(x<c.valor-0.004){
+    const novo=uid();
+    S.contas[novo]=Object.assign({},c,{id:novo,valor:R2(c.valor-x),pago:false,dataPagamento:'',pagoPor:null,creditoId:null,formaAntes:null,
+      obs:[String(c.obs||'').replace(/\s*·?\s*restante \(pago [^)]*\)/,'').trim(),`restante (pago ${brl(x)} em ${fmtDate(data)})`].filter(Boolean).join(' · '),
+      criadoEm:Date.now()});
+    c.valor=x; mudou.push(novo);
+  }
+  if(cred){
+    credAbate(c.id).forEach(id=>{ if(!mudou.includes(id)) mudou.push(id); });
+    if(c.pago) c.dataPagamento=data;
+  }else{
+    Object.assign(c,{pago:true,dataPagamento:data,forma,pagoPor:(($('whoLabel').textContent||'').trim()||null),atualizadoEm:Date.now()});
+    toast(mudou.length>1?`Pagamento de ${brl(x)} lançado. ${brl(S.contas[mudou[1]].valor)} continua em aberto.`:'Conta paga.','ok');
+  }
+  persistContas(mudou);
+  closeOverlay('ppOverlay'); ppId=null;
+  if(!useFirebase) bootUI();
+}
+
+/* ============================================================
    VIEW SWITCH
    ============================================================ */
 function setView(v){
@@ -3518,7 +3892,8 @@ function setView(v){
   document.querySelectorAll('.vtab').forEach(t=>t.classList.toggle('on',t.dataset.view===v));
   $('view-lanc').classList.toggle('on',v==='lanc');
   $('view-forn').classList.toggle('on',v==='forn');
-  if(v==='forn')renderForn(); else render();
+  $('view-cred').classList.toggle('on',v==='cred');
+  if(v==='forn')renderForn(); else if(v==='cred')renderCred(); else render();
 }
 
 /* ============================================================
@@ -4545,7 +4920,7 @@ document.addEventListener('visibilitychange',()=>{ if(!document.hidden) checkDue
 })();
 </script>
 <script>/* versão publicada (PADRAO_RM.md §3): sobe a cada publicação, junto com o CACHE do sw.js */
-const APP_VER='v62';
+const APP_VER='v63';
 </script>
 <script id="rmVersaoBloco">
 /* ===== SELO DE VERSÃO — igual em todos os sistemas (PADRAO_RM.md §3) =====
