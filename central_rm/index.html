@@ -2,6 +2,30 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8" />
+<script>
+/* PREFERÊNCIAS DO ENDEREÇO ANTIGO (ver migra.html). Só no endereço novo, uma
+   vez por aparelho: vai ao github.io buscar tema, fundo e organização da tela
+   e volta com elas em #rm-migra. Se o GitHub não responder, segue sem elas. */
+(function(){
+  var RESERVA = 'https://evertonluis4523-afk.github.io';
+  var CHAVES = /^rm_(tema|tom|theme|bg|wm|marca|density|spark|fundo|fundo_op|fundo_marca|mov|toque|escala|estilo_ultimo|cat_colors|usage|custom_systems|overrides|collapsed|username|login_lembrado|drawer_open|drawer_secs|central_agdock_[a-z]+)(:[^\s]+)?$/;
+  var m = /[#&]rm-migra=([^&]*)/.exec(location.hash);
+  if (m) {
+    try {
+      var d = JSON.parse(decodeURIComponent(escape(atob(m[1].replace(/-/g, '+').replace(/_/g, '/')))));
+      Object.keys(d || {}).forEach(function(k){ if (CHAVES.test(k) && typeof d[k] === 'string') localStorage.setItem(k, d[k]); });
+    } catch (e) {}
+    try { localStorage.setItem('rm_migrado_reserva', '1'); } catch (e) {}
+    try { history.replaceState(null, '', location.pathname + location.search); } catch (e) {}
+    return;
+  }
+  if (!/(\.pages\.dev|rmestruturas\.com\.br)$/.test(location.hostname)) return;
+  try { if (localStorage.getItem('rm_migrado_reserva') || sessionStorage.getItem('rm_migrando')) return; sessionStorage.setItem('rm_migrando', '1'); } catch (e) { return; }
+  fetch(RESERVA + '/central_rm/migra.html', { mode: 'no-cors', cache: 'no-store' })
+    .then(function(){ location.replace(RESERVA + '/central_rm/migra.html#volta=' + encodeURIComponent(location.href.split('#')[0])); })
+    .catch(function(){ try { localStorage.setItem('rm_migrado_reserva', '1'); } catch (e) {} });
+})();
+</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
 <script>
 /* SEM CLARAO ANTES DO CORPO. O tema da Central so' vale quando o <body>
@@ -4458,7 +4482,7 @@ try { var _e = localStorage.getItem('rm_estilo_ultimo'); if (_e === 'viva' || _e
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js" crossorigin="anonymous"></script>
 
 <script>/* versão publicada (PADRAO_RM.md §3): sobe a cada publicação, junto com o CACHE do sw.js */
-const APP_VER='v125';
+const APP_VER='v126';
 </script>
 <script>
   /* ===== LOGIN (Firebase Authentication) =====
@@ -6342,20 +6366,28 @@ const APP_VER='v125';
   });
 
   /* ===== DADOS ===== */
+  /* DE ONDE OS SISTEMAS ABREM: do mesmo endereço em que a Central foi
+     aberta. Aberta pelo Cloudflare (o endereço principal, que não depende da
+     fila do GitHub), tudo vem de lá; aberta pelo GitHub, tudo vem do GitHub
+     -- e no mesmo endereço tema, fundo e preferências continuam valendo em
+     todos. No programa instalado (file:) vale o principal, com a cópia em
+     disco por cima, e o programa cai no GitHub sozinho (electron/fontes.js). */
+  const SITE_PRINCIPAL = 'https://rm-estruturas.pages.dev', SITE_RESERVA = 'https://evertonluis4523-afk.github.io';
+  const SITE = /^https?:$/.test(location.protocol) ? location.origin : SITE_PRINCIPAL;
   const BASE_SYSTEMS = [
-    { id:'contas',   name:'Contas a Pagar',       url:'https://evertonluis4523-afk.github.io/rm_contas/',            local:'systems/rm_contas/index.html',            cat:'FINANCEIRO',  desc:'Gestão de vencimentos e pagamentos', icon:'card' },
-    { id:'compras',  name:'Controle de Compras',  url:'https://evertonluis4523-afk.github.io/controle_compras/',     local:'systems/controle_compras/index.html',     cat:'FINANCEIRO',  desc:'Pedidos e boletos por categoria', icon:'bag' },
-    { id:'cheques',  name:'Controle de Cheques',  url:'https://evertonluis4523-afk.github.io/controle_cheques/',     local:'systems/controle_cheques/index.html',     cat:'FINANCEIRO',  desc:'Ciclo de cheques recebidos e repassados', icon:'check' },
-    { id:'recibos',  name:'Folha de Pagamento',   url:'https://evertonluis4523-afk.github.io/recibos_rm/',           local:'systems/recibos_rm/index.html',           cat:'FINANCEIRO',  desc:'Folha de pagamento de colaboradores e terceiros', icon:'doc' },
-    { id:'obras',    name:'Controle de Obras',    url:'https://evertonluis4523-afk.github.io/controle_obras/',       local:'systems/controle_obras/index.html',       cat:'OPERACIONAL', desc:'Contratos, NFs e pagamentos por obra', icon:'home' },
-    { id:'pu',       name:'Sistema PU',           url:'https://evertonluis4523-afk.github.io/calculadora-pu/',       local:'systems/calculadora-pu/index.html',       cat:'OPERACIONAL', desc:'Controle de aplicação poliuretano', icon:'gear' },
-    { id:'corte',    name:'Corte de Estruturas',  url:'https://evertonluis4523-afk.github.io/leitor_dwg/',           local:'systems/leitor_dwg/index.html',           cat:'OPERACIONAL', desc:'Leitor DWG e otimização de cortes', icon:'cut' },
-    { id:'maquinas', name:'Estoque de Máquinas',  url:'https://evertonluis4523-afk.github.io/Controle-estoque-maquinas/', local:'systems/Controle-estoque-maquinas/index.html', cat:'OPERACIONAL', desc:'Máquinas e ferramentas por setor, com auditoria', icon:'gear' },
-    { id:'orcamento',name:'Orçamento RM',         url:'https://evertonluis4523-afk.github.io/orcamento-rm/',         local:'systems/orcamento-rm/index.html',         cat:'COMERCIAL',   desc:'Precificação de perfis e estruturas', icon:'money' },
-    { id:'premold',  name:'Cálculo Pré-Moldados', url:'https://evertonluis4523-afk.github.io/calculo_pre_moldados/', local:'systems/calculo_pre_moldados/index.html', cat:'COMERCIAL',   desc:'Preço de placas, contenções, pilares e vigas', icon:'slab' },
-    { id:'propostas',name:'Propostas e Contratos', url:'https://evertonluis4523-afk.github.io/propostas_rm/',         local:'systems/propostas_rm/index.html',         cat:'COMERCIAL',   desc:'Proposta de orçamento e contrato, em PDF e Word', icon:'doc' },
-    { id:'perfitec', name:'Controle Perfitec',    url:'https://evertonluis4523-afk.github.io/Pedidos_perfitec/',     local:'systems/pedidos_perfitec/index.html',     cat:'SUPRIMENTOS', desc:'Pedidos e pagamentos ao fornecedor', icon:'box' },
-    { id:'almocos',  name:'Controle de Almoços',  url:'https://evertonluis4523-afk.github.io/almo-os/',              local:'systems/almo-os/index.html',              cat:'SUPRIMENTOS', desc:'Registro diário de refeições', icon:'food' },
+    { id:'contas',   name:'Contas a Pagar',       url:SITE+'/rm_contas/',            local:'systems/rm_contas/index.html',            cat:'FINANCEIRO',  desc:'Gestão de vencimentos e pagamentos', icon:'card' },
+    { id:'compras',  name:'Controle de Compras',  url:SITE+'/controle_compras/',     local:'systems/controle_compras/index.html',     cat:'FINANCEIRO',  desc:'Pedidos e boletos por categoria', icon:'bag' },
+    { id:'cheques',  name:'Controle de Cheques',  url:SITE+'/controle_cheques/',     local:'systems/controle_cheques/index.html',     cat:'FINANCEIRO',  desc:'Ciclo de cheques recebidos e repassados', icon:'check' },
+    { id:'recibos',  name:'Folha de Pagamento',   url:SITE+'/recibos_rm/',           local:'systems/recibos_rm/index.html',           cat:'FINANCEIRO',  desc:'Folha de pagamento de colaboradores e terceiros', icon:'doc' },
+    { id:'obras',    name:'Controle de Obras',    url:SITE+'/controle_obras/',       local:'systems/controle_obras/index.html',       cat:'OPERACIONAL', desc:'Contratos, NFs e pagamentos por obra', icon:'home' },
+    { id:'pu',       name:'Sistema PU',           url:SITE+'/calculadora-pu/',       local:'systems/calculadora-pu/index.html',       cat:'OPERACIONAL', desc:'Controle de aplicação poliuretano', icon:'gear' },
+    { id:'corte',    name:'Corte de Estruturas',  url:SITE+'/leitor_dwg/',           local:'systems/leitor_dwg/index.html',           cat:'OPERACIONAL', desc:'Leitor DWG e otimização de cortes', icon:'cut' },
+    { id:'maquinas', name:'Estoque de Máquinas',  url:SITE+'/Controle-estoque-maquinas/', local:'systems/Controle-estoque-maquinas/index.html', cat:'OPERACIONAL', desc:'Máquinas e ferramentas por setor, com auditoria', icon:'gear' },
+    { id:'orcamento',name:'Orçamento RM',         url:SITE+'/orcamento-rm/',         local:'systems/orcamento-rm/index.html',         cat:'COMERCIAL',   desc:'Precificação de perfis e estruturas', icon:'money' },
+    { id:'premold',  name:'Cálculo Pré-Moldados', url:SITE+'/calculo_pre_moldados/', local:'systems/calculo_pre_moldados/index.html', cat:'COMERCIAL',   desc:'Preço de placas, contenções, pilares e vigas', icon:'slab' },
+    { id:'propostas',name:'Propostas e Contratos', url:SITE+'/propostas_rm/',         local:'systems/propostas_rm/index.html',         cat:'COMERCIAL',   desc:'Proposta de orçamento e contrato, em PDF e Word', icon:'doc' },
+    { id:'perfitec', name:'Controle Perfitec',    url:SITE+'/Pedidos_perfitec/',     local:'systems/pedidos_perfitec/index.html',     cat:'SUPRIMENTOS', desc:'Pedidos e pagamentos ao fornecedor', icon:'box' },
+    { id:'almocos',  name:'Controle de Almoços',  url:SITE+'/almo-os/',              local:'systems/almo-os/index.html',              cat:'SUPRIMENTOS', desc:'Registro diário de refeições', icon:'food' },
   ];
 
   // No app empacotado (Electron, protocolo file:) usa a cópia local dos sistemas —
@@ -7852,7 +7884,7 @@ const APP_VER='v125';
      instalação (recibos_rm/epi.html): instalada por ela, o app abre sempre na
      ficha rápida, sem Salários/CPF/banco à vista de quem está assinando. */
   const TEL_LINKS = {
-    epi: { nome: 'Ficha de EPI', url: 'https://evertonluis4523-afk.github.io/recibos_rm/epi.html' }
+    epi: { nome: 'Ficha de EPI', url: SITE + '/recibos_rm/epi.html' }
   };
   (function(){ const u = document.getElementById('tl-epi-url'); if (u) u.textContent = TEL_LINKS.epi.url; })();
   function telLink(qual, acao) {

@@ -12,7 +12,7 @@
      ASSETS (ex.: o jsPDF da Telha, guardado para funcionar sem internet).
    Medido: com este arquivo a versão publicada aparece na próxima abertura;
    com o anterior, e sem service worker nenhum, voltava a versão velha. */
-const CACHE = 'recibos-rm-v260';
+const CACHE = 'recibos-rm-v261';
 const ASSETS = ['./', './index.html', './epi.html', './manifest.json', './manifest-epi.json', './favicon.png', './icon-192.png', './icon-512.png', './icon-maskable-512.png', './apple-touch-icon.png'];
 const PAGINA = './index.html';
 

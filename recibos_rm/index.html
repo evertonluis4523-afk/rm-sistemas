@@ -1538,7 +1538,11 @@ tr.ext-ano td{background:#f4f5f6;font-weight:700;border-top:1.5px solid var(--li
 .ver-ficha .adm-in{border:0!important;background:none!important;pointer-events:none}
 .ver-ficha .adm-add,.ver-ficha .adm-dep-x{display:none!important}
 .ver-ficha .adm-op{pointer-events:none}
-.ver-ficha .folha{box-shadow:none;margin:0 auto;transform-origin:top center}
+.ver-ficha .folha{box-shadow:none;margin:0 auto}
+/* a ficha é uma folha A4: a janela abre mais larga e a folha encolhe para
+   caber na largura (zoom medido em verEncaixa), sem rolagem para o lado */
+.ver-modal.ver-larga{max-width:min(980px,calc(100vw - 32px))}
+.ver-ficha{overflow:hidden}
 /* Lista suspensa que desce PRESA ao campo -- mesmo padrão do Orçamento RM.
    O <datalist> nativo do navegador não segue o layout da tela: abria longe
    do campo, com a barra preta do próprio Chrome por cima. Esta é desenhada
@@ -7293,7 +7297,16 @@ function verSecao(tit, pares){
   return '<div class="ver-sec"><div class="ver-tit">'+esc(tit)+'</div><dl class="ver-dl">'
     + ps.map(p => '<div><dt>'+esc(p[0])+'</dt><dd>'+(p[2] ? p[1] : verVal(p[1]))+'</dd></div>').join('') + '</dl></div>';
 }
+function verEncaixa(){
+  const cx = document.querySelector('#verCorpo .ver-ficha'), fl = cx && cx.querySelector('.folha');
+  if(!fl) return;
+  fl.style.zoom = '';
+  const disp = cx.clientWidth, larg = fl.scrollWidth;
+  if(disp > 0 && larg > disp) fl.style.zoom = String(Math.max(.4, disp / larg));
+}
+window.addEventListener('resize', () => { if($('#verModal').classList.contains('open')) verEncaixa(); });
 function verAbre(titulo, sub, corpo, aoEditar){
+  $('#verModal').querySelector('.ver-modal').classList.toggle('ver-larga', /class="ver-ficha"/.test(corpo));
   $('#verTitulo').textContent = titulo;
   $('#verSub').textContent = sub || '';
   $('#verCorpo').innerHTML = corpo;
@@ -7345,6 +7358,7 @@ function verFichaAdm(id){
   verAbre(titlePt((f.campos||{}).nome||'Ficha'), 'Ficha de admissão · '+admQuando(f), '<div class="ver-ficha">'+html+'</div>', () => admAbrirFicha(id));
   $('#verCorpo').querySelectorAll('input.adm-in').forEach(i => { const sp = document.createElement('span'); sp.className = i.className; sp.textContent = i.value || '—'; sp.style.display = 'block'; i.replaceWith(sp); });
   $('#verCorpo').querySelectorAll('button').forEach(b => { b.disabled = true; b.tabIndex = -1; });
+  verEncaixa();
 }
 function verEntrevista(id){
   const e = entTodas()[id]; if(!e) return;
@@ -17311,7 +17325,7 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeAll();$('#prin
    juntos a cada publicacao, e ha uma prova automatica que falha se um subir
    sem o outro. Assim o numero na tela e o mesmo do arquivo que o aparelho
    guardou, e dizer "estou na v81" passa a significar alguma coisa. */
-const APP_VER='v260';
+const APP_VER='v261';
 (function(){var p=document.getElementById('verPill'); if(p)p.textContent=APP_VER;})();
 
 if('serviceWorker' in navigator){

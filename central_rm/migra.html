@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>RM Central</title></head>
+<body style="font-family:system-ui,sans-serif;color:#5e6169;padding:24px">Levando suas preferências para o endereço novo…
+<script>
+/* PREFERÊNCIAS PARA O ENDEREÇO NOVO. A Central passou a abrir pelo
+   Cloudflare (rm-estruturas.pages.dev); tema, fundo, organização da tela e
+   a lista de sistemas ficavam guardados neste aparelho no endereço antigo
+   (github.io), e o navegador não deixa um endereço ler o do outro. A Central
+   nova manda o navegador uma vez para cá; esta página junta SÓ as chaves de
+   aparência e organização (nada de dado de sistema, nada de senha) e volta.
+   A volta só vai para o site da RM. */
+(function(){
+  var CHAVES = /^rm_(tema|tom|theme|bg|wm|marca|density|spark|fundo|fundo_op|fundo_marca|mov|toque|escala|estilo_ultimo|cat_colors|usage|custom_systems|overrides|collapsed|username|login_lembrado|drawer_open|drawer_secs|central_agdock_[a-z]+)(:[^\s]+)?$/;
+  var m = /[#&]volta=([^&]+)/.exec(location.hash), volta = m ? decodeURIComponent(m[1]) : '';
+  if (!/^https:\/\/([a-z0-9-]+\.pages\.dev|([a-z0-9-]+\.)*rmestruturas\.com\.br)\//.test(volta)) { document.body.textContent = 'Endereço de volta inválido.'; return; }
+  var d = {};
+  try { for (var i = 0; i < localStorage.length; i++) { var k = localStorage.key(i); if (!CHAVES.test(k)) continue; var v = localStorage.getItem(k); if (v != null && v.length < 20000) d[k] = v; } } catch (e) {}
+  var s = btoa(unescape(encodeURIComponent(JSON.stringify(d)))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  location.replace(volta.split('#')[0] + '#rm-migra=' + s);
+})();
+</script>
+</body></html>
