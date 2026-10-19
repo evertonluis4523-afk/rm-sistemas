@@ -1250,7 +1250,11 @@ input,textarea,select{font-family:inherit;color:inherit}
 
 /* Sheet */
 .wrap{max-width:1600px;margin:22px auto;padding:0 18px 90px}
-.sheet{background:var(--surface);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);overflow:hidden}
+/* clip, não hidden: corta igual nos cantos arredondados, mas hidden faz da
+   folha uma caixa de rolagem -- e aí a ficha da aba Salários (sticky) ficava
+   presa no alto da tabela, longe da linha clicada lá embaixo.
+   Teste recibos-ficha-acompanha-a-linha. */
+.sheet{background:var(--surface);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);overflow:clip}
 .head{display:flex;justify-content:space-between;align-items:flex-start;gap:24px;padding:26px 30px 20px;border-bottom:1px solid var(--line);position:relative}
 /* O cartao da empresa ficou so' no papel: o nome do sistema ja esta na
    barra do alto, e o timbrado serve ao que sai impresso. */
@@ -2707,7 +2711,9 @@ kbd,code,pre,samp,.cod,.codigo,.chave,.chavenf,[data-mono]{
 .sal-palco>.tbl-wrap{flex:1 1 auto;min-width:0}
 .sal-ficha{flex:0 0 352px;width:352px;display:flex;flex-direction:column;background:#fff;
   border:1px solid var(--line);border-radius:13px;box-shadow:0 2px 12px rgba(16,24,40,.07);
-  position:sticky;top:12px;max-height:calc(100vh - 24px);overflow:hidden}
+  /* 64 = a barra do alto (52, fixa por cima de tudo) + 12 de folga: com
+     top:12 o nome da pessoa ficava escondido atrás da barra */
+  position:sticky;top:64px;max-height:calc(100vh - 76px);overflow:hidden}
 .sal-ficha[hidden]{display:none}
 .fh-cab{padding:14px 16px 12px;border-bottom:1px solid var(--line);position:relative}
 .fh-cab .nome{font-size:16.5px;font-weight:820;letter-spacing:-.01em;padding-right:28px;line-height:1.25}
@@ -10197,7 +10203,17 @@ function renderFicha(rolar){
       const barra=document.querySelector('.appbar');
       const alto=(barra?barra.getBoundingClientRect().height:0)+8;
       window.scrollTo(0,Math.max(0,cx.getBoundingClientRect().top+window.scrollY-alto));
-    }else if(tr&&tr.scrollIntoView)tr.scrollIntoView({block:'nearest'});
+    }else{
+      if(tr&&tr.scrollIntoView)tr.scrollIntoView({block:'nearest'});
+      /* A ficha acompanha a rolagem (sticky), mas não passa do fim da tabela:
+         aberta numa das últimas linhas ela sobe, e o nome ficava atrás da
+         barra do alto. Rola o que falta para ele aparecer.
+         Teste recibos-ficha-acompanha-a-linha. */
+      const barra=document.querySelector('.appbar');
+      const limite=(barra?barra.getBoundingClientRect().bottom:0)+12;
+      const topo=cx.getBoundingClientRect().top;
+      if(topo<limite)window.scrollBy(0,topo-limite);
+    }
   }
 }
 // Estado da caixa "marcar todos": toda marcada, toda vazia, ou parcial
@@ -17325,7 +17341,7 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeAll();$('#prin
    juntos a cada publicacao, e ha uma prova automatica que falha se um subir
    sem o outro. Assim o numero na tela e o mesmo do arquivo que o aparelho
    guardou, e dizer "estou na v81" passa a significar alguma coisa. */
-const APP_VER='v261';
+const APP_VER='v262';
 (function(){var p=document.getElementById('verPill'); if(p)p.textContent=APP_VER;})();
 
 if('serviceWorker' in navigator){
