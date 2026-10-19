@@ -1,0 +1,558 @@
+{
+ "setores": [
+  {
+   "id": "s1",
+   "nome": "Pré-Moldado",
+   "cor": "#2f74d0",
+   "corNome": "AZUL",
+   "responsavel": "",
+   "ordem": 0
+  },
+  {
+   "id": "s2",
+   "nome": "Metálica (interna)",
+   "cor": "#00b050",
+   "corNome": "VERDE",
+   "responsavel": "",
+   "ordem": 1
+  },
+  {
+   "id": "s3",
+   "nome": "Montagem Pré-Moldado",
+   "cor": "#ff0000",
+   "corNome": "VERMELHO",
+   "responsavel": "",
+   "ordem": 2
+  },
+  {
+   "id": "s4",
+   "nome": "Montagem Metálica",
+   "cor": "#ffc000",
+   "corNome": "AMARELO",
+   "responsavel": "",
+   "ordem": 3
+  },
+  {
+   "id": "s5",
+   "nome": "Estoque Interno",
+   "cor": "#7030a0",
+   "corNome": "ROXO",
+   "responsavel": "",
+   "ordem": 4
+  }
+ ],
+ "maquinas": [
+  {
+   "id": "m1_4",
+   "nome": "MAQUINA ELETRODO",
+   "modelo": "WELD FUSION",
+   "qtd": 1,
+   "setor": "s1",
+   "situacao": "uso"
+  },
+  {
+   "id": "m1_5",
+   "nome": "LIXADEIRA ORBITAL",
+   "modelo": "DWE6411 (DEWALT)",
+   "qtd": 1,
+   "setor": "s1",
+   "situacao": "uso"
+  },
+  {
+   "id": "m1_6",
+   "nome": "DESEMPENADEIRA",
+   "modelo": "DV710 (VONDER)",
+   "qtd": 1,
+   "setor": "s1",
+   "situacao": "uso"
+  },
+  {
+   "id": "m1_7",
+   "nome": "CARREGADOR SIMPLES",
+   "modelo": "DC18RC (MAKITA)",
+   "qtd": 1,
+   "setor": "s1",
+   "situacao": "uso"
+  },
+  {
+   "id": "m1_8",
+   "nome": "BATERIA 5AH",
+   "modelo": "MAKITA",
+   "qtd": 2,
+   "setor": "s1",
+   "situacao": "uso"
+  },
+  {
+   "id": "m1_9",
+   "nome": "VIBRADOR CONCRETO",
+   "modelo": "VR 10000 (MAKITA)",
+   "qtd": 2,
+   "setor": "s1",
+   "situacao": "uso"
+  },
+  {
+   "id": "m1_10",
+   "nome": "ESMERILHADEIRA",
+   "modelo": "GA9040 (MAKITA)",
+   "qtd": 1,
+   "setor": "s1",
+   "situacao": "uso"
+  },
+  {
+   "id": "m1_11",
+   "nome": "ESMERILHADEIRA 5\"",
+   "modelo": "GA5010 (MAKITA)",
+   "qtd": 2,
+   "setor": "s1",
+   "situacao": "uso"
+  },
+  {
+   "id": "m1_12",
+   "nome": "PARAFUSADEIRA",
+   "modelo": "DTD 172 (MAKITA)",
+   "qtd": 1,
+   "setor": "s1",
+   "situacao": "uso"
+  },
+  {
+   "id": "m1_13",
+   "nome": "MAQUINA SOLDA",
+   "modelo": "280 (BALMER)",
+   "qtd": 2,
+   "setor": "s1",
+   "situacao": "uso"
+  },
+  {
+   "id": "m1_14",
+   "nome": "EXTENSÃO",
+   "modelo": "",
+   "qtd": 4,
+   "setor": "s1",
+   "situacao": "uso"
+  },
+  {
+   "id": "m2_5",
+   "nome": "MAQUINA SOLDA",
+   "modelo": "280 (BALMER)",
+   "qtd": 1,
+   "setor": "s2",
+   "situacao": "uso"
+  },
+  {
+   "id": "m2_6",
+   "nome": "MAQUINA SOLDA",
+   "modelo": "277X (ESAB)",
+   "qtd": 1,
+   "setor": "s2",
+   "situacao": "uso"
+  },
+  {
+   "id": "m2_7",
+   "nome": "MAQUINA SOLDA",
+   "modelo": "VULCANO 200 (BALMER)",
+   "qtd": 1,
+   "setor": "s2",
+   "situacao": "uso"
+  },
+  {
+   "id": "m2_8",
+   "nome": "ESMERILHADEIRA 5\"",
+   "modelo": "GA5010 (MAKITA)",
+   "qtd": 1,
+   "setor": "s2",
+   "situacao": "uso"
+  },
+  {
+   "id": "m2_9",
+   "nome": "ESMERILHADEIRA 4.1/2",
+   "modelo": "M9510 (MAKITA)",
+   "qtd": 1,
+   "setor": "s2",
+   "situacao": "uso"
+  },
+  {
+   "id": "m2_10",
+   "nome": "ESMERILHADEIRA 9\"",
+   "modelo": "GA9020 (MAKITA)",
+   "qtd": 1,
+   "setor": "s2",
+   "situacao": "uso"
+  },
+  {
+   "id": "m2_11",
+   "nome": "MASCARA SOLDA",
+   "modelo": "WELD BLUE",
+   "qtd": 2,
+   "setor": "s2",
+   "situacao": "uso"
+  },
+  {
+   "id": "m2_12",
+   "nome": "EXTENSÃO",
+   "modelo": "",
+   "qtd": 2,
+   "setor": "s2",
+   "situacao": "uso"
+  },
+  {
+   "id": "m2_13",
+   "nome": "POLICORTE",
+   "modelo": "MOTOMIL",
+   "qtd": 1,
+   "setor": "s2",
+   "situacao": "uso"
+  },
+  {
+   "id": "m2_14",
+   "nome": "SERRA FITA",
+   "modelo": "MONROD",
+   "qtd": 1,
+   "setor": "s2",
+   "situacao": "uso"
+  },
+  {
+   "id": "m2_15",
+   "nome": "FURADEIRA BANCADA",
+   "modelo": "MOTOMIL",
+   "qtd": 1,
+   "setor": "s2",
+   "situacao": "uso"
+  },
+  {
+   "id": "m3_22",
+   "nome": "SERRA PISO",
+   "modelo": "STTHIL",
+   "qtd": 1,
+   "setor": "s3",
+   "situacao": "uso"
+  },
+  {
+   "id": "m3_23",
+   "nome": "MOTOSSERRA",
+   "modelo": "STTHIL",
+   "qtd": 1,
+   "setor": "s3",
+   "situacao": "uso"
+  },
+  {
+   "id": "m3_24",
+   "nome": "ESMERILHADEIRA",
+   "modelo": "GA9040 (MAKITA)",
+   "qtd": 1,
+   "setor": "s3",
+   "situacao": "uso"
+  },
+  {
+   "id": "m3_25",
+   "nome": "EXTENSÃO",
+   "modelo": "",
+   "qtd": 1,
+   "setor": "s3",
+   "situacao": "uso"
+  },
+  {
+   "id": "m3_26",
+   "nome": "SERRA CIRCULAR",
+   "modelo": "HS7600 (MAKITA)",
+   "qtd": 1,
+   "setor": "s3",
+   "situacao": "uso"
+  },
+  {
+   "id": "m3_27",
+   "nome": "FURADEIRA MARTELETE",
+   "modelo": "HR2630 (MAKITA)",
+   "qtd": 1,
+   "setor": "s3",
+   "situacao": "uso"
+  },
+  {
+   "id": "m3_28",
+   "nome": "FURADEIRA/ROMPEDOR",
+   "modelo": "HR4200",
+   "qtd": 1,
+   "setor": "s3",
+   "situacao": "uso"
+  },
+  {
+   "id": "m4_22",
+   "nome": "MAQUINA ELETRODO",
+   "modelo": "WELD FUSION",
+   "qtd": 1,
+   "setor": "s4",
+   "situacao": "uso"
+  },
+  {
+   "id": "m4_23",
+   "nome": "MASCARA SOLDA",
+   "modelo": "WELD BLUE",
+   "qtd": 1,
+   "setor": "s4",
+   "situacao": "uso"
+  },
+  {
+   "id": "m4_24",
+   "nome": "CARREGADOR SIMPLES",
+   "modelo": "DC18RC (MAKITA)",
+   "qtd": 1,
+   "setor": "s4",
+   "situacao": "uso"
+  },
+  {
+   "id": "m4_25",
+   "nome": "CARREGADOR SIMPLES",
+   "modelo": "DC18SD (MAKITA)",
+   "qtd": 1,
+   "setor": "s4",
+   "situacao": "uso"
+  },
+  {
+   "id": "m4_26",
+   "nome": "FURADEIRA MARTELETE",
+   "modelo": "HR2630 (MAKITA)",
+   "qtd": 1,
+   "setor": "s4",
+   "situacao": "uso"
+  },
+  {
+   "id": "m4_27",
+   "nome": "BATERIA 3 AH",
+   "modelo": "MAKITA",
+   "qtd": 3,
+   "setor": "s4",
+   "situacao": "uso"
+  },
+  {
+   "id": "m4_28",
+   "nome": "BATERIA 5AH",
+   "modelo": "MAKITA",
+   "qtd": 1,
+   "setor": "s4",
+   "situacao": "uso"
+  },
+  {
+   "id": "m4_29",
+   "nome": "PARAFUSADEIRA",
+   "modelo": "DTD 153 (MAKITA)",
+   "qtd": 2,
+   "setor": "s4",
+   "situacao": "uso"
+  },
+  {
+   "id": "m4_32",
+   "nome": "ESMERILHADEIRA 9\"",
+   "modelo": "GA9080 (MAKITA)",
+   "qtd": 1,
+   "setor": "s4",
+   "situacao": "uso"
+  },
+  {
+   "id": "m4_33",
+   "nome": "EXTENSÃO",
+   "modelo": "",
+   "qtd": 2,
+   "setor": "s4",
+   "situacao": "uso"
+  },
+  {
+   "id": "m4_34",
+   "nome": "FURADEIRA/ROMPEDOR",
+   "modelo": "HR4200",
+   "qtd": 1,
+   "setor": "s4",
+   "situacao": "uso"
+  },
+  {
+   "id": "m5_56",
+   "nome": "PLASMA",
+   "modelo": "CUT-60 (FM)",
+   "qtd": 1,
+   "setor": "s5",
+   "situacao": "uso"
+  },
+  {
+   "id": "m5_57",
+   "nome": "CARREGADOR BATERIA",
+   "modelo": "CAMINHÃO",
+   "qtd": 1,
+   "setor": "s5",
+   "situacao": "uso"
+  },
+  {
+   "id": "m5_58",
+   "nome": "FURADEIRA/PARAF",
+   "modelo": "DHP485 (MAKITA)",
+   "qtd": 1,
+   "setor": "s5",
+   "situacao": "uso"
+  },
+  {
+   "id": "m5_59",
+   "nome": "SOPRADOR TÉRMICO",
+   "modelo": "STL -2000 (LYNUS)",
+   "qtd": 1,
+   "setor": "s5",
+   "situacao": "uso"
+  },
+  {
+   "id": "m5_60",
+   "nome": "CARREGADOR SIMPLES",
+   "modelo": "DC18RC (MAKITA)",
+   "qtd": 1,
+   "setor": "s5",
+   "situacao": "uso"
+  },
+  {
+   "id": "m5_61",
+   "nome": "PARAF. DRYWALL",
+   "modelo": "DFS250Z (MAKITA)",
+   "qtd": 1,
+   "setor": "s5",
+   "situacao": "uso"
+  },
+  {
+   "id": "m5_62",
+   "nome": "ESMERILHADEIRA",
+   "modelo": "DWE4020 (DEWALT)",
+   "qtd": 1,
+   "setor": "s5",
+   "situacao": "uso"
+  },
+  {
+   "id": "m5_63",
+   "nome": "FURADEIRA MARTELETE",
+   "modelo": "HR2630 (MAKITA)",
+   "qtd": 1,
+   "setor": "s5",
+   "situacao": "uso"
+  },
+  {
+   "id": "m5_64",
+   "nome": "MAQUINA ELETRODO",
+   "modelo": "EASY 140 (BALMER)",
+   "qtd": 1,
+   "setor": "s5",
+   "situacao": "uso"
+  },
+  {
+   "id": "m5_65",
+   "nome": "FURADEIRA",
+   "modelo": "DWD502 (DEWALT)",
+   "qtd": 1,
+   "setor": "s5",
+   "situacao": "uso"
+  },
+  {
+   "id": "m5_66",
+   "nome": "MAQUINA ELETRODO",
+   "modelo": "WELD FUSION",
+   "qtd": 2,
+   "setor": "s5",
+   "situacao": "uso"
+  },
+  {
+   "id": "m5_67",
+   "nome": "ESMERILHADEIRA",
+   "modelo": "GA9040 (MAKITA)",
+   "qtd": 1,
+   "setor": "s5",
+   "situacao": "uso"
+  },
+  {
+   "id": "m5_68",
+   "nome": "ROMPEDOR",
+   "modelo": "1203C (MAKITA)",
+   "qtd": 1,
+   "setor": "s5",
+   "situacao": "uso"
+  },
+  {
+   "id": "m5_69",
+   "nome": "BATERIA 3 AH",
+   "modelo": "MAKITA",
+   "qtd": 4,
+   "setor": "s5",
+   "situacao": "uso"
+  },
+  {
+   "id": "m5_70",
+   "nome": "CARREGADOR SIMPLES",
+   "modelo": "DCB107 (DEWALT)",
+   "qtd": 2,
+   "setor": "s5",
+   "situacao": "uso"
+  },
+  {
+   "id": "m5_71",
+   "nome": "BATERIA 2AH",
+   "modelo": "DEWALT",
+   "qtd": 2,
+   "setor": "s5",
+   "situacao": "uso"
+  },
+  {
+   "id": "m5_72",
+   "nome": "APLICADOR PU",
+   "modelo": "DCG180 (MAKITA)",
+   "qtd": 2,
+   "setor": "s5",
+   "situacao": "uso"
+  },
+  {
+   "id": "m5_73",
+   "nome": "CARREGADOR DUPLO",
+   "modelo": "DC18RD (MAKITA)",
+   "qtd": 1,
+   "setor": "s5",
+   "situacao": "uso"
+  },
+  {
+   "id": "m5_76",
+   "nome": "ESMERILHADEIRA 5\"",
+   "modelo": "GA5010 (MAKITA)",
+   "qtd": 1,
+   "setor": "s5",
+   "situacao": "uso"
+  },
+  {
+   "id": "mmnt_43",
+   "nome": "MAQUINA SOLDA",
+   "modelo": "280 (BALMER)",
+   "qtd": 1,
+   "setor": "s5",
+   "situacao": "manutencao"
+  },
+  {
+   "id": "mmnt_44",
+   "nome": "MAQUINA SOLDA",
+   "modelo": "250 (BALMER)",
+   "qtd": 1,
+   "setor": "s5",
+   "situacao": "manutencao"
+  },
+  {
+   "id": "mmnt_45",
+   "nome": "FURADEIRA MARTELETE",
+   "modelo": "HR2630 (MAKITA)",
+   "qtd": 2,
+   "setor": "s5",
+   "situacao": "manutencao"
+  },
+  {
+   "id": "mmnt_46",
+   "nome": "ESMERILHADEIRA 9\"",
+   "modelo": "GA9040S",
+   "qtd": 1,
+   "setor": "s5",
+   "situacao": "manutencao"
+  },
+  {
+   "id": "mmnt_47",
+   "nome": "ESMERILHADEIRA 4.1/2",
+   "modelo": "M9510 (MAKITA)",
+   "qtd": 1,
+   "setor": "s5",
+   "situacao": "manutencao"
+  }
+ ]
+}

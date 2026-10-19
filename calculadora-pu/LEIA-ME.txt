@@ -1,0 +1,50 @@
+# Controle de PU — Sistema isolado
+
+Esta pasta transforma a ferramenta num **sistema com janela própria**, sem abrir
+numa aba do Chrome. Há dois modos de usar — escolha o que preferir.
+
+------------------------------------------------------------------
+## Modo 1 — App instalado (RECOMENDADO, igual ao Point Break)
+------------------------------------------------------------------
+1. Suba TODOS os arquivos desta pasta para o seu GitHub Pages
+   (ou qualquer hospedagem https), mantendo os arquivos juntos.
+2. Abra o endereço no Chrome ou no Edge.
+3. Aparece o ícone de **Instalar** na barra de endereço (ou em
+   Menu ⋮ > "Instalar Controle PU…"). Clique em Instalar.
+4. Pronto: ele vira um app com ícone próprio na área de trabalho /
+   menu Iniciar, abre em janela isolada (sem abas, sem barra de
+   endereço) e funciona **offline**.
+
+No celular é igual: abrir no Chrome > Menu > "Adicionar à tela inicial".
+
+------------------------------------------------------------------
+## Modo 2 — Sem hospedar, direto do computador (Windows)
+------------------------------------------------------------------
+1. Mantenha esta pasta completa no PC (ex.: na Área de Trabalho).
+2. Dê dois cliques em **"Abrir Sistema (Windows).bat"**.
+3. Ele abre numa janela própria do Chrome/Edge (modo app), sem abas.
+   Dica: clique direito no .bat > "Enviar para > Área de trabalho
+   (criar atalho)" para ter um ícone de abertura rápida.
+
+------------------------------------------------------------------
+## Arquivos
+------------------------------------------------------------------
+- index.html ................ Painel de Obras — é por aqui que o
+                              sistema abre
+- medicao.html .............. a medição e os cálculos de uma obra
+- painel.html ............... só redireciona para o index (existe
+                              para não quebrar atalho antigo)
+- three.module.min.js ....... biblioteca do 3D, guardada aqui dentro
+- addons/controls/ .......... controle de órbita do 3D
+- manifest.webmanifest ...... define o app (nome, ícone, janela)
+- sw.js ..................... funcionamento offline
+- icon-192 / 512 / maskable . ícones do app
+- Abrir Sistema (Windows).bat. atalho local (Modo 2)
+
+O sistema abre no **Painel de Obras**, com a lista do que já existe.
+Para medir, escolha a obra no painel ou use "✚ Nova obra".
+O 3D não depende mais de internet: a biblioteca vem junto.
+
+Observação: o **botão de tela cheia** dentro do sistema continua
+funcionando nos dois modos. Salvar/Abrir dados gera um arquivo .json
+por obra. Imprimir/PDF sai formatado para uma folha A4.

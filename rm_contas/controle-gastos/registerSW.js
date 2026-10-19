@@ -1,0 +1,1 @@
+if('serviceWorker' in navigator) {window.addEventListener('load', () => {navigator.serviceWorker.register('/rm_contas/controle-gastos/sw.js', { scope: '/rm_contas/controle-gastos/' })})}

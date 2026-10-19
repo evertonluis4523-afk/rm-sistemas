@@ -1,0 +1,60 @@
+{
+  "name": "RM Estruturas — Controle de Recibos",
+  "short_name": "Recibos RM",
+  "description": "Lançamento e impressão de recibos de pagamento e adiantamento dos funcionários — RM Estruturas Pré-Fabricadas.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#eef0f2",
+  "theme_color": "#1d2127",
+  "lang": "pt-BR",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Troca rápida de EPI",
+      "short_name": "Troca de EPI",
+      "description": "Entrega de EPI no balcão, com assinatura no aparelho — só a Ficha de EPI",
+      "url": "./?v=epi&sub=rapida&modo=campo",
+      "icons": [
+        {
+          "src": "icon-192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "Histórico de EPI",
+      "short_name": "Histórico EPI",
+      "description": "Movimentações, ficha complementar e conferência de desligamento",
+      "url": "./?v=epi&sub=historico&modo=campo",
+      "icons": [
+        {
+          "src": "icon-192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    }
+  ]
+}

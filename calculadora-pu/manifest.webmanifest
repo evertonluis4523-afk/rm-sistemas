@@ -1,0 +1,32 @@
+{
+  "name": "Controle de PU — RM Estruturas Pré-Fabricadas",
+  "short_name": "Controle PU",
+  "description": "Sistema de controle de aplicação de PU por obra: metragem, custos, arremates e cortes de alças.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#3a3a3a",
+  "theme_color": "#F24619",
+  "lang": "pt-BR",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

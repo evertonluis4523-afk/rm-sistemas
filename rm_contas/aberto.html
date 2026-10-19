@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>RM · Contas em aberto</title>
+<meta name="theme-color" content="#1d2127">
+<!-- Manifest PROPRIO, e e essa a razao desta pagina existir.
+
+     "Adicionar a tela inicial" guarda o endereco que estava aberto, com os
+     parametros e tudo. Instalar o app, nao: o Android joga fora o endereco
+     e usa o start_url do manifest. Como o manifest do sistema aponta para
+     "./index.html", o app instalado abriria o Contas a Pagar inteiro, e
+     quem acompanha pelo telefone so precisa das contas em aberto.
+
+     Aqui o start_url ja e a tela das contas em aberto. Instalando por esta
+     pagina nasce um app separado, com nome e icone proprios, que abre
+     sempre no lugar certo. O manifest do sistema fica intocado, senao o
+     app do Contas que ja esta instalado no aparelho mudaria de identidade. -->
+<link rel="manifest" href="manifest-aberto.json">
+<link rel="icon" href="favicon.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<style>
+  :root{
+    --rm-laranja:#F24618;--red:#C1310B;--red-dark:#9B2709;
+    --ink:#16171a;--muted:#6e7178;--line:#e6e6e1;--bg:#f6f6f3;--surface:#fff;
+    --sans:system-ui,-apple-system,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;
+  }
+  *{box-sizing:border-box;font-family:var(--sans)}
+  /* O atributo "hidden" do HTML perde pra qualquer regra de display escrita
+     aqui: .btn{display:block} vence a regra do navegador e o botao aparece
+     escondido no papel e visivel na tela. Como o botao de instalar so pode
+     surgir quando o Android avisa que da pra instalar, sem isto ele ficaria
+     sempre ali, sem fazer nada quando tocado. */
+  [hidden]{display:none!important}
+  html,body{margin:0;min-height:100%}
+  body{background:var(--bg);color:var(--ink);display:grid;place-items:center;
+    padding:24px;font-size:14px;line-height:1.5}
+  .cartao{width:100%;max-width:390px;background:var(--surface);border-radius:16px;
+    border:1px solid var(--line);border-top:4px solid var(--rm-laranja);
+    box-shadow:0 1px 2px rgba(20,24,32,.06),0 10px 30px rgba(20,24,32,.07);
+    padding:28px 24px 24px;text-align:center}
+  .marca{width:64px;height:auto;display:block;margin:0 auto 16px}
+  .eyebrow{font-size:9.5px;font-weight:600;letter-spacing:.19em;text-transform:uppercase;
+    color:var(--muted);margin:0}
+  h1{font-size:22px;font-weight:800;letter-spacing:-.015em;margin:7px 0 0;line-height:1.15}
+  .sub{font-size:13px;color:var(--muted);margin:10px 0 0}
+  .btn{display:block;width:100%;margin-top:20px;padding:14px;border-radius:10px;
+    border:0;font:inherit;font-size:15px;font-weight:800;cursor:pointer;
+    background:var(--red);color:#fff;text-decoration:none;text-align:center}
+  .btn:active{background:var(--red-dark)}
+  .btn.sec{background:#fff;color:var(--ink);border:1px solid var(--line);
+    font-weight:700;font-size:14px;margin-top:9px}
+  .passos{margin:20px 0 0;padding:14px 16px;background:#fafbfc;border:1px solid var(--line);
+    border-radius:10px;text-align:left;font-size:12.5px;color:var(--muted);line-height:1.6}
+  .passos b{color:var(--ink);display:block;margin-bottom:5px;font-size:12px}
+  .passos ol{margin:0;padding-left:18px}
+  .nota{margin:16px 0 0;font-size:11.5px;color:var(--muted);line-height:1.55}
+</style>
+</head>
+<body>
+<div class="cartao">
+  <svg class="marca" viewBox="6 6 109.488 118" aria-hidden="true"><path fill="#F24618" fill-rule="evenodd" d="M 12 43.7927 L 43.7927 12 L 89.9904 12 L 89.9904 51.0679 L 70.4928 70.5655 L 70.4928 31.4976 L 31.4976 31.4976 L 31.4976 118 L 12 118 Z M 50.9952 90.0631 L 70.4928 70.5655 L 70.4928 118 L 50.9952 118 Z M 89.9904 51.0679 L 109.488 70.5655 L 109.488 118 L 89.9904 118 Z"/></svg>
+  <p class="eyebrow">RM Estruturas Pré-Fabricadas</p>
+  <h1>Contas em aberto</h1>
+  <p class="sub">O que está atrasado, o que vence na semana, a forma de pagamento e o botão Paguei.</p>
+
+  <button class="btn" id="btInstalar" hidden>⤓ Instalar no telefone</button>
+  <a class="btn" id="btAbrir" href="./?ver=aberto">Abrir agora</a>
+
+  <div class="passos" id="passos" hidden>
+    <b>Para deixar como aplicativo</b>
+    <ol>
+      <li>Toque no menu do navegador</li>
+      <li>Escolha <b style="display:inline">Adicionar à Tela de Início</b></li>
+    </ol>
+  </div>
+
+  <p class="nota">Na primeira vez, toque em <b style="display:inline">Primeiro acesso</b> e crie sua senha com seu e-mail.
+    Instalado por aqui, o aplicativo abre sempre nas contas em aberto.</p>
+</div>
+
+<script>
+/* Se ja esta rodando como aplicativo instalado, esta pagina nao tem o que
+   fazer: o start_url do manifest ja e a tela das contas, entao so cai aqui quem
+   digitou o endereco. Manda direto pro trabalho. */
+(function(){
+  var app = (window.matchMedia && matchMedia('(display-mode: standalone)').matches)
+         || window.navigator.standalone === true;
+  if (app) { location.replace('./?ver=aberto'); return; }
+
+  /* O Chrome no Android avisa quando pode instalar; guardamos o aviso e
+     mostramos o botao. Sem esse aviso -- iPhone, ou app ja instalado --
+     o botao nao aparece e as instrucoes manuais entram no lugar. */
+  var guardado = null, bt = document.getElementById('btInstalar');
+  window.addEventListener('beforeinstallprompt', function (e) {
+    e.preventDefault(); guardado = e; bt.hidden = false;
+    document.getElementById('passos').hidden = true;
+  });
+  bt.addEventListener('click', function () {
+    if (!guardado) return;
+    guardado.prompt();
+    guardado.userChoice.finally(function(){ guardado = null; bt.hidden = true; });
+  });
+  window.addEventListener('appinstalled', function(){ bt.hidden = true; });
+
+  /* No iPhone nao existe o aviso de instalacao: a unica via e o menu de
+     compartilhar. Mostra o passo a passo em vez de um botao que nao faz nada. */
+  var iOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+  if (iOS) {
+    var p = document.getElementById('passos');
+    p.hidden = false;
+    p.querySelector('ol').innerHTML =
+      '<li>Toque no botão de compartilhar</li>' +
+      '<li>Escolha <b style="display:inline">Adicionar à Tela de Início</b></li>';
+  } else {
+    setTimeout(function(){ if (bt.hidden) document.getElementById('passos').hidden = false; }, 1200);
+  }
+})();
+</script>
+</body>
+</html>

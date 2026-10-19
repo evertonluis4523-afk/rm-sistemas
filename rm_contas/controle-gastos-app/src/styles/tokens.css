@@ -1,0 +1,99 @@
+/* ============================================================
+   Carteira Everton — Design Tokens
+   Tema escuro premium · acento laranja (estilo Orange Finance)
+   ============================================================ */
+:root {
+  /* Cores base */
+  --bg: #0F1115;
+  --bg-elevated: #14161b;
+  --surface: #1A1D22;
+  --surface-2: #21252C;
+  --surface-3: #2a2e36;
+
+  /* Marca (laranja) */
+  --primary: #FF8A00;
+  --primary-2: #FFB347;
+  --primary-soft: #3a2412;
+  --on-primary: #14100a;
+
+  /* Semânticas */
+  --income: #2ECC71;
+  --income-soft: #16281f;
+  --expense: #FF5C5C;
+  --expense-soft: #331c1c;
+  --warn: #F0B429;
+  --warn-soft: #332a10;
+  --info: #4EA1FF;
+  --info-soft: #142333;
+
+  /* Texto */
+  --text: #FFFFFF;
+  --text-2: #A7ADB8;
+  --text-3: #6E7480;
+  --on-surface-soft: rgba(255, 255, 255, 0.06);
+
+  /* Bordas */
+  --line: #2A2D34;
+  --line-soft: #22252b;
+
+  /* Formas */
+  --radius-lg: 22px;
+  --radius-md: 16px;
+  --radius-sm: 12px;
+  --radius-pill: 999px;
+
+  /* Sombra suave (profundidade de cartão flutuante) */
+  --shadow-sm: 0 4px 14px rgba(0, 0, 0, 0.28);
+  --shadow-md: 0 10px 28px rgba(0, 0, 0, 0.36);
+  --shadow-lg: 0 18px 44px rgba(0, 0, 0, 0.46);
+  --shadow-primary: 0 10px 24px rgba(255, 138, 0, 0.4);
+
+  /* Tipografia */
+  --font-display: 'Sora', 'Inter', system-ui, sans-serif;
+  --font-body: 'Inter', system-ui, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace;
+
+  /* Layout */
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --topbar-h: 56px;
+  --tabbar-h: 64px;
+  --max-w: 620px;
+
+  /* Movimento */
+  --ease: cubic-bezier(0.22, 0.9, 0.32, 1);
+  --dur-fast: 140ms;
+  --dur-base: 220ms;
+  --dur-slow: 360ms;
+}
+
+/* Modo alto contraste (acessibilidade) */
+:root[data-contrast="high"] {
+  --text-2: #D6D9DE;
+  --text-3: #9AA0AB;
+  --line: #3c4048;
+  --surface: #20232a;
+}
+
+/* Modo claro (opcional nas configurações) */
+:root[data-theme="light"] {
+  --bg: #F6F7F9;
+  --bg-elevated: #FFFFFF;
+  --surface: #FFFFFF;
+  --surface-2: #F0F1F4;
+  --surface-3: #E7E9ED;
+  --primary-soft: #FFEBD2;
+  --on-primary: #23140a;
+  --income-soft: #E4F7EC;
+  --expense-soft: #FDEAEA;
+  --warn-soft: #FBF1DA;
+  --info-soft: #E7F1FE;
+  --text: #14161B;
+  --text-2: #5B616C;
+  --text-3: #9096A0;
+  --line: #E5E7EB;
+  --line-soft: #EEF0F3;
+  --shadow-sm: 0 1px 2px rgba(20, 24, 32, 0.05), 0 8px 22px rgba(20, 24, 32, 0.06);
+  --shadow-md: 0 2px 6px rgba(20, 24, 32, 0.06), 0 14px 32px rgba(20, 24, 32, 0.08);
+  --shadow-lg: 0 4px 10px rgba(20, 24, 32, 0.07), 0 20px 46px rgba(20, 24, 32, 0.10);
+}

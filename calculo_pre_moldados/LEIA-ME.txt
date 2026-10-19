@@ -1,0 +1,162 @@
+CÁLCULO DE PEÇAS PRÉ-MOLDADOS — RM Estruturas Pré-Fabricadas
+=============================================================
+
+O QUE É
+-------
+Calculadora de preço por peça pré-moldada. Você escolhe o tipo,
+informa as medidas e vê na hora quanto custa a peça — e pode ir
+montando a lista de peças, com total geral e impressão em PDF no
+padrão RM.
+
+Como as medidas costumam se repetir, dá pra guardar as mais usadas
+em "Medidas salvas" e consultar o preço direto, sem recalcular.
+
+
+COMO O PREÇO É CALCULADO
+------------------------
+  Placa      → m²           = altura x comprimento    x R$/m²
+  Contenção  → m²           = altura x comprimento    x R$/m²
+  Pilar      → metro linear = comprimento             x R$/m
+  Viga       → metro linear = comprimento             x R$/m
+  Cálice     → unidade      = 1 peça                  x R$/un
+
+Preços iniciais (editáveis na própria tela, e sincronizados):
+  Placa      R$ 180,00 / m²
+  Contenção  R$ 220,00 / m²
+  Pilar      R$ 170,00 / metro linear
+  Viga       R$ 120,00 / metro linear
+  Cálice     R$ 200,00 / unidade
+
+
+COMO O PESO É CALCULADO
+-----------------------
+O peso existe porque ele vai no manifesto de transporte e na nota
+fiscal. Sai do volume da peça vezes a densidade do concreto:
+
+  Placa / Contenção  volume = altura x comprimento x espessura
+  Pilar / Viga       volume = comprimento x largura x altura da seção
+  Cálice             volume = caixa externa menos o vazio de dentro
+
+A densidade fica na tabela de preços e começa em 2.500 kg/m³
+(concreto armado). Mudar ali recalcula o peso de tudo.
+
+Exceção: o cálice no tamanho padrão sai com 750 kg, que é o peso
+PESADO na balança, e não o que a geometria daria (720 kg). Por isso
+ele não acompanha a densidade — e o manifesto avisa quando há
+cálice de referência na carga.
+
+Peça sem espessura ou sem seção NÃO entra no peso: ela aparece como
+"pendente" e trava o botão de copiar o peso. É proposital. Peso
+suposto não pode parecer peso medido num documento que vai junto
+com o caminhão.
+
+
+NOTAS (as abas)
+---------------
+Cada nota é uma lista fechada em si: as peças dela, o valor dela e o
+peso dela. Uma NÃO soma com a outra — o peso que vai no documento é
+o daquela carga, não o do mês inteiro.
+
+  + Nova nota      abre uma aba nova, vazia
+  ✎ Renomear       dá o nome da nota (ex.: NF 1234, ou o cliente)
+  ✕ Excluir nota   apaga a nota aberta e as linhas dela
+  ⌫ Limpar nota    esvazia a nota aberta sem apagá-la
+
+A aba mostra, de relance, quantas peças, quanto pesa e quanto vale.
+Tudo o que aparece abaixo das abas — indicadores, manifesto e lista
+— é da nota aberta. O "Imprimir / PDF" também sai só com ela, e com
+o nome dela no alto.
+
+Qual aba está aberta é escolha de quem está olhando: fica só neste
+aparelho. Trocar de aba no computador não pula a tela do celular no
+meio de um lançamento.
+
+Fica FORA das notas, valendo para todas: tabela de preços,
+densidade, seções de pilar e medidas salvas.
+
+
+COMO USAR
+---------
+1. Entre com seu e-mail e senha (mesma conta dos outros sistemas RM).
+2. Confira / ajuste a tabela de preços.
+3. Na calculadora: escolha o tipo, digite as medidas e a quantidade.
+   O preço da peça aparece na hora, antes mesmo de adicionar.
+4. Clique em "Adicionar" pra jogar a peça na lista.
+5. "Imprimir / PDF" gera a lista da nota aberta no padrão RM.
+
+
+MEDIDAS SALVAS
+--------------
+Depois de digitar uma medida na calculadora, "☆ Salvar esta medida"
+guarda ela no quadro de baixo. Ali você vê o preço de cada medida
+já calculado, sem precisar digitar de novo.
+
+  ↑ usar  joga a medida na calculadora (é só informar a quantidade)
+  ✕       exclui a medida salva
+
+Pra corrigir uma medida, edite a altura ou o comprimento direto no
+quadro: o valor se atualiza na hora. Mudar um preço na tabela
+também atualiza todas as medidas salvas daquele tipo, porque só as
+dimensões ficam guardadas — o preço é sempre recalculado.
+
+Medida tem que ser maior que zero: apagar o campo não zera a medida,
+o valor anterior volta assim que você sai dali.
+
+As medidas salvas e a tabela de preços são cadastro: "Nova lista"
+limpa só a lista de peças, elas continuam lá.
+
+Dica: nos campos de medida pode digitar com vírgula (2,50) ou
+ponto (2.50) — os dois funcionam. Enter no comprimento ou na
+quantidade já adiciona a peça.
+
+
+VÁRIAS PESSOAS AO MESMO TEMPO
+-----------------------------
+Pode. A tela acompanha o servidor ao vivo: se alguém lança uma peça,
+ela aparece nas outras telas sozinha, sem precisar recarregar.
+
+Cada alteração grava só o que mudou (aquela peça, aquela medida,
+aquele preço) em vez da lista inteira, então duas pessoas mexendo
+juntas não desfazem o trabalho uma da outra.
+
+Um campo que você está digitando nunca é sobrescrito no meio da
+digitação — a atualização de fora espera você sair do campo.
+
+
+ONDE OS DADOS FICAM
+-------------------
+Firebase Realtime Database do projeto rm-contas (o mesmo dos outros
+sistemas), no nó "pre_moldados/atual". Salva sozinho a cada mudança,
+e também ao fechar a aba ou trocar de app.
+
+Guarda uma cópia local no navegador com a hora da gravação. Se uma
+alteração ficou no aparelho sem conseguir subir (queda de internet,
+por exemplo), na próxima entrada ela é reconhecida como mais nova e
+enviada — não se perde.
+
+REGRA NO FIREBASE
+A regra abaixo libera para qualquer conta autenticada do projeto
+rm-contas — ou seja, todo mundo que usa qualquer sistema RM:
+
+  "pre_moldados": { ".read": "auth != null", ".write": "auth != null" }
+
+Se o acesso tiver que ser restrito a algumas pessoas, criar um nó
+com os liberados e apontar a regra para ele:
+
+  "pre_moldados": {
+    ".read":  "root.child('acesso/pre_moldados').child(auth.uid).val() === true",
+    ".write": "root.child('acesso/pre_moldados').child(auth.uid).val() === true"
+  }
+
+e em "acesso/pre_moldados" gravar { "<uid-da-pessoa>": true } para
+cada uma que pode entrar. Isso é configuração no console do Firebase,
+não mexe no sistema.
+
+
+ARQUIVOS
+--------
+  index.html            o sistema inteiro (uma página só)
+  manifest.webmanifest  instalação como app (PWA)
+  sw.js                 cache offline
+  icon-*.png            ícones
+  favicon.png           ícone da aba

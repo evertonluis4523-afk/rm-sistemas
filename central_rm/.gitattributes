@@ -1,0 +1,3 @@
+# Arquivos .bat precisam de quebra de linha do Windows (CRLF).
+# Sem isto o git entregaria LF no clone e o CMD pode engasgar.
+*.bat text eol=crlf

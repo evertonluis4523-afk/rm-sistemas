@@ -1,0 +1,183 @@
+/* ============================================================
+   Orange Finance — Estilos de componentes compartilhados
+   ============================================================ */
+
+/* ---------- Cartões ---------- */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+}
+.card.pad { padding: 18px; }
+.card.elevated { box-shadow: var(--shadow-md); }
+.card.flat { box-shadow: none; }
+.card.interactive { transition: transform var(--dur-fast) var(--ease), box-shadow var(--dur-fast) var(--ease); }
+.card.interactive:active { transform: scale(0.98); }
+
+/* ---------- Botões ---------- */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  padding: 13px 18px; border-radius: var(--radius-md); font-weight: 700; font-size: 14.5px;
+  transition: transform var(--dur-fast) var(--ease), opacity var(--dur-fast) var(--ease), background var(--dur-fast) var(--ease);
+  width: 100%; white-space: nowrap;
+}
+.btn:active { transform: scale(0.97); }
+.btn:disabled { opacity: 0.45; pointer-events: none; }
+.btn .msr { font-size: 19px; }
+.btn.primary { background: linear-gradient(135deg, var(--primary), var(--primary-2)); color: var(--on-primary); box-shadow: var(--shadow-primary); }
+.btn.secondary { background: var(--surface-2); color: var(--text); border: 1px solid var(--line); }
+.btn.ghost { background: transparent; color: var(--text-2); }
+.btn.danger { background: var(--expense-soft); color: var(--expense); }
+.btn.success { background: var(--income-soft); color: var(--income); }
+.btn.sm { padding: 9px 14px; font-size: 13px; width: auto; border-radius: var(--radius-sm); }
+.btn.icon-only { width: 44px; height: 44px; padding: 0; border-radius: var(--radius-sm); flex: 0 0 auto; }
+.btn.fab {
+  position: fixed; z-index: 35; left: 0; right: 0; margin: 0 auto;
+  bottom: calc(var(--tabbar-h) + var(--safe-bottom) + 14px);
+  width: 60px; height: 60px; border-radius: 20px; padding: 0;
+  background: linear-gradient(135deg, var(--primary), var(--primary-2));
+  box-shadow: 0 12px 28px rgba(255, 138, 0, 0.45);
+}
+.btn.fab .msr { font-size: 28px; color: var(--on-primary); }
+
+/* ---------- Campos ---------- */
+.field { display: flex; flex-direction: column; gap: 8px; }
+.field > label { font-size: 12.5px; font-weight: 700; color: var(--text-2); letter-spacing: 0.02em; padding: 0 2px; }
+.input, textarea.input, select.input {
+  width: 100%; padding: 13px 14px; border-radius: var(--radius-sm); border: 1px solid var(--line);
+  background: var(--surface-2); color: var(--text); font-size: 15px; outline: none;
+  transition: border var(--dur-fast) var(--ease);
+}
+.input:focus { border-color: var(--primary); }
+.input::placeholder { color: var(--text-3); }
+textarea.input { resize: none; min-height: 66px; }
+.input-icon-wrap { position: relative; }
+.input-icon-wrap .input { padding-left: 42px; }
+.input-icon-wrap .msr { position: absolute; left: 13px; top: 50%; transform: translateY(-50%); color: var(--text-3); font-size: 20px; }
+
+/* ---------- Chips / Pills ---------- */
+.chip {
+  padding: 9px 14px; border-radius: var(--radius-pill); border: 1.5px solid var(--line);
+  background: var(--surface-2); font-size: 13px; font-weight: 600; color: var(--text-2);
+  transition: all var(--dur-fast) var(--ease);
+}
+.chip.on { border-color: var(--primary); background: var(--primary-soft); color: var(--primary-2); }
+.pill {
+  font-size: 10.5px; font-weight: 700; letter-spacing: 0.03em; padding: 3px 8px;
+  border-radius: var(--radius-pill); background: var(--surface-2); color: var(--text-2); text-transform: uppercase;
+}
+.pill.income { background: var(--income-soft); color: var(--income); }
+.pill.expense { background: var(--expense-soft); color: var(--expense); }
+.pill.warn { background: var(--warn-soft); color: var(--warn); }
+
+/* ---------- Barra de progresso ---------- */
+.progress { height: 8px; border-radius: var(--radius-pill); background: var(--surface-2); overflow: hidden; }
+.progress > span { display: block; height: 100%; border-radius: var(--radius-pill); background: linear-gradient(90deg, var(--primary), var(--primary-2)); transition: width var(--dur-slow) var(--ease); }
+.progress.income > span { background: var(--income); }
+.progress.warn > span { background: var(--warn); }
+.progress.over > span { background: var(--expense); }
+
+/* ---------- Top bar / Bottom nav ---------- */
+.topbar {
+  position: sticky; top: 0; z-index: 30; padding-top: var(--safe-top);
+  background: color-mix(in srgb, var(--bg) 85%, transparent);
+  backdrop-filter: saturate(1.4) blur(14px); -webkit-backdrop-filter: saturate(1.4) blur(14px);
+  border-bottom: 1px solid var(--line-soft);
+}
+.topbar-in { max-width: var(--max-w); margin: 0 auto; display: flex; align-items: center; gap: 10px; padding: 12px 16px; min-height: var(--topbar-h); }
+
+.tabbar {
+  position: fixed; z-index: 34; left: 0; right: 0; bottom: 0;
+  height: calc(var(--tabbar-h) + var(--safe-bottom)); padding-bottom: var(--safe-bottom);
+  background: color-mix(in srgb, var(--bg-elevated) 92%, transparent);
+  backdrop-filter: saturate(1.4) blur(16px); -webkit-backdrop-filter: saturate(1.4) blur(16px);
+  border-top: 1px solid var(--line-soft); display: flex; align-items: stretch;
+  max-width: var(--max-w); margin: 0 auto;
+}
+.tabbar .tab {
+  flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;
+  color: var(--text-3); font-size: 10.5px; font-weight: 600; padding-top: 6px; transition: color var(--dur-fast) var(--ease);
+}
+/* Pílula de realce atrás do ícone (aba ativa — estilo Mobills) */
+.tabbar .tab .tab-pill {
+  display: grid; place-items: center; width: 52px; height: 30px; border-radius: var(--radius-pill);
+  transition: background var(--dur-fast) var(--ease);
+}
+.tabbar .tab .tab-pill .msr { font-size: 23px; }
+.tabbar .tab .tab-label { line-height: 1; }
+.tabbar .tab.on { color: var(--primary); }
+/* estilo orange-finance: aba ativa apenas na cor (sem pílula de fundo) */
+
+/* Slot central do FAB (quadrado arredondado, elevado) */
+.tabbar .tab-fab-slot { flex: 1; display: flex; align-items: flex-start; justify-content: center; position: relative; }
+.tabbar .tab-fab {
+  position: absolute; top: -22px; width: 56px; height: 56px; border-radius: 20px;
+  background: linear-gradient(135deg, var(--primary-2), var(--primary));
+  display: grid; place-items: center; box-shadow: 0 10px 24px rgba(255, 138, 0, 0.4);
+  transition: transform var(--dur-fast) var(--ease);
+}
+.tabbar .tab-fab:active { transform: scale(0.92); }
+.tabbar .tab-fab .msr { font-size: 28px; color: var(--on-primary); font-variation-settings: 'wght' 600; }
+
+/* ---------- Listas ---------- */
+.list { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-lg); overflow: hidden; box-shadow: var(--shadow-sm); }
+.list-item { display: flex; align-items: center; gap: 13px; padding: 14px 16px; border-bottom: 1px solid var(--line-soft); }
+.list-item:last-child { border-bottom: none; }
+.list-item:active { background: var(--surface-2); }
+.list-item .li-ic { width: 38px; height: 38px; border-radius: var(--radius-sm); background: var(--surface-2); display: grid; place-items: center; flex: 0 0 auto; }
+.list-item .li-mid { flex: 1; min-width: 0; }
+.list-item .li-t { font-weight: 600; font-size: 14.5px; }
+.list-item .li-s { font-size: 12px; color: var(--text-3); }
+.list-item .li-r { color: var(--text-3); }
+
+/* ---------- Alertas ---------- */
+.alert { display: flex; gap: 12px; padding: 14px 15px; border-radius: var(--radius-md); align-items: flex-start; border: 1px solid var(--line); }
+.alert.over { background: var(--expense-soft); }
+.alert.warn { background: var(--warn-soft); }
+.alert.ok { background: var(--income-soft); }
+.alert .ai { font-size: 20px; margin-top: 1px; }
+.alert.over .ai { color: var(--expense); } .alert.warn .ai { color: var(--warn); } .alert.ok .ai { color: var(--income); }
+
+/* ---------- Bottom sheet / Modal ---------- */
+.scrim { position: fixed; inset: 0; z-index: 45; background: rgba(4, 5, 7, 0.6); backdrop-filter: blur(2px); }
+.sheet-host { position: fixed; z-index: 46; left: 0; right: 0; bottom: 0; }
+.bsheet {
+  background: var(--bg-elevated); border-top: 1px solid var(--line); border-radius: 26px 26px 0 0;
+  max-width: var(--max-w); margin: 0 auto; max-height: 92vh; overflow-y: auto;
+  box-shadow: 0 -12px 44px rgba(0, 0, 0, 0.5);
+  padding: 8px 18px calc(22px + var(--safe-bottom)); -webkit-overflow-scrolling: touch;
+}
+.grab { width: 40px; height: 4px; border-radius: var(--radius-pill); background: var(--line); margin: 10px auto 8px; }
+.sheet-head { display: flex; align-items: center; justify-content: space-between; margin: 6px 2px 16px; }
+.sheet-head h2 { font-size: 19px; font-weight: 800; }
+
+/* ---------- Toast ---------- */
+.toast {
+  position: fixed; z-index: 60; left: 50%; transform: translateX(-50%);
+  bottom: calc(var(--tabbar-h) + var(--safe-bottom) + 20px);
+  background: var(--surface-3); color: var(--text); padding: 12px 18px; border-radius: var(--radius-md);
+  font-size: 13.5px; font-weight: 600; box-shadow: var(--shadow-lg); max-width: 90%; text-align: center;
+  border: 1px solid var(--line);
+}
+
+/* ---------- Avatar / ícone circular ---------- */
+.avatar { width: 42px; height: 42px; border-radius: var(--radius-sm); display: grid; place-items: center; flex: 0 0 auto; font-size: 19px; }
+
+/* ---------- Empty state ---------- */
+.empty { text-align: center; padding: 48px 20px; color: var(--text-3); }
+.empty .em-ic { width: 60px; height: 60px; border-radius: var(--radius-md); background: var(--surface-2); display: grid; place-items: center; margin: 0 auto 14px; }
+.empty .em-ic .msr { font-size: 28px; color: var(--text-3); }
+.empty h3 { margin: 0 0 4px; font-size: 16px; color: var(--text-2); }
+.empty p { margin: 0; font-size: 13.5px; }
+
+/* ---------- Segmented control ---------- */
+.seg { display: flex; background: var(--surface-2); border-radius: var(--radius-sm); padding: 3px; gap: 3px; }
+.seg button { flex: 1; padding: 9px; font-size: 13px; font-weight: 600; color: var(--text-2); border-radius: 9px; transition: var(--dur-fast); }
+.seg button.on { background: var(--surface); color: var(--text); box-shadow: var(--shadow-sm); }
+
+/* ---------- Switch ---------- */
+.switch { width: 46px; height: 28px; border-radius: var(--radius-pill); background: var(--surface-3); position: relative; flex: 0 0 auto; transition: var(--dur-base); }
+.switch.on { background: linear-gradient(135deg, var(--primary), var(--primary-2)); }
+.switch::after { content: ''; position: absolute; top: 3px; left: 3px; width: 22px; height: 22px; border-radius: 50%; background: #fff; transition: var(--dur-base); box-shadow: 0 1px 3px rgba(0,0,0,0.3); }
+.switch.on::after { left: 21px; }
