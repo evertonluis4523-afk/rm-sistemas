@@ -6992,7 +6992,7 @@ function renderEmps(){
   $('#cAtv').textContent=visiveis.filter(e=>e.status==='ativo').length;
   $('#cAfa').textContent=visiveis.filter(e=>e.status==='afast').length;
   $('#cSem').textContent=visiveis.filter(e=>!e.doc).length;
-  const q=($('#fSearch').value||'').toLowerCase(),f=$('#fStatus').value,b=$('#empBody');b.innerHTML='';
+  const q=buscaTxt($('#fSearch').value),f=$('#fStatus').value,b=$('#empBody');b.innerHTML='';
   const admin=isAdminUser();
   /* AFASTADO EM GRUPO PRÓPRIO, embaixo. Misturado na lista, quem está
      afastado (INSS, cárcere...) aparecia entre os que estão trabalhando, e a
@@ -7000,7 +7000,7 @@ function renderEmps(){
      vai para o grupo "Afastados", no fim da tela, logo acima dos desligados.
      Com o filtro "Afastados" escolhido, eles voltam para a lista principal --
      é o que se está procurando. */
-  const busca=e=>!q||e.nome.toLowerCase().includes(q)||(e.doc||'').toLowerCase().includes(q);
+  const busca=e=>!q||buscaTxt(e.nome).includes(q)||buscaTxt(e.doc).includes(q);
   const afastGrupo=f!=='afast'&&f!=='ativo';
   const list=sortByNome(visiveis).filter(e=>{
     if(!busca(e))return false;
@@ -7703,9 +7703,9 @@ function renderCarta(){
 /* Mesma lista, nome e funcao -- usada tanto na Carta de emprego quanto na
    Advertencia, porque as duas so' precisam de "escolha o funcionario". */
 function empBuscaItens(q){
-  const alvo=(q||'').toLowerCase();
+  const alvo=buscaTxt(q);
   const todos=(state.employees||[]).filter(e=>e&&e.nome).sort((a,b)=>a.nome.localeCompare(b.nome,'pt-BR'));
-  return alvo?todos.filter(e=>e.nome.toLowerCase().includes(alvo)):todos;
+  return alvo?todos.filter(e=>buscaTxt(e.nome).includes(alvo)):todos;
 }
 function empBuscaLinha(e){
   return '<div class="d">'+esc(titlePt(e.nome))+'</div><div class="g">'+(e.funcao?esc(frasePt(e.funcao)):'sem função cadastrada')+'</div>';
@@ -8744,7 +8744,7 @@ function renderTerc(){
   $('#tcCpf').textContent=state.terceiros.filter(t=>t.docTipo==='CPF'&&t.doc).length;
   $('#tcCnpj').textContent=state.terceiros.filter(t=>t.docTipo==='CNPJ'&&t.doc).length;
   $('#tcSem').textContent=state.terceiros.filter(t=>!t.doc).length;
-  const q=($('#tfSearch').value||'').toLowerCase(),b=$('#tercBody');b.innerHTML='';
+  const q=buscaTxt($('#tfSearch').value),b=$('#tercBody');b.innerHTML='';
   const list=state.terceiros.filter(t=>!q||tercChave(t).includes(q.normalize('NFD').replace(/[̀-ͯ]/g,'')));
   if(!list.length){b.innerHTML='<tr><td colspan="5"><div class="empty"><b>Nenhum terceiro</b>Cadastre prestadores de serviço para emitir recibos.</div></td></tr>';return;}
   list.forEach(t=>{
@@ -8956,11 +8956,11 @@ function delIndic(id){
 }
 function renderIndic(){
   const b=$('#indicBody'); if(!b)return;
-  const busca=($('#inBusca').value||'').trim().toLowerCase(), filtro=$('#inFiltro').value;
+  const busca=buscaTxt($('#inBusca').value).trim(), filtro=$('#inFiltro').value;
   let lista=state.indicacoes.slice();
   if(filtro==='abertas')lista=lista.filter(x=>x.situacao!=='pago'&&x.situacao!=='nao_passou');
   else if(filtro!=='todas')lista=lista.filter(x=>x.situacao===filtro);
-  if(busca)lista=lista.filter(x=>(indicNome(x.indicadorId)+' '+indicNome(x.indicadoId)).toLowerCase().includes(busca));
+  if(busca)lista=lista.filter(x=>buscaTxt(indicNome(x.indicadorId)+' '+indicNome(x.indicadoId)).includes(busca));
   /* Quem vence primeiro aparece primeiro: a lista serve para agir, e o que
      está estourando é o que precisa de decisão hoje. O que já foi resolvido
      desce para o fim -- na lista "Todas", um bônus pago em janeiro ficava no
@@ -10019,8 +10019,8 @@ function renderSal(){
   renderCicloBarra();
   document.querySelectorAll('#salSeg button').forEach(x=>x.classList.toggle('on',x.dataset.m===salFilter));
   const cd=$('#chkDetRec');if(cd)cd.checked=!!state.cfg.detalharRecibo;
-  const q=($('#salSearch').value||'').toLowerCase(),b=$('#salBody');b.innerHTML='';
-  const rows=empAtivos().filter(e=>{const met=e.metodo||'banco';if(salFilter!=='todos'&&met!==salFilter)return false;if(q&&!e.nome.toLowerCase().includes(q))return false;return true;});
+  const q=buscaTxt($('#salSearch').value),b=$('#salBody');b.innerHTML='';
+  const rows=empAtivos().filter(e=>{const met=e.metodo||'banco';if(salFilter!=='todos'&&met!==salFilter)return false;if(q&&!buscaTxt(e.nome).includes(q))return false;return true;});
   salVisiveis=rows.map(e=>e.id);
   salTotals();
   $('#salTable').classList.toggle('hide-det',!salDetail);
@@ -10229,8 +10229,8 @@ $('#salIncPagos')&&($('#salIncPagos').onchange=function(){
   if(this.checked) toast('Segunda via ligada: quem já está pago volta a sair nos recibos e no relatório.');
 });
 $('#salChkAll').onchange=function(){
-  const q=($('#salSearch').value||'').toLowerCase();
-  const rows=empAtivos().filter(e=>{const met=e.metodo||'banco';if(salFilter!=='todos'&&met!==salFilter)return false;if(q&&!e.nome.toLowerCase().includes(q))return false;return true;});
+  const q=buscaTxt($('#salSearch').value);
+  const rows=empAtivos().filter(e=>{const met=e.metodo||'banco';if(salFilter!=='todos'&&met!==salFilter)return false;if(q&&!buscaTxt(e.nome).includes(q))return false;return true;});
   rows.forEach(e=>{if(this.checked)delete salGen.excluded[e.id];else salGen.excluded[e.id]=true;});
   saveSalGen(); renderSal();
 };
@@ -10339,6 +10339,10 @@ $('#btnSalAuto').onclick=()=>{const pct=parseValor($('#salPct').value)||0;if(pct
 $('#btnSalResto').onclick=()=>{empAtivos().forEach(e=>{const s=Number(e.salario)||0,a=Number(e.valAdiantamento)||0;if(s>0){e.base=Math.max(0,Math.round((s-a)*100)/100);e.descRM=0;e.acresc=0;e.banheiro=0;e.almoco=0;}});persist();renderSal();toast('Pagamento = salário − adiantamento','ok');};
 
 /* ---------- Importar Almoços (do sistema de Almoços) ---------- */
+/* BUSCA SEM ACENTO. Os campos de busca comparavam letra por letra: "joao"
+   não achava "João", "antonio" não achava "Antônio". Toda busca passa o termo
+   e o texto por aqui. Teste recibos-busca-sem-acento. */
+function buscaTxt(s){ return String(s==null?'':s).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase(); }
 function normName(s){
   return String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/\s+/g,' ').trim();
 }
@@ -12033,8 +12037,8 @@ $('#relBusca') && ($('#relBusca').oninput=()=>{relBuscaAplicar();relRefreshTable
 criarBuscaNome('relBusca','relSugg',
   q=>{
     const nomes=new Set(); state.employees.forEach(e=>e&&e.nome&&nomes.add(e.nome)); state.terceiros.forEach(t=>t&&t.nome&&nomes.add(t.nome));
-    const todos=[...nomes].sort((a,b)=>a.localeCompare(b,'pt-BR')), alvo=q.toLowerCase();
-    return alvo?todos.filter(n=>n.toLowerCase().includes(alvo)):todos;
+    const todos=[...nomes].sort((a,b)=>a.localeCompare(b,'pt-BR')), alvo=buscaTxt(q);
+    return alvo?todos.filter(n=>buscaTxt(n).includes(alvo)):todos;
   },
   nome=>'<div class="d">'+esc(titlePt(nome))+'</div>',
   nome=>{const inp=$('#relBusca');inp.value=nome;inp.dispatchEvent(new Event('input',{bubbles:true}));});
@@ -12043,10 +12047,10 @@ $('#relTipoF') && ($('#relTipoF').onchange=()=>{relRefreshTable();renderRelConfe
 /* ---- filtro de tipo + busca aplicado só à tabela de lançamentos ---- */
 function relFiltrarLista(list){
   const tipo=$('#relTipoF')?$('#relTipoF').value:'todos';
-  const q=($('#relBusca')?$('#relBusca').value:'').trim().toLowerCase();
+  const q=buscaTxt($('#relBusca')?$('#relBusca').value:'').trim();
   return list.filter(r=>{
     if(tipo!=='todos'&&r.tipo!==tipo)return false;
-    if(q&&!(r.itens||[]).some(it=>(it.nome||'').toLowerCase().includes(q)))return false;
+    if(q&&!(r.itens||[]).some(it=>buscaTxt(it.nome).includes(q)))return false;
     return true;
   });
 }
@@ -12512,13 +12516,13 @@ function bhSitBadge(s){if(s==='emdia')return 'atv"><span class="d"></span>Em dia
 function renderBH(){
   const ms=$('#bhMes');if(!ms.options.length)MESES.forEach((m,i)=>{const o=el('option');o.value=i;o.textContent=m.charAt(0).toUpperCase()+m.slice(1);ms.appendChild(o);});
   if($('#bhAno').value===''){const n=new Date();ms.value=n.getMonth();$('#bhAno').value=n.getFullYear();}
-  const q=($('#bhSearch').value||'').toLowerCase(),fil=$('#bhFiltro').value;
+  const q=buscaTxt($('#bhSearch').value),fil=$('#bhFiltro').value;
   const all=(Array.isArray(state.employees)?state.employees:[]).filter(e=>{const s=e.status||'ativo';return s!=='desligado'&&s!=='demissao';}).slice().sort((a,b)=>(a.nome||'').localeCompare(b.nome||'','pt-BR'));
   let tF=0,tR=0,tS=0,qtdDia=0,qtdQuit=0,qtdRecup=0,qtdPend=0;
   const rows=[];
   all.forEach(e=>{const r=bhResumo(e.id);tF+=r.hf;tR+=r.hr;tS+=r.saldo;
     if(r.sit==='emdia')qtdDia++;else if(r.sit==='quitado')qtdQuit++;else if(r.sit==='recuperando')qtdRecup++;else qtdPend++;
-    if(q&&!e.nome.toLowerCase().includes(q))return;
+    if(q&&!buscaTxt(e.nome).includes(q))return;
     if(fil!=='todos'&&r.sit!==fil)return;
     rows.push({e,r});});
   $('#bhTotFaltas').textContent=fmtHM(tF);$('#bhTotRecup').textContent=fmtHM(tR);$('#bhTotSaldo').textContent=fmtHM(tS);
@@ -12660,8 +12664,8 @@ function proximaParcelaHTML(em){
 function renderEmpr(){
   empsToEmprSelect();
   if($('#emprData').value==='')$('#emprData').value=rmDiaISO();
-  const q=($('#emprSearch').value||'').toLowerCase(),b=$('#emprBody');b.innerHTML='';
-  const list=[];state.employees.forEach(e=>{(e.emprestimos||[]).forEach(em=>{if(!q||e.nome.toLowerCase().includes(q)||(em.desc||'').toLowerCase().includes(q))list.push({...em,empId:e.id,empNome:e.nome});});});
+  const q=buscaTxt($('#emprSearch').value),b=$('#emprBody');b.innerHTML='';
+  const list=[];state.employees.forEach(e=>{(e.emprestimos||[]).forEach(em=>{if(!q||buscaTxt(e.nome).includes(q)||buscaTxt(em.desc).includes(q))list.push({...em,empId:e.id,empNome:e.nome});});});
   if(!list.length){b.innerHTML='<tr><td colspan="8"><div class="empty"><b>Nenhum empréstimo</b>Cadastre um novo acima.</div></td></tr>';return;}
   list.forEach(em=>{const pago=em.parcelas.filter(p=>p.pago).reduce((s,p)=>s+p.valor,0);const saldo=em.valor-pago;const tr=el('tr');
     tr.innerHTML='<td class="forn">'+esc(titlePt(em.empNome))+'</td><td data-label="Descrição">'+esc(em.desc||'')+'</td>'+
@@ -14124,8 +14128,8 @@ function renderCli(){
      exclusão de outro recibo) não pode reconstruir a linha embaixo do
      dedo de quem está digitando um "referente a". */
   if($('#cliPagLinhas')&&!$('#cliPagLinhas').children.length)renderCliPagLinhas();
-  const q=($('#cliSearch').value||'').toLowerCase(),b=$('#cliBody');b.innerHTML='';
-  const list=state.clientes.filter(c=>!q||c.nome.toLowerCase().includes(q)||(c.doc||'').toLowerCase().includes(q)||cliPagamentos(c).some(p=>(p.descricao||'').toLowerCase().includes(q)));
+  const q=buscaTxt($('#cliSearch').value),b=$('#cliBody');b.innerHTML='';
+  const list=state.clientes.filter(c=>!q||buscaTxt(c.nome).includes(q)||buscaTxt(c.doc).includes(q)||cliPagamentos(c).some(p=>buscaTxt(p.descricao).includes(q)));
   let tot=0;state.clientes.forEach(c=>tot+=cliTotal(c));
   $('#cliQtd').textContent=state.clientes.length;$('#cliTot').textContent='R$ '+fmtBRL(tot);
   if(!list.length){b.innerHTML='<tr><td colspan="6"><div class="empty"><b>Nenhum recibo emitido</b>Preencha os campos acima e gere o primeiro.</div></td></tr>';return;}
@@ -14232,7 +14236,7 @@ function cliNomesUnicos(){
     .sort((a,b)=>String(a.nome||'').localeCompare(String(b.nome||''),'pt-BR'));
 }
 criarBuscaNome('cliNome','cliSugg',
-  q=>{const todos=cliNomesUnicos(),alvo=q.toLowerCase();return alvo?todos.filter(c=>(c.nome||'').toLowerCase().includes(alvo)):todos;},
+  q=>{const todos=cliNomesUnicos(),alvo=buscaTxt(q);return alvo?todos.filter(c=>buscaTxt(c.nome).includes(alvo)):todos;},
   c=>'<div class="d">'+esc(titlePt(c.nome))+'</div><div class="g">'+(c.doc?esc(c.docTipo)+' '+esc(c.doc)+' · ':'')+'último recibo em '+fmtDate(c.data)+'</div>',
   c=>{$('#cliNome').value=c.nome;cliAplicarDadosAnteriores(c);});
 $('#cliNome').addEventListener('blur',()=>{
@@ -14352,9 +14356,9 @@ function renderResc(){
   if($('#rescData').value==='')$('#rescData').value=rmDiaISO();
   if($('#rescCidade').value==='')$('#rescCidade').value=state.cfg.cidadeEmissao;
   if(!Array.isArray(state.rescisoes))state.rescisoes=[];
-  const q=($('#rescSearch').value||'').toLowerCase(),b=$('#rescBody');b.innerHTML='';
-  const list=state.rescisoes.filter(r=>!q||(r.nome||'').toLowerCase().includes(q)
-    ||(r.doc||'').toLowerCase().includes(q)||(r.motivo||'').toLowerCase().includes(q));
+  const q=buscaTxt($('#rescSearch').value),b=$('#rescBody');b.innerHTML='';
+  const list=state.rescisoes.filter(r=>!q||buscaTxt(r.nome).includes(q)
+    ||buscaTxt(r.doc).includes(q)||buscaTxt(r.motivo).includes(q));
   let tot=0;state.rescisoes.forEach(r=>tot+=Number(r.valor)||0);
   $('#rescQtd').textContent=state.rescisoes.length;$('#rescTot').textContent='R$ '+fmtBRL(tot);
   if(!list.length){b.innerHTML='<tr><td colspan="7"><div class="empty"><b>Nenhum recibo de rescisão</b>Escolha o funcionário acima, informe o valor e o motivo.</div></td></tr>';return;}
@@ -17341,7 +17345,7 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeAll();$('#prin
    juntos a cada publicacao, e ha uma prova automatica que falha se um subir
    sem o outro. Assim o numero na tela e o mesmo do arquivo que o aparelho
    guardou, e dizer "estou na v81" passa a significar alguma coisa. */
-const APP_VER='v262';
+const APP_VER='v263';
 (function(){var p=document.getElementById('verPill'); if(p)p.textContent=APP_VER;})();
 
 if('serviceWorker' in navigator){
@@ -17792,7 +17796,7 @@ function montaAvisoDup(ano){
 }
 
 function movimentosFiltrados(){
-  const ano=String($('#relAno').value||new Date().getFullYear()),mes=$('#relMesF').value,tipo=$('#relTipoF').value,status=$('#relStatusF').value,met=$('#relMetodoF').value,q=($('#relBusca').value||'').trim().toLowerCase(),obra=($('#relObraF').value||'').trim().toLowerCase();
+  const ano=String($('#relAno').value||new Date().getFullYear()),mes=$('#relMesF').value,tipo=$('#relTipoF').value,status=$('#relStatusF').value,met=$('#relMetodoF').value,q=buscaTxt($('#relBusca').value).trim(),obra=buscaTxt($('#relObraF').value).trim();
   return movLista().filter(m=>{
     if(!String(m.competencia||'').startsWith(ano))return false;if(mes!=='todos'&&String(m.competencia||'').slice(5,7)!==String(Number(mes)+1).padStart(2,'0'))return false;
     if(tipo!=='todos'&&m.tipo!==tipo)return false;if(status!=='todos'&&m.status!==status)return false;if(met!=='todos'&&metodoNorm(m.metodo)!==met)return false;
@@ -17802,7 +17806,7 @@ function movimentosFiltrados(){
        escolher "Cancelado" no filtro de situacao --, porque sumir de vez com
        um lancamento de dinheiro seria pior do que mostra-lo demais. */
     if(m.status==='cancelado'&&status!=='cancelado')return false;
-    if(q&&!String(m.nome||'').toLowerCase().includes(q))return false;if(obra&&!([m.obra,m.nfReferencia,m.referenciaPagamento,m.servico].join(' ').toLowerCase().includes(obra)))return false;return true;
+    if(q&&!buscaTxt(m.nome).includes(q))return false;if(obra&&!(buscaTxt([m.obra,m.nfReferencia,m.referenciaPagamento,m.servico].join(' ')).includes(obra)))return false;return true;
   }).sort((a,b)=>String(b.dataPagamento||b.dataPrevista||b.competencia).localeCompare(String(a.dataPagamento||a.dataPrevista||a.competencia))||movTs(b)-movTs(a));
 }
 function renderRelConferencia(){
@@ -17861,11 +17865,11 @@ function aplicarSituacaoLote(){
   persist();renderRel();toast(ids.length+' lançamento(s) atualizados','ok');
 }
 function renderRelTerceiros(){
-  const b=$('#relTercBody');if(!b)return;const list=movimentosFiltrados().filter(m=>m.tipo==='terceiros'),q=($('#relBusca').value||'').trim().toLowerCase(),obra=($('#relObraF').value||'').trim().toLowerCase();
+  const b=$('#relTercBody');if(!b)return;const list=movimentosFiltrados().filter(m=>m.tipo==='terceiros'),q=buscaTxt($('#relBusca').value).trim(),obra=buscaTxt($('#relObraF').value).trim();
   /* Contrato e saldo por OBRA do terceiro (antes era um valor só por
      terceiro, e duas obras dividiam o mesmo saldo). */
-  const cts=[];state.terceiros.filter(t=>!q||t.nome.toLowerCase().includes(q)).forEach(t=>tercContratos(t).forEach(c=>{
-    if(!obra||[c.obra,t.servico].join(' ').toLowerCase().includes(obra))cts.push({t,c});}));
+  const cts=[];state.terceiros.filter(t=>!q||buscaTxt(t.nome).includes(q)).forEach(t=>tercContratos(t).forEach(c=>{
+    if(!obra||buscaTxt([c.obra,t.servico].join(' ')).includes(obra))cts.push({t,c});}));
   const contrato=cts.reduce((s,x)=>s+x.c.valor,0);
   const allPaid=movLista().filter(m=>m.tipo==='terceiros'&&['pago','historico','divergente'].includes(m.status)),paidBy={};
   allPaid.forEach(m=>{const k=m.pessoaId+'|'+obraChave(m.obra);paidBy[k]=(paidBy[k]||0)+valorMovPago(m);});
