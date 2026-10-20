@@ -2777,16 +2777,42 @@ body:not(.com-doc) .docs-card,body:not(.com-doc) .ed-grid{display:none}
 .salvo .s-txt{flex:1;min-width:0}
 .salvo .s-nome,.salvo .s-sub{display:block}
 .salvo .s-nome{font-weight:750;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.salvo .s-sub{font-size:12.5px;color:var(--muted);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.salvo .s-sub{font-size:12.5px;color:var(--muted);margin-top:2px;line-height:1.7}
 .salvo .s-val{font-weight:750;font-size:13.5px;white-space:nowrap;font-variant-numeric:tabular-nums}
 .s-sit{display:inline-block;font-size:11.5px;font-weight:700;padding:1px 8px;border-radius:999px;background:var(--line);color:var(--muted);margin-left:6px}
 .s-sit.aprovada,.s-sit.assinado{background:rgba(31,122,69,.12);color:#1F7A45}
 .s-sit.perdida{background:rgba(196,49,8,.1);color:#B4290A}
+.ficha-ind{position:sticky;top:60px;z-index:5;display:flex;align-items:center;gap:8px;padding:6px 8px;margin-bottom:10px;background:var(--card,#fff);border:1px solid var(--line);border-radius:12px;box-shadow:0 2px 8px rgba(16,24,40,.06)}
+.fi-chips{display:flex;flex-wrap:nowrap;gap:4px;overflow-x:auto;flex:1;min-width:0;scrollbar-width:thin}
+.fi-chips button{white-space:nowrap;flex:none}
+.ficha-ind button{border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:999px;padding:3px 9px;font:inherit;font-size:11.5px;font-weight:700;cursor:pointer}
+.ficha-ind button:hover{border-color:var(--red);color:var(--red)}
+.fi-acoes{display:flex;gap:2px;flex:none;border-left:1px solid var(--line);padding-left:6px}
+.fi-acoes button{background:none;border-color:transparent;color:var(--muted);padding:2px 4px}
+@media (max-width:900px){.ficha-ind{position:static}}
+.ini-filtro{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.ini-filtro .grow{flex:1}
+.chip{border:1px solid var(--line);background:var(--card,#fff);color:var(--muted);border-radius:999px;padding:5px 12px;font:inherit;font-size:12.5px;font-weight:700;cursor:pointer}
+.chip.on{background:var(--ink);border-color:var(--ink);color:#fff}
+.chip:hover{border-color:var(--muted)}
+.ini-resumo{display:flex;flex-wrap:wrap;gap:6px 18px;font-size:13.5px;color:var(--muted)}
+.ini-resumo b{color:var(--ink)}
+.ini-resumo .r-venc{color:#B4290A}.ini-resumo .r-venc b{color:#B4290A}
+.ini-lixo .ini-h .nota{font-size:12px}
+.salvo.lixo{cursor:default}
+.lixo-a{display:flex;gap:6px;flex:none}
+.lixo-a .del{color:#B4290A}
+.rev-faixa{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:-6px 0 12px;padding:8px 12px;border-radius:8px;background:#FFF4DB;color:#7A5200;font-size:13px;font-weight:600}
+.rev-l{display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap;padding:6px 0;border-bottom:1px solid var(--line)}
+.rev-a{display:flex;gap:6px}
 .ini-vazio{padding:22px 16px;color:var(--muted);font-size:13.5px;text-align:center}
 .docs-l{display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap}
 .docs-l .fld{min-width:170px}
 .docs-l .fld.grow{min-width:260px}
-.docs-b{display:flex;gap:8px}
+.docs-b{display:flex;gap:8px;flex-wrap:wrap}
+.doc-tit{display:flex;flex-direction:column;gap:2px;min-width:220px;flex:1 1 260px;align-self:center}
+.doc-tit b{font-size:17px;font-weight:800;letter-spacing:-.01em}
+.doc-tit span{font-size:13px;color:var(--muted)}
 .abas{display:flex;gap:4px;border-bottom:1px solid var(--line)}
 .aba{background:none;border:0;border-bottom:2px solid transparent;padding:9px 16px;font:inherit;font-size:13px;font-weight:700;color:var(--muted);cursor:pointer;margin-bottom:-1px}
 .aba.on{color:var(--ink);border-bottom-color:var(--red)}
@@ -2836,6 +2862,8 @@ body:not(.com-doc) .docs-card,body:not(.com-doc) .ed-grid{display:none}
 .cfg-tag button{border:0;background:none;color:var(--muted);cursor:pointer;font-size:12px;padding:0 2px}
 .cfg-add{display:flex;gap:8px;max-width:420px}
 .cfg-lsel select{max-width:320px;margin:4px 0}
+.cfg-grupo{margin:18px 0 6px;font-size:13px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--red)}
+.cfg-banco{margin:6px 0}
 .cfg-add input{flex:1}
 .resumo .soma.erro{color:var(--rm-perigo,#C43108)}
 .resumo .soma.ok{color:#1F7A45}
@@ -3041,6 +3069,14 @@ body:not(.com-doc) .docs-card,body:not(.com-doc) .ed-grid{display:none}
         <button class="btn btn-sm ini-nova" id="iniNova" type="button">＋ Nova proposta</button>
       </div>
     </div>
+    <div class="ini-filtro" role="group" aria-label="Situação">
+      <button type="button" class="chip on" data-fsit="">Todas</button><button type="button" class="chip" data-fsit="negociacao">Em negociação</button>
+      <button type="button" class="chip" data-fsit="vencida">Validade vencida</button><button type="button" class="chip" data-fsit="aprovada">Aprovadas</button>
+      <button type="button" class="chip" data-fsit="assinado">Contrato assinado</button><button type="button" class="chip" data-fsit="perdida">Não fechou</button>
+      <span class="grow"></span><button type="button" class="chip chip-lixo" id="btnLixeira">🗑 Lixeira</button>
+    </div>
+    <div class="ini-resumo" id="iniResumo"></div>
+    <section class="card ini-bloco ini-lixo" id="lixeiraBloco" hidden><div class="ini-h"><b>Lixeira</b><span class="ini-n" id="nLixo"></span><span class="grow"></span><span class="nota">Fica 30 dias; depois some de vez.</span></div><div class="ini-lista" id="listaLixo"></div></section>
     <div class="ini-blocos">
       <section class="card ini-bloco"><div class="ini-h"><b>Propostas</b><span class="ini-n" id="nProp"></span></div><div class="ini-lista" id="listaProp"></div></section>
       <section class="card ini-bloco"><div class="ini-h"><b>Contratos</b><span class="ini-n" id="nCont"></span></div><div class="ini-lista" id="listaCont"></div></section>
@@ -3049,13 +3085,14 @@ body:not(.com-doc) .docs-card,body:not(.com-doc) .ed-grid{display:none}
 
   <div class="card docs-card no-print">
     <div class="docs-l">
-      <div class="fld grow"><label for="docSel">Proposta aberta</label><select id="docSel"></select></div>
-      <div class="fld"><label for="docBusca">Procurar</label><input id="docBusca" type="search" placeholder="cliente, número ou cidade" autocomplete="off"></div>
+      <!-- qual proposta está aberta: o título; trocar de proposta é pelos Salvos -->
+      <div class="doc-tit grow"><b id="docTitulo"></b><span id="docSub"></span></div>
       <div class="fld"><label for="docStatus">Situação</label><select id="docStatus" disabled>
         <option value="negociacao">Em negociação</option><option value="aprovada">Aprovada</option><option value="assinado">Contrato assinado</option><option value="perdida">Não fechou</option>
       </select></div>
       <div class="docs-b">
         <button class="btn btn-sm" id="btnFechar" type="button" disabled title="Guarda agora e volta para a lista de salvos">✓ Salvar e fechar</button>
+        <button class="btn btn-ghost btn-sm" id="btnRev" type="button" disabled title="Guarda a versão atual como enviada e começa a próxima revisão">⟲ Nova revisão</button>
         <button class="btn btn-ghost btn-sm" id="btnDup" type="button" disabled>⧉ Duplicar</button>
         <button class="btn btn-ghost btn-sm" id="btnDel" type="button" disabled>✕ Excluir</button>
         <button class="btn btn-ghost btn-sm" id="btnImportar" type="button" title="Lê uma proposta ou um contrato em Word (.docx) e monta no layout novo">⇪ Importar Word</button>
@@ -3128,6 +3165,16 @@ body:not(.com-doc) .docs-card,body:not(.com-doc) .ed-grid{display:none}
       <div class="cfg-add"><input id="cfgListaNovo" placeholder="novo item" autocomplete="off"><button class="btn btn-ghost btn-sm" id="cfgListaAdd" type="button">＋ Adicionar</button></div>
       <p class="nota">Aparecem na lista que abre ao digitar nos campos. O que já foi usado em alguma proposta entra sozinho, mesmo fora daqui.</p>
     </div>
+    <div class="cfg-bloco">
+      <div class="cfg-tit">Dados bancários da RM</div>
+      <div class="g4 cfg-banco">
+        <div class="fld"><label for="cfgBanco">Banco</label><input id="cfgBanco" autocomplete="off"></div>
+        <div class="fld"><label for="cfgAgencia">Agência</label><input id="cfgAgencia" autocomplete="off"></div>
+        <div class="fld"><label for="cfgConta">Conta</label><input id="cfgConta" autocomplete="off"></div>
+        <div class="fld"><label for="cfgPix">PIX</label><input id="cfgPix" autocomplete="off" placeholder="chave PIX"></div>
+      </div>
+      <p class="nota">Saem no contrato, logo abaixo das parcelas.</p>
+    </div>
     <div class="cfg-tit">Textos padrão</div>
     <p class="nota">Valem para as próximas propostas e contratos. Os que já existem guardam o texto com que nasceram. Uma linha é um parágrafo; linha que começa com "- " vira item de lista.</p>
     <div id="modeloCorpo"></div>
@@ -3145,6 +3192,7 @@ body:not(.com-doc) .docs-card,body:not(.com-doc) .ed-grid{display:none}
 <datalist id="dlPre"></datalist>
 <datalist id="dlMet"></datalist>
 <datalist id="dlCnm"></datalist>
+<datalist id="dlCivil"><option value="solteiro"><option value="casado"><option value="divorciado"><option value="viúvo"><option value="em união estável"><option value="solteira"><option value="casada"><option value="divorciada"><option value="viúva"></datalist>
 <datalist id="dlComp"></datalist>
 <datalist id="dlEtapa"></datalist>
 
@@ -3289,6 +3337,18 @@ const MODELO_PADRAO = {
   ],
   valores: ['Fundações', 'Pré-fabricado', 'Metálica']
 };
+/* CONTRATO CHAVE NA MÃO: o mesmo contrato, com o que muda no contrato de
+   chave na mão da RM -- a contratada cuida também da legalização, do
+   alinhamento, de água e luz e da retroescavadeira; multa por atraso fixa
+   por mês; mora com juros de 2%; garantia de 5 anos (4.12). Editável em
+   Configurações, como os outros textos. Teste propostas-contrato-chave. */
+MODELO_PADRAO.contratoChave = Object.assign({}, MODELO_PADRAO.contrato, {
+  obrigContratada: MODELO_PADRAO.contrato.obrigContratada + '\n1.3.6. Por ser obra entregue pronta, também são de responsabilidade da CONTRATADA:\n- Legalização perante os órgãos competentes;\n- Alinhamento da fachada (marcar os quatro cantos da obra);\n- Fornecimento de água e energia elétrica para a execução dos serviços;\n- Retroescavadeira, caso seja necessário.',
+  obrigContratante: ['a) Análise de solo, caso necessário;', 'b) Entrega do terreno limpo e sem prévias construções para o início dos trabalhos;', 'c) Livre movimentação para a execução da obra;', 'd) Pagar as parcelas do contrato em dia.'].join('\n'),
+  prazoExtra: MODELO_PADRAO.contrato.prazoExtra.replace('multa de 1% (um por cento) sobre o valor da obra.', 'multa de R$ 20.000,00 (vinte mil reais) ao mês.'),
+  pagamento: MODELO_PADRAO.contrato.pagamento.replace('multa de 2% sobre o valor em atraso, mais juros moratórios de 1% ao mês', 'multa de 2% sobre o valor em atraso (com tolerância de cinco dias), mais juros moratórios de 2% ao mês'),
+  encargos: MODELO_PADRAO.contrato.encargos + '\n4.12. A CONTRATADA dá garantia ao CONTRATANTE contra vícios de construção e de material pelo prazo de 5 (cinco) anos, contados a partir da conclusão dos trabalhos contratados.'
+});
 /* O que a tela mostra para cada texto em "Textos padrão" e na ficha. */
 const ROTULOS_TEXTO = {
   'proposta.abertura': 'Abertura',
@@ -3312,6 +3372,9 @@ const ROTULOS_TEXTO = {
   'contrato.seguranca': '5 — Da segurança',
   'contrato.gerais': '6 — Das cláusulas gerais'
 };
+/* os mesmos rótulos para o contrato chave na mão */
+Object.keys(ROTULOS_TEXTO).filter(k => k.indexOf('contrato.') === 0).forEach(k => { ROTULOS_TEXTO['contratoChave.' + k.slice(9)] = ROTULOS_TEXTO[k]; });
+const GRUPOS_TEXTO = { proposta: 'Proposta', contrato: 'Contrato padrão', contratoChave: 'Contrato chave na mão' };
 const SITUACOES = { incluso: 'Incluso', aparte: 'Incluso, valor à parte', nao: 'Não incluso', cortesia: 'Cortesia' };
 /* TIPO DA PROPOSTA. Padrão: a estrutura (pré-moldado + metálica). Chave na
    mão: a obra pronta -- além da estrutura, um bloco por serviço (esquadrias,
@@ -3333,6 +3396,13 @@ const CNM_TEXTOS = {
 const CNM_NOVA = ['Esquadrias', 'Banheiros', 'Elétrica', 'Hidráulica', 'Pintura', 'Gesso'];
 function cnmTextoPadrao(nome) { const k = Object.keys(CNM_TEXTOS).find(x => chaveBusca(x) === chaveBusca(nome)); return k ? CNM_TEXTOS[k] : ''; }
 function cnmServico(nome) { return { nome: nome || '', valor: 0, mostrar: true, texto: nome ? cnmTextoPadrao(nome) : '', itens: [] }; }
+/* REVISÕES. "Nova revisão" guarda a proposta como estava (a versão enviada
+   ao cliente) e a atual passa a ser a Rev. seguinte. As versões guardadas se
+   veem no papel e podem voltar a ser a atual (a que estava vira uma versão
+   também -- nada se perde). Teste propostas-revisoes-lixeira. */
+function numeroRev(d) { return (d.numero || '') + (lerValor(d.rev) ? ' rev. ' + lerValor(d.rev) : ''); }
+function fotoDoc(d) { const c = clone(d); delete c.revisoes; delete c.contratoLixeira; delete c.lixeira; return c; }
+let verRev = null;   /* versão guardada que está no papel, só para ver */
 function tituloDoc(d) { return String(d.titulo || '').trim() || TITULO_TIPO[d.tipo] || TITULO_TIPO.padrao; }
 const UNIDADES = ['un', 'm', 'm²', 'm³', 'kg', 'cj', 'vb'];
 const MET_CAMPOS = ['Modulação entre tesouras', 'Vigas de cobertura', 'Cobertura (terças)', 'Telha de cobertura', 'Fechamento'];
@@ -3493,7 +3563,7 @@ function maisMeses(isoMes, k, dia) {
 ═══════════════════════════════════════════════════════════ */
 function modeloAtual() {
   const m = clone(MODELO_PADRAO), n = modeloNuvem || {};
-  ['proposta', 'contrato'].forEach(k => { if (n[k]) Object.keys(n[k]).forEach(c => { if (typeof n[k][c] === 'string') m[k][c] = n[k][c]; }); });
+  ['proposta', 'contrato', 'contratoChave'].forEach(k => { if (n[k]) Object.keys(n[k]).forEach(c => { if (typeof n[k][c] === 'string') m[k][c] = n[k][c]; }); });
   return m;
 }
 function proximoNumero(ano) {
@@ -3506,7 +3576,7 @@ function novoDoc(tipo) {
   return {
     id: uid(), numero: proximoNumero(hoje.slice(0, 4)), status: 'negociacao', tipo: tipo === 'chave' ? 'chave' : 'padrao', titulo: '',
     criado: Date.now(), alterado: Date.now(),
-    cliente: { nome: '', doc: '', endereco: '', cidade: '', cep: '', rep: '', repDoc: '' },
+    cliente: { nome: '', doc: '', endereco: '', cidade: '', cep: '', rep: '', repDoc: '', nacionalidade: '', profissao: '', estadoCivil: '', rg: '' },
     obra: { endereco: '', cidade: '' },
     data: hoje, validade: 30, tratamento: 'Prezado Senhor',
     descricao: '',
@@ -3526,7 +3596,7 @@ function novoContrato(d) {
   const m = modeloAtual(), hoje = rmDiaISO();
   return {
     data: hoje, prazoDias: d.prazoDias,
-    textos: clone(m.contrato),
+    textos: clone(d && d.tipo === 'chave' ? m.contratoChave : m.contrato),
     pag: { modo: 'parcelas', entrada: 0, entradaData: hoje, n: 6, dia: 5, inicio: maisMeses(hoje, 1, 1).slice(0, 7), forma: '', bem: '', itens: [] },
     /* valor do contrato com desconto: fica só no contrato, a proposta não muda */
     valorAjustado: 0
@@ -3554,6 +3624,8 @@ function normalizar(d) {
   /* proposta anterior aos tipos: com serviços preenchidos, é de chave na mão */
   o.tipo = d.tipo === 'chave' || d.tipo === 'padrao' ? d.tipo : (o.cnm.itens.some(x => x.nome.trim() || x.valor) ? 'chave' : 'padrao');
   o.titulo = d.titulo || '';
+  o.rev = lerValor(d.rev);
+  o.revisoes = lista(d.revisoes).map(r => ({ rev: lerValor(r.rev), em: r.em || 0, total: lerValor(r.total), json: r.json || '' })).filter(r => r.json);
   o.prazoDias = lerValor(d.prazoDias != null ? d.prazoDias : b.prazoDias);
   o.validade = lerValor(d.validade != null ? d.validade : b.validade);
   if (d.contrato) {
@@ -3700,7 +3772,7 @@ function blocosServico(x, v) {
 function blocosProposta(d) {
   const v = vars(d), t = d.textos, bl = [];
   const tot = totalProposta(d), opc = d.valores.filter(x => x.opcional && !x.cortesia && lerValor(x.valor));
-  bl.push({ t: 'cab', tipo: 'Proposta comercial', titulo: tituloDoc(d), sub: 'Nº ' + d.numero });
+  bl.push({ t: 'cab', tipo: 'Proposta comercial', titulo: tituloDoc(d), sub: 'Nº ' + d.numero + (lerValor(d.rev) ? ' · Rev. ' + lerValor(d.rev) : '') });
   bl.push({ t: 'meta', pares: [['Cliente', d.cliente.nome || '—'], ['Local da obra', v.MUNICIPIO], ['Data', dataBR(d.data)], ['Validade', fmtNum(d.validade, 0) + ' dias']] });
   if (d.tratamento) bl.push({ t: 'p', runs: [{ t: d.tratamento + ',' }] });
   bl.push(...textoBlocos(t.abertura, v));
@@ -3769,11 +3841,12 @@ function blocosProposta(d) {
 function blocosContrato(d) {
   const c = d.contrato, v = vars(d), t = c.textos, bl = [], cl = d.cliente;
   const tot = totalContrato(d);
-  bl.push({ t: 'cab', tipo: 'Contrato', titulo: t.titulo, sub: 'Referente à proposta nº ' + d.numero });
+  bl.push({ t: 'cab', tipo: 'Contrato', titulo: t.titulo, sub: 'Referente à proposta nº ' + numeroRev(d) });
   const repRM = (config.rep || '').trim() ? 'Representada por ' + config.rep.trim() + ((config.repDoc || '').trim() ? ' · ' + config.repDoc.trim() : '') : '';
   const repCl = cl.rep.trim() ? 'Representada por ' + cl.rep.trim() + (cl.repDoc.trim() ? ' · ' + cl.repDoc.trim() : '') : '';
   bl.push({ t: 'partes', a: { rot: 'Contratada', nome: EMPRESA.razao + ' (RM Estruturas)', linhas: ['CNPJ ' + EMPRESA.cnpj, EMPRESA.enderecoContrato, repRM].filter(Boolean) },
-    b: { rot: 'Contratante', nome: cl.nome || '—', linhas: [cl.doc ? (cl.doc.replace(/\D/g, '').length > 11 ? 'CNPJ ' : 'CPF ') + cl.doc : '', [cl.endereco, cl.cidade].filter(s => s.trim()).join(', '), cl.cep ? 'CEP ' + cl.cep : '', repCl].filter(Boolean) } });
+    b: { rot: 'Contratante', nome: cl.nome || '—', linhas: [[cl.nacionalidade, cl.profissao, cl.estadoCivil].map(x => String(x || '').trim()).filter(Boolean).join(', '),
+      [String(cl.rg || '').trim() ? 'RG ' + cl.rg.trim() : '', cl.doc ? (cl.doc.replace(/\D/g, '').length > 11 ? 'CNPJ ' : 'CPF ') + cl.doc : ''].filter(Boolean).join(' · '), [cl.endereco, cl.cidade].filter(s => s.trim()).join(', '), cl.cep ? 'CEP ' + cl.cep : '', repCl].filter(Boolean) } });
   bl.push(...textoBlocos(t.preambulo, v));
   bl.push({ t: 'h2', n: 1, txt: 'Do objeto' });
   bl.push({ t: 'p', runs: [{ t: '1.1. ', b: true }, { t: [troca(t.objeto, v), troca(d.descricao, v)].filter(s => s.trim()).join(' ') }] });
@@ -3803,6 +3876,9 @@ function blocosContrato(d) {
   bl.push({ t: 'tab', cls: 'tot', cols: [{ t: 'Parcela', w: 20 }, { t: c.pag.modo === 'percentual' ? 'Quando' : 'Vencimento' }].concat(comForma ? [{ t: 'Forma', w: 28 }] : [], [{ t: 'Valor', dir: true, w: 24 }]),
     linhas: ps.map(p => [p.rot, p.quando + (p.pct != null ? ' (' + fmtNum(p.pct, p.pct % 1 ? 1 : 0) + '%)' : '')].concat(comForma ? [formaTxt(p)] : [], [brl(p.valor)])),
     total: ['Total', ''].concat(comForma ? [''] : [], [brl(ps.reduce((s, x) => s + x.valor, 0))]) });
+  /* dados bancários da RM (Configurações), logo abaixo das parcelas */
+  const bc = config.banco || {}, bcTxt = [bc.banco ? 'Banco ' + String(bc.banco).replace(/^banco\s+/i, '') : '', bc.agencia ? 'Agência ' + bc.agencia : '', bc.conta ? 'Conta ' + bc.conta : '', bc.pix ? 'PIX ' + bc.pix : ''].filter(Boolean).join(' · ');
+  if (bcTxt) bl.push({ t: 'p', runs: [{ t: 'Dados bancários para pagamento: ', b: true }, { t: bcTxt + '.' }] });
   bl.push(...textoBlocos(t.pagamento, v));
   bl.push({ t: 'h2', n: 4, txt: 'Dos encargos' });
   bl.push(...textoBlocos(t.encargos, v));
@@ -4047,9 +4123,19 @@ function fichaHTML(d) {
     h += secao('Textos do contrato', Object.keys(c.textos).map(k => campo(ROTULOS_TEXTO['contrato.' + k] || k, area('contrato.textos.' + k, c.textos[k], Math.min(14, Math.max(2, Math.ceil(String(c.textos[k]).length / 90))), ROTULOS_TEXTO['contrato.' + k]))).join('')
       + '<p class="nota">Mudanças aqui valem só para este contrato. Para mudar o padrão dos próximos, use "Textos padrão".</p>', { aberta: false });
   }
+  if ((d.revisoes || []).length && aba !== 'contrato') {
+    h += secao('Revisões', d.revisoes.slice().reverse().map(r => '<div class="rev-l"><span><b>Rev. ' + r.rev + '</b> · guardada em ' + new Date(r.em).toLocaleDateString('pt-BR') + ' · ' + brl(r.total) + '</span>'
+      + '<span class="rev-a"><button type="button" class="btn btn-ghost btn-sm" data-revver="' + r.rev + '">Ver no papel</button><button type="button" class="btn btn-ghost btn-sm" data-revvolta="' + r.rev + '">Voltar a esta</button></span></div>').join('')
+      + '<p class="nota">Esta é a Rev. ' + lerValor(d.rev) + '. "Voltar a esta" traz a versão de volta; a que está agora fica guardada.</p>', { aberta: false, extra: d.revisoes.length + ' guardada(s)' });
+  }
   const cl = d.cliente;
   h += secao('Cliente', campo('Nome ou razão social', inp('cliente.nome', cl.nome, { ph: 'ex.: Frigorífico Exemplo Ltda' }))
     + '<div class="g2">' + campo('CNPJ ou CPF', inp('cliente.doc', cl.doc)) + campo('CEP', inp('cliente.cep', cl.cep, { mode: 'numeric' })) + '</div>'
+    /* pessoa física: a qualificação que o contrato pede ("brasileiro,
+       empresário, casado, RG nº...") */
+    + '<div class="g4">' + campo('Nacionalidade', inp('cliente.nacionalidade', cl.nacionalidade, { ph: 'ex.: brasileiro' })) + campo('Profissão', inp('cliente.profissao', cl.profissao, { ph: 'ex.: empresário' }))
+      + campo('Estado civil', inp('cliente.estadoCivil', cl.estadoCivil, { ph: 'ex.: casado', lista: 'dlCivil' })) + campo('RG', inp('cliente.rg', cl.rg)) + '</div>'
+    + '<p class="nota">Nacionalidade, profissão, estado civil e RG: para cliente pessoa física; saem no contrato.</p>'
     + '<div class="g2">' + campo('Endereço', inp('cliente.endereco', cl.endereco)) + campo('Cidade/UF', inp('cliente.cidade', cl.cidade, { ph: 'ex.: Santa Cruz do Sul/RS' })) + '</div>'
     + '<div class="g2">' + campo('Representante', inp('cliente.rep', cl.rep)) + campo('CPF do representante', inp('cliente.repDoc', cl.repDoc)) + '</div>'
     + campo('Tratamento na proposta', '<select data-p="tratamento">' + ['Prezado Senhor', 'Prezada Senhora', 'Prezados Senhores', ''].map(t => '<option value="' + t + '"' + (d.tratamento === t ? ' selected' : '') + '>' + (t || '(sem saudação)') + '</option>').join('') + '</select>'));
@@ -4126,27 +4212,40 @@ function fichaHTML(d) {
    "João". Teste propostas-salvos. */
 function chaveBusca(t) { return String(t || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim(); }
 function renderLista() {
-  const sel = $('docSel'), q = chaveBusca($('docBusca').value);
-  const lista = Object.values(docs).filter(Boolean).sort((a, b) => (b.alterado || 0) - (a.alterado || 0));
-  const vis = lista.filter(d => !q || ((d.numero || '') + ' ' + (d.cliente && d.cliente.nome || '') + ' ' + (d.obra && d.obra.cidade || '')).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().indexOf(q) >= 0);
-  sel.innerHTML = vis.length ? vis.map(d => '<option value="' + esc(d.id) + '"' + (d.id === atualId ? ' selected' : '') + '>' + esc((d.numero || '') + ' · ' + (d.cliente && d.cliente.nome || 'sem cliente') + ' · ' + (STATUS[d.status] || '')) + '</option>').join('') : '<option value="">' + (lista.length ? 'nada encontrado' : 'nenhuma proposta ainda') + '</option>';
   const d = atual();
+  $('docTitulo').textContent = d ? (TIPOS[d.tipo] || 'Proposta') + ' ' + numeroRev(d) : '';
+  $('docSub').textContent = d ? (d.cliente.nome || 'sem cliente') + (d.obra.cidade ? ' · ' + d.obra.cidade : '') : '';
   $('docStatus').value = d ? d.status : 'negociacao';
-  ['docStatus', 'btnFechar', 'btnDup', 'btnDel', 'btnImprimir', 'btnWord'].forEach(id => { $(id).disabled = !d; });
+  ['docStatus', 'btnFechar', 'btnRev', 'btnDup', 'btnDel', 'btnImprimir', 'btnWord'].forEach(id => { $(id).disabled = !d; });
   $('abaProposta').classList.toggle('on', aba === 'proposta');
   $('abaContrato').classList.toggle('on', aba === 'contrato');
   $('abaContrato').textContent = d && d.contrato ? 'Contrato' : '＋ Gerar contrato';
   /* na aba Contrato, excluir tira só o contrato; a proposta fica */
   $('btnDel').textContent = d && d.contrato && aba === 'contrato' ? '✕ Excluir contrato' : '✕ Excluir';
 }
+/* ÍNDICE DA FICHA: um atalho por seção (abre e leva até ela), e abrir ou
+   recolher tudo -- a proposta de chave na mão tem muitas seções. */
+function fichaIndice() { return '<nav class="ficha-ind" aria-label="Seções"><span class="fi-chips"></span><span class="fi-acoes"><button type="button" data-fiabre="1">Abrir tudo</button><button type="button" data-fifecha="1">Recolher tudo</button></span></nav>'; }
+function montarIndice() {
+  const f = $('ficha'), box = f.querySelector('.fi-chips'); if (!box) return;
+  box.innerHTML = [...f.querySelectorAll('details.sec > summary')].map((s, i) => '<button type="button" data-fivai="' + i + '">' + esc(s.firstChild.textContent) + '</button>').join('');
+}
+$('ficha').addEventListener('click', e => {
+  const f = $('ficha'), secs = [...f.querySelectorAll('details.sec')];
+  const v = e.target.closest('[data-fivai]');
+  if (v) { const s = secs[+v.dataset.fivai]; if (s) { s.open = true; const y = s.getBoundingClientRect().top + window.scrollY - 110; window.scrollTo({ top: Math.max(0, y), behavior: 'smooth' }); } return; }
+  if (e.target.closest('[data-fiabre]')) secs.forEach(s => { s.open = true; });
+  if (e.target.closest('[data-fifecha]')) secs.forEach(s => { s.open = false; });
+});
 function renderFicha() {
   const d = atual(), f = $('ficha');
   preencherListas();
   if (!d) { f.innerHTML = '<div class="vazio">Nenhuma proposta aberta. Clique em <b>＋ Nova proposta</b>.</div>'; return; }
   const abertas = [...f.querySelectorAll('details.sec')].map(x => x.open);
-  f.innerHTML = fichaHTML(d);
+  f.innerHTML = fichaIndice(d) + fichaHTML(d);
   if (abertas.length) [...f.querySelectorAll('details.sec')].forEach((x, i) => { if (abertas[i] != null && f.dataset.doc === d.id + aba) x.open = abertas[i]; });
   f.dataset.doc = d.id + aba;
+  montarIndice();
 }
 function renderFolha() {
   const d = atual(), f = $('folha');
@@ -4156,6 +4255,10 @@ function renderFolha() {
   $('folhaPapel').classList.toggle('vazia', !d);
   $('folhaPapel').style.setProperty('--fe', String(escalaLetra()));
   if (!d) { f.innerHTML = ''; return; }
+  if (verRev && verRev.id === d.id) {
+    let v = null; try { v = normalizar(JSON.parse(verRev.json)); } catch (e) { }
+    if (v) { f.innerHTML = '<div class="rev-faixa no-print">Vendo a Rev. ' + verRev.rev + ' (guardada em ' + new Date(verRev.em).toLocaleDateString('pt-BR') + '), só para consulta. <button type="button" class="btn btn-ghost btn-sm" data-revfecha>Voltar à atual</button></div>' + blocosHTML(blocosProposta(v)); return; }
+  }
   f.innerHTML = blocosHTML(aba === 'contrato' && d.contrato ? blocosContrato(d) : blocosProposta(d));
 }
 function redesenhar() { document.body.classList.toggle('com-doc', !!atual()); renderLista(); renderFicha(); renderFolha(); renderSalvos(); }
@@ -4173,20 +4276,62 @@ function salvoHTML(d, qual) {
   const total = c ? totalContrato(d) : totalProposta(d);
   return '<button type="button" class="salvo" data-abrir="' + esc(d.id) + '" data-qual="' + qual + '">'
     + '<span class="s-txt"><span class="s-nome">' + esc(quem) + '</span>'
-    + '<span class="s-sub">' + esc([(c ? 'Contrato · proposta ' : 'Proposta ') + (d.numero || ''), onde, quando].filter(Boolean).join(' · '))
-    + '<span class="s-sit ' + (SIT_CLS[d.status] || '') + '">' + esc(STATUS[d.status] || '') + '</span></span></span>'
+    + '<span class="s-sub">' + esc([(c ? 'Contrato · proposta ' : (TIPOS[d.tipo] || 'Proposta') + ' ') + numeroRev(d), onde, quando].filter(Boolean).join(' · '))
+    + '<span class="s-sit ' + (SIT_CLS[d.status] || '') + '">' + esc(STATUS[d.status] || '') + '</span>'
+    + (!c && vencida(d) ? '<span class="s-sit perdida">validade vencida em ' + dataBR(vencida(d)) + '</span>' : '') + '</span></span>'
     + (total ? '<span class="s-val">' + brl(total) + '</span>' : '') + '</button>';
+}
+/* ACOMPANHAMENTO: proposta em negociação com a validade passada aparece
+   como vencida (para cobrar o cliente); filtro por situação; o resumo soma
+   o que está em negociação. Teste propostas-revisoes-lixeira. */
+function vencida(d) {
+  if (d.status !== 'negociacao') return '';
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(d.data || ''); if (!m) return '';
+  const fim = new Date(+m[1], +m[2] - 1, +m[3] + lerValor(d.validade)); const hoje = new Date(rmDiaISO() + 'T12:00:00');
+  return fim < hoje ? fim.toISOString().slice(0, 10) : '';
+}
+let filtroSit = '', vendoLixo = false;
+const LIXO_DIAS = 30;
+function limparLixeira() {
+  const prazo = Date.now() - LIXO_DIAS * 86400000;
+  Object.values(docs).forEach(d => {
+    if (!d) return;
+    if (d.lixeira && d.lixeira < prazo) { delete docs[d.id]; delete pendentes[d.id]; if (fbDB && fbAuthReady) fbDB.ref(FB_NO + '/docs/' + d.id).remove().catch(() => { }); }
+    else if (d.contratoLixeira && d.contratoLixeira.em < prazo) { d.contratoLixeira = null; alterou(d, false); }
+  });
+}
+function renderLixeira() {
+  const itens = [];
+  Object.values(docs).forEach(d => { if (!d) return;
+    if (d.lixeira) itens.push({ d, qual: 'proposta', em: d.lixeira });
+    else if (d.contratoLixeira) itens.push({ d, qual: 'contrato', em: d.contratoLixeira.em }); });
+  itens.sort((a, b) => b.em - a.em);
+  $('nLixo').textContent = itens.length;
+  $('btnLixeira').textContent = '🗑 Lixeira' + (itens.length ? ' (' + itens.length + ')' : '');
+  $('listaLixo').innerHTML = itens.length ? itens.map(x => '<div class="salvo lixo"><span class="s-txt"><span class="s-nome">' + esc(x.d.cliente.nome || 'sem cliente') + '</span><span class="s-sub">'
+    + esc((x.qual === 'contrato' ? 'Contrato da proposta ' : 'Proposta ') + numeroRev(x.d) + ' · excluído em ' + new Date(x.em).toLocaleDateString('pt-BR')) + '</span></span>'
+    + '<span class="lixo-a"><button type="button" class="btn btn-ghost btn-sm" data-restaura="' + esc(x.d.id) + '" data-qual="' + x.qual + '">Restaurar</button><button type="button" class="btn btn-ghost btn-sm del" data-apaga="' + esc(x.d.id) + '" data-qual="' + x.qual + '">Excluir de vez</button></span></div>').join('')
+    : '<div class="ini-vazio">A lixeira está vazia.</div>';
 }
 function renderSalvos() {
   if (!$('inicio')) return;
+  limparLixeira();
+  renderLixeira();
+  $('lixeiraBloco').hidden = !vendoLixo;
   const q = chaveBusca($('salvoBusca').value);
-  const todos = Object.values(docs).filter(Boolean).sort((a, b) => (b.alterado || 0) - (a.alterado || 0));
+  const vivos = Object.values(docs).filter(d => d && !d.lixeira);
+  const naSit = d => !filtroSit || (filtroSit === 'vencida' ? !!vencida(d) : d.status === filtroSit);
+  const todos = vivos.filter(naSit).sort((a, b) => (b.alterado || 0) - (a.alterado || 0));
+  const neg = vivos.filter(d => d.status === 'negociacao'), venc = vivos.filter(d => vencida(d));
+  $('iniResumo').innerHTML = '<span><b>' + neg.length + '</b> em negociação · <b>' + brl(neg.reduce((s, d) => s + totalProposta(d), 0)) + '</b></span>'
+    + (venc.length ? '<span class="r-venc"><b>' + venc.length + '</b> com a validade vencida — vale ligar para o cliente</span>' : '');
+  document.querySelectorAll('.ini-filtro [data-fsit]').forEach(b => b.classList.toggle('on', b.dataset.fsit === filtroSit));
   const acha = d => !q || ((d.numero || '') + ' ' + (d.cliente && d.cliente.nome || '') + ' ' + (d.obra && d.obra.cidade || '') + ' ' + (d.cliente && d.cliente.cidade || '')).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().indexOf(q) >= 0;
   const props = todos.filter(acha), conts = todos.filter(d => d.contrato).filter(acha);
   const vazio = (n, txt) => '<div class="ini-vazio">' + (q && n ? 'Nada encontrado com "' + esc($('salvoBusca').value.trim()) + '".' : txt) + '</div>';
   $('listaProp').innerHTML = props.length ? props.map(d => salvoHTML(d, 'proposta')).join('') : vazio(todos.length, 'Nenhuma proposta salva ainda. Clique em <b>＋ Nova proposta</b>.');
   $('listaCont').innerHTML = conts.length ? conts.map(d => salvoHTML(d, 'contrato')).join('') : vazio(todos.filter(d => d.contrato).length, 'Nenhum contrato ainda. Abra uma proposta e use <b>Gerar contrato</b>.');
-  $('nProp').textContent = todos.length; $('nCont').textContent = todos.filter(d => d.contrato).length;
+  $('nProp').textContent = props.length; $('nCont').textContent = conts.length;
 }
 /* proposta nova que ninguém preencheu não vira item salvo */
 function emBranco(d) {
@@ -4316,37 +4461,83 @@ $('ficha').addEventListener('click', e => {
 });
 
 /* ---------- topo ---------- */
-function abrir(id, qual) { atualId = id || null; if (qual) aba = qual; if (atual() && aba === 'contrato' && !atual().contrato) aba = 'proposta'; try { localStorage.setItem(LS_KEY + '_aberto', atualId || ''); } catch (e) { } redesenhar(); }
-$('docSel').addEventListener('change', e => abrir(e.target.value));
+function abrir(id, qual) { verRev = null; atualId = id || null; if (qual) aba = qual; if (atual() && aba === 'contrato' && !atual().contrato) aba = 'proposta'; try { localStorage.setItem(LS_KEY + '_aberto', atualId || ''); } catch (e) { } redesenhar(); }
 $('salvoBusca').addEventListener('input', () => renderSalvos());
+document.querySelector('.ini-filtro').addEventListener('click', e => { const b = e.target.closest('[data-fsit]'); if (!b) return; filtroSit = b.dataset.fsit; renderSalvos(); });
+$('btnLixeira').addEventListener('click', () => { vendoLixo = !vendoLixo; renderSalvos(); });
+$('listaLixo').addEventListener('click', e => {
+  const r = e.target.closest('[data-restaura]'), a = e.target.closest('[data-apaga]');
+  const b = r || a; if (!b) return; const d = docs[b.dataset.restaura || b.dataset.apaga]; if (!d) return;
+  if (r) {
+    if (b.dataset.qual === 'contrato') {
+      if (d.contrato) { avisoTopo('A proposta já tem outro contrato. Exclua aquele antes de restaurar este.'); return; }
+      try { d.contrato = JSON.parse(d.contratoLixeira.json); } catch (er) { return; }
+      d.contratoLixeira = null; d.contrato = normalizar(Object.assign({}, d, { contrato: d.contrato })).contrato;
+    } else delete d.lixeira;
+    alterou(d, false); renderSalvos(); avisoTopo((b.dataset.qual === 'contrato' ? 'Contrato' : 'Proposta') + ' ' + d.numero + ' restaurado.');
+    return;
+  }
+  confirmar('Excluir de vez ' + (b.dataset.qual === 'contrato' ? 'o contrato da proposta ' : 'a proposta ') + esc(d.numero) + '? Isso não pode ser desfeito.', () => {
+    if (b.dataset.qual === 'contrato') { d.contratoLixeira = null; alterou(d, false); }
+    else { delete docs[d.id]; delete pendentes[d.id]; guardarLocal(); if (fbDB && fbAuthReady) fbDB.ref(FB_NO + '/docs/' + d.id).remove().catch(e2 => { if (window.rmNuvemErro) rmNuvemErro('excluir a proposta', e2); }); }
+    renderSalvos();
+  });
+});
 $('inicio').addEventListener('click', e => { const b = e.target.closest('[data-abrir]'); if (b) abrir(b.dataset.abrir, b.dataset.qual); });
 $('iniNova').addEventListener('click', () => $('btnNova').click());
 $('iniImportar').addEventListener('click', () => $('arqWord').click());
 $('btnFechar').addEventListener('click', () => fecharDoc(true));
-$('docBusca').addEventListener('input', () => renderLista());
 $('docStatus').addEventListener('change', e => { const d = atual(); if (!d) return; d.status = e.target.value; alterou(d, true); });
 $('btnNova').addEventListener('click', () => $('tipoTela').classList.add('on'));
 $('tipoNao').addEventListener('click', () => $('tipoTela').classList.remove('on'));
 $('tipoTela').addEventListener('click', e => { const b = e.target.closest('[data-tipo]'); if (b) { $('tipoTela').classList.remove('on'); novaProposta(b.dataset.tipo); } else if (e.target === $('tipoTela')) $('tipoTela').classList.remove('on'); });
 function novaProposta(tipo) { const d = novoDoc(tipo); docs[d.id] = d; aba = 'proposta'; abrir(d.id); alterou(d, true); const c = document.querySelector('#ficha [data-p="cliente.nome"]'); if (c) c.focus(); }
+$('btnRev').addEventListener('click', () => {
+  const d = atual(); if (!d) return;
+  const r = lerValor(d.rev);
+  confirmar('Guardar a proposta como está agora (<b>Rev. ' + r + '</b>, a enviada ao cliente) e começar a <b>Rev. ' + (r + 1) + '</b>?', () => {
+    d.revisoes = (d.revisoes || []).concat([{ rev: r, em: Date.now(), total: totalProposta(d), json: JSON.stringify(fotoDoc(d)) }]);
+    d.rev = r + 1; aba = 'proposta'; alterou(d, true); redesenhar(); avisoTopo('Rev. ' + r + ' guardada. Agora é a Rev. ' + d.rev + '.');
+  });
+});
+$('folha').addEventListener('click', e => { if (e.target.closest('[data-revfecha]')) { verRev = null; renderFolha(); } });
+$('ficha').addEventListener('click', e => {
+  const d = atual(); if (!d) return;
+  const vv = e.target.closest('[data-revver]'), vt = e.target.closest('[data-revvolta]');
+  if (vv) { const r = d.revisoes.find(x => x.rev === +vv.dataset.revver); verRev = r ? Object.assign({ id: d.id }, r) : null; aba = 'proposta'; renderFolha(); return; }
+  if (vt) {
+    const r = d.revisoes.find(x => x.rev === +vt.dataset.revvolta); if (!r) return;
+    confirmar('Voltar para a <b>Rev. ' + r.rev + '</b>? A proposta como está agora fica guardada nas revisões.', () => {
+      let v; try { v = normalizar(JSON.parse(r.json)); } catch (er) { return; }
+      const guardadas = (d.revisoes || []).concat([{ rev: lerValor(d.rev), em: Date.now(), total: totalProposta(d), json: JSON.stringify(fotoDoc(d)) }]);
+      const manter = { id: d.id, numero: d.numero, rev: d.rev, criado: d.criado, contrato: d.contrato, status: d.status };
+      Object.keys(d).forEach(k => delete d[k]); Object.assign(d, v, manter, { revisoes: guardadas });
+      verRev = null; alterou(d, true); redesenhar(); avisoTopo('A proposta voltou ao conteúdo da Rev. ' + r.rev + '.');
+    });
+  }
+});
 $('btnDup').addEventListener('click', () => {
   const o = atual(); if (!o) return;
   const d = normalizar(clone(o));
   d.id = uid(); d.numero = proximoNumero(rmDiaISO().slice(0, 4)); d.status = 'negociacao'; d.criado = Date.now(); d.data = rmDiaISO(); d.contrato = null;
+  d.rev = 0; d.revisoes = []; delete d.lixeira; delete d.contratoLixeira;
   docs[d.id] = d; aba = 'proposta'; abrir(d.id); alterou(d, true); avisoTopo('Cópia criada: proposta ' + d.numero + '.');
 });
 $('btnDel').addEventListener('click', () => {
   const d = atual(); if (!d) return;
+  /* LIXEIRA: excluir não apaga de vez -- fica 30 dias na lixeira dos Salvos,
+     de onde volta com um clique. Teste propostas-revisoes-lixeira. */
   if (d.contrato && aba === 'contrato') {
-    confirmar('Excluir o contrato da proposta ' + esc(d.numero) + (d.cliente.nome ? ' de <b>' + esc(d.cliente.nome) + '</b>' : '') + '? A proposta continua salva, com os valores dela.', () => {
-      d.contrato = null; aba = 'proposta'; alterou(d, true); redesenhar(); avisoTopo('Contrato excluído. A proposta ' + d.numero + ' continua salva.');
+    confirmar('Excluir o contrato da proposta ' + esc(d.numero) + (d.cliente.nome ? ' de <b>' + esc(d.cliente.nome) + '</b>' : '') + '? A proposta continua salva, e o contrato fica 30 dias na lixeira.', () => {
+      d.contratoLixeira = { em: Date.now(), json: JSON.stringify(d.contrato) }; d.contrato = null;
+      aba = 'proposta'; alterou(d, true); redesenhar(); avisoTopo('Contrato na lixeira. A proposta ' + d.numero + ' continua salva.');
     });
     return;
   }
-  confirmar('Excluir a proposta ' + esc(d.numero) + (d.cliente.nome ? ' de <b>' + esc(d.cliente.nome) + '</b>' : '') + (d.contrato ? ' e o contrato dela' : '') + '? Isso não pode ser desfeito.', () => {
-    delete docs[d.id]; delete pendentes[d.id]; guardarLocal();
-    if (fbDB && fbAuthReady) fbDB.ref(FB_NO + '/docs/' + d.id).remove().catch(e => { if (window.rmNuvemErro) rmNuvemErro('excluir a proposta', e); });
+  confirmar('Excluir a proposta ' + esc(d.numero) + (d.cliente.nome ? ' de <b>' + esc(d.cliente.nome) + '</b>' : '') + (d.contrato ? ' e o contrato dela' : '') + '? Ela fica 30 dias na lixeira, de onde dá para restaurar.', () => {
+    d.lixeira = Date.now(); alterou(d, false);
     aba = 'proposta'; abrir(null);   /* volta para os salvos */
+    avisoTopo('Proposta ' + d.numero + ' na lixeira.');
   });
 });
 $('abaProposta').addEventListener('click', () => { aba = 'proposta'; redesenhar(); });
@@ -4403,19 +4594,23 @@ $('cfgBemAdd').addEventListener('click', addBem);
 $('cfgBemNovo').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); addBem(); } });
 $('btnModelo').addEventListener('click', () => {
   bensEdit = bensLista(); renderBens();
+  const bc = config.banco || {}; $('cfgBanco').value = bc.banco || ''; $('cfgAgencia').value = bc.agencia || ''; $('cfgConta').value = bc.conta || ''; $('cfgPix').value = bc.pix || '';
   listasEdit = {}; Object.keys(LISTAS_PADRAO).forEach(k => { listasEdit[k] = listaCadastro(k); }); renderListaCfg();
   const m = modeloAtual();
   $('cfgLetra').dataset.escolha = config.letra || 'normal'; renderLetra($('cfgLetra').dataset.escolha);
-  $('modeloCorpo').innerHTML = Object.keys(ROTULOS_TEXTO).map(k => { const [g, c] = k.split('.'); return campo(ROTULOS_TEXTO[k], '<textarea data-m="' + k + '" rows="' + Math.min(14, Math.max(2, Math.ceil(String(m[g][c]).length / 100))) + '">' + esc(m[g][c]) + '</textarea>'); }).join('');
+  let grupoAtual = '';
+  $('modeloCorpo').innerHTML = Object.keys(ROTULOS_TEXTO).map(k => { const [g, c] = k.split('.'); const cab = g !== grupoAtual ? '<div class="cfg-grupo">' + esc(GRUPOS_TEXTO[g] || g) + '</div>' : ''; grupoAtual = g; return cab + campo(ROTULOS_TEXTO[k], '<textarea data-m="' + k + '" rows="' + Math.min(14, Math.max(2, Math.ceil(String(m[g][c]).length / 100))) + '">' + esc(m[g][c]) + '</textarea>'); }).join('');
   $('modeloTela').classList.add('on');
 });
 $('modeloFechar').addEventListener('click', () => { $('modeloTela').classList.remove('on'); renderFolha(); });
 $('modeloSalvar').addEventListener('click', () => {
   const letra = $('cfgLetra').dataset.escolha || 'normal';
   if (letra !== (config.letra || 'normal')) { config.letra = letra; salvarConfig(); }
+  const bancoNovo = { banco: $('cfgBanco').value.trim(), agencia: $('cfgAgencia').value.trim(), conta: $('cfgConta').value.trim(), pix: $('cfgPix').value.trim() };
+  if (JSON.stringify(bancoNovo) !== JSON.stringify(Object.assign({ banco: '', agencia: '', conta: '', pix: '' }, config.banco || {}))) { config.banco = bancoNovo; salvarConfig(); }
   if (JSON.stringify(bensEdit) !== JSON.stringify(bensLista())) { config.bens = bensEdit.slice(); salvarConfig(); renderFicha(); }
   if (Object.keys(LISTAS_PADRAO).some(k => JSON.stringify(listasEdit[k]) !== JSON.stringify(listaCadastro(k)))) salvarListas(listasEdit);
-  const n = { proposta: {}, contrato: {} };
+  const n = { proposta: {}, contrato: {}, contratoChave: {} };
   document.querySelectorAll('#modeloCorpo [data-m]').forEach(t => { const [g, c] = t.dataset.m.split('.'); if (t.value !== MODELO_PADRAO[g][c]) n[g][c] = t.value; });
   modeloNuvem = n;
   try { localStorage.setItem(LS_KEY + '_modelo', JSON.stringify(n)); } catch (e) { }
@@ -4465,7 +4660,7 @@ function salvarListas(n) {
 function salvarConfig() {
   guardarLocal();
   clearTimeout(tCfg);
-  tCfg = setTimeout(() => { if (fbDB && fbAuthReady) fbDB.ref(FB_NO + '/config').set({ rep: config.rep || '', repDoc: config.repDoc || '', letra: config.letra || 'normal', bens: bensLista() }).catch(e => { if (window.rmNuvemErro) rmNuvemErro('salvar as configurações', e); }); }, 700);
+  tCfg = setTimeout(() => { if (fbDB && fbAuthReady) fbDB.ref(FB_NO + '/config').set({ rep: config.rep || '', repDoc: config.repDoc || '', letra: config.letra || 'normal', bens: bensLista(), banco: config.banco || null }).catch(e => { if (window.rmNuvemErro) rmNuvemErro('salvar as configurações', e); }); }, 700);
 }
 function escalaLetra() { return (LETRAS[config.letra] || LETRAS.normal).k; }
 function editandoAqui() { const a = document.activeElement; return a && $('ficha').contains(a) && /INPUT|TEXTAREA|SELECT/.test(a.tagName); }
@@ -5445,7 +5640,7 @@ if ('serviceWorker' in navigator) {
 })();
 </script>
 <script>/* versão publicada (PADRAO_RM.md §3): sobe a cada publicação, junto com o CACHE do sw.js */
-const APP_VER='v11';
+const APP_VER='v12';
 </script>
 <script id="rmVersaoBloco">
 /* ===== SELO DE VERSÃO — igual em todos os sistemas (PADRAO_RM.md §3) =====
