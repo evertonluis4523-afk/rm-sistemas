@@ -2816,13 +2816,15 @@ body:not(.com-doc) .docs-card,body:not(.com-doc) .ed-grid{display:none}
 .linha{display:grid;gap:6px;align-items:center}
 .l-pre{grid-template-columns:1fr 74px 64px 28px}
 .l-met{grid-template-columns:150px 1fr 28px}
-.l-comp{grid-template-columns:1fr 170px 28px}
 .l-pag .un{color:var(--muted);font-weight:700}
 .l-val{grid-template-columns:1fr 120px 28px}
 .l-ops{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:4px 16px;margin:-1px 0 6px 2px}
 .l-pag{grid-template-columns:62px 14px 1fr 130px 28px}
 .l-parc{grid-template-columns:1fr 1fr 110px 130px 28px}
-.l-cnm{grid-template-columns:1fr 110px auto 28px}
+.l-cnm{grid-template-columns:1fr 120px 28px}
+.l-cnm input.forte{font-weight:700}
+.l-comp{grid-template-columns:24px 24px 1fr 150px 28px}
+.icon-btn.mv{width:24px;padding:0;font-size:14px}
 .l-bem{grid-template-columns:1fr;margin:-2px 0 4px 20px}
 .chk-bloco{align-self:end;padding-bottom:9px}
 .resumo .soma{width:100%;font-weight:700}
@@ -2869,6 +2871,12 @@ body:not(.com-doc) .docs-card,body:not(.com-doc) .ed-grid{display:none}
 .imp-l b{color:var(--ink)}
 .imp-s{margin:6px 0 0;padding-left:18px;font-size:12px;color:var(--muted);max-height:220px;overflow:auto}
 .modal-box:has(.imp-l){max-width:560px}
+.modal-box.tipo-box{max-width:520px}
+.tipo-ops{display:grid;gap:10px;margin:0 0 16px}
+.tipo-op{display:flex;flex-direction:column;gap:3px;text-align:left;padding:14px 16px;border:1.5px solid var(--line);border-radius:12px;background:var(--card,#fff);font:inherit;color:var(--ink);cursor:pointer}
+.tipo-op b{font-size:15px;font-weight:800}
+.tipo-op span{font-size:13px;color:var(--muted);line-height:1.45}
+.tipo-op:hover,.tipo-op:focus-visible{border-color:var(--red);background:var(--red-soft,#FDECE6);outline:0}
 .folha .f-head{display:flex;justify-content:space-between;align-items:center;gap:14px;padding-bottom:3mm;border-bottom:1.5px solid #F24619}
 .folha .f-head .logo img{height:36px;width:auto;display:block}
 .folha .tb2{display:flex;gap:14px;font-size:9px;line-height:1.6;color:#6E747C}
@@ -3073,6 +3081,17 @@ body:not(.com-doc) .docs-card,body:not(.com-doc) .ed-grid{display:none}
 <div class="aviso-topo no-print" id="avisoTopo" role="status"></div>
 
 <!-- Textos padrão: o que vai igual em toda proposta e todo contrato -->
+<!-- tipo da proposta nova: padrão (estrutura) ou chave na mão -->
+<div class="modal no-print" id="tipoTela" role="dialog" aria-label="Tipo da proposta">
+  <div class="modal-box tipo-box">
+    <div class="mb-txt"><b>Que proposta vai ser?</b></div>
+    <div class="tipo-ops">
+      <button class="tipo-op" type="button" data-tipo="padrao"><b>Proposta padrão</b><span>A estrutura: pré-moldado, fundações e metálica.</span></button>
+      <button class="tipo-op" type="button" data-tipo="chave"><b>Proposta chave na mão</b><span>A obra pronta: a estrutura e os serviços (esquadrias, banheiros, elétrica, hidráulica, pintura...).</span></button>
+    </div>
+    <div class="mb-acoes"><button class="btn btn-ghost" id="tipoNao" type="button">Cancelar</button></div>
+  </div>
+</div>
 <div class="modelo-tela no-print" id="modeloTela">
   <div class="mt-box">
     <div class="mt-cab">
@@ -3282,7 +3301,28 @@ const ROTULOS_TEXTO = {
   'contrato.seguranca': '5 — Da segurança',
   'contrato.gerais': '6 — Das cláusulas gerais'
 };
-const SITUACOES = { incluso: 'Incluso', aparte: 'Incluso, valor à parte', nao: 'Não incluso' };
+const SITUACOES = { incluso: 'Incluso', aparte: 'Incluso, valor à parte', nao: 'Não incluso', cortesia: 'Cortesia' };
+/* TIPO DA PROPOSTA. Padrão: a estrutura (pré-moldado + metálica). Chave na
+   mão: a obra pronta -- além da estrutura, um bloco por serviço (esquadrias,
+   banheiros, elétrica...), como no contrato de chave na mão da RM. O termo
+   "chave na mão" sai no papel só no título, que é editável. */
+const TIPOS = { padrao: 'Proposta padrão', chave: 'Proposta chave na mão' };
+const TITULO_TIPO = { padrao: 'Proposta de orçamento', chave: 'Proposta de orçamento chave na mão' };
+const CNM_TITULO = 'Serviços inclusos';
+/* textos de cada serviço, tirados do contrato de chave na mão da RM */
+const CNM_TEXTOS = {
+  'Esquadrias': 'A CONTRATADA se obriga a fornecer e instalar todas as esquadrias do pavilhão, entregando-as completas, instaladas e em perfeito funcionamento, conforme projeto aprovado. Estão incluídos todos os serviços e materiais necessários, tais como: portas, janelas, caixilhos, vidros e ferragens.',
+  'Banheiros': 'A CONTRATADA se obriga a executar os banheiros do pavilhão, entregando-os completos, prontos para uso e em perfeito funcionamento, conforme projeto aprovado. Estão incluídos todos os serviços e materiais necessários, tais como: fossa, alvenarias, revestimentos, impermeabilização, louças e metais.',
+  'Elétrica': 'A CONTRATADA se obriga a executar integralmente as instalações elétricas, entregando-as completas, testadas e em perfeito funcionamento. Estão incluídos todos os serviços e materiais necessários, tais como: entrada de energia, quadros de distribuição, disjuntores, eletrodutos, fiação, cabos, tomadas e interruptores.',
+  'Hidráulica': 'A CONTRATADA se obriga a executar integralmente as instalações hidráulicas, conforme projeto aprovado. Estão incluídos todos os serviços e materiais necessários, tais como: redes de água fria, tubulações, conexões, registros, reservatórios e pontos de consumo, bem como a rede de esgoto sanitário e de águas pluviais, com as respectivas tubulações e caixas de inspeção.',
+  'Pintura': 'A CONTRATADA se obriga a executar integralmente os serviços de pintura do pavilhão, entregando-os completos, finalizados e em perfeito estado de acabamento. Estão incluídos todos os serviços e materiais necessários, tais como: preparação das superfícies (limpeza e lixamento), aplicação de seladores, fundos e tintas adequadas, e pintura das paredes internas e externas, conforme a NBR 17170:2022 e a NBR 5674.',
+  'Gesso': 'A CONTRATADA se obriga a executar integralmente os serviços em gesso no forro, entregando-os completos, finalizados e em perfeito estado de acabamento.',
+  'Projeto': 'Projeto aprovado na prefeitura e PPCI inclusos no contrato, exceto taxas municipais.'
+};
+const CNM_NOVA = ['Esquadrias', 'Banheiros', 'Elétrica', 'Hidráulica', 'Pintura', 'Gesso'];
+function cnmTextoPadrao(nome) { const k = Object.keys(CNM_TEXTOS).find(x => chaveBusca(x) === chaveBusca(nome)); return k ? CNM_TEXTOS[k] : ''; }
+function cnmServico(nome) { return { nome: nome || '', valor: 0, mostrar: true, texto: nome ? cnmTextoPadrao(nome) : '', itens: [] }; }
+function tituloDoc(d) { return String(d.titulo || '').trim() || TITULO_TIPO[d.tipo] || TITULO_TIPO.padrao; }
 const UNIDADES = ['un', 'm', 'm²', 'm³', 'kg', 'cj', 'vb'];
 const MET_CAMPOS = ['Modulação entre tesouras', 'Vigas de cobertura', 'Cobertura (terças)', 'Telha de cobertura', 'Fechamento'];
 /* Tamanho da letra no papel. "Normal" é 15% maior que a primeira versão,
@@ -3301,7 +3341,7 @@ function formaTxt(x) { return x && x.forma ? x.forma + (ehBem(x.forma) && String
 /* CHAVE NA MÃO: os mesmos serviços do Chave na mão do Orçamento RM (lá eles
    moram dentro de cada orçamento, num nó que a conta da arquiteta não lê --
    por isso a lista de nomes vem copiada aqui; qualquer outro se digita). */
-const CNM_SERVICOS = ['Elétrica', 'Hidráulica', 'Pintura', 'Banheiro', 'Esquadrias', 'Fundação', 'Alvenaria', 'Cobertura', 'Piso', 'Forro / gesso', 'Estrutura metálica', 'Revestimento', 'Limpeza final'];
+const CNM_SERVICOS = ['Elétrica', 'Hidráulica', 'Pintura', 'Banheiros', 'Esquadrias', 'Gesso', 'Projeto', 'Fundação', 'Alvenaria', 'Cobertura', 'Piso', 'Forro / gesso', 'Estrutura metálica', 'Revestimento', 'Limpeza final'];
 /* LISTAS DE SELEÇÃO RÁPIDA. Começam com o que veio dos documentos de exemplo;
    o cadastro (Configurações › Listas de seleção rápida) mora na nuvem, em
    propostas_rm/listas, e vale para todos. Além dele, entra sozinho o que já
@@ -3450,10 +3490,10 @@ function proximoNumero(ano) {
   Object.values(docs).forEach(d => { const m = /^(\d+)\/(\d{4})$/.exec(d && d.numero || ''); if (m && m[2] === String(ano)) max = Math.max(max, +m[1]); });
   return String(max + 1).padStart(3, '0') + '/' + ano;
 }
-function novoDoc() {
+function novoDoc(tipo) {
   const m = modeloAtual(), hoje = rmDiaISO();
   return {
-    id: uid(), numero: proximoNumero(hoje.slice(0, 4)), status: 'negociacao',
+    id: uid(), numero: proximoNumero(hoje.slice(0, 4)), status: 'negociacao', tipo: tipo === 'chave' ? 'chave' : 'padrao', titulo: '',
     criado: Date.now(), alterado: Date.now(),
     cliente: { nome: '', doc: '', endereco: '', cidade: '', cep: '', rep: '', repDoc: '' },
     obra: { endereco: '', cidade: '' },
@@ -3464,8 +3504,8 @@ function novoDoc() {
     comp: clone(m.complementares),
     prazoDias: 120,
     pagProp: clone(m.pagamentoProposta).map(x => Object.assign({ forma: '', bem: '' }, x)),
-    valores: m.valores.map(e => ({ etapa: e, valor: 0, opcional: false, contrato: true, mostrar: true })),
-    cnm: { itens: [], pct: 0, somar: true },
+    valores: m.valores.map(e => ({ etapa: e, valor: 0, opcional: false, contrato: true, mostrar: true, cortesia: false })),
+    cnm: { itens: tipo === 'chave' ? CNM_NOVA.map(cnmServico) : [], pct: 0, somar: true, titulo: '' },
     textos: clone(m.proposta),
     contrato: null
   };
@@ -3494,9 +3534,13 @@ function normalizar(d) {
   o.met = lista(d.met).map(g => ({ titulo: g.titulo || '', linhas: lista(g.linhas).map(l => ({ k: l.k || '', v: l.v || '' })) }));
   o.comp = d.comp ? lista(d.comp).map(c => ({ item: c.item || '', sit: SITUACOES[c.sit] ? c.sit : 'incluso' })) : b.comp;
   o.pagProp = d.pagProp ? lista(d.pagProp).map(p => ({ pct: lerValor(p.pct), quando: p.quando || '', forma: p.forma || '', bem: p.bem || '' })) : b.pagProp;
-  o.valores = d.valores ? lista(d.valores).map(v => ({ etapa: v.etapa || '', valor: lerValor(v.valor), opcional: !!v.opcional, contrato: v.contrato !== false, mostrar: v.mostrar !== false })) : b.valores;
+  o.valores = d.valores ? lista(d.valores).map(v => ({ etapa: v.etapa || '', valor: lerValor(v.valor), opcional: !!v.opcional, contrato: v.contrato !== false, mostrar: v.mostrar !== false, cortesia: !!v.cortesia })) : b.valores;
   const cn = d.cnm || {};
-  o.cnm = { itens: lista(cn.itens).map(x => ({ nome: x.nome || '', valor: lerValor(x.valor), mostrar: x.mostrar !== false })), pct: lerValor(cn.pct), somar: cn.somar !== false };
+  o.cnm = { itens: lista(cn.itens).map(x => ({ nome: x.nome || '', valor: lerValor(x.valor), mostrar: x.mostrar !== false, texto: x.texto || '',
+    itens: lista(x.itens).map(i => ({ desc: i.desc || '', qtd: i.qtd == null ? '' : String(i.qtd), un: i.un || 'un' })) })), pct: lerValor(cn.pct), somar: cn.somar !== false, titulo: cn.titulo || '' };
+  /* proposta anterior aos tipos: com serviços preenchidos, é de chave na mão */
+  o.tipo = d.tipo === 'chave' || d.tipo === 'padrao' ? d.tipo : (o.cnm.itens.some(x => x.nome.trim() || x.valor) ? 'chave' : 'padrao');
+  o.titulo = d.titulo || '';
   o.prazoDias = lerValor(d.prazoDias != null ? d.prazoDias : b.prazoDias);
   o.validade = lerValor(d.validade != null ? d.validade : b.validade);
   if (d.contrato) {
@@ -3517,14 +3561,15 @@ function normalizar(d) {
 /* Chave na mão: cada serviço já com o acréscimo (%) aplicado -- é assim que
    sai no papel, e o total é a soma do que aparece. */
 function cnmFinal(d, x) { return centavos(lerValor(x.valor) * (1 + lerValor(d.cnm && d.cnm.pct) / 100)); }
-function cnmItens(d) { return d.cnm ? d.cnm.itens.filter(x => String(x.nome || '').trim() || lerValor(x.valor)) : []; }
+function cnmItens(d) { return d.cnm && d.tipo === 'chave' ? d.cnm.itens.filter(x => String(x.nome || '').trim() || lerValor(x.valor)) : []; }
 function totalCnm(d) { return centavos(cnmItens(d).reduce((s, x) => s + cnmFinal(d, x), 0)); }
 function cnmNoTotal(d) { return d.cnm && d.cnm.somar !== false ? totalCnm(d) : 0; }
-function totalProposta(d) { return centavos(d.valores.filter(v => !v.opcional).reduce((s, v) => s + lerValor(v.valor), 0) + cnmNoTotal(d)); }
+/* cortesia: o item aparece, mas o valor não entra em total nenhum */
+function totalProposta(d) { return centavos(d.valores.filter(v => !v.opcional && !v.cortesia).reduce((s, v) => s + lerValor(v.valor), 0) + cnmNoTotal(d)); }
 /* o contrato soma o que foi marcado "no contrato" (e o chave na mão); com
    desconto, vale o valor ajustado -- guardado no contrato, a proposta fica
    como estava */
-function totalContratoBase(d) { return centavos(d.valores.filter(v => v.contrato).reduce((s, v) => s + lerValor(v.valor), 0) + cnmNoTotal(d)); }
+function totalContratoBase(d) { return centavos(d.valores.filter(v => v.contrato && !v.cortesia).reduce((s, v) => s + lerValor(v.valor), 0) + cnmNoTotal(d)); }
 function totalContrato(d) { const aj = d.contrato ? lerValor(d.contrato.valorAjustado) : 0; return aj > 0 ? centavos(aj) : totalContratoBase(d); }
 function parcelasContrato(d) {
   const c = d.contrato, tot = totalContrato(d), p = c.pag, out = [];
@@ -3625,10 +3670,18 @@ function tabPre(g) {
 function tabMet(g) {
   return { t: 'tab', semCab: true, cols: [{ t: '', w: 30, rot: true }, { t: '' }], linhas: g.linhas.filter(l => l.v.trim()).map(l => [l.k, l.v]) };
 }
+/* um serviço da chave na mão no papel: título, texto e a lista de itens */
+function blocosServico(x, v) {
+  const out = [{ t: 'h3', txt: x.nome }];
+  if (String(x.texto || '').trim()) out.push(...textoBlocos(x.texto, v));
+  const its = (x.itens || []).filter(i => String(i.desc || '').trim());
+  if (its.length) out.push({ t: 'tab', cols: [{ t: 'Item' }, { t: 'Qtd', dir: true, w: 18 }], linhas: its.map(i => [i.desc, qtdTxt(i)]) });
+  return out;
+}
 function blocosProposta(d) {
   const v = vars(d), t = d.textos, bl = [];
-  const tot = totalProposta(d), opc = d.valores.filter(x => x.opcional && lerValor(x.valor));
-  bl.push({ t: 'cab', tipo: 'Proposta comercial', titulo: 'Proposta de orçamento', sub: 'Nº ' + d.numero });
+  const tot = totalProposta(d), opc = d.valores.filter(x => x.opcional && !x.cortesia && lerValor(x.valor));
+  bl.push({ t: 'cab', tipo: 'Proposta comercial', titulo: tituloDoc(d), sub: 'Nº ' + d.numero });
   bl.push({ t: 'meta', pares: [['Cliente', d.cliente.nome || '—'], ['Local da obra', v.MUNICIPIO], ['Data', dataBR(d.data)], ['Validade', fmtNum(d.validade, 0) + ' dias']] });
   if (d.tratamento) bl.push({ t: 'p', runs: [{ t: d.tratamento + ',' }] });
   bl.push(...textoBlocos(t.abertura, v));
@@ -3650,20 +3703,25 @@ function blocosProposta(d) {
     bl.push({ t: 'tab', cols: [{ t: 'Parcela', w: 14 }, { t: 'Quando' }].concat(comForma ? [{ t: 'Forma', w: 30 }] : [], [{ t: '%', dir: true, w: 14 }]),
       linhas: d.pagProp.map((p, i) => [String(i + 1), p.quando].concat(comForma ? [formaTxt(p)] : [], [fmtNum(p.pct, lerValor(p.pct) % 1 ? 1 : 0) + '%'])) });
   }
-  /* chave na mão: os serviços com o acréscimo já aplicado; valor oculto
-     sai só com o nome, e o total do bloco continua */
-  const cnm = cnmItens(d), totCnm = totalCnm(d);
+  /* chave na mão: um bloco por serviço (texto e itens), e o resumo com os
+     valores -- já com o acréscimo; valor oculto sai só com o nome. O termo
+     "chave na mão" não aparece aqui: só no título, que é editável. */
+  const cnm = cnmItens(d), totCnm = totalCnm(d), titCnm = String(d.cnm.titulo || '').trim() || CNM_TITULO;
   if (cnm.length) {
-    sec('Chave na mão');
+    sec(titCnm);
+    cnm.forEach(x => { bl.push(...blocosServico(x, v)); });
     bl.push({ t: 'tab', cls: 'tot', cols: [{ t: 'Serviço' }, { t: 'Valor', dir: true, w: 26 }],
       linhas: cnm.map(x => x.mostrar === false ? [{ t: x.nome }, ''] : [{ t: x.nome, sub: extenso(cnmFinal(d, x)) }, brl(cnmFinal(d, x))]),
-      total: ['Total chave na mão', brl(totCnm)], totalSub: extenso(totCnm) });
-    if (!d.cnm.somar) bl.push({ t: 'p', runs: [{ t: 'Os serviços de chave na mão são à parte, fora do total da obra.' }] });
+      total: ['Total dos serviços', brl(totCnm)], totalSub: extenso(totCnm) });
+    if (!d.cnm.somar) bl.push({ t: 'p', runs: [{ t: 'Os serviços acima são à parte, fora do total da obra.' }] });
   }
   sec('Valores');
   /* "mostrar valor" desmarcado: a etapa aparece, o valor dela não -- só o total */
-  const lv = d.valores.filter(x => !x.opcional && (x.etapa.trim() || lerValor(x.valor))).map(x => x.mostrar === false ? [{ t: x.etapa }, ''] : [{ t: x.etapa, sub: extenso(x.valor) }, brl(x.valor)]);
-  if (cnm.length && d.cnm.somar) lv.push([{ t: 'Chave na mão', sub: extenso(totCnm) }, brl(totCnm)]);
+  /* cortesia: a etapa sai como brinde, fora do total */
+  const linhaValor = x => x.cortesia ? [{ t: x.etapa, sub: x.mostrar === false || !lerValor(x.valor) ? 'cortesia, sem custo' : 'cortesia, sem custo · valor de ' + brl(x.valor) }, 'Cortesia']
+    : x.mostrar === false ? [{ t: x.etapa }, ''] : [{ t: x.etapa, sub: extenso(x.valor) }, brl(x.valor)];
+  const lv = d.valores.filter(x => (!x.opcional || x.cortesia) && (x.etapa.trim() || lerValor(x.valor))).map(linhaValor);
+  if (cnm.length && d.cnm.somar) lv.push([{ t: titCnm, sub: extenso(totCnm) }, brl(totCnm)]);
   const tab = { t: 'tab', cls: 'tot', cols: [{ t: 'Etapa' }, { t: 'Valor', dir: true, w: 26 }], linhas: lv, total: ['Total da obra', brl(tot)], totalSub: extenso(tot) };
   if (opc.length) {
     /* os opcionais somados, e a obra com eles: o cliente que quer tudo não
@@ -3698,8 +3756,10 @@ function blocosContrato(d) {
   if (met.length) { bl.push({ t: 'h3', txt: 'Estrutura metálica' }); met.forEach(g => { if (g.titulo.trim()) bl.push({ t: 'cap', txt: g.titulo }); bl.push(tabMet(g)); }); }
   const comp = d.comp.filter(x => x.item.trim());
   if (comp.length) { bl.push({ t: 'h3', txt: 'Itens complementares' }); bl.push({ t: 'tab', cols: [{ t: 'Item' }, { t: 'Situação', w: 32 }], linhas: comp.map(x => [x.item, { t: x.sit === 'nao' ? 'Não incluso no contrato' : 'Incluso no contrato', fraco: x.sit === 'nao' }]) }); }
+  /* os serviços da chave na mão, cada um com o seu título, como no
+     contrato de chave na mão da RM */
   const cnmC = cnmItens(d);
-  if (cnmC.length && d.cnm.somar) { bl.push({ t: 'h3', txt: 'Chave na mão' }); bl.push({ t: 'tab', cols: [{ t: 'Serviço' }, { t: 'Situação', w: 32 }], linhas: cnmC.map(x => [x.nome, 'Incluso no contrato']) }); }
+  if (cnmC.length && d.cnm.somar) cnmC.forEach(x => bl.push(...blocosServico(x, v)));
   if (t.observacoes.trim()) { bl.push({ t: 'h3', txt: 'Observações' }); bl.push(...textoBlocos(t.observacoes, v)); }
   bl.push({ t: 'h3', txt: '1.3. Das obrigações da contratada' });
   bl.push(...textoBlocos(t.obrigContratada, v));
@@ -3965,7 +4025,9 @@ function fichaHTML(d) {
     + '<div class="g2">' + campo('Endereço', inp('cliente.endereco', cl.endereco)) + campo('Cidade/UF', inp('cliente.cidade', cl.cidade, { ph: 'ex.: Santa Cruz do Sul/RS' })) + '</div>'
     + '<div class="g2">' + campo('Representante', inp('cliente.rep', cl.rep)) + campo('CPF do representante', inp('cliente.repDoc', cl.repDoc)) + '</div>'
     + campo('Tratamento na proposta', '<select data-p="tratamento">' + ['Prezado Senhor', 'Prezada Senhora', 'Prezados Senhores', ''].map(t => '<option value="' + t + '"' + (d.tratamento === t ? ' selected' : '') + '>' + (t || '(sem saudação)') + '</option>').join('') + '</select>'));
-  h += secao('Obra e proposta', '<div class="g2">' + campo('Município da obra', inp('obra.cidade', d.obra.cidade, { ph: 'ex.: Santa Cruz do Sul/RS' })) + campo('Endereço da obra', inp('obra.endereco', d.obra.endereco)) + '</div>'
+  h += secao('Obra e proposta', '<div class="g2">' + campo('Tipo', '<select data-p="tipo" data-re="1">' + Object.keys(TIPOS).map(k => '<option value="' + k + '"' + (d.tipo === k ? ' selected' : '') + '>' + TIPOS[k] + '</option>').join('') + '</select>')
+    + campo('Título no papel', inp('titulo', d.titulo, { ph: TITULO_TIPO[d.tipo] || TITULO_TIPO.padrao, rot: 'Título no papel' })) + '</div>'
+    + '<div class="g2">' + campo('Município da obra', inp('obra.cidade', d.obra.cidade, { ph: 'ex.: Santa Cruz do Sul/RS' })) + campo('Endereço da obra', inp('obra.endereco', d.obra.endereco)) + '</div>'
     + '<div class="g3">' + campo('Data da proposta', inp('data', d.data, { type: 'date' })) + campo('Validade (dias)', inp('validade', d.validade, { tipo: 'num', mode: 'numeric' })) + campo('Prazo de entrega (dias)', inp('prazoDias', d.prazoDias, { tipo: 'num', mode: 'numeric' })) + '</div>'
     + campo('Descrição da estrutura', area('descricao', d.descricao, 5, 'Descrição da estrutura')));
   let pre = '';
@@ -3988,26 +4050,38 @@ function fichaHTML(d) {
     met += bt('metLinha', '＋ Linha', { i, cls: 'btn btn-ghost btn-sm' }) + '</div>';
   });
   h += secao('Estrutura metálica', met + bt('metGrupo', '＋ Volume', { cls: 'btn btn-ghost btn-sm' }));
-  h += secao('Itens complementares', d.comp.map((c, i) => '<div class="linha l-comp">' + inp('comp.' + i + '.item', c.item, { rot: 'Item', lista: 'dlComp' }) + '<select data-p="comp.' + i + '.sit" aria-label="Situação">' + Object.keys(SITUACOES).map(k => '<option value="' + k + '"' + (c.sit === k ? ' selected' : '') + '>' + SITUACOES[k] + '</option>').join('') + '</select>' + bt('compDel', '✕', { i, rot: 'Excluir item', cls: 'icon-btn del' }) + '</div>').join('') + bt('compAdd', '＋ Item', { cls: 'btn btn-ghost btn-sm' }));
+  h += secao('Itens complementares', d.comp.map((c, i) => '<div class="linha l-comp">' + bt('compUp', '↑', { i, rot: 'Subir item', cls: 'icon-btn mv' }) + bt('compDown', '↓', { i, rot: 'Descer item', cls: 'icon-btn mv' }) + inp('comp.' + i + '.item', c.item, { rot: 'Item', lista: 'dlComp' }) + '<select data-p="comp.' + i + '.sit" aria-label="Situação">' + Object.keys(SITUACOES).map(k => '<option value="' + k + '"' + (c.sit === k ? ' selected' : '') + '>' + SITUACOES[k] + '</option>').join('') + '</select>' + bt('compDel', '✕', { i, rot: 'Excluir item', cls: 'icon-btn del' }) + '</div>').join('') + bt('compAdd', '＋ Item', { cls: 'btn btn-ghost btn-sm' }));
   const pct = d.pagProp.reduce((s, x) => s + lerValor(x.pct), 0);
   h += secao('Pagamento da proposta', d.pagProp.map((p, i) => '<div class="linha l-pag">' + inp('pagProp.' + i + '.pct', p.pct, { tipo: 'num', mode: 'decimal', rot: 'Percentual', cls: 'pct' }) + '<span class="un">%</span>' + inp('pagProp.' + i + '.quando', p.quando, { rot: 'Quando' }) + formaSel('pagProp.' + i, p) + bt('pagDel', '✕', { i, rot: 'Excluir parcela', cls: 'icon-btn del' }) + '</div>' + bemCampo('pagProp.' + i, p)).join('') + bt('pagAdd', '＋ Parcela', { cls: 'btn btn-ghost btn-sm' })
     + '<p class="nota">Forma: dinheiro, depósito ou um bem como parte do pagamento (terreno, imóvel, carro...). A lista dos bens se muda em Configurações.</p>', { extra: fmtNum(pct, pct % 1 ? 1 : 0) + '%' });
-  /* chave na mão */
-  const cn = d.cnm, baseCnm = centavos(cn.itens.reduce((s, x) => s + lerValor(x.valor), 0));
-  h += secao('Chave na mão', cn.itens.map((x, i) => '<div class="linha l-cnm">' + inp('cnm.itens.' + i + '.nome', x.nome, { lista: 'dlCnm', ph: 'Serviço (ex.: banheiro)', rot: 'Serviço' })
-      + inp('cnm.itens.' + i + '.valor', lerValor(x.valor) ? fmtNum(x.valor, 2) : '', { tipo: 'valor', mode: 'decimal', ph: '0,00', rot: 'Valor', cls: 'val' })
-      + '<label class="chk"><input type="checkbox" data-p="cnm.itens.' + i + '.mostrar"' + (x.mostrar !== false ? ' checked' : '') + '> mostrar valor</label>' + bt('cnmDel', '✕', { i, rot: 'Excluir serviço', cls: 'icon-btn del' }) + '</div>').join('')
-    + bt('cnmAdd', '＋ Serviço', { cls: 'btn btn-ghost btn-sm' })
-    + '<div class="g2">' + campo('Acréscimo sobre o total (%)', inp('cnm.pct', lerValor(cn.pct) ? fmtNum(cn.pct, lerValor(cn.pct) % 1 ? 2 : 0) : '', { tipo: 'num', mode: 'decimal', ph: '0', rot: 'Acréscimo (%)' }))
-    + '<label class="chk chk-bloco"><input type="checkbox" data-p="cnm.somar" data-re="1"' + (cn.somar !== false ? ' checked' : '') + '> somar ao total da obra</label></div>'
-    + '<div class="tot-linha" data-tot="cnm">Total chave na mão <b>' + brl(totalCnm(d)) + '</b><span>' + esc(notaCnm(d)) + '</span></div>'
-    + '<p class="nota">O acréscimo vai distribuído nos serviços (cada valor sai no papel já com ele). "Mostrar valor" desmarcado: o serviço aparece sem o valor, e o total continua.</p>',
-    { aberta: cn.itens.length > 0, extra: cn.itens.length ? brl(totalCnm(d)) : '' });
+  /* chave na mão: só na proposta chave na mão. Cada serviço é um cartão com
+     o nome, o valor, o texto que sai no papel e a lista de itens. */
+  if (d.tipo === 'chave') {
+    const cn = d.cnm;
+    let sv = '';
+    cn.itens.forEach((x, i) => {
+      sv += '<div class="grupo"><div class="linha l-cnm">' + inp('cnm.itens.' + i + '.nome', x.nome, { lista: 'dlCnm', ph: 'Serviço (ex.: banheiros)', rot: 'Serviço', cls: 'forte' })
+        + inp('cnm.itens.' + i + '.valor', lerValor(x.valor) ? fmtNum(x.valor, 2) : '', { tipo: 'valor', mode: 'decimal', ph: '0,00', rot: 'Valor', cls: 'val' })
+        + bt('cnmDel', '✕', { i, rot: 'Excluir serviço', cls: 'icon-btn del' })
+        + '<div class="l-ops"><label class="chk"><input type="checkbox" data-p="cnm.itens.' + i + '.mostrar"' + (x.mostrar !== false ? ' checked' : '') + '> mostrar valor</label></div></div>'
+        + area('cnm.itens.' + i + '.texto', x.texto, Math.min(6, Math.max(2, Math.ceil(String(x.texto || '').length / 90))), 'Texto do serviço')
+        + (x.itens || []).map((it, k) => '<div class="linha l-pre">' + inp('cnm.itens.' + i + '.itens.' + k + '.desc', it.desc, { ph: 'Item (ex.: porta de alumínio 1,00x2,10 m)', rot: 'Item' }) + inp('cnm.itens.' + i + '.itens.' + k + '.qtd', it.qtd, { mode: 'decimal', ph: 'Qtd', rot: 'Quantidade' })
+          + '<select data-p="cnm.itens.' + i + '.itens.' + k + '.un" aria-label="Unidade">' + UNIDADES.map(u => '<option' + (it.un === u ? ' selected' : '') + '>' + u + '</option>').join('') + '</select>' + bt('cnmItemDel', '✕', { i, j: k, rot: 'Excluir item', cls: 'icon-btn del' }) + '</div>').join('')
+        + bt('cnmItem', '＋ Item', { i, cls: 'btn btn-ghost btn-sm' }) + '</div>';
+    });
+    h += secao('Chave na mão', sv + bt('cnmAdd', '＋ Serviço', { cls: 'btn btn-ghost btn-sm' })
+      + campo('Título do bloco no papel', inp('cnm.titulo', cn.titulo, { ph: CNM_TITULO, rot: 'Título do bloco no papel' }))
+      + '<div class="g2">' + campo('Acréscimo sobre o total (%)', inp('cnm.pct', lerValor(cn.pct) ? fmtNum(cn.pct, lerValor(cn.pct) % 1 ? 2 : 0) : '', { tipo: 'num', mode: 'decimal', ph: '0', rot: 'Acréscimo (%)' }))
+      + '<label class="chk chk-bloco"><input type="checkbox" data-p="cnm.somar" data-re="1"' + (cn.somar !== false ? ' checked' : '') + '> somar ao total da obra</label></div>'
+      + '<div class="tot-linha" data-tot="cnm">Total dos serviços <b>' + brl(totalCnm(d)) + '</b><span>' + esc(notaCnm(d)) + '</span></div>'
+      + '<p class="nota">Escolhendo um serviço da lista (esquadrias, banheiros, elétrica...), o texto padrão dele entra sozinho; dá para mudar. O acréscimo vai distribuído nos serviços (cada valor sai no papel já com ele). "Mostrar valor" desmarcado: o serviço aparece sem o valor, e o total continua.</p>',
+      { extra: brl(totalCnm(d)) });
+  }
   h += secao('Valores', d.valores.map((v, i) => '<div class="linha l-val">' + inp('valores.' + i + '.etapa', v.etapa, { rot: 'Etapa', ph: 'Etapa', lista: 'dlEtapa' }) + inp('valores.' + i + '.valor', lerValor(v.valor) ? fmtNum(v.valor, 2) : '', { tipo: 'valor', mode: 'decimal', ph: '0,00', rot: 'Valor', cls: 'val' })
     + bt('valDel', '✕', { i, rot: 'Excluir valor', cls: 'icon-btn del' })
-    + '<div class="l-ops"><label class="chk"><input type="checkbox" data-p="valores.' + i + '.opcional"' + (v.opcional ? ' checked' : '') + '> opcional</label><label class="chk"><input type="checkbox" data-p="valores.' + i + '.contrato"' + (v.contrato ? ' checked' : '') + '> no contrato</label><label class="chk"><input type="checkbox" data-p="valores.' + i + '.mostrar"' + (v.mostrar !== false ? ' checked' : '') + '> mostrar valor</label></div></div>').join('')
+    + '<div class="l-ops"><label class="chk"><input type="checkbox" data-p="valores.' + i + '.opcional"' + (v.opcional ? ' checked' : '') + '> opcional</label><label class="chk"><input type="checkbox" data-p="valores.' + i + '.contrato"' + (v.contrato ? ' checked' : '') + '> no contrato</label><label class="chk"><input type="checkbox" data-p="valores.' + i + '.mostrar"' + (v.mostrar !== false ? ' checked' : '') + '> mostrar valor</label><label class="chk"><input type="checkbox" data-p="valores.' + i + '.cortesia"' + (v.cortesia ? ' checked' : '') + '> cortesia</label></div></div>').join('')
     + bt('valAdd', '＋ Valor', { cls: 'btn btn-ghost btn-sm' }) + '<div class="tot-linha" data-tot="proposta">Total da proposta <b>' + brl(totalProposta(d)) + '</b><span>' + esc(extenso(totalProposta(d))) + '</span></div>'
-    + '<p class="nota">"Opcional" sai na proposta à parte, fora do total. "No contrato" entra no valor do contrato. "Mostrar valor" desmarcado: a etapa aparece sem o valor, e o total continua.' + (cnmNoTotal(d) ? ' O total inclui o chave na mão (' + brl(cnmNoTotal(d)) + ').' : '') + '</p>', { extra: brl(totalProposta(d)) });
+    + '<p class="nota">"Opcional" sai na proposta à parte, fora do total. "No contrato" entra no valor do contrato. "Mostrar valor" desmarcado: a etapa aparece sem o valor, e o total continua. "Cortesia": a etapa sai como brinde, e o valor fica fora do total.' + (cnmNoTotal(d) ? ' O total inclui os serviços da chave na mão (' + brl(cnmNoTotal(d)) + ').' : '') + '</p>', { extra: brl(totalProposta(d)) });
   h += secao('Textos da proposta', Object.keys(d.textos).map(k => k === 'fundacoes' || k === 'fundacoesObs' ? '' : campo(ROTULOS_TEXTO['proposta.' + k] || k, area('textos.' + k, d.textos[k], Math.min(8, Math.max(2, Math.ceil(String(d.textos[k]).length / 90))), ROTULOS_TEXTO['proposta.' + k]))).join('')
     + '<p class="nota">Mudanças aqui valem só para esta proposta. Para mudar o padrão das próximas, use "Textos padrão".</p>', { aberta: false });
   return h;
@@ -4155,6 +4229,9 @@ $('ficha').addEventListener('input', e => {
 $('ficha').addEventListener('change', e => {
   const el = e.target, d = atual();
   if (!d || !el.dataset.p) return;
+  /* serviço da chave na mão com nome conhecido e sem texto: entra o texto padrão */
+  const mc = /^cnm\.itens\.(\d+)\.nome$/.exec(el.dataset.p);
+  if (mc) { const x = d.cnm.itens[+mc[1]]; if (x && !String(x.texto || '').trim() && cnmTextoPadrao(x.nome)) { x.texto = cnmTextoPadrao(x.nome); alterou(d, true); return; } }
   if (el.dataset.t === 'valor' && el.value.trim()) el.value = fmtNum(lerValor(el.value), 2);
   if (el.type === 'checkbox' || el.tagName === 'SELECT') atualizarResumos();
 });
@@ -4175,8 +4252,12 @@ $('ficha').addEventListener('click', e => {
     compDel: () => d.comp.splice(i, 1),
     pagAdd: () => d.pagProp.push({ pct: 0, quando: '', forma: '', bem: '' }),
     pagDel: () => d.pagProp.splice(i, 1),
-    valAdd: () => d.valores.push({ etapa: '', valor: 0, opcional: false, contrato: true, mostrar: true }),
-    cnmAdd: () => d.cnm.itens.push({ nome: '', valor: 0, mostrar: true }),
+    valAdd: () => d.valores.push({ etapa: '', valor: 0, opcional: false, contrato: true, mostrar: true, cortesia: false }),
+    cnmAdd: () => d.cnm.itens.push(cnmServico('')),
+    cnmItem: () => d.cnm.itens[i].itens.push({ desc: '', qtd: '', un: 'un' }),
+    cnmItemDel: () => d.cnm.itens[i].itens.splice(j, 1),
+    compUp: () => { if (i > 0) d.comp.splice(i - 1, 0, d.comp.splice(i, 1)[0]); },
+    compDown: () => { if (i < d.comp.length - 1) d.comp.splice(i + 1, 0, d.comp.splice(i, 1)[0]); },
     cnmDel: () => d.cnm.itens.splice(i, 1),
     parcAdd: () => d.contrato && d.contrato.pag.itens.push({ rot: '', quando: '', valor: 0, forma: '', bem: '' }),
     parcDel: () => d.contrato && d.contrato.pag.itens.splice(i, 1),
@@ -4188,7 +4269,7 @@ $('ficha').addEventListener('click', e => {
   acoes[a]();
   alterou(d, true);
   /* o campo novo já recebe o cursor */
-  const s = secs()[k]; if (!s || /Del$/.test(a)) return;
+  const s = secs()[k]; if (!s || /Del$|Up$|Down$/.test(a)) return;
   const ultimo = l => l[l.length - 1];
   let alvo = null;
   if (a === 'preItem' || a === 'metLinha') { const g = s.querySelectorAll('.grupo')[i]; const l = g && ultimo(g.querySelectorAll('.linha')); alvo = l && l.querySelector('input'); }
@@ -4207,7 +4288,10 @@ $('iniImportar').addEventListener('click', () => $('arqWord').click());
 $('btnFechar').addEventListener('click', () => fecharDoc(true));
 $('docBusca').addEventListener('input', () => renderLista());
 $('docStatus').addEventListener('change', e => { const d = atual(); if (!d) return; d.status = e.target.value; alterou(d, true); });
-$('btnNova').addEventListener('click', () => { const d = novoDoc(); docs[d.id] = d; aba = 'proposta'; abrir(d.id); alterou(d, true); const c = document.querySelector('#ficha [data-p="cliente.nome"]'); if (c) c.focus(); });
+$('btnNova').addEventListener('click', () => $('tipoTela').classList.add('on'));
+$('tipoNao').addEventListener('click', () => $('tipoTela').classList.remove('on'));
+$('tipoTela').addEventListener('click', e => { const b = e.target.closest('[data-tipo]'); if (b) { $('tipoTela').classList.remove('on'); novaProposta(b.dataset.tipo); } else if (e.target === $('tipoTela')) $('tipoTela').classList.remove('on'); });
+function novaProposta(tipo) { const d = novoDoc(tipo); docs[d.id] = d; aba = 'proposta'; abrir(d.id); alterou(d, true); const c = document.querySelector('#ficha [data-p="cliente.nome"]'); if (c) c.focus(); }
 $('btnDup').addEventListener('click', () => {
   const o = atual(); if (!o) return;
   const d = normalizar(clone(o));
@@ -5279,7 +5363,7 @@ if ('serviceWorker' in navigator) {
 })();
 </script>
 <script>/* versão publicada (PADRAO_RM.md §3): sobe a cada publicação, junto com o CACHE do sw.js */
-const APP_VER='v8';
+const APP_VER='v9';
 </script>
 <script id="rmVersaoBloco">
 /* ===== SELO DE VERSÃO — igual em todos os sistemas (PADRAO_RM.md §3) =====
