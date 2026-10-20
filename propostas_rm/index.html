@@ -2823,7 +2823,10 @@ body:not(.com-doc) .docs-card,body:not(.com-doc) .ed-grid{display:none}
 .l-parc{grid-template-columns:1fr 1fr 110px 130px 28px}
 .l-cnm{grid-template-columns:1fr 120px 28px}
 .l-cnm input.forte{font-weight:700}
-.l-comp{grid-template-columns:24px 24px 1fr 150px 28px}
+.l-comp{grid-template-columns:24px 24px 1fr 28px}
+.l-comp2{flex-wrap:nowrap;margin-left:54px}
+.l-comp2 select{flex:1 1 auto;min-width:0}
+.l-comp2 input{width:130px;flex:none}
 .icon-btn.mv{width:24px;padding:0;font-size:14px}
 .l-bem{grid-template-columns:1fr;margin:-2px 0 4px 20px}
 .chk-bloco{align-self:end;padding-bottom:9px}
@@ -3501,7 +3504,8 @@ function novoDoc(tipo) {
     descricao: '',
     pre: [{ titulo: '', itens: [{ desc: '', qtd: '', un: 'un' }] }],
     met: [{ titulo: '', linhas: MET_CAMPOS.map(k => ({ k, v: '' })) }],
-    comp: clone(m.complementares),
+    comp: clone(m.complementares).map(c => Object.assign({ valor: 0 }, c)),
+    compCfg: { mostrar: true, somar: true },
     prazoDias: 120,
     pagProp: clone(m.pagamentoProposta).map(x => Object.assign({ forma: '', bem: '' }, x)),
     valores: m.valores.map(e => ({ etapa: e, valor: 0, opcional: false, contrato: true, mostrar: true, cortesia: false })),
@@ -3532,7 +3536,8 @@ function normalizar(d) {
   const lista = v => Array.isArray(v) ? v.filter(x => x != null) : (v && typeof v === 'object' ? Object.keys(v).sort((a, c) => a - c).map(k => v[k]).filter(x => x != null) : []);
   o.pre = lista(d.pre).map(g => ({ titulo: g.titulo || '', itens: lista(g.itens).map(i => ({ desc: i.desc || '', qtd: i.qtd == null ? '' : String(i.qtd), un: i.un || 'un' })) }));
   o.met = lista(d.met).map(g => ({ titulo: g.titulo || '', linhas: lista(g.linhas).map(l => ({ k: l.k || '', v: l.v || '' })) }));
-  o.comp = d.comp ? lista(d.comp).map(c => ({ item: c.item || '', sit: SITUACOES[c.sit] ? c.sit : 'incluso' })) : b.comp;
+  o.comp = d.comp ? lista(d.comp).map(c => ({ item: c.item || '', sit: SITUACOES[c.sit] ? c.sit : 'incluso', valor: lerValor(c.valor) })) : b.comp;
+  o.compCfg = { mostrar: !(d.compCfg && d.compCfg.mostrar === false), somar: !(d.compCfg && d.compCfg.somar === false) };
   o.pagProp = d.pagProp ? lista(d.pagProp).map(p => ({ pct: lerValor(p.pct), quando: p.quando || '', forma: p.forma || '', bem: p.bem || '' })) : b.pagProp;
   o.valores = d.valores ? lista(d.valores).map(v => ({ etapa: v.etapa || '', valor: lerValor(v.valor), opcional: !!v.opcional, contrato: v.contrato !== false, mostrar: v.mostrar !== false, cortesia: !!v.cortesia })) : b.valores;
   const cn = d.cnm || {};
@@ -3563,13 +3568,19 @@ function normalizar(d) {
 function cnmFinal(d, x) { return centavos(lerValor(x.valor) * (1 + lerValor(d.cnm && d.cnm.pct) / 100)); }
 function cnmItens(d) { return d.cnm && d.tipo === 'chave' ? d.cnm.itens.filter(x => String(x.nome || '').trim() || lerValor(x.valor)) : []; }
 function totalCnm(d) { return centavos(cnmItens(d).reduce((s, x) => s + cnmFinal(d, x), 0)); }
+/* ITENS COMPLEMENTARES COM VALOR: somam à parte, num subtotal; "Não
+   incluso" e "Cortesia" ficam fora. O subtotal pode entrar ou não no total
+   da obra, e os valores podem sair ou não no papel. */
+function compContam(d) { return (d.comp || []).filter(c => c.sit !== 'nao' && c.sit !== 'cortesia' && lerValor(c.valor)); }
+function totalComp(d) { return centavos(compContam(d).reduce((s, c) => s + lerValor(c.valor), 0)); }
+function compNoTotal(d) { return d.compCfg && d.compCfg.somar === false ? 0 : totalComp(d); }
 function cnmNoTotal(d) { return d.cnm && d.cnm.somar !== false ? totalCnm(d) : 0; }
 /* cortesia: o item aparece, mas o valor não entra em total nenhum */
-function totalProposta(d) { return centavos(d.valores.filter(v => !v.opcional && !v.cortesia).reduce((s, v) => s + lerValor(v.valor), 0) + cnmNoTotal(d)); }
+function totalProposta(d) { return centavos(d.valores.filter(v => !v.opcional && !v.cortesia).reduce((s, v) => s + lerValor(v.valor), 0) + cnmNoTotal(d) + compNoTotal(d)); }
 /* o contrato soma o que foi marcado "no contrato" (e o chave na mão); com
    desconto, vale o valor ajustado -- guardado no contrato, a proposta fica
    como estava */
-function totalContratoBase(d) { return centavos(d.valores.filter(v => v.contrato && !v.cortesia).reduce((s, v) => s + lerValor(v.valor), 0) + cnmNoTotal(d)); }
+function totalContratoBase(d) { return centavos(d.valores.filter(v => v.contrato && !v.cortesia).reduce((s, v) => s + lerValor(v.valor), 0) + cnmNoTotal(d) + compNoTotal(d)); }
 function totalContrato(d) { const aj = d.contrato ? lerValor(d.contrato.valorAjustado) : 0; return aj > 0 ? centavos(aj) : totalContratoBase(d); }
 function parcelasContrato(d) {
   const c = d.contrato, tot = totalContrato(d), p = c.pag, out = [];
@@ -3695,7 +3706,15 @@ function blocosProposta(d) {
   if (t.fundacoes.trim() || t.fundacoesObs.trim()) { sec('Fundações'); bl.push(...textoBlocos(t.fundacoes, v)); if (t.fundacoesObs.trim()) bl.push({ t: 'obs', runs: runs(troca(t.fundacoesObs, v)) }); }
   if (met.length) { sec('Estrutura metálica'); met.forEach(g => { if (g.titulo.trim()) bl.push({ t: 'cap', txt: g.titulo }); bl.push(tabMet(g)); }); }
   const comp = d.comp.filter(c => c.item.trim());
-  if (comp.length) { sec('Itens complementares'); bl.push({ t: 'tab', cols: [{ t: 'Item' }, { t: 'Situação', w: 32 }], linhas: comp.map(c => [c.item, { t: SITUACOES[c.sit], fraco: c.sit === 'nao' }]) }); }
+  const totComp = totalComp(d), compVal = totComp > 0 && d.compCfg.mostrar !== false;
+  if (comp.length) {
+    sec('Itens complementares');
+    const tabC = { t: 'tab', cls: compVal ? 'tot' : '', cols: [{ t: 'Item' }, { t: 'Situação', w: 28 }].concat(compVal ? [{ t: 'Valor', dir: true, w: 22 }] : []),
+      linhas: comp.map(c => [c.item, { t: SITUACOES[c.sit], fraco: c.sit === 'nao' }].concat(compVal ? [c.sit !== 'nao' && c.sit !== 'cortesia' && lerValor(c.valor) ? brl(c.valor) : ''] : [])) };
+    if (compVal) { tabC.total = ['Subtotal dos itens complementares', '', brl(totComp)]; tabC.totalSub = extenso(totComp); }
+    bl.push(tabC);
+    if (totComp > 0 && d.compCfg.somar === false) bl.push({ t: 'p', runs: [{ t: 'Os itens complementares com valor são à parte, fora do total da obra.' }] });
+  }
   sec('Prazos e pagamento');
   bl.push({ t: 'p', runs: [{ t: 'Prazo de entrega: ', b: true }, { t: fmtNum(d.prazoDias, 0) + ' dias' + (t.prazoTexto.trim() ? ', ' + troca(t.prazoTexto.trim(), v) : '') + '.' }] });
   if (d.pagProp.length) {
@@ -3722,6 +3741,7 @@ function blocosProposta(d) {
     : x.mostrar === false ? [{ t: x.etapa }, ''] : [{ t: x.etapa, sub: extenso(x.valor) }, brl(x.valor)];
   const lv = d.valores.filter(x => (!x.opcional || x.cortesia) && (x.etapa.trim() || lerValor(x.valor))).map(linhaValor);
   if (cnm.length && d.cnm.somar) lv.push([{ t: titCnm, sub: extenso(totCnm) }, brl(totCnm)]);
+  if (compNoTotal(d)) lv.push(d.compCfg.mostrar === false ? [{ t: 'Itens complementares' }, ''] : [{ t: 'Itens complementares', sub: extenso(totComp) }, brl(totComp)]);
   const tab = { t: 'tab', cls: 'tot', cols: [{ t: 'Etapa' }, { t: 'Valor', dir: true, w: 26 }], linhas: lv, total: ['Total da obra', brl(tot)], totalSub: extenso(tot) };
   if (opc.length) {
     /* os opcionais somados, e a obra com eles: o cliente que quer tudo não
@@ -4050,7 +4070,14 @@ function fichaHTML(d) {
     met += bt('metLinha', '＋ Linha', { i, cls: 'btn btn-ghost btn-sm' }) + '</div>';
   });
   h += secao('Estrutura metálica', met + bt('metGrupo', '＋ Volume', { cls: 'btn btn-ghost btn-sm' }));
-  h += secao('Itens complementares', d.comp.map((c, i) => '<div class="linha l-comp">' + bt('compUp', '↑', { i, rot: 'Subir item', cls: 'icon-btn mv' }) + bt('compDown', '↓', { i, rot: 'Descer item', cls: 'icon-btn mv' }) + inp('comp.' + i + '.item', c.item, { rot: 'Item', lista: 'dlComp' }) + '<select data-p="comp.' + i + '.sit" aria-label="Situação">' + Object.keys(SITUACOES).map(k => '<option value="' + k + '"' + (c.sit === k ? ' selected' : '') + '>' + SITUACOES[k] + '</option>').join('') + '</select>' + bt('compDel', '✕', { i, rot: 'Excluir item', cls: 'icon-btn del' }) + '</div>').join('') + bt('compAdd', '＋ Item', { cls: 'btn btn-ghost btn-sm' }));
+  h += secao('Itens complementares', d.comp.map((c, i) => '<div class="linha l-comp">' + bt('compUp', '↑', { i, rot: 'Subir item', cls: 'icon-btn mv' }) + bt('compDown', '↓', { i, rot: 'Descer item', cls: 'icon-btn mv' }) + inp('comp.' + i + '.item', c.item, { rot: 'Item', lista: 'dlComp' })
+      + bt('compDel', '✕', { i, rot: 'Excluir item', cls: 'icon-btn del' })
+      + '<div class="l-ops l-comp2"><select data-p="comp.' + i + '.sit" aria-label="Situação">' + Object.keys(SITUACOES).map(k => '<option value="' + k + '"' + (c.sit === k ? ' selected' : '') + '>' + SITUACOES[k] + '</option>').join('') + '</select>'
+      + inp('comp.' + i + '.valor', lerValor(c.valor) ? fmtNum(c.valor, 2) : '', { tipo: 'valor', mode: 'decimal', ph: 'valor (opcional)', rot: 'Valor', cls: 'val' }) + '</div></div>').join('')
+    + bt('compAdd', '＋ Item', { cls: 'btn btn-ghost btn-sm' })
+    + '<div class="l-ops"><label class="chk"><input type="checkbox" data-p="compCfg.mostrar" data-re="1"' + (d.compCfg.mostrar !== false ? ' checked' : '') + '> mostrar os valores na proposta</label><label class="chk"><input type="checkbox" data-p="compCfg.somar" data-re="1"' + (d.compCfg.somar !== false ? ' checked' : '') + '> somar ao total da obra</label></div>'
+    + '<div class="tot-linha" data-tot="comp">Subtotal dos itens complementares <b>' + brl(totalComp(d)) + '</b><span>' + esc(notaComp(d)) + '</span></div>'
+    + '<p class="nota">O valor é opcional. Somam no subtotal os itens com valor, menos os "Não incluso" e "Cortesia".</p>', { extra: totalComp(d) ? brl(totalComp(d)) : '' });
   const pct = d.pagProp.reduce((s, x) => s + lerValor(x.pct), 0);
   h += secao('Pagamento da proposta', d.pagProp.map((p, i) => '<div class="linha l-pag">' + inp('pagProp.' + i + '.pct', p.pct, { tipo: 'num', mode: 'decimal', rot: 'Percentual', cls: 'pct' }) + '<span class="un">%</span>' + inp('pagProp.' + i + '.quando', p.quando, { rot: 'Quando' }) + formaSel('pagProp.' + i, p) + bt('pagDel', '✕', { i, rot: 'Excluir parcela', cls: 'icon-btn del' }) + '</div>' + bemCampo('pagProp.' + i, p)).join('') + bt('pagAdd', '＋ Parcela', { cls: 'btn btn-ghost btn-sm' })
     + '<p class="nota">Forma: dinheiro, depósito ou um bem como parte do pagamento (terreno, imóvel, carro...). A lista dos bens se muda em Configurações.</p>', { extra: fmtNum(pct, pct % 1 ? 1 : 0) + '%' });
@@ -4182,6 +4209,7 @@ function notaDesconto(d) {
   return 'Pelos valores da proposta: ' + brl(base) + '. ' + (aj > 0 ? (aj < base ? 'Desconto de ' + brl(base - aj) + '. ' : aj > base ? 'Acima do calculado em ' + brl(aj - base) + '. ' : '') : 'Vazio usa esse valor. ')
     + 'Vale só para o contrato: a proposta continua com os valores dela.';
 }
+function notaComp(d) { return (d.compCfg.somar !== false ? 'somado ao total da obra' : 'fora do total da obra') + (d.compCfg.mostrar === false ? ' · valores ocultos no papel' : ''); }
 function notaCnm(d) {
   const base = centavos(d.cnm.itens.reduce((s, x) => s + lerValor(x.valor), 0)), pc = lerValor(d.cnm.pct);
   return (pc ? 'serviços ' + brl(base) + ' + ' + fmtNum(pc, pc % 1 ? 2 : 0) + '% · ' : '') + (d.cnm.somar !== false ? 'somado ao total da obra' : 'fora do total da obra');
@@ -4191,8 +4219,8 @@ function atualizarResumos() {
   const d = atual(); if (!d) return;
   document.querySelectorAll('#ficha .tot-linha').forEach(el => {
     const q = el.dataset.tot || 'proposta';
-    const v = q === 'contrato' ? totalContrato(d) : q === 'cnm' ? totalCnm(d) : totalProposta(d);
-    el.querySelector('b').textContent = brl(v); el.querySelector('span').textContent = q === 'cnm' ? notaCnm(d) : extenso(v);
+    const v = q === 'contrato' ? totalContrato(d) : q === 'cnm' ? totalCnm(d) : q === 'comp' ? totalComp(d) : totalProposta(d);
+    el.querySelector('b').textContent = brl(v); el.querySelector('span').textContent = q === 'cnm' ? notaCnm(d) : q === 'comp' ? notaComp(d) : extenso(v);
   });
   const r = document.querySelector('#ficha .resumo');
   if (r && d.contrato) r.innerHTML = resumoParcelas(d);
@@ -4201,6 +4229,7 @@ function atualizarResumos() {
     const t = el.closest('summary').firstChild.textContent;
     if (t === 'Valores') el.textContent = brl(totalProposta(d));
     if (t === 'Chave na mão') el.textContent = d.cnm.itens.length ? brl(totalCnm(d)) : '';
+    if (t === 'Itens complementares') el.textContent = totalComp(d) ? brl(totalComp(d)) : '';
     if (t === 'Pagamento da proposta') { const p = d.pagProp.reduce((s, x) => s + lerValor(x.pct), 0); el.textContent = fmtNum(p, p % 1 ? 1 : 0) + '%'; }
   });
 }
@@ -4248,7 +4277,7 @@ $('ficha').addEventListener('click', e => {
     metDel: () => d.met.splice(i, 1),
     metLinha: () => d.met[i].linhas.push({ k: '', v: '' }),
     metLinhaDel: () => d.met[i].linhas.splice(j, 1),
-    compAdd: () => d.comp.push({ item: '', sit: 'incluso' }),
+    compAdd: () => d.comp.push({ item: '', sit: 'incluso', valor: 0 }),
     compDel: () => d.comp.splice(i, 1),
     pagAdd: () => d.pagProp.push({ pct: 0, quando: '', forma: '', bem: '' }),
     pagDel: () => d.pagProp.splice(i, 1),
@@ -5363,7 +5392,7 @@ if ('serviceWorker' in navigator) {
 })();
 </script>
 <script>/* versão publicada (PADRAO_RM.md §3): sobe a cada publicação, junto com o CACHE do sw.js */
-const APP_VER='v9';
+const APP_VER='v10';
 </script>
 <script id="rmVersaoBloco">
 /* ===== SELO DE VERSÃO — igual em todos os sistemas (PADRAO_RM.md §3) =====
