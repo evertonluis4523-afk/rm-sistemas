@@ -2817,9 +2817,23 @@ body:not(.com-doc) .docs-card,body:not(.com-doc) .ed-grid{display:none}
 .l-pre{grid-template-columns:1fr 74px 64px 28px}
 .l-met{grid-template-columns:150px 1fr 28px}
 .l-comp{grid-template-columns:1fr 170px 28px}
-.l-pag{grid-template-columns:62px 14px 1fr 28px}
 .l-pag .un{color:var(--muted);font-weight:700}
-.l-val{grid-template-columns:1fr 110px auto auto 28px}
+.l-val{grid-template-columns:1fr 120px 28px}
+.l-ops{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:4px 16px;margin:-1px 0 6px 2px}
+.l-pag{grid-template-columns:62px 14px 1fr 130px 28px}
+.l-parc{grid-template-columns:1fr 1fr 110px 130px 28px}
+.l-cnm{grid-template-columns:1fr 110px auto 28px}
+.l-bem{grid-template-columns:1fr;margin:-2px 0 4px 20px}
+.chk-bloco{align-self:end;padding-bottom:9px}
+.resumo .soma{width:100%;font-weight:700}
+.cfg-bens{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0}
+.cfg-tag{display:inline-flex;align-items:center;gap:6px;padding:4px 6px 4px 10px;border:1px solid var(--line);border-radius:999px;font-size:13px;font-weight:600;background:var(--card)}
+.cfg-tag button{border:0;background:none;color:var(--muted);cursor:pointer;font-size:12px;padding:0 2px}
+.cfg-add{display:flex;gap:8px;max-width:420px}
+.cfg-lsel select{max-width:320px;margin:4px 0}
+.cfg-add input{flex:1}
+.resumo .soma.erro{color:var(--rm-perigo,#C43108)}
+.resumo .soma.ok{color:#1F7A45}
 .ficha .linha input,.ficha .linha select{padding:7px 9px;font-size:13.5px}
 .val,.pct{text-align:right;font-variant-numeric:tabular-nums}
 .chk{display:flex;align-items:center;gap:4px;margin:0;font-size:12px;white-space:nowrap;color:var(--muted)}
@@ -3071,6 +3085,19 @@ body:not(.com-doc) .docs-card,body:not(.com-doc) .ed-grid{display:none}
       <div class="seg" id="cfgLetra" role="radiogroup" aria-label="Tamanho da letra"></div>
       <p class="nota">Vale para a folha na tela, o PDF e o Word, em todas as propostas e contratos.</p>
     </div>
+    <div class="cfg-bloco">
+      <div class="cfg-tit">Bens aceitos como parte do pagamento</div>
+      <div class="cfg-bens" id="cfgBens"></div>
+      <div class="cfg-add"><input id="cfgBemNovo" placeholder="outro bem (ex.: trator, sala comercial)" autocomplete="off"><button class="btn btn-ghost btn-sm" id="cfgBemAdd" type="button">＋ Adicionar</button></div>
+      <p class="nota">Aparecem na forma de pagamento, ao lado de dinheiro e depósito.</p>
+    </div>
+    <div class="cfg-bloco">
+      <div class="cfg-tit">Listas de seleção rápida</div>
+      <div class="cfg-lsel"><select id="cfgLista" aria-label="Qual lista"></select></div>
+      <div class="cfg-bens" id="cfgListaItens"></div>
+      <div class="cfg-add"><input id="cfgListaNovo" placeholder="novo item" autocomplete="off"><button class="btn btn-ghost btn-sm" id="cfgListaAdd" type="button">＋ Adicionar</button></div>
+      <p class="nota">Aparecem na lista que abre ao digitar nos campos. O que já foi usado em alguma proposta entra sozinho, mesmo fora daqui.</p>
+    </div>
     <div class="cfg-tit">Textos padrão</div>
     <p class="nota">Valem para as próximas propostas e contratos. Os que já existem guardam o texto com que nasceram. Uma linha é um parágrafo; linha que começa com "- " vira item de lista.</p>
     <div id="modeloCorpo"></div>
@@ -3083,24 +3110,13 @@ body:not(.com-doc) .docs-card,body:not(.com-doc) .ed-grid{display:none}
   </div>
 </div>
 
-<datalist id="dlPre">
-  <option value="Pilar de concreto armado 25x35 × ">
-  <option value="Viga de concreto armado 15x40 cm">
-  <option value="Viga de concreto armado 20x50 cm">
-  <option value="Placa de concreto armado 8 cm">
-  <option value="Placa de concreto armado 16 cm">
-  <option value="Piso de concreto polido 10 cm com base extrusora">
-  <option value="Piso de concreto polido 12 cm com base extrusora">
-</datalist>
-<datalist id="dlMet">
-  <option value="Modulação entre tesouras">
-  <option value="Vigas de cobertura">
-  <option value="Cobertura (terças)">
-  <option value="Telha de cobertura">
-  <option value="Telha de fechamento">
-  <option value="Estrutura de fechamento">
-  <option value="Fechamento">
-</datalist>
+<!-- seleção rápida: preenchidas pelo cadastro das listas (LISTAS_PADRAO,
+     Configurações e o que já foi usado nas propostas) -->
+<datalist id="dlPre"></datalist>
+<datalist id="dlMet"></datalist>
+<datalist id="dlCnm"></datalist>
+<datalist id="dlComp"></datalist>
+<datalist id="dlEtapa"></datalist>
 
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js" crossorigin="anonymous"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js" crossorigin="anonymous"></script>
@@ -3273,6 +3289,50 @@ const MET_CAMPOS = ['Modulação entre tesouras', 'Vigas de cobertura', 'Cobertu
    que a arquiteta achou pequena; "Pequena" é a de antes. */
 const LETRAS = { pequena: { k: 1, rot: 'Pequena', ex: 'a primeira versão' }, normal: { k: 1.15, rot: 'Normal', ex: 'recomendada' },
   grande: { k: 1.3, rot: 'Grande', ex: '+30%' }, maior: { k: 1.45, rot: 'Muito grande', ex: '+45%' } };
+/* FORMAS DE PAGAMENTO. Dinheiro e depósito são as formas de pagar em
+   moeda; os bens (terreno, imóvel, carro...) entram como parte do pagamento,
+   com a descrição do bem -- a lista dos bens é editável em Configurações. */
+const FORMAS_MOEDA = ['Dinheiro', 'Depósito'];
+const BENS_PADRAO = ['Terreno', 'Imóvel', 'Carro', 'Moto', 'Caminhão'];
+function bensLista() { const b = Array.isArray(config.bens) ? config.bens.filter(x => x && String(x).trim()) : null; return b && b.length ? b : BENS_PADRAO.slice(); }
+function formasPag() { return FORMAS_MOEDA.concat(bensLista()); }
+function ehBem(f) { return !!f && FORMAS_MOEDA.indexOf(f) < 0; }
+function formaTxt(x) { return x && x.forma ? x.forma + (ehBem(x.forma) && String(x.bem || '').trim() ? ' — ' + x.bem.trim() : '') : ''; }
+/* CHAVE NA MÃO: os mesmos serviços do Chave na mão do Orçamento RM (lá eles
+   moram dentro de cada orçamento, num nó que a conta da arquiteta não lê --
+   por isso a lista de nomes vem copiada aqui; qualquer outro se digita). */
+const CNM_SERVICOS = ['Elétrica', 'Hidráulica', 'Pintura', 'Banheiro', 'Esquadrias', 'Fundação', 'Alvenaria', 'Cobertura', 'Piso', 'Forro / gesso', 'Estrutura metálica', 'Revestimento', 'Limpeza final'];
+/* LISTAS DE SELEÇÃO RÁPIDA. Começam com o que veio dos documentos de exemplo;
+   o cadastro (Configurações › Listas de seleção rápida) mora na nuvem, em
+   propostas_rm/listas, e vale para todos. Além dele, entra sozinho o que já
+   foi digitado em alguma proposta salva. Teste propostas-listas. */
+const LISTAS_PADRAO = {
+  pre: { rot: 'Peças do pré-moldado', dl: 'dlPre', itens: ['Pilar de concreto armado 25x35 × ', 'Viga de concreto armado 15x40 cm', 'Viga de concreto armado 20x50 cm', 'Placa de concreto armado 8 cm', 'Placa de concreto armado 16 cm', 'Piso de concreto polido 10 cm com base extrusora', 'Piso de concreto polido 12 cm com base extrusora'] },
+  met: { rot: 'Itens da estrutura metálica', dl: 'dlMet', itens: ['Modulação entre tesouras', 'Vigas de cobertura', 'Cobertura (terças)', 'Telha de cobertura', 'Telha de fechamento', 'Estrutura de fechamento', 'Fechamento'] },
+  cnm: { rot: 'Serviços de chave na mão', dl: 'dlCnm', itens: null },
+  comp: { rot: 'Itens complementares', dl: 'dlComp', itens: null },
+  etapa: { rot: 'Etapas dos valores', dl: 'dlEtapa', itens: ['Fundações', 'Pré-fabricado', 'Metálica', 'Piso de concreto polido', 'Escada metálica', 'Projeto + PPCI'] }
+};
+let listasNuvem = null;
+function listaCadastro(k) { const v = listasNuvem && listasNuvem[k]; if (Array.isArray(v)) return v.filter(x => x && String(x).trim()); const b = LISTAS_PADRAO[k];
+  return (b.itens || (k === 'cnm' ? CNM_SERVICOS : k === 'comp' ? MODELO_PADRAO.complementares.map(c => c.item) : [])).slice(); }
+function listaUsados(k) {
+  const out = [];
+  Object.values(docs).forEach(d => { if (!d) return;
+    if (k === 'pre') (d.pre || []).forEach(g => (g.itens || []).forEach(i => out.push(i.desc)));
+    if (k === 'met') (d.met || []).forEach(g => (g.linhas || []).forEach(l => out.push(l.k)));
+    if (k === 'cnm') (d.cnm && d.cnm.itens || []).forEach(i => out.push(i.nome));
+    if (k === 'comp') (d.comp || []).forEach(c => out.push(c.item));
+    if (k === 'etapa') (d.valores || []).forEach(v => out.push(v.etapa));
+  });
+  return out;
+}
+function listaCompleta(k) {
+  const vistos = {}, out = [];
+  listaCadastro(k).concat(listaUsados(k)).forEach(x => { const t = String(x || '').trim(), c = chaveBusca(t); if (t && !vistos[c]) { vistos[c] = 1; out.push(t); } });
+  return out;
+}
+function preencherListas() { Object.keys(LISTAS_PADRAO).forEach(k => { const el = $(LISTAS_PADRAO[k].dl); if (el) el.innerHTML = listaCompleta(k).map(n => '<option value="' + esc(n) + '">').join(''); }); }
 const STATUS = { negociacao: 'Em negociação', aprovada: 'Aprovada', assinado: 'Contrato assinado', perdida: 'Não fechou' };
 
 /* ═══════════════════════════════════════════════════════════
@@ -3403,8 +3463,9 @@ function novoDoc() {
     met: [{ titulo: '', linhas: MET_CAMPOS.map(k => ({ k, v: '' })) }],
     comp: clone(m.complementares),
     prazoDias: 120,
-    pagProp: clone(m.pagamentoProposta),
-    valores: m.valores.map(e => ({ etapa: e, valor: 0, opcional: false, contrato: true })),
+    pagProp: clone(m.pagamentoProposta).map(x => Object.assign({ forma: '', bem: '' }, x)),
+    valores: m.valores.map(e => ({ etapa: e, valor: 0, opcional: false, contrato: true, mostrar: true })),
+    cnm: { itens: [], pct: 0, somar: true },
     textos: clone(m.proposta),
     contrato: null
   };
@@ -3414,7 +3475,9 @@ function novoContrato(d) {
   return {
     data: hoje, prazoDias: d.prazoDias,
     textos: clone(m.contrato),
-    pag: { modo: 'parcelas', entrada: 0, entradaData: hoje, n: 6, dia: 5, inicio: maisMeses(hoje, 1, 1).slice(0, 7) }
+    pag: { modo: 'parcelas', entrada: 0, entradaData: hoje, n: 6, dia: 5, inicio: maisMeses(hoje, 1, 1).slice(0, 7), forma: '', bem: '', itens: [] },
+    /* valor do contrato com desconto: fica só no contrato, a proposta não muda */
+    valorAjustado: 0
   };
 }
 /* O Firebase não guarda lista vazia nem texto vazio dentro de lista: o que
@@ -3430,8 +3493,10 @@ function normalizar(d) {
   o.pre = lista(d.pre).map(g => ({ titulo: g.titulo || '', itens: lista(g.itens).map(i => ({ desc: i.desc || '', qtd: i.qtd == null ? '' : String(i.qtd), un: i.un || 'un' })) }));
   o.met = lista(d.met).map(g => ({ titulo: g.titulo || '', linhas: lista(g.linhas).map(l => ({ k: l.k || '', v: l.v || '' })) }));
   o.comp = d.comp ? lista(d.comp).map(c => ({ item: c.item || '', sit: SITUACOES[c.sit] ? c.sit : 'incluso' })) : b.comp;
-  o.pagProp = d.pagProp ? lista(d.pagProp).map(p => ({ pct: lerValor(p.pct), quando: p.quando || '' })) : b.pagProp;
-  o.valores = d.valores ? lista(d.valores).map(v => ({ etapa: v.etapa || '', valor: lerValor(v.valor), opcional: !!v.opcional, contrato: v.contrato !== false })) : b.valores;
+  o.pagProp = d.pagProp ? lista(d.pagProp).map(p => ({ pct: lerValor(p.pct), quando: p.quando || '', forma: p.forma || '', bem: p.bem || '' })) : b.pagProp;
+  o.valores = d.valores ? lista(d.valores).map(v => ({ etapa: v.etapa || '', valor: lerValor(v.valor), opcional: !!v.opcional, contrato: v.contrato !== false, mostrar: v.mostrar !== false })) : b.valores;
+  const cn = d.cnm || {};
+  o.cnm = { itens: lista(cn.itens).map(x => ({ nome: x.nome || '', valor: lerValor(x.valor), mostrar: x.mostrar !== false })), pct: lerValor(cn.pct), somar: cn.somar !== false };
   o.prazoDias = lerValor(d.prazoDias != null ? d.prazoDias : b.prazoDias);
   o.validade = lerValor(d.validade != null ? d.validade : b.validade);
   if (d.contrato) {
@@ -3439,6 +3504,8 @@ function normalizar(d) {
     o.contrato = Object.assign({}, c, d.contrato);
     o.contrato.textos = Object.assign({}, c.textos, d.contrato.textos || {});
     o.contrato.pag = Object.assign({}, c.pag, d.contrato.pag || {});
+    o.contrato.pag.itens = lista(o.contrato.pag.itens).map(x => ({ rot: x.rot || '', quando: x.quando || '', valor: lerValor(x.valor), forma: x.forma || '', bem: x.bem || '' }));
+    o.contrato.valorAjustado = lerValor(o.contrato.valorAjustado);
     o.contrato.prazoDias = lerValor(o.contrato.prazoDias);
   } else o.contrato = null;
   return o;
@@ -3447,8 +3514,18 @@ function normalizar(d) {
 /* Totais. O total da proposta é o que não é opcional; o do contrato é o que
    foi marcado "no contrato" -- no Word de 05/2026 os três opcionais da
    proposta (piso, escada, projeto) entraram no contrato. */
-function totalProposta(d) { return centavos(d.valores.filter(v => !v.opcional).reduce((s, v) => s + lerValor(v.valor), 0)); }
-function totalContrato(d) { return centavos(d.valores.filter(v => v.contrato).reduce((s, v) => s + lerValor(v.valor), 0)); }
+/* Chave na mão: cada serviço já com o acréscimo (%) aplicado -- é assim que
+   sai no papel, e o total é a soma do que aparece. */
+function cnmFinal(d, x) { return centavos(lerValor(x.valor) * (1 + lerValor(d.cnm && d.cnm.pct) / 100)); }
+function cnmItens(d) { return d.cnm ? d.cnm.itens.filter(x => String(x.nome || '').trim() || lerValor(x.valor)) : []; }
+function totalCnm(d) { return centavos(cnmItens(d).reduce((s, x) => s + cnmFinal(d, x), 0)); }
+function cnmNoTotal(d) { return d.cnm && d.cnm.somar !== false ? totalCnm(d) : 0; }
+function totalProposta(d) { return centavos(d.valores.filter(v => !v.opcional).reduce((s, v) => s + lerValor(v.valor), 0) + cnmNoTotal(d)); }
+/* o contrato soma o que foi marcado "no contrato" (e o chave na mão); com
+   desconto, vale o valor ajustado -- guardado no contrato, a proposta fica
+   como estava */
+function totalContratoBase(d) { return centavos(d.valores.filter(v => v.contrato).reduce((s, v) => s + lerValor(v.valor), 0) + cnmNoTotal(d)); }
+function totalContrato(d) { const aj = d.contrato ? lerValor(d.contrato.valorAjustado) : 0; return aj > 0 ? centavos(aj) : totalContratoBase(d); }
 function parcelasContrato(d) {
   const c = d.contrato, tot = totalContrato(d), p = c.pag, out = [];
   if (p.modo === 'percentual') {
@@ -3457,17 +3534,20 @@ function parcelasContrato(d) {
       const ult = i === d.pagProp.length - 1;
       const v = ult ? centavos(tot - soma) : centavos(tot * lerValor(x.pct) / 100);
       soma = centavos(soma + v);
-      out.push({ rot: (i + 1) + 'ª parcela', quando: x.quando, valor: v, pct: lerValor(x.pct) });
+      out.push({ rot: (i + 1) + 'ª parcela', quando: x.quando, valor: v, pct: lerValor(x.pct), forma: x.forma, bem: x.bem });
     });
     return out;
   }
+  /* parcelas com valores livres: entrada e última maiores, bem como parte do
+     pagamento... o que não fechar com o total vira aviso */
+  if (p.modo === 'manual') return (p.itens || []).map((x, i) => ({ rot: String(x.rot || '').trim() || ((i + 1) + 'ª parcela'), quando: x.quando || '', valor: centavos(lerValor(x.valor)), forma: x.forma, bem: x.bem }));
   const ent = centavos(lerValor(p.entrada)), n = Math.max(0, Math.floor(lerValor(p.n)));
-  if (ent > 0) out.push({ rot: 'Entrada', quando: dataBR(p.entradaData) || 'na assinatura', valor: ent });
+  if (ent > 0) out.push({ rot: 'Entrada', quando: dataBR(p.entradaData) || 'na assinatura', valor: ent, forma: p.forma, bem: p.bem });
   if (n) {
     const resto = centavos(tot - ent), base = Math.floor(resto / n * 100) / 100;
     for (let i = 0; i < n; i++) {
       const v = i === n - 1 ? centavos(resto - base * (n - 1)) : base;
-      out.push({ rot: (i + 1) + 'ª parcela', quando: dataBR(maisMeses(p.inicio, i, p.dia)) || ('mês ' + (i + 1)), valor: v });
+      out.push({ rot: (i + 1) + 'ª parcela', quando: dataBR(maisMeses(p.inicio, i, p.dia)) || ('mês ' + (i + 1)), valor: v, forma: p.forma, bem: p.bem });
     }
   }
   return out;
@@ -3481,7 +3561,7 @@ function avisos(d) {
   if (!totalProposta(d)) a.push('A proposta está sem valor.');
   if (d.contrato) {
     const tot = totalContrato(d), soma = centavos(parcelasContrato(d).reduce((s, x) => s + x.valor, 0));
-    if (Math.abs(tot - soma) > 0.004) a.push('As parcelas do contrato somam ' + brl(soma) + ', e o contrato vale ' + brl(tot) + '.');
+    if (Math.abs(tot - soma) > 0.004) a.push('As parcelas do contrato somam ' + brl(soma) + ', e o contrato vale ' + brl(tot) + (soma < tot ? ': faltam ' + brl(tot - soma) : ': passam ' + brl(soma - tot)) + '.');
     if (parcelasContrato(d).some(x => x.valor < 0)) a.push('A entrada é maior que o valor do contrato.');
     if (lerValor(d.contrato.prazoDias) !== lerValor(d.prazoDias)) a.push('O prazo do contrato (' + fmtNum(d.contrato.prazoDias, 0) + ' dias) é diferente do da proposta (' + fmtNum(d.prazoDias, 0) + ' dias).');
     if (!(config.rep || '').trim()) a.push('Falta quem assina pela RM (Contrato › Representante da contratada).');
@@ -3504,7 +3584,8 @@ const EMPRESA = {
 function vars(d) {
   const mun = d.obra.cidade.trim() || d.cliente.cidade.trim() || '—';
   const end = [d.obra.endereco.trim(), d.obra.cidade.trim()].filter(Boolean).join(', ') || mun;
-  const cc = (d.obra.cidade || d.cliente.cidade || '').trim();
+  /* foro: Estrela/RS e a cidade do CLIENTE (cadastro); sem ela, a da obra */
+  const cc = (d.cliente.cidade || d.obra.cidade || '').trim();
   const foro = cc && cc.toLowerCase().indexOf('estrela') !== 0 ? EMPRESA.sede + ' e ' + cc : EMPRESA.sede;
   const dias = lerValor(d.contrato ? d.contrato.prazoDias : d.prazoDias);
   return { MUNICIPIO: mun, ENDERECO_OBRA: end, FORO: foro, DIAS: fmtNum(dias, 0) + ' (' + inteiroExtenso(dias) + ')' };
@@ -3564,15 +3645,31 @@ function blocosProposta(d) {
   if (comp.length) { sec('Itens complementares'); bl.push({ t: 'tab', cols: [{ t: 'Item' }, { t: 'Situação', w: 32 }], linhas: comp.map(c => [c.item, { t: SITUACOES[c.sit], fraco: c.sit === 'nao' }]) }); }
   sec('Prazos e pagamento');
   bl.push({ t: 'p', runs: [{ t: 'Prazo de entrega: ', b: true }, { t: fmtNum(d.prazoDias, 0) + ' dias' + (t.prazoTexto.trim() ? ', ' + troca(t.prazoTexto.trim(), v) : '') + '.' }] });
-  if (d.pagProp.length) bl.push({ t: 'tab', cols: [{ t: 'Parcela', w: 14 }, { t: 'Quando' }, { t: '%', dir: true, w: 14 }], linhas: d.pagProp.map((p, i) => [String(i + 1), p.quando, fmtNum(p.pct, lerValor(p.pct) % 1 ? 1 : 0) + '%']) });
+  if (d.pagProp.length) {
+    const comForma = d.pagProp.some(p => p.forma);
+    bl.push({ t: 'tab', cols: [{ t: 'Parcela', w: 14 }, { t: 'Quando' }].concat(comForma ? [{ t: 'Forma', w: 30 }] : [], [{ t: '%', dir: true, w: 14 }]),
+      linhas: d.pagProp.map((p, i) => [String(i + 1), p.quando].concat(comForma ? [formaTxt(p)] : [], [fmtNum(p.pct, lerValor(p.pct) % 1 ? 1 : 0) + '%'])) });
+  }
+  /* chave na mão: os serviços com o acréscimo já aplicado; valor oculto
+     sai só com o nome, e o total do bloco continua */
+  const cnm = cnmItens(d), totCnm = totalCnm(d);
+  if (cnm.length) {
+    sec('Chave na mão');
+    bl.push({ t: 'tab', cls: 'tot', cols: [{ t: 'Serviço' }, { t: 'Valor', dir: true, w: 26 }],
+      linhas: cnm.map(x => x.mostrar === false ? [{ t: x.nome }, ''] : [{ t: x.nome, sub: extenso(cnmFinal(d, x)) }, brl(cnmFinal(d, x))]),
+      total: ['Total chave na mão', brl(totCnm)], totalSub: extenso(totCnm) });
+    if (!d.cnm.somar) bl.push({ t: 'p', runs: [{ t: 'Os serviços de chave na mão são à parte, fora do total da obra.' }] });
+  }
   sec('Valores');
-  const lv = d.valores.filter(x => !x.opcional && (x.etapa.trim() || lerValor(x.valor))).map(x => [{ t: x.etapa, sub: extenso(x.valor) }, brl(x.valor)]);
+  /* "mostrar valor" desmarcado: a etapa aparece, o valor dela não -- só o total */
+  const lv = d.valores.filter(x => !x.opcional && (x.etapa.trim() || lerValor(x.valor))).map(x => x.mostrar === false ? [{ t: x.etapa }, ''] : [{ t: x.etapa, sub: extenso(x.valor) }, brl(x.valor)]);
+  if (cnm.length && d.cnm.somar) lv.push([{ t: 'Chave na mão', sub: extenso(totCnm) }, brl(totCnm)]);
   const tab = { t: 'tab', cls: 'tot', cols: [{ t: 'Etapa' }, { t: 'Valor', dir: true, w: 26 }], linhas: lv, total: ['Total da obra', brl(tot)], totalSub: extenso(tot) };
   if (opc.length) {
     /* os opcionais somados, e a obra com eles: o cliente que quer tudo não
        precisa fazer a conta (pedido da arquiteta, 19/10/2026) */
     const somaOpc = centavos(opc.reduce((s, x) => s + lerValor(x.valor), 0)), comOpc = centavos(tot + somaOpc);
-    tab.depois = { rot: 'Opcionais, fora do total acima', linhas: opc.map(x => [{ t: x.etapa, sub: extenso(x.valor) }, brl(x.valor)]),
+    tab.depois = { rot: 'Opcionais, fora do total acima', linhas: opc.map(x => x.mostrar === false ? [{ t: x.etapa }, ''] : [{ t: x.etapa, sub: extenso(x.valor) }, brl(x.valor)]),
       totais: [{ rot: 'Total dos opcionais', v: brl(somaOpc), sub: extenso(somaOpc), cls: 'subt' }, { rot: 'Total da obra com opcionais', v: brl(comOpc), sub: extenso(comOpc), cls: 'grand' }] };
   }
   bl.push(tab);
@@ -3601,6 +3698,8 @@ function blocosContrato(d) {
   if (met.length) { bl.push({ t: 'h3', txt: 'Estrutura metálica' }); met.forEach(g => { if (g.titulo.trim()) bl.push({ t: 'cap', txt: g.titulo }); bl.push(tabMet(g)); }); }
   const comp = d.comp.filter(x => x.item.trim());
   if (comp.length) { bl.push({ t: 'h3', txt: 'Itens complementares' }); bl.push({ t: 'tab', cols: [{ t: 'Item' }, { t: 'Situação', w: 32 }], linhas: comp.map(x => [x.item, { t: x.sit === 'nao' ? 'Não incluso no contrato' : 'Incluso no contrato', fraco: x.sit === 'nao' }]) }); }
+  const cnmC = cnmItens(d);
+  if (cnmC.length && d.cnm.somar) { bl.push({ t: 'h3', txt: 'Chave na mão' }); bl.push({ t: 'tab', cols: [{ t: 'Serviço' }, { t: 'Situação', w: 32 }], linhas: cnmC.map(x => [x.nome, 'Incluso no contrato']) }); }
   if (t.observacoes.trim()) { bl.push({ t: 'h3', txt: 'Observações' }); bl.push(...textoBlocos(t.observacoes, v)); }
   bl.push({ t: 'h3', txt: '1.3. Das obrigações da contratada' });
   bl.push(...textoBlocos(t.obrigContratada, v));
@@ -3612,9 +3711,10 @@ function blocosContrato(d) {
   bl.push({ t: 'h2', n: 3, txt: 'Do preço e do pagamento' });
   bl.push({ t: 'p', runs: [{ t: '3.1. ', b: true }, { t: 'Pelo efetivo fornecimento e instalação do pavilhão industrial descrito e caracterizado na cláusula 1 (Do objeto), o CONTRATANTE pagará à CONTRATADA o preço certo e ajustado de ' }, { t: brl(tot), b: true }, { t: ' (' + extenso(tot) + ').' }] });
   bl.push({ t: 'p', runs: [{ t: '3.2. ', b: true }, { t: 'Condições de pagamento: o montante do preço ajustado no item 3.1 deverá ser adimplido pelo CONTRATANTE em moeda corrente nacional, diretamente à CONTRATADA, da seguinte forma:' }] });
-  const ps = parcelasContrato(d);
-  bl.push({ t: 'tab', cls: 'tot', cols: [{ t: 'Parcela', w: 20 }, { t: c.pag.modo === 'percentual' ? 'Quando' : 'Vencimento' }, { t: 'Valor', dir: true, w: 24 }],
-    linhas: ps.map(p => [p.rot, p.quando + (p.pct != null ? ' (' + fmtNum(p.pct, p.pct % 1 ? 1 : 0) + '%)' : ''), brl(p.valor)]), total: ['Total', '', brl(ps.reduce((s, x) => s + x.valor, 0))] });
+  const ps = parcelasContrato(d), comForma = ps.some(p => p.forma);
+  bl.push({ t: 'tab', cls: 'tot', cols: [{ t: 'Parcela', w: 20 }, { t: c.pag.modo === 'percentual' ? 'Quando' : 'Vencimento' }].concat(comForma ? [{ t: 'Forma', w: 28 }] : [], [{ t: 'Valor', dir: true, w: 24 }]),
+    linhas: ps.map(p => [p.rot, p.quando + (p.pct != null ? ' (' + fmtNum(p.pct, p.pct % 1 ? 1 : 0) + '%)' : '')].concat(comForma ? [formaTxt(p)] : [], [brl(p.valor)])),
+    total: ['Total', ''].concat(comForma ? [''] : [], [brl(ps.reduce((s, x) => s + x.valor, 0))]) });
   bl.push(...textoBlocos(t.pagamento, v));
   bl.push({ t: 'h2', n: 4, txt: 'Dos encargos' });
   bl.push(...textoBlocos(t.encargos, v));
@@ -3821,19 +3921,40 @@ const area = (p, val, linhas, rot) => '<textarea data-p="' + p + '" rows="' + (l
 const bt = (acao, txt, o) => { o = o || {}; return '<button type="button" class="' + (o.cls || 'icon-btn') + '" data-acao="' + acao + '"' + (o.i != null ? ' data-i="' + o.i + '"' : '') + (o.j != null ? ' data-j="' + o.j + '"' : '') + (o.rot ? ' aria-label="' + esc(o.rot) + '" title="' + esc(o.rot) + '"' : '') + '>' + txt + '</button>'; };
 const secao = (titulo, corpo, o) => { o = o || {}; return '<details class="sec"' + (o.aberta === false ? '' : ' open') + '><summary>' + esc(titulo) + (o.extra ? '<span class="sec-x">' + o.extra + '</span>' : '') + '</summary><div class="sec-b">' + corpo + '</div></details>'; };
 
+/* select da forma de pagamento (dinheiro, depósito ou um bem) e, se for
+   bem, o campo para dizer qual */
+function formaSel(path, x) {
+  const f = x.forma || '';
+  return '<select data-p="' + path + '.forma" data-re="1" aria-label="Forma de pagamento"><option value="">forma…</option>'
+    + '<optgroup label="Pagamento">' + FORMAS_MOEDA.map(o => '<option' + (f === o ? ' selected' : '') + '>' + esc(o) + '</option>').join('') + '</optgroup>'
+    + '<optgroup label="Bem como parte do pagamento">' + bensLista().concat(ehBem(f) && bensLista().indexOf(f) < 0 ? [f] : []).map(o => '<option' + (f === o ? ' selected' : '') + '>' + esc(o) + '</option>').join('') + '</optgroup></select>';
+}
+function bemCampo(path, x) { return ehBem(x.forma) ? '<div class="linha l-bem">' + inp(path + '.bem', x.bem || '', { ph: 'Qual ' + String(x.forma).toLowerCase() + ' (ex.: modelo, ano, matrícula, endereço)', rot: 'Descrição do bem' }) + '</div>' : ''; }
 function fichaHTML(d) {
   let h = '';
   if (aba === 'contrato' && d.contrato) {
     const c = d.contrato, p = c.pag;
-    let pg = campo('Forma', '<select data-p="contrato.pag.modo"><option value="parcelas"' + (p.modo !== 'percentual' ? ' selected' : '') + '>Entrada + parcelas mensais</option><option value="percentual"' + (p.modo === 'percentual' ? ' selected' : '') + '>Os mesmos percentuais da proposta</option></select>');
-    if (p.modo !== 'percentual') pg += '<div class="g4">' + campo('Entrada (R$)', inp('contrato.pag.entrada', lerValor(p.entrada) ? fmtNum(p.entrada, 2) : '', { tipo: 'valor', mode: 'decimal', ph: '0,00' })) + campo('Data da entrada', inp('contrato.pag.entradaData', p.entradaData, { type: 'date' }))
+    const modo = p.modo === 'percentual' || p.modo === 'manual' ? p.modo : 'parcelas';
+    let pg = campo('Como dividir', '<select data-p="contrato.pag.modo">' + [['parcelas', 'Entrada + parcelas mensais iguais'], ['manual', 'Parcelas com valores livres'], ['percentual', 'Os mesmos percentuais da proposta']]
+      .map(([k, r]) => '<option value="' + k + '"' + (modo === k ? ' selected' : '') + '>' + r + '</option>').join('') + '</select>');
+    if (modo === 'manual') {
+      pg += (p.itens || []).map((x, i) => '<div class="linha l-parc">' + inp('contrato.pag.itens.' + i + '.rot', x.rot, { ph: (i + 1) + 'ª parcela', rot: 'Parcela' })
+        + inp('contrato.pag.itens.' + i + '.quando', x.quando, { ph: 'dd/mm/aaaa ou quando', rot: 'Vencimento' })
+        + inp('contrato.pag.itens.' + i + '.valor', lerValor(x.valor) ? fmtNum(x.valor, 2) : '', { tipo: 'valor', mode: 'decimal', ph: '0,00', rot: 'Valor', cls: 'val' })
+        + formaSel('contrato.pag.itens.' + i, x) + bt('parcDel', '✕', { i, rot: 'Excluir parcela', cls: 'icon-btn del' }) + '</div>' + bemCampo('contrato.pag.itens.' + i, x)).join('')
+        + bt('parcAdd', '＋ Parcela', { cls: 'btn btn-ghost btn-sm' });
+    } else if (modo === 'parcelas') pg += campo('Forma de pagamento das parcelas', formaSel('contrato.pag', p)) + bemCampo('contrato.pag', p);
+    else pg += '<p class="nota">A forma de cada parcela vem do Pagamento da proposta.</p>';
+    if (modo === 'parcelas') pg += '<div class="g4">' + campo('Entrada (R$)', inp('contrato.pag.entrada', lerValor(p.entrada) ? fmtNum(p.entrada, 2) : '', { tipo: 'valor', mode: 'decimal', ph: '0,00' })) + campo('Data da entrada', inp('contrato.pag.entradaData', p.entradaData, { type: 'date' }))
       + campo('Nº de parcelas', inp('contrato.pag.n', p.n, { tipo: 'num', mode: 'numeric' })) + campo('Vence no dia', inp('contrato.pag.dia', p.dia, { tipo: 'num', mode: 'numeric' })) + '</div>'
       + '<div class="g2">' + campo('Primeira parcela em', inp('contrato.pag.inicio', p.inicio, { type: 'month' })) + '</div>';
-    pg += '<div class="resumo">' + parcelasContrato(d).map(x => '<span>' + esc(x.rot) + ' · ' + esc(x.quando) + ' · <b>' + brl(x.valor) + '</b></span>').join('') + '</div>';
+    pg += '<div class="resumo">' + resumoParcelas(d) + '</div>';
     h += secao('Contrato', '<div class="g2">' + campo('Data do contrato', inp('contrato.data', c.data, { type: 'date' })) + campo('Prazo de conclusão (dias)', inp('contrato.prazoDias', c.prazoDias, { tipo: 'num', mode: 'numeric' })) + '</div>'
       + '<div class="g2">' + campo('Representante da contratada (RM)', '<input data-cfg="rep" value="' + esc(config.rep || '') + '" autocomplete="off" placeholder="nome de quem assina">') + campo('Documento do representante', '<input data-cfg="repDoc" value="' + esc(config.repDoc || '') + '" autocomplete="off" placeholder="RG ou CPF">') + '</div>'
       + '<p class="nota">O representante da RM fica gravado e vale para todos os contratos.</p>'
-      + '<div class="tot-linha">Valor do contrato <b>' + brl(totalContrato(d)) + '</b><span>' + esc(extenso(totalContrato(d))) + '</span></div>');
+      + campo('Valor do contrato com desconto (R$)', inp('contrato.valorAjustado', lerValor(c.valorAjustado) ? fmtNum(c.valorAjustado, 2) : '', { tipo: 'valor', mode: 'decimal', ph: fmtNum(totalContratoBase(d), 2), rot: 'Valor do contrato com desconto' }))
+      + '<p class="nota" data-desc="1">' + notaDesconto(d) + '</p>'
+      + '<div class="tot-linha" data-tot="contrato">Valor do contrato <b>' + brl(totalContrato(d)) + '</b><span>' + esc(extenso(totalContrato(d))) + '</span></div>');
     h += secao('Pagamento do contrato', pg);
     h += secao('Textos do contrato', Object.keys(c.textos).map(k => campo(ROTULOS_TEXTO['contrato.' + k] || k, area('contrato.textos.' + k, c.textos[k], Math.min(14, Math.max(2, Math.ceil(String(c.textos[k]).length / 90))), ROTULOS_TEXTO['contrato.' + k]))).join('')
       + '<p class="nota">Mudanças aqui valem só para este contrato. Para mudar o padrão dos próximos, use "Textos padrão".</p>', { aberta: false });
@@ -3867,13 +3988,26 @@ function fichaHTML(d) {
     met += bt('metLinha', '＋ Linha', { i, cls: 'btn btn-ghost btn-sm' }) + '</div>';
   });
   h += secao('Estrutura metálica', met + bt('metGrupo', '＋ Volume', { cls: 'btn btn-ghost btn-sm' }));
-  h += secao('Itens complementares', d.comp.map((c, i) => '<div class="linha l-comp">' + inp('comp.' + i + '.item', c.item, { rot: 'Item' }) + '<select data-p="comp.' + i + '.sit" aria-label="Situação">' + Object.keys(SITUACOES).map(k => '<option value="' + k + '"' + (c.sit === k ? ' selected' : '') + '>' + SITUACOES[k] + '</option>').join('') + '</select>' + bt('compDel', '✕', { i, rot: 'Excluir item', cls: 'icon-btn del' }) + '</div>').join('') + bt('compAdd', '＋ Item', { cls: 'btn btn-ghost btn-sm' }));
+  h += secao('Itens complementares', d.comp.map((c, i) => '<div class="linha l-comp">' + inp('comp.' + i + '.item', c.item, { rot: 'Item', lista: 'dlComp' }) + '<select data-p="comp.' + i + '.sit" aria-label="Situação">' + Object.keys(SITUACOES).map(k => '<option value="' + k + '"' + (c.sit === k ? ' selected' : '') + '>' + SITUACOES[k] + '</option>').join('') + '</select>' + bt('compDel', '✕', { i, rot: 'Excluir item', cls: 'icon-btn del' }) + '</div>').join('') + bt('compAdd', '＋ Item', { cls: 'btn btn-ghost btn-sm' }));
   const pct = d.pagProp.reduce((s, x) => s + lerValor(x.pct), 0);
-  h += secao('Pagamento da proposta', d.pagProp.map((p, i) => '<div class="linha l-pag">' + inp('pagProp.' + i + '.pct', p.pct, { tipo: 'num', mode: 'decimal', rot: 'Percentual', cls: 'pct' }) + '<span class="un">%</span>' + inp('pagProp.' + i + '.quando', p.quando, { rot: 'Quando' }) + bt('pagDel', '✕', { i, rot: 'Excluir parcela', cls: 'icon-btn del' }) + '</div>').join('') + bt('pagAdd', '＋ Parcela', { cls: 'btn btn-ghost btn-sm' }), { extra: fmtNum(pct, pct % 1 ? 1 : 0) + '%' });
-  h += secao('Valores', d.valores.map((v, i) => '<div class="linha l-val">' + inp('valores.' + i + '.etapa', v.etapa, { rot: 'Etapa', ph: 'Etapa' }) + inp('valores.' + i + '.valor', lerValor(v.valor) ? fmtNum(v.valor, 2) : '', { tipo: 'valor', mode: 'decimal', ph: '0,00', rot: 'Valor', cls: 'val' })
-    + '<label class="chk"><input type="checkbox" data-p="valores.' + i + '.opcional"' + (v.opcional ? ' checked' : '') + '> opcional</label><label class="chk"><input type="checkbox" data-p="valores.' + i + '.contrato"' + (v.contrato ? ' checked' : '') + '> no contrato</label>' + bt('valDel', '✕', { i, rot: 'Excluir valor', cls: 'icon-btn del' }) + '</div>').join('')
-    + bt('valAdd', '＋ Valor', { cls: 'btn btn-ghost btn-sm' }) + '<div class="tot-linha">Total da proposta <b>' + brl(totalProposta(d)) + '</b><span>' + esc(extenso(totalProposta(d))) + '</span></div>'
-    + '<p class="nota">"Opcional" sai na proposta à parte, fora do total. "No contrato" entra no valor do contrato.</p>', { extra: brl(totalProposta(d)) });
+  h += secao('Pagamento da proposta', d.pagProp.map((p, i) => '<div class="linha l-pag">' + inp('pagProp.' + i + '.pct', p.pct, { tipo: 'num', mode: 'decimal', rot: 'Percentual', cls: 'pct' }) + '<span class="un">%</span>' + inp('pagProp.' + i + '.quando', p.quando, { rot: 'Quando' }) + formaSel('pagProp.' + i, p) + bt('pagDel', '✕', { i, rot: 'Excluir parcela', cls: 'icon-btn del' }) + '</div>' + bemCampo('pagProp.' + i, p)).join('') + bt('pagAdd', '＋ Parcela', { cls: 'btn btn-ghost btn-sm' })
+    + '<p class="nota">Forma: dinheiro, depósito ou um bem como parte do pagamento (terreno, imóvel, carro...). A lista dos bens se muda em Configurações.</p>', { extra: fmtNum(pct, pct % 1 ? 1 : 0) + '%' });
+  /* chave na mão */
+  const cn = d.cnm, baseCnm = centavos(cn.itens.reduce((s, x) => s + lerValor(x.valor), 0));
+  h += secao('Chave na mão', cn.itens.map((x, i) => '<div class="linha l-cnm">' + inp('cnm.itens.' + i + '.nome', x.nome, { lista: 'dlCnm', ph: 'Serviço (ex.: banheiro)', rot: 'Serviço' })
+      + inp('cnm.itens.' + i + '.valor', lerValor(x.valor) ? fmtNum(x.valor, 2) : '', { tipo: 'valor', mode: 'decimal', ph: '0,00', rot: 'Valor', cls: 'val' })
+      + '<label class="chk"><input type="checkbox" data-p="cnm.itens.' + i + '.mostrar"' + (x.mostrar !== false ? ' checked' : '') + '> mostrar valor</label>' + bt('cnmDel', '✕', { i, rot: 'Excluir serviço', cls: 'icon-btn del' }) + '</div>').join('')
+    + bt('cnmAdd', '＋ Serviço', { cls: 'btn btn-ghost btn-sm' })
+    + '<div class="g2">' + campo('Acréscimo sobre o total (%)', inp('cnm.pct', lerValor(cn.pct) ? fmtNum(cn.pct, lerValor(cn.pct) % 1 ? 2 : 0) : '', { tipo: 'num', mode: 'decimal', ph: '0', rot: 'Acréscimo (%)' }))
+    + '<label class="chk chk-bloco"><input type="checkbox" data-p="cnm.somar" data-re="1"' + (cn.somar !== false ? ' checked' : '') + '> somar ao total da obra</label></div>'
+    + '<div class="tot-linha" data-tot="cnm">Total chave na mão <b>' + brl(totalCnm(d)) + '</b><span>' + esc(notaCnm(d)) + '</span></div>'
+    + '<p class="nota">O acréscimo vai distribuído nos serviços (cada valor sai no papel já com ele). "Mostrar valor" desmarcado: o serviço aparece sem o valor, e o total continua.</p>',
+    { aberta: cn.itens.length > 0, extra: cn.itens.length ? brl(totalCnm(d)) : '' });
+  h += secao('Valores', d.valores.map((v, i) => '<div class="linha l-val">' + inp('valores.' + i + '.etapa', v.etapa, { rot: 'Etapa', ph: 'Etapa', lista: 'dlEtapa' }) + inp('valores.' + i + '.valor', lerValor(v.valor) ? fmtNum(v.valor, 2) : '', { tipo: 'valor', mode: 'decimal', ph: '0,00', rot: 'Valor', cls: 'val' })
+    + bt('valDel', '✕', { i, rot: 'Excluir valor', cls: 'icon-btn del' })
+    + '<div class="l-ops"><label class="chk"><input type="checkbox" data-p="valores.' + i + '.opcional"' + (v.opcional ? ' checked' : '') + '> opcional</label><label class="chk"><input type="checkbox" data-p="valores.' + i + '.contrato"' + (v.contrato ? ' checked' : '') + '> no contrato</label><label class="chk"><input type="checkbox" data-p="valores.' + i + '.mostrar"' + (v.mostrar !== false ? ' checked' : '') + '> mostrar valor</label></div></div>').join('')
+    + bt('valAdd', '＋ Valor', { cls: 'btn btn-ghost btn-sm' }) + '<div class="tot-linha" data-tot="proposta">Total da proposta <b>' + brl(totalProposta(d)) + '</b><span>' + esc(extenso(totalProposta(d))) + '</span></div>'
+    + '<p class="nota">"Opcional" sai na proposta à parte, fora do total. "No contrato" entra no valor do contrato. "Mostrar valor" desmarcado: a etapa aparece sem o valor, e o total continua.' + (cnmNoTotal(d) ? ' O total inclui o chave na mão (' + brl(cnmNoTotal(d)) + ').' : '') + '</p>', { extra: brl(totalProposta(d)) });
   h += secao('Textos da proposta', Object.keys(d.textos).map(k => k === 'fundacoes' || k === 'fundacoesObs' ? '' : campo(ROTULOS_TEXTO['proposta.' + k] || k, area('textos.' + k, d.textos[k], Math.min(8, Math.max(2, Math.ceil(String(d.textos[k]).length / 90))), ROTULOS_TEXTO['proposta.' + k]))).join('')
     + '<p class="nota">Mudanças aqui valem só para esta proposta. Para mudar o padrão das próximas, use "Textos padrão".</p>', { aberta: false });
   return h;
@@ -3893,9 +4027,12 @@ function renderLista() {
   $('abaProposta').classList.toggle('on', aba === 'proposta');
   $('abaContrato').classList.toggle('on', aba === 'contrato');
   $('abaContrato').textContent = d && d.contrato ? 'Contrato' : '＋ Gerar contrato';
+  /* na aba Contrato, excluir tira só o contrato; a proposta fica */
+  $('btnDel').textContent = d && d.contrato && aba === 'contrato' ? '✕ Excluir contrato' : '✕ Excluir';
 }
 function renderFicha() {
   const d = atual(), f = $('ficha');
+  preencherListas();
   if (!d) { f.innerHTML = '<div class="vazio">Nenhuma proposta aberta. Clique em <b>＋ Nova proposta</b>.</div>'; return; }
   const abertas = [...f.querySelectorAll('details.sec')].map(x => x.open);
   f.innerHTML = fichaHTML(d);
@@ -3960,19 +4097,36 @@ function fecharDoc(salvo) {
 }
 let tFolha = null;
 function agendarFolha() { clearTimeout(tFolha); tFolha = setTimeout(() => { renderFolha(); atualizarResumos(); }, 120); }
+/* parcelas do contrato e a conta delas contra o valor do contrato */
+function resumoParcelas(d) {
+  const ps = parcelasContrato(d), soma = centavos(ps.reduce((s, x) => s + x.valor, 0)), tot = totalContrato(d), dif = centavos(tot - soma);
+  return ps.map(x => '<span>' + esc(x.rot) + ' · ' + esc(x.quando) + (x.forma ? ' · ' + esc(formaTxt(x)) : '') + ' · <b>' + brl(x.valor) + '</b></span>').join('')
+    + '<span class="soma ' + (Math.abs(dif) > 0.004 ? 'erro' : 'ok') + '">Soma das parcelas ' + brl(soma) + (Math.abs(dif) > 0.004 ? (dif > 0 ? ' · faltam ' + brl(dif) : ' · passam ' + brl(-dif)) + ' para fechar ' + brl(tot) : ' · fecha com o valor do contrato') + '</span>';
+}
+function notaDesconto(d) {
+  const base = totalContratoBase(d), aj = lerValor(d.contrato && d.contrato.valorAjustado);
+  return 'Pelos valores da proposta: ' + brl(base) + '. ' + (aj > 0 ? (aj < base ? 'Desconto de ' + brl(base - aj) + '. ' : aj > base ? 'Acima do calculado em ' + brl(aj - base) + '. ' : '') : 'Vazio usa esse valor. ')
+    + 'Vale só para o contrato: a proposta continua com os valores dela.';
+}
+function notaCnm(d) {
+  const base = centavos(d.cnm.itens.reduce((s, x) => s + lerValor(x.valor), 0)), pc = lerValor(d.cnm.pct);
+  return (pc ? 'serviços ' + brl(base) + ' + ' + fmtNum(pc, pc % 1 ? 2 : 0) + '% · ' : '') + (d.cnm.somar !== false ? 'somado ao total da obra' : 'fora do total da obra');
+}
 function atualizarResumos() {
   /* os totais da ficha mudam enquanto se digita, sem redesenhar os campos */
   const d = atual(); if (!d) return;
   document.querySelectorAll('#ficha .tot-linha').forEach(el => {
-    const contrato = /contrato/i.test(el.firstChild.textContent);
-    const v = contrato ? totalContrato(d) : totalProposta(d);
-    el.querySelector('b').textContent = brl(v); el.querySelector('span').textContent = extenso(v);
+    const q = el.dataset.tot || 'proposta';
+    const v = q === 'contrato' ? totalContrato(d) : q === 'cnm' ? totalCnm(d) : totalProposta(d);
+    el.querySelector('b').textContent = brl(v); el.querySelector('span').textContent = q === 'cnm' ? notaCnm(d) : extenso(v);
   });
   const r = document.querySelector('#ficha .resumo');
-  if (r && d.contrato) r.innerHTML = parcelasContrato(d).map(x => '<span>' + esc(x.rot) + ' · ' + esc(x.quando) + ' · <b>' + brl(x.valor) + '</b></span>').join('');
+  if (r && d.contrato) r.innerHTML = resumoParcelas(d);
+  const nd = document.querySelector('#ficha [data-desc]'); if (nd && d.contrato) nd.textContent = notaDesconto(d);
   document.querySelectorAll('#ficha .sec-x').forEach(el => {
     const t = el.closest('summary').firstChild.textContent;
     if (t === 'Valores') el.textContent = brl(totalProposta(d));
+    if (t === 'Chave na mão') el.textContent = d.cnm.itens.length ? brl(totalCnm(d)) : '';
     if (t === 'Pagamento da proposta') { const p = d.pagProp.reduce((s, x) => s + lerValor(x.pct), 0); el.textContent = fmtNum(p, p % 1 ? 1 : 0) + '%'; }
   });
 }
@@ -3992,8 +4146,11 @@ $('ficha').addEventListener('input', e => {
   const p = el.dataset.p; if (!p) return;
   let v = el.type === 'checkbox' ? el.checked : el.value;
   if (el.dataset.t === 'num' || el.dataset.t === 'valor') v = lerValor(v);
+  /* passando para parcelas livres, elas já vêm com o que estava calculado */
+  if (p === 'contrato.pag.modo' && v === 'manual' && d.contrato && !(d.contrato.pag.itens || []).length)
+    d.contrato.pag.itens = parcelasContrato(d).map(x => ({ rot: x.rot, quando: x.quando, valor: x.valor, forma: x.forma || '', bem: x.bem || '' }));
   setP(d, p, v);
-  alterou(d, el.tagName === 'SELECT' && p === 'contrato.pag.modo');
+  alterou(d, !!el.dataset.re || (el.tagName === 'SELECT' && p === 'contrato.pag.modo'));
 });
 $('ficha').addEventListener('change', e => {
   const el = e.target, d = atual();
@@ -4016,9 +4173,13 @@ $('ficha').addEventListener('click', e => {
     metLinhaDel: () => d.met[i].linhas.splice(j, 1),
     compAdd: () => d.comp.push({ item: '', sit: 'incluso' }),
     compDel: () => d.comp.splice(i, 1),
-    pagAdd: () => d.pagProp.push({ pct: 0, quando: '' }),
+    pagAdd: () => d.pagProp.push({ pct: 0, quando: '', forma: '', bem: '' }),
     pagDel: () => d.pagProp.splice(i, 1),
-    valAdd: () => d.valores.push({ etapa: '', valor: 0, opcional: false, contrato: true }),
+    valAdd: () => d.valores.push({ etapa: '', valor: 0, opcional: false, contrato: true, mostrar: true }),
+    cnmAdd: () => d.cnm.itens.push({ nome: '', valor: 0, mostrar: true }),
+    cnmDel: () => d.cnm.itens.splice(i, 1),
+    parcAdd: () => d.contrato && d.contrato.pag.itens.push({ rot: '', quando: '', valor: 0, forma: '', bem: '' }),
+    parcDel: () => d.contrato && d.contrato.pag.itens.splice(i, 1),
     valDel: () => d.valores.splice(i, 1)
   };
   if (!acoes[a]) return;
@@ -4055,6 +4216,12 @@ $('btnDup').addEventListener('click', () => {
 });
 $('btnDel').addEventListener('click', () => {
   const d = atual(); if (!d) return;
+  if (d.contrato && aba === 'contrato') {
+    confirmar('Excluir o contrato da proposta ' + esc(d.numero) + (d.cliente.nome ? ' de <b>' + esc(d.cliente.nome) + '</b>' : '') + '? A proposta continua salva, com os valores dela.', () => {
+      d.contrato = null; aba = 'proposta'; alterou(d, true); redesenhar(); avisoTopo('Contrato excluído. A proposta ' + d.numero + ' continua salva.');
+    });
+    return;
+  }
   confirmar('Excluir a proposta ' + esc(d.numero) + (d.cliente.nome ? ' de <b>' + esc(d.cliente.nome) + '</b>' : '') + (d.contrato ? ' e o contrato dela' : '') + '? Isso não pode ser desfeito.', () => {
     delete docs[d.id]; delete pendentes[d.id]; guardarLocal();
     if (fbDB && fbAuthReady) fbDB.ref(FB_NO + '/docs/' + d.id).remove().catch(e => { if (window.rmNuvemErro) rmNuvemErro('excluir a proposta', e); });
@@ -4096,7 +4263,26 @@ $('cfgLetra').addEventListener('click', e => {
   renderLetra(b.dataset.letra); $('cfgLetra').dataset.escolha = b.dataset.letra;
   $('folhaPapel').style.setProperty('--fe', String(LETRAS[b.dataset.letra].k));
 });
+let bensEdit = [], listasEdit = {};
+function renderListaCfg() {
+  const k = $('cfgLista').value || 'pre';
+  $('cfgListaItens').innerHTML = (listasEdit[k] || []).map((b, i) => '<span class="cfg-tag">' + esc(b) + '<button type="button" data-lstdel="' + i + '" aria-label="Tirar ' + esc(b) + '">✕</button></span>').join('') || '<span class="nota">Lista vazia.</span>';
+}
+$('cfgLista').innerHTML = Object.keys(LISTAS_PADRAO).map(k => '<option value="' + k + '">' + esc(LISTAS_PADRAO[k].rot) + '</option>').join('');
+$('cfgLista').addEventListener('change', renderListaCfg);
+$('cfgListaItens').addEventListener('click', e => { const b = e.target.closest('[data-lstdel]'); if (!b) return; listasEdit[$('cfgLista').value].splice(+b.dataset.lstdel, 1); renderListaCfg(); });
+function addListaItem() { const k = $('cfgLista').value, v = $('cfgListaNovo').value.trim(); if (!v) return; const l = listasEdit[k] = listasEdit[k] || [];
+  if (!l.some(x => chaveBusca(x) === chaveBusca(v))) l.push(v); $('cfgListaNovo').value = ''; renderListaCfg(); }
+$('cfgListaAdd').addEventListener('click', addListaItem);
+$('cfgListaNovo').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); addListaItem(); } });
+function renderBens() { $('cfgBens').innerHTML = bensEdit.map((b, i) => '<span class="cfg-tag">' + esc(b) + '<button type="button" data-bemdel="' + i + '" aria-label="Tirar ' + esc(b) + '">✕</button></span>').join(''); }
+$('cfgBens').addEventListener('click', e => { const b = e.target.closest('[data-bemdel]'); if (!b) return; bensEdit.splice(+b.dataset.bemdel, 1); renderBens(); });
+function addBem() { const v = $('cfgBemNovo').value.trim(); if (!v) return; if (!bensEdit.some(x => x.toLowerCase() === v.toLowerCase())) bensEdit.push(v); $('cfgBemNovo').value = ''; renderBens(); }
+$('cfgBemAdd').addEventListener('click', addBem);
+$('cfgBemNovo').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); addBem(); } });
 $('btnModelo').addEventListener('click', () => {
+  bensEdit = bensLista(); renderBens();
+  listasEdit = {}; Object.keys(LISTAS_PADRAO).forEach(k => { listasEdit[k] = listaCadastro(k); }); renderListaCfg();
   const m = modeloAtual();
   $('cfgLetra').dataset.escolha = config.letra || 'normal'; renderLetra($('cfgLetra').dataset.escolha);
   $('modeloCorpo').innerHTML = Object.keys(ROTULOS_TEXTO).map(k => { const [g, c] = k.split('.'); return campo(ROTULOS_TEXTO[k], '<textarea data-m="' + k + '" rows="' + Math.min(14, Math.max(2, Math.ceil(String(m[g][c]).length / 100))) + '">' + esc(m[g][c]) + '</textarea>'); }).join('');
@@ -4106,6 +4292,8 @@ $('modeloFechar').addEventListener('click', () => { $('modeloTela').classList.re
 $('modeloSalvar').addEventListener('click', () => {
   const letra = $('cfgLetra').dataset.escolha || 'normal';
   if (letra !== (config.letra || 'normal')) { config.letra = letra; salvarConfig(); }
+  if (JSON.stringify(bensEdit) !== JSON.stringify(bensLista())) { config.bens = bensEdit.slice(); salvarConfig(); renderFicha(); }
+  if (Object.keys(LISTAS_PADRAO).some(k => JSON.stringify(listasEdit[k]) !== JSON.stringify(listaCadastro(k)))) salvarListas(listasEdit);
   const n = { proposta: {}, contrato: {} };
   document.querySelectorAll('#modeloCorpo [data-m]').forEach(t => { const [g, c] = t.dataset.m.split('.'); if (t.value !== MODELO_PADRAO[g][c]) n[g][c] = t.value; });
   modeloNuvem = n;
@@ -4147,10 +4335,16 @@ async function salvarDoc(id) {
   } catch (e) { if (window.rmNuvemErro) rmNuvemErro('salvar a proposta ' + (d.numero || ''), e); }
 }
 let tCfg = null;
+function salvarListas(n) {
+  listasNuvem = JSON.parse(JSON.stringify(n));
+  try { localStorage.setItem(LS_KEY + '_listas', JSON.stringify(listasNuvem)); } catch (e) { }
+  if (fbDB && fbAuthReady) fbDB.ref(FB_NO + '/listas').set(listasNuvem).catch(e => { if (window.rmNuvemErro) rmNuvemErro('salvar as listas de seleção rápida', e); });
+  preencherListas();
+}
 function salvarConfig() {
   guardarLocal();
   clearTimeout(tCfg);
-  tCfg = setTimeout(() => { if (fbDB && fbAuthReady) fbDB.ref(FB_NO + '/config').set({ rep: config.rep || '', repDoc: config.repDoc || '', letra: config.letra || 'normal' }).catch(e => { if (window.rmNuvemErro) rmNuvemErro('salvar as configurações', e); }); }, 700);
+  tCfg = setTimeout(() => { if (fbDB && fbAuthReady) fbDB.ref(FB_NO + '/config').set({ rep: config.rep || '', repDoc: config.repDoc || '', letra: config.letra || 'normal', bens: bensLista() }).catch(e => { if (window.rmNuvemErro) rmNuvemErro('salvar as configurações', e); }); }, 700);
 }
 function escalaLetra() { return (LETRAS[config.letra] || LETRAS.normal).k; }
 function editandoAqui() { const a = document.activeElement; return a && $('ficha').contains(a) && /INPUT|TEXTAREA|SELECT/.test(a.tagName); }
@@ -4233,6 +4427,7 @@ function lerLocal() {
     const s = JSON.parse(localStorage.getItem(LS_KEY) || 'null');
     if (s) { Object.keys(s.docs || {}).forEach(id => { docs[id] = normalizar(s.docs[id]); }); Object.assign(pendentes, s.pendentes || {}); config = s.config || {}; }
     modeloNuvem = JSON.parse(localStorage.getItem(LS_KEY + '_modelo') || 'null');
+    listasNuvem = JSON.parse(localStorage.getItem(LS_KEY + '_listas') || 'null');
     /* a tela abre limpa, nos salvos: não reabre a última proposta mexida */
     atualId = null;
   } catch (e) { }
@@ -4245,6 +4440,7 @@ async function iniciarApp() {
   /* o que ficou neste aparelho sem subir vai primeiro */
   Object.keys(pendentes).forEach(id => salvarDoc(id));
   fbDB.ref(FB_NO + '/modelo').on('value', s => { modeloNuvem = s.val(); try { localStorage.setItem(LS_KEY + '_modelo', JSON.stringify(modeloNuvem)); } catch (e) { } }, e => { if (window.rmNuvemErro) rmNuvemErro('ler os textos padrão', e); });
+  fbDB.ref(FB_NO + '/listas').on('value', s => { const v = s.val(); if (v) { listasNuvem = v; try { localStorage.setItem(LS_KEY + '_listas', JSON.stringify(v)); } catch (e) { } preencherListas(); } });
   fbDB.ref(FB_NO + '/config').on('value', s => { const v = s.val(); if (v) { config = Object.assign({}, config, v); guardarLocal(); if (!editandoAqui()) renderFolha(); } });
   fbDB.ref(FB_NO + '/docs').on('value', s => aplicarRemoto(s.val()), e => { if (window.rmNuvemErro) rmNuvemErro('ler as propostas', e); });
 }
@@ -5083,7 +5279,7 @@ if ('serviceWorker' in navigator) {
 })();
 </script>
 <script>/* versão publicada (PADRAO_RM.md §3): sobe a cada publicação, junto com o CACHE do sw.js */
-const APP_VER='v7';
+const APP_VER='v8';
 </script>
 <script id="rmVersaoBloco">
 /* ===== SELO DE VERSÃO — igual em todos os sistemas (PADRAO_RM.md §3) =====
