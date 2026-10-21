@@ -2744,6 +2744,7 @@ body:not(.com-doc) .docs-card,body:not(.com-doc) .ed-grid{display:none}
 .folha.f-arial,.folha.f-arial *,.seg button.f-arial{font-family:Arial,Helvetica,'Liberation Sans',sans-serif!important}
 .seg button.on{border-color:var(--red);background:var(--red-soft);color:var(--red-dark)}
 .imp-l{margin-top:8px;font-size:13px;color:var(--muted)}
+.imp-av{margin:10px 0 0}
 .imp-l b{color:var(--ink)}
 .modal-box:has(.imp-l){max-width:560px}
 .modal-box:has(.imp-rev){max-width:760px;max-height:calc(100vh - 44px);overflow:auto}
@@ -5045,12 +5046,47 @@ function secaoDe(t) {
   return null;
 }
 function lerValoresDe(t) { const m = /R\$?\s*([\d.]+,\d{2})/.exec(t); return m ? lerValor(m[1]) : 0; }
+/* título de cláusula do contrato -> onde o texto que vem depois entra
+   (undefined: não é título; null: título cujo texto já é lido à parte) */
+function enderecoCidade(txt) {
+  const e = String(txt || '').replace(/[\s,\/–-]+$/, '').trim(), m = /^(.*\S)\s*[,–-]\s*([A-Za-zÀ-ú'. ]+(?:\s*\/\s*[A-Z]{2})?)$/.exec(e);
+  return m && /[A-Za-zÀ-ú]{3}/.test(m[2]) ? { end: m[1].replace(/[\s,–-]+$/, '').trim(), cid: m[2].replace(/\s*\/\s*/, '/').trim() } : { end: e, cid: '' };
+}
+function clausulaDe(t) {
+  if (/^1\.3\.?\s*DAS?\s+OBRIGA/i.test(t)) return 'obrigContratada';
+  if (/^1\.4\.?\s*DAS?\s+OBRIGA/i.test(t)) return 'obrigContratante';
+  if (/^3\.2\.?\s*CONDI[ÇC]/i.test(t) || /^CONDI[ÇC][ÕO]ES DE PAGAMENTO/i.test(t)) return 'parcelas';
+  const m = /^\d*\s*[.\-–]*\s*[.\-–]?\s*D[OA]S?\s+(PRAZO|PRE[ÇC]O|ENCARGOS|SEGURAN[ÇC]A|CL[ÁA]USULAS)/i.exec(t);
+  if (!m || t.length > 70) return undefined;
+  const k = m[1].toUpperCase();
+  return /^PRAZO/.test(k) ? 'prazoExtra' : /^PRE/.test(k) ? null : /^ENC/.test(k) ? 'encargos' : /^SEG/.test(k) ? 'seguranca' : 'gerais';
+}
+/* item de lista do Word (sem número escrito) ganha o "- " do padrão */
+function linhaClausula(t, lista) {
+  if (lista && !/^(\d+(\.\d+)*\.|[a-z]\)|[-–•])\s*/i.test(t)) return '- ' + t;
+  return t.replace(/^[–•]\s*/, '- ');
+}
+/* "Entrada de 20% no valor de R$ X (...) na assinatura", "R$ X (...) após
+   trinta dias da assinatura (20/12/2026)", "R$ X (...) Reserva técnica, paga
+   30 dias após o recebimento": o valor, o nome e o "quando" com as palavras
+   do contrato */
+function parcelaDoTexto(t, ja) {
+  const v = lerValoresDe(t); if (!(v > 0)) return null;
+  const sem = t.replace(/^[a-z]\)\s*/i, '').trim(), pct = /^Entrada\s+de\s+([\d,]+)\s*%/i.exec(sem);
+  const n = ja.filter(x => /ª parcela$/.test(x.rot)).length + 1;
+  const rot = /^Entrada\b/i.test(sem) ? 'Entrada' + (pct ? ' (' + pct[1] + '%)' : '') : /reserva\s+t[ée]cnica/i.test(sem) ? 'Reserva técnica' : n + 'ª parcela';
+  let q = sem.replace(/^Entrada\s+de\s+[\d,]+\s*%\s*(no valor de\s*)?/i, '').replace(/^Entrada\s+(de\s+)?/i, '')
+    .replace(/R\$\s*[\d.]+,\d{2}\s*(\([^)]*\))?/, '').replace(/reserva\s+t[ée]cnica\s*,?\s*/i, '').replace(/^[\s,;:–-]+|[\s.;]+$/g, '');
+  return { rot, quando: q, valor: v };
+}
 function interpretar(linhas) {
   const d = novoDoc(), lidos = [], sobras = [];
   const contrato = linhas.some(l => /^CONTRATANTE\s*:/i.test(l.t)) || /^CONTRATO\b/i.test((linhas[0] || {}).t || '');
   d.pre = []; d.met = []; d.valores = [];
   let comp = [], pagProp = [], sec = null, grupo = null, fundTxt = [], fundObs = '', compet = [], resp = [], impostos = [], intro = [], fixo = false, objeto = '';
   let compAtual = null;
+  /* contrato: as cláusulas como estão escritas (cap = onde a linha entra), as parcelas e as observações */
+  let cap = null; const caps = {}, parcC = [], obsC = [];
   const c = contrato ? novoContrato(d) : null;
   for (let i = 0; i < linhas.length; i++) {
     const t = linhas[i].t;
@@ -5061,8 +5097,13 @@ function interpretar(linhas) {
         const cl = d.cliente;
         if ((m = /CONTRATANTE\s*:\s*(.+?)\s*(?:,|\binscrit[oa]\b)/i.exec(t))) cl.nome = m[1].trim();
         if ((m = /(?:CNPJ|CPF)\s*(?:sob\s*)?(?:n[º°o.]*\s*)?([\d./-]{11,})/i.exec(t))) cl.doc = m[1].replace(/[.,]$/, '');
-        if ((m = /(?:sediad[oa]|residente|domiciliad[oa]|localizad[oa])\s+n[ao]\s+(.+?),?\s+([A-Za-zÀ-ú' ]+\/[A-Z]{2})\s*,?\s*CEP\s*([\d.\-]+)/i.exec(t))) { cl.endereco = m[1].trim(); cl.cidade = m[2].trim(); cl.cep = m[3].replace(/\.(?=\d{3}-)/, ''); }
-        if ((m = /representad[oa]\s+pel[oa]\s+(?:senhor[a]?|sr\.?|sra\.?)\s+(.+?),\s*portador[a]?\s+d[oa]\s+(CPF|RG)\s*(?:n[º°o.]*\s*)?([\d.\-\/xX]+)/i.exec(t))) { cl.rep = m[1].trim(); cl.repDoc = m[2].toUpperCase() + ' ' + m[3].replace(/[.,]$/, ''); }
+        /* o endereço até o CEP; a cidade é o último pedaço (depois da última
+           vírgula ou travessão), com ou sem a UF -- "Av. X, n° 1 – Bairro: Y –
+           Cidade/ CEP" também é lido */
+        if ((m = /(?:sediad[oa]|residente|domiciliad[oa]|localizad[oa])\s+n[ao]\s+(.+?)\s*,?\s*CEP\s*:?\s*([\d.\-]+)/i.exec(t))) {
+          const ec = enderecoCidade(m[1]); cl.endereco = ec.end; cl.cidade = ec.cid; cl.cep = m[2].replace(/\.(?=\d{3}-)/, '').replace(/[.,]$/, '');
+        }
+        if ((m = /representad[oa]\s+pel[oa]\s+(?:senhor[a]?|sr\.?|sra\.?)\s+(.+?),\s*portador[a]?\s+d[oa]\s+(CPF|CPG|RG)\s*(?:n[º°o.]*\s*)?([\d.\-\/xX]+)/i.exec(t))) { cl.rep = m[1].trim(); cl.repDoc = m[2].toUpperCase().replace('CPG', 'CPF') + ' ' + m[3].replace(/[.,]$/, ''); }
         lidos.push('Contratante: ' + (cl.nome || '?')); continue;
       }
       if (/^CONTRATAD[AO]\s*:/i.test(t)) {
@@ -5072,9 +5113,10 @@ function interpretar(linhas) {
         continue;
       }
       if (/^Pelo presente instrumento/i.test(t)) {
+        c.textos.preambulo = t;
         if ((m = /realizad[oa]\s+n[ao]\s+(.+?)\s*,?\s+sob o regime/i.exec(t))) {
-          const e = m[1].trim(), mm = /^(.*),\s*([^,]+\/[A-Z]{2})$/.exec(e);
-          if (mm) { d.obra.endereco = mm[1].trim(); d.obra.cidade = mm[2].trim(); } else d.obra.endereco = e;
+          const ec = enderecoCidade(m[1]);
+          if (ec.cid) { d.obra.endereco = ec.end; d.obra.cidade = ec.cid; } else d.obra.endereco = ec.end;
           lidos.push('Endereço da obra');
         }
         continue;
@@ -5082,7 +5124,7 @@ function interpretar(linhas) {
       if (i === 0 && /^CONTRATO\b/i.test(t)) { c.textos.titulo = frase(t); continue; }
       if (/^1\.1\.?\s*(?=[A-Za-zÀ-ú])/.test(t)) { objeto = t.replace(/^1\.1\.?\s*/, ''); lidos.push('Objeto (1.1)'); sec = null; continue; }
       if (/^1\.2\.?\s*(?=[A-Za-zÀ-ú])/.test(t)) continue;
-      if (/^1\.3\.?\s*(?=[A-Za-zÀ-ú])/.test(t)) { fixo = true; continue; }
+      if (/^1\.3\.?\s*(?=[A-Za-zÀ-ú])/.test(t)) { fixo = true; cap = 'obrigContratada'; continue; }
       if (/^2\.1\.?\s*(?=[A-Za-zÀ-ú])/.test(t)) {
         c.textos.prazo = t.replace(/^2\.1\.?\s*/, '');
         const dias = (t.match(/(\d+)\s*(?:\([^)]*\)\s*)?dias/g) || []).map(x => parseInt(x, 10)).filter(Boolean);
@@ -5101,8 +5143,20 @@ function interpretar(linhas) {
         const dd = /dia\s+(\d{1,2})/i.exec(t); if (dd) c.pag.dia = +dd[1];
         lidos.push('Parcelas'); continue;
       }
+      /* DAQUI PARA BAIXO, O TEXTO DO CONTRATO FICA COMO ESTÁ. Antes as
+         cláusulas eram trocadas pelas do padrão do sistema e as parcelas
+         ("R$ ... após trinta dias da assinatura") não eram lidas: o contrato
+         saía com 6 parcelas inventadas e a falta de uma delas passava. */
       if (fixo) {
-        const dt = dataDoTexto(t); if (dt && /^[A-Za-zÀ-ú ]+(\/[A-Z]{2})?,\s*\d/.test(t)) { c.data = dt; d.data = dt; }
+        const dt = dataDoTexto(t); if (dt && /^[A-Za-zÀ-ú ]+(\/[A-Z]{2})?,\s*\d/.test(t)) { c.data = dt; d.data = dt; cap = null; continue; }
+        const cab = clausulaDe(t);
+        if (cab !== undefined) { cap = cab; continue; }
+        if (/^_{3,}/.test(t) || /^(CONTRATANTE|CONTRATAD[OA])\b/i.test(t)) { cap = null; continue; }
+        if (cap === 'parcelas') {
+          if (/^\d+\.\d+(\.\d+)*\.?\s/.test(t)) cap = 'pagamento';
+          else { const pc = parcelaDoTexto(t, parcC); if (pc) parcC.push(pc); continue; }
+        }
+        if (cap) (caps[cap] = caps[cap] || []).push(linhaClausula(t, linhas[i].lista));
         continue;
       }
     }
@@ -5110,7 +5164,7 @@ function interpretar(linhas) {
     const s = secaoDe(t);
     if (s) {
       sec = s.k; grupo = null; compAtual = null;
-      if (s.k === 'compl') { compAtual = { item: s.nome, sit: 'incluso', det: '' }; comp.push(compAtual); }
+      if (s.k === 'compl') { compAtual = { item: s.nome, base: s.nome, sit: 'incluso', det: '' }; comp.push(compAtual); }
       if (s.k === 'obs' && contrato) fixo = false;
       continue;
     }
@@ -5152,11 +5206,15 @@ function interpretar(linhas) {
     }
     /* só a linha que diz incluso / não incluso / à parte é do item; outra
        coisa logo depois do título não pode virar "incluso" calada */
-    if (sec === 'compl' && compAtual && /inclus|separadamente|[àa] parte/i.test(t)) {
-      if (/n[ãa]o\s+inclus/i.test(t)) compAtual.sit = 'nao';
+    if (sec === 'compl' && compAtual && /inclus|separadamente|[àa] parte|cortesia/i.test(t)) {
+      /* segunda linha no mesmo título ("Quatro portões..." e "Um portão..."): outro item, não troca o primeiro */
+      if (compAtual.feito) { compAtual = { item: compAtual.base || compAtual.item, base: compAtual.base, sit: 'incluso', det: '' }; comp.push(compAtual); }
+      compAtual.feito = true;
+      if (/cortesia/i.test(t)) compAtual.sit = 'cortesia';
+      else if (/n[ãa]o\s+inclus/i.test(t)) compAtual.sit = 'nao';
       else if (/separadamente|[àa] parte/i.test(t)) compAtual.sit = 'aparte';
       else compAtual.sit = 'incluso';
-      const det = t.replace(/^[-–•]\s*/, '').replace(/\s*(inclus[oa]s?|n[ãa]o\s+inclus[oa]s?).*$/i, '').replace(/^(uma|um)\s+/i, '').trim();
+      const det = t.replace(/^[-–•]\s*/, '').replace(/\s*(fornecid[oa]s?\s+)?(como\s+)?cortesia.*$/i, '').replace(/\s*(inclus[oa]s?|n[ãa]o\s+inclus[oa]s?).*$/i, '').replace(/^(uma|um)\s+/i, '').trim();
       if (det && det.toLowerCase() !== compAtual.item.toLowerCase() && det.length < 80 && !/^n[ãa]o$/i.test(det)) compAtual.det = det;
       continue;
     }
@@ -5172,7 +5230,8 @@ function interpretar(linhas) {
       if (/^Atendendo/i.test(t)) { if ((m = /munic[íi]pio de\s+(.+?)(?:,|\s+conforme|\.)/i.exec(t))) { d.obra.cidade = m[1].trim(); lidos.push('Município da obra'); } continue; }
       intro.push(t); continue;
     }
-    if (contrato && (sec === 'obs' || sec === 'objeto' || sec === 'preco')) continue;
+    if (contrato && sec === 'obs') { obsC.push(linhaClausula(t, linhas[i].lista)); continue; }
+    if (contrato && (sec === 'objeto' || sec === 'preco')) continue;
     sobras.push(t);
   }
   /* o que se juntou ao longo do arquivo */
@@ -5189,6 +5248,8 @@ function interpretar(linhas) {
   if (comp.length) d.comp = comp.map(x => {
     const det = (x.det || '').replace(/[\s,]+(e|ou)$/i, '').trim();
     if (!det) return { item: x.item, sit: x.sit };
+    /* "Quatro portões cortina 4,50x5,00m": a linha já diz o que é */
+    if (/^(\d+|duas?|tr[eê]s|quatro|cinco|seis|sete|oito|nove|dez)\s/i.test(det)) return { item: det.charAt(0).toUpperCase() + det.slice(1), sit: x.sit };
     if (primeira(det) === primeira(x.item)) return { item: det.charAt(0).toUpperCase() + det.slice(1), sit: x.sit };
     return { item: x.item + ' (' + det.charAt(0).toLowerCase() + det.slice(1) + ')', sit: x.sit };
   });
@@ -5198,8 +5259,16 @@ function interpretar(linhas) {
   if (!d.pre.length) d.pre = [{ titulo: '', itens: [{ desc: '', qtd: '', un: 'un' }] }];
   if (!d.met.length) d.met = [{ titulo: '', linhas: MET_CAMPOS.map(k => ({ k, v: '' })) }];
   if (!d.valores.length) d.valores = novoDoc().valores;
+  let mantidas = 0;
   if (contrato) {
     if (objeto) { c.textos.objeto = objeto; }
+    Object.keys(caps).forEach(k => { const x = caps[k].join('\n').trim(); if (x) { c.textos[k] = x; mantidas++; } });
+    if (obsC.length) { c.textos.observacoes = obsC.join('\n'); mantidas++; }
+    if (mantidas) lidos.push(mantidas + ' cláusula(s) como estão no contrato');
+    if (parcC.length) {
+      c.pag.modo = 'manual'; c.pag.itens = parcC.map(x => ({ rot: x.rot, quando: x.quando, valor: x.valor, forma: '', bem: '' }));
+      lidos.push(parcC.length + ' parcela(s) do contrato');
+    }
     if (!c.prazoDias) c.prazoDias = d.prazoDias;
     d.contrato = c; d.status = 'assinado';
   }
@@ -5210,7 +5279,7 @@ function interpretar(linhas) {
   if (comp.length) lidos.push(comp.length + ' item(ns) complementar(es)');
   if (d.valores.some(v => v.valor)) lidos.push(d.valores.filter(v => v.valor).length + ' valor(es)');
   if (pagProp.length) lidos.push(pagProp.length + ' parcela(s) da proposta');
-  return { doc: d, contrato, lidos, sobras };
+  return { doc: d, contrato, lidos, sobras, mantidas };
 }
 async function importarWord(arquivo) {
   let r;
@@ -5248,7 +5317,9 @@ function abrirRevisao(d, r, nome) {
       + '<input data-imp-t value="' + esc(impTexto(t, dst)) + '" aria-label="Texto que entra"></div>'; };
   $('modalTxt').innerHTML = '<b>' + (r.contrato ? 'Contrato importado' : 'Proposta importada') + ' de "' + esc(nome) + '"</b>'
     + '<div class="imp-l">Lido: ' + esc(r.lidos.join(' · ') || 'nada reconhecido') + '</div>'
-    + (r.contrato ? '<div class="imp-l">As cláusulas fixas são as do padrão do sistema.</div>' : '')
+    + (r.contrato ? (r.mantidas ? '<div class="imp-l">As cláusulas ficaram como estão no contrato importado.</div>' : '<div class="imp-l">Não achei as cláusulas no arquivo: ficaram as do padrão do sistema.</div>') : '')
+    /* o que não fecha (parcelas x preço) aparece já na importação */
+    + (r.contrato && avisos(d).filter(x => /parcelas do contrato|entrada é maior/i.test(x)).length ? '<div class="avisos imp-av">' + avisos(d).filter(x => /parcelas do contrato|entrada é maior/i.test(x)).map(x => '<div>Confira: ' + esc(x) + '</div>').join('') + '</div>' : '')
     + (sob.length ? '<div class="imp-l"><b>Revise</b> — ' + sob.length + ' trecho(s) que o sistema não soube onde pôr. Escolha onde cada um entra (e ajuste o texto, se quiser):</div><div class="imp-rev">' + sob.map(linha).join('') + '</div>'
       : '<div class="imp-l">Tudo reconhecido.</div>');
   $('modalTxt').querySelectorAll('[data-imp-o]').forEach(sel => sel.addEventListener('change', () => {
@@ -5835,7 +5906,7 @@ if ('serviceWorker' in navigator) {
 })();
 </script>
 <script>/* versão publicada (PADRAO_RM.md §3): sobe a cada publicação, junto com o CACHE do sw.js */
-const APP_VER='v16';
+const APP_VER='v17';
 </script>
 <script id="rmVersaoBloco">
 /* ===== SELO DE VERSÃO — igual em todos os sistemas (PADRAO_RM.md §3) =====
