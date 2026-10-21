@@ -4027,6 +4027,10 @@ function poe(){
   +'pointer-events:none;z-index:50;opacity:.035;mix-blend-mode:multiply;'
   +'-webkit-print-color-adjust:exact;print-color-adjust:exact}'
   +'#rm-dagua-imp img{width:28%;max-width:190px;height:auto;display:block}'
+  /* documento cujas imagens ja levam a marca gravada nelas (as imagens da
+     obra, no Propostas): a da pagina sai, para nao sobrepor as duas.
+     O sistema marca <html class="rm-sem-dagua"> enquanto mostra ele. */
+  +'html.rm-sem-dagua body #rm-dagua-imp{display:none!important}'
   /* o fio da marca no papel e FINO e corre a linha inteira, como na
      papelaria -- a regua de 4px com o fio escuro embaixo saiu */
   +'.head::after,.rm-cab::after{height:2px!important;left:0!important;right:0!important;width:auto!important}'

@@ -1332,6 +1332,10 @@ function poe(){
   +'pointer-events:none;z-index:50;opacity:.035;mix-blend-mode:multiply;'
   +'-webkit-print-color-adjust:exact;print-color-adjust:exact}'
   +'#rm-dagua-imp img{width:28%;max-width:190px;height:auto;display:block}'
+  /* documento cujas imagens ja levam a marca gravada nelas (as imagens da
+     obra, no Propostas): a da pagina sai, para nao sobrepor as duas.
+     O sistema marca <html class="rm-sem-dagua"> enquanto mostra ele. */
+  +'html.rm-sem-dagua body #rm-dagua-imp{display:none!important}'
   /* o fio da marca no papel e FINO e corre a linha inteira, como na
      papelaria -- a regua de 4px com o fio escuro embaixo saiu */
   +'.head::after,.rm-cab::after{height:2px!important;left:0!important;right:0!important;width:auto!important}'
@@ -2864,7 +2868,8 @@ body:not(.com-doc) .docs-card,body:not(.com-doc) .ed-grid{display:none}
 .folha .f-figt{display:flex;align-items:center;gap:6px;margin:0 0 1.5mm;font-size:calc(9px*var(--fe,1.333));font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#141414;break-after:avoid}
 .folha .f-figt::before{content:'';flex:none;width:3px;height:1.1em;background:#F24619;-webkit-print-color-adjust:exact;print-color-adjust:exact}
 .folha .f-figd{margin:0 0 2mm;font-size:calc(9px*var(--fe,1.333));color:#4A515B;break-after:avoid}
-.folha .f-fig img{display:block;max-width:100%;max-height:106mm;width:auto;height:auto;margin:0 auto;border:1px solid #eceef1;border-radius:2px}
+/* a imagem limpa, sem quadro em volta (pedido de 21/10/2026) */
+.folha .f-fig img{display:block;max-width:100%;max-height:106mm;width:auto;height:auto;margin:0 auto}
 .folha .f-fig.p1 img{max-height:86mm}
 .folha .f-fig.inteira img{max-height:215mm}
 .folha .f-fig.inteira.p1 img{max-height:180mm}
@@ -4532,6 +4537,10 @@ function renderFicha() {
 }
 function renderFolha() {
   const d = atual(), f = $('folha');
+  /* o documento das imagens: cada imagem já leva a marca d'água gravada; a
+     da página (bloco comum) sai, para não sobrepor as duas. Na proposta com
+     as imagens anexadas a da página continua -- as folhas do texto pedem. */
+  document.documentElement.classList.toggle('rm-sem-dagua', !!d && aba === 'imagens');
   const av = d && aba !== 'imagens' ? avisos(d) : [];
   $('avisos').innerHTML = av.map(a => '<div>⚠ ' + esc(a) + '</div>').join('');
   $('avisos').style.display = av.length ? '' : 'none';
@@ -6244,7 +6253,7 @@ if ('serviceWorker' in navigator) {
 })();
 </script>
 <script>/* versão publicada (PADRAO_RM.md §3): sobe a cada publicação, junto com o CACHE do sw.js */
-const APP_VER='v20';
+const APP_VER='v21';
 </script>
 <script id="rmVersaoBloco">
 /* ===== SELO DE VERSÃO — igual em todos os sistemas (PADRAO_RM.md §3) =====
