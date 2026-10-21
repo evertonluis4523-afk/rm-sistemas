@@ -1551,15 +1551,98 @@ table.items tbody tr.dragover td{box-shadow:inset 0 2px 0 var(--red)}
 .modal .mhead .x:hover{background:var(--red)}
 .cat-menor>input:first-child{border-color:#1a7f45;background:#eaf7ee;color:#11603a;font-weight:700}
 .cat-m2{display:block;width:82px;margin:3px 0 0 auto;font-size:11px;padding-top:3px;padding-bottom:3px}
-.cat-fcol{white-space:nowrap}.cat-fsub{font-size:10px;font-weight:500;color:var(--muted);letter-spacing:.02em;text-transform:none}
-.cat-colx{border:0;background:none;color:var(--muted);cursor:pointer;font-size:11px;padding:0 2px}.cat-colx:hover{color:var(--red)}
-.tabs{display:flex;flex-wrap:wrap;gap:2px;padding:0 22px;border-bottom:1px solid var(--line);background:#f7f8f9}
-.tabs>.tab,.tabs>.btn-sm,#catTabs>.tab{flex:0 0 auto;white-space:nowrap}
-/* No celular as abas não cabem: a barra rola de lado (arrastar com o dedo)
-   em vez de cortar as que ficam depois de "Chapas/Bobinas". */
+/* ===== BANCO DE DADOS (out/2026): menu lateral, fornecedores em colunas ===== */
+.db-wrap{display:grid;grid-template-columns:218px minmax(0,1fr);align-items:stretch}
+.db-nav{display:flex;flex-direction:column;gap:1px;padding:12px 10px 16px;border-right:1px solid var(--line);background:#f7f8f9;min-width:0}
+.db-g{font-size:10.5px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);padding:12px 10px 4px}
+.db-nav .db-i{display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;text-align:left;border:0;border-radius:9px;background:none;padding:8px 10px;font:inherit;font-size:13.5px;font-weight:600;color:var(--ink);cursor:pointer;letter-spacing:0}
+.db-nav .db-i em{font-style:normal;font-size:11px;color:var(--muted);font-weight:600;font-variant-numeric:tabular-nums}
+.db-nav .db-i:hover{background:rgba(0,0,0,.04)}
+.db-nav .db-i.on{background:#fff;color:var(--red);box-shadow:inset 3px 0 0 var(--red),0 0 0 1px var(--line)}
+.db-add{margin:6px 0 2px;padding:7px 10px;border:1.5px dashed var(--line);border-radius:9px;background:none;font:inherit;font-size:12.5px;font-weight:600;color:var(--muted);cursor:pointer}
+.db-add:hover{border-color:var(--red);color:var(--red)}
+.db-wrap .mbody{min-width:0}
+.db-h{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin:0 0 6px}
+.panel .db-h h3{margin:0}
+.db-h .s{font-size:12.5px;color:var(--muted)}
+.db-h .sp,.db-bar .sp{flex:1}
+.db-bar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:10px 0}
+.db-bar .dbsearch{flex:1 1 240px;margin:0}
+.db-chips{display:flex;gap:6px;flex-wrap:wrap}
+.db-chip{border:1px solid var(--line);border-radius:999px;background:#fff;padding:5px 11px;font:inherit;font-size:12px;font-weight:650;color:var(--muted);cursor:pointer}
+.db-chip:hover{color:var(--ink);border-color:var(--ink)}
+.db-chip.on{background:var(--ink);border-color:var(--ink);color:#fff}
+.db-tw{overflow-x:auto;-webkit-overflow-scrolling:touch}
+/* tabela limpa: o campo parece texto e vira campo ao passar e ao clicar */
+.dbtbl.limpa td .din{border-color:transparent;background:transparent}
+.dbtbl.limpa tr:hover td .din{border-color:var(--line);background:#fff}
+.dbtbl.limpa td .din:focus{border-color:var(--red);background:#fff}
+.dbtbl.limpa .db-desc{min-width:200px}
+.dbtbl.limpa td.cat-menor{background:#eaf7ee}
+.dbtbl.limpa td.cat-menor>input:first-child{border-color:transparent;background:transparent}
+.dbtbl.limpa tr:hover td.cat-menor>input:first-child{border-color:#1a7f45}
+.db-fcol{white-space:nowrap;vertical-align:bottom;min-width:104px}
+.db-fbt{display:inline-flex;align-items:center;gap:5px;border:0;background:none;padding:2px 4px;margin:0 -4px 0 0;border-radius:6px;font:inherit;cursor:pointer;color:var(--ink)}
+.db-fbt b{font-size:12px;letter-spacing:.04em;text-transform:uppercase}
+.db-fbt:hover{background:rgba(0,0,0,.05)}
+.db-dots{color:var(--muted);font-weight:800;letter-spacing:0}
+.db-fcol i{display:block;font-style:normal;font-size:10px;font-weight:550;letter-spacing:0;text-transform:none;color:var(--muted);min-height:13px}
+.db-fcol.ref i{color:var(--red)}
+.db-nova{min-width:118px;text-align:center;vertical-align:bottom}
+.db-novab{border:1.5px dashed var(--red);border-radius:9px;background:none;color:var(--red);padding:7px 10px;font:inherit;font-size:12px;font-weight:750;cursor:pointer;white-space:nowrap}
+.db-novab:hover{background:var(--red-soft)}
+.db-grp td{background:#f7f8f9;padding:4px 8px!important}
+.db-grp .din{font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);background:transparent;border-color:transparent;max-width:420px}
+.db-grp .din:hover,.db-grp .din:focus{border-color:var(--line);background:#fff}
+.db-rbt{border:0;background:none;color:var(--muted);font-weight:800;font-size:15px;padding:2px 8px;border-radius:6px;cursor:pointer}
+.db-rbt:hover{background:rgba(0,0,0,.05);color:var(--ink)}
+.db-novo{padding:2px 0!important;border-bottom:0!important}
+.db-novol{border:0;background:none;padding:10px 8px;font:inherit;font-size:13px;font-weight:650;color:var(--muted);cursor:pointer;text-align:left;width:100%}
+.db-novol:hover{color:var(--red)}
+.db-vazio{text-align:center;color:var(--muted);padding:16px!important}
+.db-cod{font-family:var(--mono);font-size:10.5px;color:var(--muted)}
+.db-sub{display:block;font-size:11px;color:var(--muted)}
+.db-leg{display:flex;gap:16px;flex-wrap:wrap;font-size:12px;color:var(--muted);margin-top:8px}
+.db-leg b{display:inline-block;width:11px;height:11px;border-radius:3px;margin-right:5px;vertical-align:-1px}
+.db-leg b.v{background:#eaf7ee;border:1px solid #bfe0cc}
+.db-leg b.r{background:var(--red)}
+.db-pop{position:absolute;z-index:120;background:#fff;border:1px solid var(--line);border-radius:10px;box-shadow:0 14px 34px rgba(0,0,0,.16);padding:6px;min-width:230px;max-width:300px;max-height:60vh;overflow:auto}
+.db-pop button{display:block;width:100%;text-align:left;border:0;background:none;padding:8px 10px;border-radius:7px;font:inherit;font-size:13px;font-weight:600;color:var(--ink);cursor:pointer}
+.db-pop button:hover{background:rgba(0,0,0,.05)}
+.db-pop button.perigo{color:var(--red)}
+.db-pop button.forte{color:var(--red);font-weight:750}
+.db-pop hr{border:0;border-top:1px solid var(--line);margin:4px 2px}
+.db-pop-t{font-size:10.5px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);padding:6px 10px 4px}
+.db-pop-v{font-size:12.5px;color:var(--muted);padding:6px 10px}
+.db-pop-f{display:flex;flex-direction:column;gap:4px;padding:8px 10px;font-size:13px;font-weight:600}
+.db-pop-f span{display:flex;align-items:center;gap:6px}
+.db-pop-f small{font-size:11px;color:var(--muted);font-weight:500}
+.db-fl{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px;margin-top:12px}
+.db-fc{border:1px solid var(--line);border-radius:12px;padding:14px;background:#fff;display:flex;flex-direction:column;gap:8px;transition:box-shadow .3s}
+.db-fc.foco{box-shadow:0 0 0 2px var(--red)}
+.db-fc h4{margin:0;font-size:15px;display:flex;justify-content:space-between;align-items:center;gap:8px}
+.db-fc .k{font-size:12px;color:var(--muted)}
+.db-fc .cs{display:flex;flex-wrap:wrap;gap:5px}
+.db-fc .db-chip{font-size:11.5px;padding:3px 9px}
+.db-fc-a{display:flex;gap:6px;margin-top:auto}
+.db-tag{font-size:10.5px;font-weight:750;padding:2px 8px;border-radius:999px;background:var(--red-soft);color:var(--red-dark,#9B2709);white-space:nowrap}
+.db-dlg{border:1px solid var(--line);border-radius:14px;padding:16px 18px;background:#fff;box-shadow:0 14px 34px rgba(0,0,0,.12);max-width:620px;margin:6px 0 4px}
+.db-dlg h4{margin:0 0 10px;font-size:16px}
+.db-dlg-r{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
+.db-dlg-r label{display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--muted);font-weight:600}
+.db-dlg-c{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:6px 14px;font-size:13px;margin:8px 0 14px}
+.db-dlg-c label{display:flex;gap:7px;align-items:center;cursor:pointer}
+.db-dlg-c input{width:auto}
+.db-dlg-a{display:flex;gap:8px;justify-content:flex-end}
+.db-nf{margin-top:8px}
+/* No celular o menu vira uma faixa que rola de lado, em cima */
 @media (max-width:760px){
-  .tabs{flex-wrap:nowrap;overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain;scrollbar-width:none;padding:0 10px;touch-action:pan-x}
-  .tabs::-webkit-scrollbar{display:none}
+  .db-wrap{grid-template-columns:1fr}
+  .db-nav{flex-direction:row;overflow-x:auto;border-right:0;border-bottom:1px solid var(--line);padding:6px 8px;gap:4px;scrollbar-width:none;touch-action:pan-x}
+  .db-nav::-webkit-scrollbar{display:none}
+  .db-g{display:none}
+  .db-nav .db-i,.db-add{flex:0 0 auto;width:auto;white-space:nowrap}
+  .db-dlg-r{grid-template-columns:1fr}
 }
 .tab{border:0;background:none;padding:13px 14px;font-size:14px;font-weight:600;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;letter-spacing:.02em}
 .tab:hover{color:var(--ink)}
@@ -1599,7 +1682,7 @@ table.items tbody tr.dragover td{box-shadow:inset 0 2px 0 var(--red)}
      ganha em qualquer ordem. */
   #loginScreen.hidden{display:none!important}
 }
-.panel h3{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--gray);margin:0 0 12px;font-weight:700}
+.panel h3{font-size:18px;letter-spacing:0;color:var(--ink);margin:0 0 10px;font-weight:800}
 .dbtbl{width:100%;border-collapse:collapse;font-size:14px;margin-bottom:8px;font-weight:505}
 .dbtbl th{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);text-align:left;padding:6px 8px;border-bottom:1.5px solid var(--line);font-weight:600}
 .dbtbl td{padding:5px 8px;border-bottom:1px solid var(--line-2);vertical-align:middle}
@@ -1680,8 +1763,6 @@ table.items tbody tr.dragover td{box-shadow:inset 0 2px 0 var(--red)}
 .edit-telha-modal .mhead .x:hover{background:var(--red)}
 .edit-telha-modal .mbody{padding:20px 22px}
 .edit-telha-modal .mfoot{display:flex;gap:8px;align-items:center;padding:14px 22px;border-top:1px solid var(--line);background:#f7f8f9;justify-content:flex-end}
-.suprow{display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap}
-.suprow select{border:1px solid var(--line);border-radius:7px;padding:7px 10px;font-weight:600;font-size:14px;background:#fff}
 .dbsearch{display:flex;align-items:center;gap:8px;border:1px solid var(--line);border-radius:8px;padding:7px 11px;margin-bottom:12px;background:#fafbfc}
 .dbsearch input{border:0;outline:0;background:transparent;flex:1;font-size:14px;font-family:var(--mono);font-weight:505}
 .dbsearch svg{width:15px;height:15px;color:var(--muted)}
@@ -4002,46 +4083,31 @@ body:not([data-theme="escuro"]){
     <h2>Banco de dados</h2>
     <button class="x" onclick="closeDB()">&times;</button>
   </div>
-  <div class="tabs">
-    <button class="tab" data-tab="forn" onclick="showTab('forn')">Fornecedores &amp; preços/kg</button>
-    <button class="tab" data-tab="perfis" onclick="showTab('perfis')">Perfis</button>
-    <button class="tab" data-tab="telhas" onclick="showTab('telhas')">Telhas</button>
-    <button class="tab" data-tab="chapas" onclick="showTab('chapas')">Chapas/Bobinas (R$/kg)</button>
-    <span id="catTabs" style="display:contents"></span>
-    <button class="tab" data-tab="empresa" onclick="showTab('empresa')">Empresa</button>
-    <button class="tab" data-tab="ajustes" onclick="showTab('ajustes')">⚙ Ajustes</button>
-    <button class="btn-sm" onclick="addCategoria()" style="margin:6px 0 6px 8px;padding:5px 11px">+ Categoria</button>
-  </div>
+  <!-- O MENU LATERAL DO BANCO DE DADOS (out/2026). Eram 12 abas numa
+       linha, Empresa e Ajustes no meio dos materiais. Agora: Materiais,
+       Serviços, Cadastros e Ferramentas, cada um com quantos itens tem.
+       Empresa e Ajustes ficam na engrenagem do sistema. Os itens continuam
+       sendo .tab com data-tab: showTab() é o mesmo de antes. -->
+  <div class="db-wrap">
+  <nav class="db-nav" id="dbNav" aria-label="Banco de dados"></nav>
   <div class="mbody">
 
     <div class="panel" data-panel="ajustes"><div id="ajustesBody"></div></div>
 
-    <!-- FORNECEDORES -->
+    <!-- FORNECEDORES: o cadastro único (out/2026) -->
+    <div class="panel" data-panel="fornecedores"><div id="fornCad"></div></div>
+
+    <!-- PREÇO POR KG (perfis): uma coluna por fornecedor -->
     <div class="panel" data-panel="forn">
-      <h3>Preço por kg de cada espessura</h3>
-      <p class="note">Os valores abaixo são usados para calcular o total de cada perfil (peso total × R$/kg). Edite quando o fornecedor reajustar.</p>
-      <div class="suprow">
-        <span style="font-size:12px;color:var(--muted);font-weight:600">Editando:</span>
-        <select id="supEdit" onchange="renderForn()"></select>
-        <button class="btn-sm" onclick="addFornecedor()">+ Novo fornecedor</button>
-        <button class="btn-sm" onclick="delFornecedor()">Excluir fornecedor</button>
-      </div>
-      <table class="dbtbl">
-        <thead><tr><th>Espessura</th><th class="r">Preço por kg (R$)</th></tr></thead>
-        <tbody id="fornBody"></tbody>
-      </table>
-      <div class="reajuste-bar">
-        <span>Reajuste em massa:</span>
-        <input id="reajForn" class="din mono r" style="width:64px" placeholder="6"> %
-        <button class="btn-sm red" onclick="reajustarForn()">Aplicar a este fornecedor</button>
-        <button class="btn-sm" onclick="desfazerReajuste()">Desfazer último</button>
-        <span class="note" style="margin:0">Use negativo para baixar (ex.: -3).</span>
-      </div>
+      <div class="db-h"><h3>Preço por kg dos perfis</h3><span class="s" id="kgSub"></span><span class="sp"></span></div>
+      <p class="note">O total de cada perfil é peso × R$/kg da espessura. Cada fornecedor tem a sua coluna; o menor preço de cada espessura fica em verde. O orçamento usa o fornecedor escolhido nele.</p>
+      <div class="db-bar"><span class="sp"></span><button class="btn-sm red" onclick="fornAdd('kg',this)">＋ Fornecedor</button></div>
+      <div class="db-tw"><table class="dbtbl limpa"><thead id="fornHead"></thead><tbody id="fornBody"></tbody></table></div>
     </div>
 
     <!-- PERFIS -->
     <div class="panel" data-panel="perfis">
-      <h3>Cadastro de perfis (<span id="perfilCount">0</span>)</h3>
+      <div class="db-h"><h3>Perfis</h3><span class="s"><span id="perfilCount">0</span> perfis · preço pela espessura, em Preço por kg</span></div>
       <p class="note">O peso é calculado por <b>Larg. × espessura × comprimento × densidade</b> — a mesma fórmula da sua planilha. <b>Larg.</b> é a largura da bobina (slitter), em mm. Recalcula conforme o comprimento digitado.</p>
       <p class="note"><b>Produção</b> diz onde a Perfitec faz o perfil, e o <b>Corte de Estruturas</b> lê daqui: o que sai da <b>perfiladeira</b> detalhado mantém o preço por quilo da barra; o que sai de <b>corte e dobra</b> paga o R$/kg de detalhamento. Perfil que não está neste cadastro é tratado como corte e dobra.</p>
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
@@ -4095,22 +4161,13 @@ body:not([data-theme="escuro"]){
 
     <!-- TELHAS -->
     <div class="panel" data-panel="telhas">
-      <h3>Cadastro de telhas (<span id="telhaCount">0</span>)</h3>
+      <div class="db-h"><h3>Telhas</h3><span class="s"><span id="telhaCount">0</span> telhas · R$ por metro</span></div>
       <!-- A Brastelha (e qualquer outra que so' faca telha) aproveita ESTA
-           lista: mesma telha, mesma descricao, so' muda a coluna de preco.
-           O seletor diz de quem e' o preco que esta' sendo editado. -->
-      <div class="reajuste-bar" style="background:#f7f9fc">
-        <span>Preços de:</span>
-        <select id="telhaForn" onchange="renderDBTelhas()"></select>
-        <span class="note" style="margin:0" id="telhaFornNota"></span>
-        <button class="btn-sm" style="margin-left:auto" onclick="openBras()" title="A Brastelha tem linhas e larguras próprias (TP-40 com 980 mm úteis)">Catálogo Brastelha</button>
-      </div>
-      <div class="reajuste-bar">
-        <span>Reajuste em massa (todas as telhas):</span>
-        <input id="reajTelhas" class="din mono r" style="width:64px" placeholder="6"> %
-        <button class="btn-sm red" onclick="reajustarTelhas()">Aplicar</button>
-        <button class="btn-sm" onclick="desfazerReajuste()">Desfazer último</button>
-      </div>
+           lista: mesma telha, mesma descricao, uma coluna de preço por
+           fornecedor (out/2026: antes era um "Preços de:" por vez). -->
+      <div class="db-bar"><span class="note" style="margin:0">Uma coluna por fornecedor; o menor preço de cada telha fica em verde.</span><span class="sp"></span>
+        <button class="btn-sm" onclick="openBras()" title="A Brastelha tem linhas e larguras próprias (TP-40 com 980 mm úteis)">Catálogo Brastelha</button>
+        <button class="btn-sm red" onclick="fornAdd('telhas',this)">＋ Fornecedor</button></div>
       <div id="dbTelhaBody" style="margin-top:12px"></div>
       <div class="row-form">
         <div class="f" style="grid-column:span 5"><span class="lab">Categoria</span>
@@ -4130,24 +4187,14 @@ body:not([data-theme="escuro"]){
 
     <!-- CHAPAS / BOBINAS (R$/kg) -->
     <div class="panel" data-panel="chapas">
-      <h3>Chapas e bobinas · preço por kg</h3>
+      <div class="db-h"><h3>Chapas e bobinas</h3><span class="s">R$ por kg</span></div>
       <p class="note">Vendidas por kg — para orçar, use o botão <b>🧮 Calcular perfil</b>, escolha o material aqui cadastrado e informe as dimensões. Valores sem IPI (use o IPI 3,25% na calculadora).</p>
-      <div class="reajuste-bar" style="background:#f7f9fc">
-        <span>Preços de:</span>
-        <select id="chapasForn" onchange="dbFornSet(this.value)"></select>
-        <span class="note" style="margin:0" id="chapasFornNota"></span>
-      </div>
-      <div class="reaj">
-        <span>Reajuste em massa:</span>
-        <input class="din mono r sm" id="reajChapas" placeholder="%" style="width:74px">
-        <button class="btn-sm" onclick="reajusteMateriais()">Aplicar %</button>
-        <button class="btn-sm" onclick="desfazerReajuste()">↺ Desfazer último</button>
-      </div>
-      <table class="dbtbl" style="margin-top:10px"><thead><tr><th class="l">Material</th><th style="width:130px">R$/kg</th><th style="width:34px"></th></tr></thead>
-        <tbody id="chapasBody"></tbody></table>
+      <div class="db-bar"><span class="note" style="margin:0">Uma coluna por fornecedor; o menor preço de cada material fica em verde.</span><span class="sp"></span><button class="btn-sm red" onclick="fornAdd('chapas',this)">＋ Fornecedor</button></div>
+      <div class="db-tw"><table class="dbtbl limpa"><thead id="chapasHead"></thead>
+        <tbody id="chapasBody"></tbody></table></div>
       <div class="row-form" style="margin-top:10px">
         <div class="f" style="grid-column:span 9"><span class="lab">Material</span><input class="din" id="nm_nome" placeholder="Ex.: Chapa carbono 2,00mm (acima 2 t)"></div>
-        <div class="f" style="grid-column:span 2"><span class="lab">R$/kg</span><input class="din mono r" id="nm_rkg" placeholder="7,29"></div>
+        <div class="f" style="grid-column:span 2"><span class="lab">R$/kg (referência)</span><input class="din mono r" id="nm_rkg" placeholder="7,29"></div>
         <div class="f" style="grid-column:span 1;align-self:end"><button class="btn-sm red" style="width:100%" onclick="addMaterial()">+</button></div>
       </div>
     </div>
@@ -4166,6 +4213,7 @@ body:not([data-theme="escuro"]){
       <p class="note" style="margin-top:8px">O "Orçamento Nº" do documento do fornecedor é gerado sozinho (sequencial) ao entrar no modo fornecedor. Ajuste aqui para alinhar com seu controle. O prefixo é livre — quem já enviou documentos com um prefixo não deve trocá-lo, senão a numeração perde a sequência com o que o fornecedor recebeu.</p>
     </div>
 
+  </div>
   </div>
   <div class="mfoot">
     <button class="btn-sm" onclick="openImport()">⇪ Atualizar por planilha</button>
@@ -5558,14 +5606,6 @@ function matPrecoDe(m,nome){
 }
 /* Fornecedor cujos precos o banco de dados esta mostrando. Um so' para
    todas as abas: trocar em uma troca nas outras (Telhas, Fornecedores). */
-function dbFornNome(){return telhaFornAtual();}
-function dbFornSet(nome){
-  telhaFornSel=nome;
-  const f=cpForn(nome);
-  if(f){editForn=f.id;const se=document.getElementById('supEdit');if(se)se.value=f.id;}
-  const tf=document.getElementById('telhaForn');if(tf)tf.value=nome;
-  renderForn();renderDBTelhas();renderChapasKg();renderCatTabs();showTab(activeTab);
-}
 function dbFornOpcoes(sel){
   const nomes=(S.fornecedores||[]).map(f=>f.nome);if(!nomes.length)nomes.push(cpRefNome());
   return nomes.map(n=>'<option '+(cpNorm(n)===cpNorm(sel)?'selected':'')+'>'+escapeAttr(n)+'</option>').join('');
@@ -6796,10 +6836,10 @@ function renderAvulsos(){
 
 /* ---------- DB: custom categories ---------- */
 function renderCatTabs(){
-  const th=document.getElementById('catTabs'); if(!th)return;
-  th.innerHTML=S.categorias.map(c=>`<button class="tab" data-tab="cat:${c.id}" onclick="showTab('cat:${c.id}')">${escapeAttr(c.nome)}</button>`).join('');
-  const ph=document.getElementById('catPanels');
+  const ph=document.getElementById('catPanels'); if(!ph)return;
   ph.innerHTML=S.categorias.map(catPanelHTML).join('');
+  ph.querySelectorAll('.panel').forEach(x=>x.classList.toggle('on',x.dataset.panel===activeTab));
+  renderDbNav();
 }
 /* Categoria com tela/malha ganha a coluna R$/m²: a área do painel sai do
    nome (2,45 X 6,00) e o valor por m² é o da peça dividido por ela. Dá para
@@ -6920,11 +6960,6 @@ function catFornCols(c){
 }
 function setCatItemValorCol(catId,itemId,i,raw){const c=catById(catId);if(!c)return;setCatItemValor(catId,itemId,raw,catFornCols(c)[i]);}
 function setCatItemM2Col(catId,itemId,i,raw){const c=catById(catId);if(!c)return;setCatItemM2(catId,itemId,raw,catFornCols(c)[i]);}
-function addCatFornCol(catId,nome){
-  const c=catById(catId);if(!c||!nome)return;
-  c.fornCols=c.fornCols||[];if(!c.fornCols.some(x=>cpNorm(x)===cpNorm(nome)))c.fornCols.push(nome);
-  save();renderCatTabs();showTab('cat:'+catId);
-}
 function removeCatFornCol(catId,i){
   const c=catById(catId);if(!c)return;const nome=catFornCols(c)[i];if(!nome||i===0)return;
   const f=cpForn(nome),pre=fbChave(c.id)+'~',n=f&&f.catPrecos?Object.keys(f.catPrecos).filter(k=>k.indexOf(pre)===0).length:0;
@@ -6934,70 +6969,96 @@ function removeCatFornCol(catId,i){
   save();renderCatTabs();showTab('cat:'+catId);recompute();renderLines();
 }
 function catItemRow(c,it){
-  const cols=catFornCols(c),area=malhaAreaM2(it),man=catItemManual(it);
-  const precos=cols.map(n=>man?null:catItemPrecoDe(c,it,n));
-  const ok=precos.filter(v=>v>0),menor=ok.length>1?Math.min(...ok):null;
+  const cols=catFornCols(c),area=malhaAreaM2(it),man=catItemManual(it),sem=catSemFornecedor(c);
+  const precos=cols.map(n=>man?null:catItemPrecoDe(c,it,n)),menor=menorDe(precos.map(v=>v||0));
   const cel=cols.map((n,i)=>{
     const pv=precos[i],val=man?'':(pv==null?'':String(pv).replace('.',','));
     const m2=area?`<input class="din mono r sm cat-m2" value="${pv>0?String(round2(pv/area)).replace('.',','):''}" placeholder="R$/m²" title="${escapeAttr(n)}: R$ por m² — painel de ${num(area,2)} m². Digite para calcular o valor da peça." onchange="setCatItemM2Col('${c.id}','${it.id}',${i},this.value)">`:'';
-    return `<td class="r${pv>0&&pv===menor?' cat-menor':''}"><input class="din mono r sm" style="width:82px" value="${val}" placeholder="${i===0&&man?'por orçamento':'—'}" title="${i===0?'Preço de '+escapeAttr(n)+'. Em branco em todos os fornecedores = preço só na hora do orçamento (ex.: Esquadrias).':'Preço de '+escapeAttr(n)+'. Em branco = '+escapeAttr(n)+' não tem este item.'}" onchange="setCatItemValorCol('${c.id}','${it.id}',${i},this.value)">${m2}</td>`;
+    return `<td class="r${pv>0&&pv===menor?' cat-menor':''}"><input class="din mono r sm" value="${val}" placeholder="${i===0&&man?'por orçamento':'—'}" title="${i===0?'Preço de '+escapeAttr(n)+'. Em branco em todos os fornecedores = preço só na hora do orçamento (ex.: Esquadrias).':'Preço de '+escapeAttr(n)+'. Em branco = '+escapeAttr(n)+' não tem este item.'}" onchange="setCatItemValorCol('${c.id}','${it.id}',${i},this.value)">${m2}</td>`;
   }).join('');
-  return `<tr>
-    <td><input class="din" style="width:150px" value="${escapeAttr(it.grupo)}" onchange="editCatItem('${c.id}','${it.id}','grupo',this.value)"></td>
-    <td><input class="din" value="${escapeAttr(it.tipo)}" onchange="editCatItem('${c.id}','${it.id}','tipo',this.value)"></td>
-    <td><input class="din mono sm" style="width:52px" value="${escapeAttr(it.esp)}" onchange="editCatItem('${c.id}','${it.id}','esp',this.value)"></td>
-    <td><input class="din mono sm" style="width:62px" value="${escapeAttr(it.unidade)}" onchange="editCatItem('${c.id}','${it.id}','unidade',this.value)"></td>
-    <td class="r"><input class="din mono r sm" style="width:62px" value="${it.comp}" onchange="editCatItem('${c.id}','${it.id}','comp',parseInt(this.value)||0)"></td>
-    ${catTemFardo(c)?`<td class="r"><input class="din mono r sm" style="width:54px" value="${Number(it.fardo)>0?it.fardo:''}" placeholder="—" title="Quantas peças vêm num fardo fechado" onchange="editCatItem('${c.id}','${it.id}','fardo',parseInt(this.value)||0)"></td>`:''}
-    ${cel}<td class="r"><button class="delx" onclick="delCatItem('${c.id}','${it.id}')">${trash()}</button></td>
+  return `<tr data-item="${it.id}">
+    <td class="db-desc"><input class="din" value="${escapeAttr(it.tipo)}" placeholder="descrição" onchange="editCatItem('${c.id}','${it.id}','tipo',this.value)"></td>
+    <td><input class="din mono sm" style="width:60px" value="${escapeAttr(it.esp)}" placeholder="—" onchange="editCatItem('${c.id}','${it.id}','esp',this.value)"></td>
+    <td><input class="din sm" style="width:66px" value="${escapeAttr(it.unidade)}" onchange="editCatItem('${c.id}','${it.id}','unidade',this.value)"></td>
+    <td class="r"><input class="din mono r sm" style="width:70px" value="${it.comp||''}" placeholder="—" onchange="editCatItem('${c.id}','${it.id}','comp',parseInt(this.value)||0)"></td>
+    ${catTemFardo(c)?`<td class="r"><input class="din mono r sm" style="width:56px" value="${Number(it.fardo)>0?it.fardo:''}" placeholder="—" title="Quantas peças vêm num fardo fechado" onchange="editCatItem('${c.id}','${it.id}','fardo',parseInt(this.value)||0)"></td>`:''}
+    ${cel}${sem?'':'<td></td>'}<td class="r db-ra"><button class="db-rbt" type="button" data-cimenu="${c.id}" data-item="${it.id}" title="Mudar de grupo ou excluir" aria-label="Mais ações do item">⋯</button></td>
   </tr>`;
 }
+/* Grupos (VERGALHÃO CA50, TELA SOLDADA...) viram títulos de seção, em vez
+   de o nome se repetir em cada linha; o título é editável e muda o grupo
+   inteiro. A busca e os botões de grupo filtram sem perder o resto. */
+const CAT_GRP={},CAT_Q={};
+const grupoDe=it=>String(it.grupo||'').trim()||'Sem grupo';
+function catGrupos(c){const g=[];c.items.forEach(it=>{const k=grupoDe(it);if(!g.includes(k))g.push(k);});return g;}
+function catCorpo(c){
+  const q=semAcento(CAT_Q[c.id]||'').toLowerCase().replace(',','.').trim(),toks=q.split(/\s+/).filter(Boolean),gsel=CAT_GRP[c.id]||'';
+  const ok=it=>{if(gsel&&grupoDe(it)!==gsel)return false;if(!toks.length)return true;const hay=semAcento(`${it.grupo} ${it.tipo} ${it.esp}`).toLowerCase().replace(',','.');return toks.every(t=>hay.includes(t));};
+  let h='';
+  catGrupos(c).forEach(g=>{
+    const its=c.items.filter(it=>grupoDe(it)===g&&ok(it));if(!its.length)return;
+    h+='<tr class="db-grp"><td colspan="99"><input class="din" value="'+escapeAttr(g==='Sem grupo'?'':g)+'" placeholder="Sem grupo" title="Nome do grupo: muda em todos os itens dele" data-cgrp-ren="'+c.id+'" data-g="'+escapeAttr(g)+'"></td></tr>';
+    h+=its.map(it=>catItemRow(c,it)).join('');
+  });
+  return h||'<tr><td colspan="99" class="db-vazio">'+(c.items.length?'Nenhum item com esse filtro.':'Nenhum item nesta categoria ainda.')+'</td></tr>';
+}
+function catRenomeiaGrupo(catId,velho,novo){
+  const c=catById(catId);if(!c)return;novo=String(novo||'').trim().toUpperCase();
+  c.items.forEach(it=>{if(grupoDe(it)===velho)it.grupo=novo;});
+  if(CAT_GRP[catId]===velho)CAT_GRP[catId]=novo||'Sem grupo';
+  save();renderCatTabs();renderCatAddSelect();renderLines();toast('Grupo renomeado');
+}
+function catItemMenu(catId,itemId,anc){
+  const c=catById(catId),it=catItemById(c,itemId);if(!it)return;
+  const p=dbPop(anc,'<button type="button" data-a="g">Mudar de grupo…</button><hr><button type="button" data-a="x" class="perigo">Excluir item</button>');
+  p.addEventListener('click',ev=>{const b=ev.target.closest('button');if(!b)return;dbPopFecha();
+    if(b.dataset.a==='x')delCatItem(catId,itemId);
+    else askText('Grupo deste item (ex.: '+(catGrupos(c)[0]||'BARRA CHATA')+'):',it.grupo||'',function(v){if(v==null)return;it.grupo=String(v).trim().toUpperCase();save();renderCatTabs();renderLines();toast('Item movido para '+(it.grupo||'sem grupo'));},'Mudar de grupo');});
+}
+/* ⚙ Categoria: renomear, acréscimo automático e excluir -- saíram das três
+   faixas coloridas de cima da tabela */
+function catConfig(catId,anc){
+  const c=catById(catId);if(!c)return;
+  const p=dbPop(anc,'<div class="db-pop-t">'+escapeAttr(catNomeBonito(c.nome))+'</div><button type="button" data-a="n">Renomear…</button>'
+    +'<label class="db-pop-f">Acréscimo automático no orçamento<span><input id="acrCat_'+c.id+'" class="din mono r sm" value="'+(c.acrescimoPct||'')+'" placeholder="0"> %</span><small>Soma em cima do valor cadastrado na hora de orçar; não muda o preço-base.</small></label>'
+    +'<hr><button type="button" data-a="x" class="perigo">Excluir categoria…</button>');
+  const ac=p.querySelector('input');ac.addEventListener('change',()=>setCatAcrescimo(catId,ac.value));
+  p.addEventListener('click',ev=>{const b=ev.target.closest('button');if(!b)return;dbPopFecha();if(b.dataset.a==='n')renameCategoria(catId);else delCategoria(catId);});
+}
+function catNovoItem(catId){
+  const f=document.getElementById('catform_'+catId);if(!f)return;
+  f.hidden=false;const g=document.getElementById('ni_'+catId+'_grupo');if(g&&!g.value&&CAT_GRP[catId])g.value=CAT_GRP[catId];
+  const t=document.getElementById('ni_'+catId+'_tipo');if(t){t.focus();if(f.scrollIntoView)f.scrollIntoView({block:'nearest'});}
+}
 function catPanelHTML(c){
-  const rows=c.items.map(it=>catItemRow(c,it)).join('')||'<tr><td colspan="99" style="text-align:center;color:var(--muted);padding:14px">Nenhum item nesta categoria.</td></tr>';
+  const sem=catSemFornecedor(c),cols=catFornCols(c),grupos=catGrupos(c),g=CAT_GRP[c.id]||'',nome=catNomeBonito(c.nome);
+  const th=sem?'<th class="r">Valor</th>':cols.map((n,i)=>fornTh('cat:'+c.id,n,i)).join('')+'<th class="db-nova"><button type="button" class="db-novab" onclick="fornAdd(\'cat:'+c.id+'\',this)">＋ Fornecedor</button></th>';
   return `<div class="panel" data-panel="cat:${c.id}">
-    <h3 style="display:flex;align-items:center;gap:10px">${escapeAttr(c.nome)} (${c.items.length} itens)
-      <span style="flex:1"></span>
-      <button class="btn-sm" onclick="renameCategoria('${c.id}')">Renomear</button>
-      <button class="btn-sm" onclick="delCategoria('${c.id}')">Excluir categoria</button>
-    </h3>
-    <p class="note">Itens cobrados por unidade — total = <b>Valor × Quantidade</b>. Comprimento padrão é informativo (ex.: barra de 6000 mm).</p>
-    <div class="reajuste-bar" style="background:#f7f9fc${catSemFornecedor(c)?';display:none':''}">
-      <span>Uma coluna por fornecedor — cada um com o seu preço; o menor de cada item fica em <b style="color:var(--ok,#1a7f45)">verde</b>.</span>
-      <select style="margin-left:auto" onchange="addCatFornCol('${c.id}',this.value)"><option value="">+ fornecedor nesta aba…</option>${(S.fornecedores||[]).filter(f=>!catFornCols(c).some(n=>cpNorm(n)===cpNorm(f.nome))).map(f=>'<option>'+escapeAttr(f.nome)+'</option>').join('')}</select>
-    </div>
-    <div class="reajuste-bar">
-      <span>Acréscimo automático desta categoria:</span>
-      <input id="acrCat_${c.id}" class="din mono r" style="width:56px" value="${c.acrescimoPct||''}" placeholder="0" onchange="setCatAcrescimo('${c.id}',this.value)"> %
-      <span class="note" style="margin:0">— soma em cima do Valor cadastrado, na hora de orçar. Não altera o preço-base.</span>
-    </div>
-    <div class="reajuste-bar">
-      <span>Reajuste em massa (${escapeAttr(c.nome)}) de</span>
-      <select id="reajForn_${c.id}"${catSemFornecedor(c)?' style="display:none"':''}>${catFornCols(c).map(n=>'<option>'+escapeAttr(n)+'</option>').join('')}</select>:
-      <input id="reajCat_${c.id}" class="din mono r" style="width:64px" placeholder="6"> %
-      <button class="btn-sm red" onclick="reajustarCat('${c.id}')">Aplicar</button>
-      <button class="btn-sm" onclick="desfazerReajuste()">Desfazer último</button>
-    </div>
-    <div class="dbsearch"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
-      <input placeholder="Filtrar ${escapeAttr(c.nome.toLowerCase())}…" oninput="filterCatPanel('${c.id}',this.value)"></div>
-    <table class="dbtbl"><thead><tr><th>Grupo</th><th>Descrição</th><th>Esp.</th><th>Unid.</th><th class="r">Comp. (mm)</th>${catTemFardo(c)?'<th class="r" title="Peças por fardo fechado">Pç/fardo</th>':''}${catFornCols(c).map((n,i)=>'<th class="r cat-fcol">'+escapeAttr(catSemFornecedor(c)?'Valor':n)+(i?' <button class="cat-colx" title="Tirar '+escapeAttr(n)+' desta aba" onclick="removeCatFornCol(\''+c.id+'\','+i+')">✕</button>':'')+'<div class="cat-fsub">'+(catTemMalha(c)?'peça · m²':'valor/'+'peça')+'</div></th>').join('')}<th></th></tr></thead>
-      <tbody id="catbody_${c.id}">${rows}</tbody></table>
-    <div class="row-form">
-      <div class="f" style="grid-column:span 3"><span class="lab">Grupo</span><input class="din" id="ni_${c.id}_grupo" placeholder="BARRA CHATA"></div>
-      <div class="f" style="grid-column:span 4"><span class="lab">Tipo</span><input class="din" id="ni_${c.id}_tipo" placeholder="1/2 X 3/16 (12,7 X 4,75)"></div>
+    <div class="db-h"><h3>${escapeAttr(nome)}</h3><span class="s">${c.items.length} ${c.items.length===1?'item':'itens'}${sem?'':' · '+cols.length+' fornecedor'+(cols.length===1?'':'es')}${catTemMalha(c)?' · tela por peça ou por m²':''}${c.acrescimoPct?' · +'+num(c.acrescimoPct,c.acrescimoPct%1?1:0)+'% no orçamento':''}</span><span class="sp"></span>
+      <button class="btn-sm" type="button" onclick="catConfig('${c.id}',this)">⚙ Categoria</button></div>
+    <div class="db-bar"><div class="dbsearch"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+      <input placeholder="Buscar em ${escapeAttr(nome.toLowerCase())}…" value="${escapeAttr(CAT_Q[c.id]||'')}" oninput="filterCatPanel('${c.id}',this.value)"></div>
+      ${grupos.length>1?'<span class="db-chips">'+['',...grupos].map(x=>'<button type="button" class="db-chip'+(x===g?' on':'')+'" data-cgrp="'+c.id+'" data-g="'+escapeAttr(x)+'">'+escapeAttr(x?catNomeBonito(x):'Todos')+'</button>').join('')+'</span>':''}
+      <span class="sp"></span><button class="btn-sm" type="button" onclick="catNovoItem('${c.id}')">＋ Item</button>
+      ${sem?'':`<button class="btn-sm red" type="button" onclick="fornAdd('cat:${c.id}',this)">＋ Fornecedor</button>`}</div>
+    <div class="db-tw"><table class="dbtbl limpa"><thead><tr><th>Item</th><th>Esp.</th><th>Unid.</th><th class="r">Comp. (mm)</th>${catTemFardo(c)?'<th class="r" title="Peças por fardo fechado">Pç/fardo</th>':''}${th}<th></th></tr></thead>
+      <tbody id="catbody_${c.id}">${catCorpo(c)}</tbody>
+      <tbody><tr><td colspan="99" class="db-novo"><button type="button" class="db-novol" onclick="catNovoItem('${c.id}')">＋ Novo item em ${escapeAttr(nome)}</button></td></tr></tbody></table></div>
+    <div class="row-form db-nf" id="catform_${c.id}" hidden>
+      <div class="f" style="grid-column:span 3"><span class="lab">Grupo</span><input class="din" id="ni_${c.id}_grupo" list="dl_grp_${c.id}" placeholder="${escapeAttr(grupos[0]&&grupos[0]!=='Sem grupo'?grupos[0]:'BARRA CHATA')}"><datalist id="dl_grp_${c.id}">${grupos.filter(x=>x!=='Sem grupo').map(x=>'<option value="'+escapeAttr(x)+'">').join('')}</datalist></div>
+      <div class="f" style="grid-column:span 4"><span class="lab">Descrição</span><input class="din" id="ni_${c.id}_tipo" placeholder="1/2 X 3/16 (12,7 X 4,75)"></div>
       <div class="f" style="grid-column:span 2"><span class="lab">Espessura</span><input class="din mono" id="ni_${c.id}_esp" placeholder=""></div>
       <div class="f" style="grid-column:span 3"><span class="lab">Unidade</span><input class="din" id="ni_${c.id}_unidade" placeholder="barra"></div>
       <div class="f" style="grid-column:span 3"><span class="lab">Comprimento (mm)</span><input class="din mono r" id="ni_${c.id}_comp" value="6000"></div>
-      <div class="f" style="grid-column:span 3"><span class="lab">Valor (R$)</span><input class="din mono r" id="ni_${c.id}_valor" placeholder="0,00"></div>
-      <div class="f" style="grid-column:span 3;align-self:end"><button class="btn-sm red" style="width:100%" onclick="addCatItem('${c.id}')">+ Adicionar item</button></div>
+      <div class="f" style="grid-column:span 3"><span class="lab">${sem?'Valor (R$)':'Valor de '+escapeAttr(catFornBase(c))+' (R$)'}</span><input class="din mono r" id="ni_${c.id}_valor" placeholder="0,00"></div>
+      <div class="f" style="grid-column:span 6;align-self:end;display:flex;gap:8px;flex-direction:row;justify-content:flex-end"><button class="btn-sm" type="button" onclick="document.getElementById('catform_${c.id}').hidden=true">Cancelar</button><button class="btn-sm red" type="button" onclick="addCatItem('${c.id}')">＋ Adicionar item</button></div>
     </div>
+    ${sem?'':'<div class="db-leg"><span><b class="v"></b>menor preço do item</span><span><b class="r"></b>referência: é contra ela que a economia é medida</span><span>Clique no preço para editar · ⋯ no nome do fornecedor para reajustar</span></div>'}
   </div>`;
 }
 function filterCatPanel(catId,q){
-  const cat=catById(catId); const body=document.getElementById('catbody_'+catId); if(!cat||!body)return;
-  const nq=semAcento(q||'').toLowerCase().replace(',','.').trim();
-  const toks=nq.split(/\s+/).filter(Boolean);
-  const items=nq?cat.items.filter(it=>{const hay=semAcento(`${it.grupo} ${it.tipo} ${it.esp}`).toLowerCase().replace(',','.');return toks.every(t=>hay.includes(t));}):cat.items;
-  body.innerHTML=items.map(it=>catItemRow(cat,it)).join('')||'<tr><td colspan="99" style="text-align:center;color:var(--muted);padding:14px">Nenhum item.</td></tr>';
+  const cat=catById(catId),body=document.getElementById('catbody_'+catId);if(!cat||!body)return;
+  CAT_Q[catId]=q||'';body.innerHTML=catCorpo(cat);
 }
 function editCatItem(catId,itemId,field,val){
   const cat=catById(catId); const it=catItemById(cat,itemId); if(!it)return;
@@ -7010,7 +7071,8 @@ function editCatItem(catId,itemId,field,val){
 // "ainda sem preco" que ja existia, e mudar isso mexeria em cadastro antigo.
 function setCatItemValor(catId,itemId,raw,nome){
   const cat=catById(catId); const it=catItemById(cat,itemId); if(!it)return;
-  const fn=nome||dbFornNome();
+  const fn=nome||catFornBase(cat);
+  marcaAtual(fn,'cat:'+catId);
   if(cpNorm(fn)!==cpNorm(catFornBase(cat))){
     /* fornecedor que nao e' a referencia: o valor e' so' dele */
     const f=cpForn(fn);if(!f)return;if(!f.catPrecos)f.catPrecos={};
@@ -7038,13 +7100,14 @@ function addCatItem(catId){
   const tipo=(document.getElementById('ni_'+catId+'_tipo').value||'').trim();
   const valor=parseNumLoose(document.getElementById('ni_'+catId+'_valor').value);
   if(!g&&!tipo){alert('Informe ao menos Grupo ou Tipo.');return;}
-  const fn=dbFornNome(),daRef=cpNorm(fn)===cpNorm(catFornBase(cat));
+  const fn=catFornBase(cat),daRef=true;
   const novo={id:'i'+Date.now().toString(36),grupo:g.toUpperCase(),tipo,
     esp:(document.getElementById('ni_'+catId+'_esp').value||'').trim(),
     unidade:(document.getElementById('ni_'+catId+'_unidade').value||'').trim()||'barra',
     comp:parseInt(document.getElementById('ni_'+catId+'_comp').value)||6000, valor:daRef?valor:0};
   cat.items.push(novo);
   if(!daRef&&valor>0){const f=cpForn(fn);if(f){if(!f.catPrecos)f.catPrecos={};f.catPrecos[catPrecoKey(cat,novo)]=valor;}}
+  marcaAtual(fn,'cat:'+catId);
   save(); renderCatTabs(); showTab('cat:'+catId); renderCatAddSelect(); toast('Item adicionado');
 }
 function setCatAcrescimo(catId,val){
@@ -7058,7 +7121,7 @@ function addCategoria(){
   askText('Nome da nova categoria (ex.: PARAFUSOS, ACESSÓRIOS, CHAPAS):','',function(nome){
     if(!nome||!nome.trim())return;
     const id='cat_'+Date.now().toString(36);
-    S.categorias.push({id,nome:nome.trim().toUpperCase(),items:[],fornBase:dbFornNome()});
+    S.categorias.push({id,nome:nome.trim().toUpperCase(),items:[],fornBase:cpRefNome()});
     save(); renderCatTabs(); renderCatAddSelect(); showTab('cat:'+id); toast('Categoria criada');
   },'Nova categoria');
 }
@@ -7074,7 +7137,7 @@ function delCategoria(catId){
   if(!confirm('Excluir a categoria "'+cat.nome+'" e todos os seus itens?'))return;
   S.categorias=S.categorias.filter(c=>c.id!==catId);
   S.linhasCat=S.linhasCat.filter(l=>l.catId!==catId);
-  save(); renderCatTabs(); renderCatAddSelect(); showTab('forn'); renderLines(); toast('Categoria excluída');
+  save(); renderCatTabs(); renderCatAddSelect(); showTab('perfis'); renderLines(); toast('Categoria excluída');
 }
 
 function recompute(){
@@ -7296,7 +7359,7 @@ function onFornecedorGrupoInput(grupo){
 }
 
 /* ============ DB MODAL ============ */
-function openDB(tab){document.getElementById('overlay').classList.add('open');renderForn();renderDBPerfis();renderDBTelhas();renderChapasKg();renderCatTabs();renderEmpresa();renderCatAddSelect();renderAjustes();showTab(tab||'forn');document.getElementById('storeNote').textContent=storageOK?'Salvamento automático ativo neste navegador.':'Atenção: este ambiente NÃO salva sozinho — use “Baixar cadastro” e publique no GitHub Pages.';}
+function openDB(tab){document.getElementById('overlay').classList.add('open');renderFornCad();renderForn();renderDBPerfis();renderDBTelhas();renderChapasKg();renderCatTabs();renderEmpresa();renderCatAddSelect();renderAjustes();showTab(tab||'perfis');document.getElementById('storeNote').textContent=storageOK?'Salvamento automático ativo neste navegador.':'Atenção: este ambiente NÃO salva sozinho — use “Baixar cadastro” e publique no GitHub Pages.';}
 function closeDB(){commitEdits();document.getElementById('overlay').classList.remove('open');renderCompany();renderSupSelect();renderCatAddSelect();renderLines();if(typeof FB!=='undefined'&&FB.pending)fbApply(FB.pending);}
 /* garante que a última edição (campo ainda em foco) seja gravada antes de sair/fechar */
 function commitEdits(){ try{ const a=document.activeElement; if(a && typeof a.blur==='function') a.blur(); save(); }catch(e){} }
@@ -7310,48 +7373,256 @@ function showTab(t){
   activeTab=t;
   document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('on',x.dataset.tab===t));
   /* a aba escolhida fica à vista na barra que rola (celular) */
-  try{const a=document.querySelector('.tabs .tab.on');if(a&&a.scrollIntoView)a.scrollIntoView({block:'nearest',inline:'nearest'});}catch(e){}
+  try{const a=document.querySelector('.db-nav .tab.on');if(a&&a.scrollIntoView)a.scrollIntoView({block:'nearest',inline:'nearest'});}catch(e){}
+  dbPopFecha();
   document.querySelectorAll('.panel').forEach(x=>x.classList.toggle('on',x.dataset.panel===t));
 }
 
-/* fornecedores panel */
-let editForn=null;
-function renderForn(){
-  const sel=document.getElementById('supEdit');
-  /* LER A ESCOLHA ANTES DE RECONSTRUIR AS OPCOES.
-     Aqui estava o motivo de trocar o fornecedor no cadastro nao trocar os
-     precos: o onchange chamava esta funcao, que reescrevia o <select> inteiro
-     marcando "selected" no editForn AINDA ANTIGO. Isso apagava a escolha que
-     o navegador tinha acabado de registrar, e a linha seguinte
-     (editForn=sel.value) lia de volta o valor velho. O seletor voltava
-     sozinho para o fornecedor anterior e a tabela de precos nunca mudava.
+/* ═══════════ BANCO DE DADOS: FORNECEDORES EM COLUNAS (out/2026) ═══════════
+   Era confuso: cada área tratava fornecedor de um jeito ("Editando:" no preço
+   por kg, "Preços de:" em Telhas e Chapas, colunas nas categorias), e
+   fornecedor novo só se cadastrava na aba de preço por kg -- o JR foi
+   cadastrado e não aparecia em Vergalhões e telas; o "+ fornecedor nesta
+   aba" ficava escondido entre três faixas coloridas.
+   Agora: UM cadastro (Fornecedores), onde se marca em que áreas ele vende, e
+   em TODAS as áreas um fornecedor por coluna, com o menu ⋯ no título
+   (reajustar, desfazer, referência, ver, tirar) e "＋ Fornecedor" na tabela.
+   Os preços continuam guardados onde sempre estiveram -- não há migração:
+     referência -> no item (telha: t.preco; material: m.rkg; categoria:
+                   it.valor de quem é o fornBase); o R$/kg em f.precos
+     os demais  -> no fornecedor (f.precos, f.telhas, f.matPrecos, f.catPrecos)
+   f.vende {kg, telhas, chapas}: aparece na área mesmo ainda sem preço (nas
+   categorias é a lista c.fornCols, como antes). f.atualizadoEm[área]: quando
+   o preço dele mudou ali. Teste orcamento-banco-fornecedores. */
+const AREA_NOME={kg:'Preço por kg (perfis)',telhas:'Telhas',chapas:'Chapas e bobinas'};
+function chapasLigado(){return !document.body.classList.contains('off-chapas');}
+function catNomeBonito(n){n=String(n||'');return n===n.toUpperCase()?n.charAt(0)+n.slice(1).toLowerCase():n;}
+function areaTitulo(area){if(area.indexOf('cat:')===0){const c=catById(area.slice(4));return c?catNomeBonito(c.nome):'';}return AREA_NOME[area]||area;}
+function areaRef(area){if(area.indexOf('cat:')===0){const c=catById(area.slice(4));return c?catFornBase(c):cpRefNome();}return cpRefNome();}
+function fornTemArea(f,area){
+  if(!f)return false;
+  const ref=cpNorm(f.nome)===cpNorm(cpRefNome()),v=f.vende||{},algum=o=>Object.values(o||{}).some(x=>Number(x)>0);
+  if(area==='kg')return ref||!!v.kg||algum(f.precos)||f.id===S.fornecedorAtivo;
+  if(area==='telhas')return ref||!!v.telhas||algum(f.telhas);
+  if(area==='chapas')return ref||!!v.chapas||algum(f.matPrecos);
+  if(area.indexOf('cat:')===0){const c=catById(area.slice(4));return !!c&&!catSemFornecedor(c)&&catFornCols(c).some(n=>cpNorm(n)===cpNorm(f.nome));}
+  return false;
+}
+function fornCols(area){
+  if(area.indexOf('cat:')===0){const c=catById(area.slice(4));return c?catFornCols(c):[];}
+  const ref=cpRefNome(),nomes=[ref];
+  (S.fornecedores||[]).forEach(f=>{if(cpNorm(f.nome)!==cpNorm(ref)&&fornTemArea(f,area))nomes.push(f.nome);});
+  return nomes;
+}
+function marcaAtual(nome,area){const f=cpForn(nome);if(!f)return;f.atualizadoEm=f.atualizadoEm||{};f.atualizadoEm[fbChave(area)]=Date.now();}
+function fornAtualEm(nome,area){const f=cpForn(nome),t=f&&f.atualizadoEm&&f.atualizadoEm[fbChave(area)];return t?new Date(t).toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'}):'';}
+function menorDe(vs){const ok=vs.filter(v=>v>0);return ok.length>1?Math.min(...ok):null;}
+/* título da coluna: o nome, "referência", quando mudou e o menu ⋯ */
+function fornTh(area,nome,i){
+  const ref=cpNorm(nome)===cpNorm(areaRef(area)),quando=fornAtualEm(nome,area);
+  return '<th class="r db-fcol'+(ref?' ref':'')+'"><button type="button" class="db-fbt" data-fm="'+escapeAttr(area)+'" data-fi="'+i+'" title="Ações de '+escapeAttr(nome)+'"><b>'+escapeAttr(nome)+'</b><span class="db-dots" aria-hidden="true">⋯</span></button><i>'+(ref?'referência':'')+(ref&&quando?' · ':'')+(quando?'atualizado '+quando:'')+'</i></th>';
+}
+/* janelinha presa a um botão (menu ⋯, escolher fornecedor, ⚙ Categoria) */
+function dbPop(anc,html){
+  dbPopFecha();
+  const p=document.createElement('div');p.className='db-pop no-print';p.id='dbPop';p.innerHTML=html;document.body.appendChild(p);
+  const r=anc.getBoundingClientRect(),larg=document.documentElement.clientWidth;
+  p.style.top=(window.scrollY+r.bottom+4)+'px';
+  p.style.left=Math.max(8,Math.min(window.scrollX+r.right-p.offsetWidth,window.scrollX+larg-p.offsetWidth-8))+'px';
+  setTimeout(()=>document.addEventListener('mousedown',dbPopFora),0);
+  return p;
+}
+function dbPopFora(e){const p=document.getElementById('dbPop');if(p&&!p.contains(e.target))dbPopFecha();}
+function dbPopFecha(){const p=document.getElementById('dbPop');if(p)p.remove();document.removeEventListener('mousedown',dbPopFora);}
+function dbRender(area){
+  if(area==='kg')renderForn();else if(area==='telhas')renderDBTelhas();else if(area==='chapas')renderChapasKg();else renderCatTabs();
+  renderFornCad();renderDbNav();
+}
+document.addEventListener('click',e=>{
+  const b=e.target.closest&&e.target.closest('.db-fbt');if(b){e.stopPropagation();fornMenu(b.dataset.fm,+b.dataset.fi,b);return;}
+  const m=e.target.closest&&e.target.closest('[data-cimenu]');if(m){e.stopPropagation();catItemMenu(m.dataset.cimenu,m.dataset.item,m);return;}
+  const g=e.target.closest&&e.target.closest('[data-cgrp]');if(g){CAT_GRP[g.dataset.cgrp]=g.dataset.g;renderCatTabs();}
+});
+document.addEventListener('change',e=>{const x=e.target;if(x&&x.dataset&&x.dataset.cgrpRen)catRenomeiaGrupo(x.dataset.cgrpRen,x.dataset.g,x.value);});
+function fornMenu(area,i,anc){
+  const nome=fornCols(area)[i];if(!nome)return;
+  const ref=cpNorm(nome)===cpNorm(areaRef(area)),cat=area.indexOf('cat:')===0;
+  const it=[['Reajustar preços de '+nome+'…','r'],['Desfazer último reajuste','d']];
+  if(cat&&!ref)it.push(['Usar como referência desta categoria','ref']);
+  it.push(['-',''],['Ver no cadastro de fornecedores','ver']);
+  if(!ref)it.push(['Tirar '+nome+' daqui','tira']);
+  const p=dbPop(anc,it.map(x=>x[0]==='-'?'<hr>':'<button type="button" data-a="'+x[1]+'"'+(x[1]==='tira'?' class="perigo"':'')+'>'+escapeAttr(x[0])+'</button>').join(''));
+  p.addEventListener('click',ev=>{const b=ev.target.closest('button');if(!b)return;dbPopFecha();const a=b.dataset.a;
+    if(a==='r')reajusteForn(area,nome);
+    else if(a==='d')desfazerReajuste();
+    else if(a==='ref')catUsarRef(area.slice(4),nome);
+    else if(a==='ver'){showTab('fornecedores');fornCadFoco(nome);}
+    else if(a==='tira')fornTiraDaArea(area,nome);});
+}
+function reajusteForn(area,nome){
+  askText('Reajuste dos preços de '+nome+' em '+areaTitulo(area)+', em % (ex.: 6 para subir 6%, -3 para baixar 3%):','',function(v){
+    const pct=parseNumLoose(v);if(!pct)return;
+    const ref=cpNorm(nome)===cpNorm(areaRef(area)),f=cpForn(nome),k=x=>round2(x*(1+pct/100)),cp=o=>JSON.parse(JSON.stringify(o||{}));
+    if(area==='kg'){if(!f)return;S._undo={tipo:'forn',fornId:f.id,before:cp(f.precos)};Object.keys(f.precos||{}).forEach(e=>{if(Number(f.precos[e])>0)f.precos[e]=k(f.precos[e]);});}
+    else if(area==='telhas'){
+      if(ref){S._undo={tipo:'telhas',before:S.telhas.map(t=>({id:t.id,preco:t.preco}))};S.telhas.forEach(t=>{if(Number(t.preco)>0)t.preco=k(t.preco);});}
+      else{if(!f)return;f.telhas=f.telhas||{};S._undo={tipo:'telhasForn',forn:nome,before:cp(f.telhas)};Object.keys(f.telhas).forEach(id=>{if(Number(f.telhas[id])>0)f.telhas[id]=k(f.telhas[id]);});}}
+    else if(area==='chapas'){
+      if(ref){S._undo={tipo:'materiais',before:(S.materiaisKg||[]).map(m=>({id:m.id,rkg:m.rkg}))};(S.materiaisKg||[]).forEach(m=>{if(Number(m.rkg)>0)m.rkg=k(m.rkg);});}
+      else{if(!f)return;f.matPrecos=f.matPrecos||{};S._undo={tipo:'matForn',forn:nome,before:cp(f.matPrecos)};Object.keys(f.matPrecos).forEach(id=>{if(Number(f.matPrecos[id])>0)f.matPrecos[id]=k(f.matPrecos[id]);});}}
+    else{const cat=catById(area.slice(4));if(!cat)return;
+      if(ref){S._undo={tipo:'cat',catId:cat.id,before:cat.items.map(it=>({id:it.id,valor:it.valor}))};cat.items.forEach(it=>{if(Number(it.valor)>0)it.valor=k(it.valor);});}
+      else{if(!f)return;f.catPrecos=f.catPrecos||{};S._undo={tipo:'catForn',catId:cat.id,forn:nome,before:cp(f.catPrecos)};cat.items.forEach(it=>{const kk=catPrecoKey(cat,it);if(Number(f.catPrecos[kk])>0)f.catPrecos[kk]=k(f.catPrecos[kk]);});}}
+    marcaAtual(nome,area);
+    save();dbRender(area);recompute();renderLines();toast('Reajuste de '+(pct>0?'+':'')+num(pct,pct%1?1:0)+'% nos preços de '+nome);
+  },'Reajustar preços');
+}
+/* "Usar como referência": troca de verdade. Os preços da referência antiga
+   (que moram no item) vão para a coluna dela; os da nova passam a ser os do
+   item. Cada fornecedor continua com os seus números. */
+function catUsarRef(catId,nome){
+  const cat=catById(catId);if(!cat)return;const velho=catFornBase(cat);if(cpNorm(nome)===cpNorm(velho))return;
+  if(!confirm(nome+' passa a ser a referência de '+catNomeBonito(cat.nome)+' (é contra ela que a economia é medida).\n\nOs preços de cada fornecedor continuam os mesmos. Continuar?'))return;
+  const fn=cpForn(nome);if(!fn)return;
+  let fv=cpForn(velho);
+  if(!fv){fv={id:'f'+Date.now().toString(36),nome:velho,precos:{}};S.fornecedores.push(fv);}
+  fv.catPrecos=fv.catPrecos||{};fn.catPrecos=fn.catPrecos||{};
+  cat.items.forEach(it=>{const k=catPrecoKey(cat,it),vv=Number(it.valor)>0?Number(it.valor):0,vn=Number(fn.catPrecos[k])>0?Number(fn.catPrecos[k]):0;
+    if(vv>0)fv.catPrecos[k]=vv;else delete fv.catPrecos[k];
+    delete fn.catPrecos[k];it.valor=vn;});
+  cat.fornCols=cat.fornCols||[];if(!cat.fornCols.some(x=>cpNorm(x)===cpNorm(velho)))cat.fornCols.push(velho);
+  cat.fornBase=nome;
+  save();dbRender('cat:'+catId);recompute();renderLines();toast('Referência de '+catNomeBonito(cat.nome)+': '+nome);
+}
+function fornTiraDaArea(area,nome){
+  if(area.indexOf('cat:')===0){const c=catById(area.slice(4));if(!c)return;const i=catFornCols(c).findIndex(n=>cpNorm(n)===cpNorm(nome));if(i>0)removeCatFornCol(c.id,i);renderFornCad();renderDbNav();return;}
+  const f=cpForn(nome);if(!f)return;
+  if(area==='kg'&&f.id===S.fornecedorAtivo){alert(nome+' é o fornecedor dos perfis no orçamento. Escolha outro lá antes de tirá-lo daqui.');return;}
+  const campo={kg:'precos',telhas:'telhas',chapas:'matPrecos'}[area],n=Object.values(f[campo]||{}).filter(v=>Number(v)>0).length;
+  if(!confirm('Tirar '+nome+' de '+AREA_NOME[area]+'?'+(n?'\n\nOs '+n+' preço(s) dele aqui são apagados.':'')))return;
+  if(area==='kg')Object.keys(f.precos||{}).forEach(e=>{f.precos[e]=null;});else delete f[campo];
+  f.vende=f.vende||{};f.vende[area]=false;
+  save();dbRender(area);recompute();renderLines();toast(nome+' saiu de '+AREA_NOME[area]);
+}
+/* "＋ Fornecedor": escolher entre os cadastrados ou cadastrar um novo */
+function fornAdd(area,anc){
+  const ja=fornCols(area),fora=(S.fornecedores||[]).filter(f=>!ja.some(n=>cpNorm(n)===cpNorm(f.nome)));
+  const p=dbPop(anc,'<div class="db-pop-t">Mostrar em '+escapeAttr(areaTitulo(area))+'</div>'
+    +(fora.map(f=>'<button type="button" data-n="'+escapeAttr(f.nome)+'">'+escapeAttr(f.nome)+'</button>').join('')||'<div class="db-pop-v">Todos os fornecedores já estão aqui.</div>')
+    +'<hr><button type="button" data-novo="1" class="forte">＋ Cadastrar fornecedor novo…</button>');
+  p.addEventListener('click',ev=>{const b=ev.target.closest('button');if(!b)return;dbPopFecha();
+    if(b.dataset.novo){showTab('fornecedores');fornDialogo(null,area);return;}
+    fornPoeNaArea(area,b.dataset.n);});
+}
+function fornPoeNaArea(area,nome){
+  if(area.indexOf('cat:')===0){const c=catById(area.slice(4));if(!c)return;c.fornCols=c.fornCols||[];if(!c.fornCols.some(x=>cpNorm(x)===cpNorm(nome)))c.fornCols.push(nome);}
+  else{const f=cpForn(nome);if(!f)return;f.vende=f.vende||{};f.vende[area]=true;}
+  save();dbRender(area);toast(nome+' em '+areaTitulo(area)+': digite os preços na coluna dele');
+}
 
-     Medido: com PERFITEC e Perfiaco cadastrados, escolher Perfiaco deixava o
-     select em PERFITEC e os tres precos iguais. */
-  const escolhido = sel && sel.value;
-  if(escolhido && S.fornecedores.some(f=>f.id===escolhido)) editForn=escolhido;
-  if(!editForn||!S.fornecedores.find(f=>f.id===editForn)) editForn=S.fornecedorAtivo;
-  const f=S.fornecedores.find(x=>x.id===editForn)||S.fornecedores[0];
-  editForn=f.id; telhaFornSel=f.nome;
-  sel.innerHTML=S.fornecedores.map(x=>`<option value="${x.id}" ${x.id===editForn?'selected':''}>${escapeAttr(x.nome)}</option>`).join('');
-  sel.value=editForn;
-  const body=document.getElementById('fornBody');
-  body.innerHTML=S.espessuras.map(esp=>{
-    const v=f.precos[esp]; const dv=v!=null?String(v).replace('.',','):'';
-    return `<tr><td class="mono">#${esp} mm</td>
-      <td class="r"><input class="din mono r sm" value="${dv}" placeholder="—"
-        oninput="setPrecoKgLive('${esp}', this.value)" onchange="setPrecoKg('${esp}', this.value)"></td>
-      <td class="r" style="width:34px"><button class="delx" onclick="delEspessura('${esp}')">${trash()}</button></td></tr>`;
+/* ---------- Fornecedores: o cadastro ---------- */
+let FORN_DLG=null,FORN_FOCO='';
+function fornAreas(){
+  const a=[['kg','Perfis (R$/kg)'],['telhas','Telhas']];if(chapasLigado())a.push(['chapas','Chapas e bobinas']);
+  (S.categorias||[]).filter(c=>!catSemFornecedor(c)).forEach(c=>a.push(['cat:'+c.id,catNomeBonito(c.nome)]));
+  return a;
+}
+function fornNumPrecos(f){
+  const ref=cpNorm(f.nome)===cpNorm(cpRefNome()),pos=o=>Object.values(o||{}).filter(v=>Number(v)>0).length;
+  let n=pos(f.precos)+pos(f.catPrecos)+(ref?S.telhas.filter(t=>Number(t.preco)>0).length:pos(f.telhas))+(ref?(S.materiaisKg||[]).filter(m=>Number(m.rkg)>0).length:pos(f.matPrecos));
+  (S.categorias||[]).forEach(c=>{if(cpNorm(catFornBase(c))===cpNorm(f.nome))n+=c.items.filter(it=>Number(it.valor)>0).length;});
+  return n;
+}
+function renderFornCad(){
+  const box=document.getElementById('fornCad');if(!box)return;
+  const ref=cpRefNome();
+  const cards=(S.fornecedores||[]).map(f=>{
+    const ar=fornAreas().filter(a=>fornTemArea(f,a[0])),n=fornNumPrecos(f),q=Object.values(f.atualizadoEm||{}).reduce((m,x)=>Math.max(m,Number(x)||0),0),eRef=cpNorm(f.nome)===cpNorm(ref);
+    return '<div class="db-fc'+(FORN_FOCO&&cpNorm(FORN_FOCO)===cpNorm(f.nome)?' foco':'')+'" data-fid="'+f.id+'"><h4><span>'+escapeAttr(f.nome)+'</span>'+(eRef?'<span class="db-tag">referência</span>':'')+'</h4>'
+      +(f.contato?'<div class="k">'+escapeAttr(f.contato)+'</div>':'')
+      +'<div class="cs">'+(ar.map(a=>'<button type="button" class="db-chip" onclick="showTab(\''+a[0]+'\')">'+escapeAttr(a[1])+'</button>').join('')||'<span class="k">ainda em nenhuma área</span>')+'</div>'
+      +'<div class="k">'+n+' preço'+(n===1?'':'s')+(q?' · atualizado '+new Date(q).toLocaleDateString('pt-BR'):'')+(f.id===S.fornecedorAtivo?' · usado nos perfis do orçamento':'')+'</div>'
+      +'<div class="db-fc-a"><button class="btn-sm" type="button" onclick="fornDialogo(\''+f.id+'\')">Editar</button>'+(eRef?'':'<button class="btn-sm" type="button" onclick="fornExcluir(\''+f.id+'\')">Excluir</button>')+'</div></div>';
   }).join('');
+  box.innerHTML='<div class="db-h"><h3>Fornecedores</h3><span class="s">um cadastro só: cada fornecedor vira uma coluna nas áreas em que vende</span><span class="sp"></span><button class="btn-sm red" type="button" onclick="fornDialogo(null)">＋ Novo fornecedor</button></div>'
+    +(FORN_DLG?fornDialogoHTML():'')+'<div class="db-fl">'+cards+'</div>';
 }
-function setPrecoKg(esp,val){
-  const f=S.fornecedores.find(x=>x.id===editForn);
-  const v=val.trim()===''?null:parseNumLoose(val);
-  f.precos[esp]=v; save(); recompute(); toast('Preço atualizado');
+function fornCadFoco(nome){FORN_FOCO=nome;renderFornCad();const c=document.querySelector('#fornCad .db-fc.foco');if(c&&c.scrollIntoView)c.scrollIntoView({block:'nearest'});setTimeout(()=>{FORN_FOCO='';const x=document.querySelector('#fornCad .db-fc.foco');if(x)x.classList.remove('foco');},2500);}
+function fornDialogoHTML(){
+  const f=FORN_DLG.id?(S.fornecedores||[]).find(x=>x.id===FORN_DLG.id):null;
+  const marc=a=>f?fornTemArea(f,a):FORN_DLG.area===a;
+  return '<div class="db-dlg" id="fornDlg"><h4>'+(f?'Editar '+escapeAttr(f.nome):'Novo fornecedor')+'</h4>'
+    +'<div class="db-dlg-r"><label>Nome<input class="din" id="fd_nome" value="'+escapeAttr(f?f.nome:'')+'"'+(f?' readonly title="O nome não muda depois de cadastrado: orçamentos e cotações guardam o fornecedor pelo nome"':' placeholder="ex.: JR"')+' autocomplete="off"></label>'
+    +'<label>Contato (opcional)<input class="din" id="fd_contato" value="'+escapeAttr(f&&f.contato||'')+'" placeholder="telefone, vendedor…" autocomplete="off"></label></div>'
+    +'<div class="note">Vende em quais áreas? Ele vira uma coluna em cada uma.</div>'
+    +'<div class="db-dlg-c">'+fornAreas().map(a=>{const r=f&&cpNorm(f.nome)===cpNorm(areaRef(a[0]));return '<label'+(r?' title="É a referência aqui"':'')+'><input type="checkbox" data-area="'+escapeAttr(a[0])+'"'+(marc(a[0])||r?' checked':'')+(r?' disabled':'')+'> '+escapeAttr(a[1])+'</label>';}).join('')+'</div>'
+    +'<div class="db-dlg-a"><button class="btn-sm" type="button" onclick="FORN_DLG=null;renderFornCad()">Cancelar</button><button class="btn-sm red" type="button" onclick="fornSalvar()">'+(f?'Salvar':'Cadastrar')+'</button></div></div>';
 }
-function setPrecoKgLive(esp,val){
-  const f=S.fornecedores.find(x=>x.id===editForn); if(!f)return;
-  f.precos[esp]=val.trim()===''?null:parseNumLoose(val); save();
+function fornDialogo(id,area){FORN_DLG={id:id||null,area:area||''};renderFornCad();setTimeout(()=>{const e=document.getElementById(id?'fd_contato':'fd_nome');if(e)e.focus();},30);}
+function fornSalvar(){
+  const id=FORN_DLG&&FORN_DLG.id;let f=id?(S.fornecedores||[]).find(x=>x.id===id):null;
+  const nome=(document.getElementById('fd_nome').value||'').trim(),contato=(document.getElementById('fd_contato').value||'').trim();
+  const marcadas=[...document.querySelectorAll('#fornDlg [data-area]')].filter(x=>!x.disabled).map(x=>[x.dataset.area,x.checked]);
+  if(!f){
+    if(!nome){alert('Informe o nome do fornecedor.');return;}
+    if(cpForn(nome)){alert('Já existe um fornecedor chamado '+cpForn(nome).nome+'.');return;}
+    const precos={};(S.espessuras||[]).forEach(e=>precos[e]=null);
+    f={id:'f'+Date.now().toString(36),nome,precos};S.fornecedores.push(f);
+  }
+  if(contato)f.contato=contato;else delete f.contato;
+  let primeira='';
+  marcadas.forEach(([a,on])=>{
+    const tem=fornTemArea(f,a);
+    if(on&&!tem){if(a.indexOf('cat:')===0){const c=catById(a.slice(4));c.fornCols=c.fornCols||[];if(!c.fornCols.some(x=>cpNorm(x)===cpNorm(f.nome)))c.fornCols.push(f.nome);}else{f.vende=f.vende||{};f.vende[a]=true;}if(!primeira)primeira=a;}
+    if(!on&&tem)fornTiraDaArea(a,f.nome);
+  });
+  FORN_DLG=null;save();renderCatTabs();renderForn();renderDBTelhas();renderChapasKg();renderFornCad();renderDbNav();renderSupSelect();
+  if(!id&&primeira){showTab(primeira);toast(f.nome+' cadastrado: digite os preços na coluna dele');}else toast(id?'Fornecedor atualizado':f.nome+' cadastrado');
+}
+function fornExcluir(id){
+  const f=(S.fornecedores||[]).find(x=>x.id===id);if(!f)return;
+  if(cpNorm(f.nome)===cpNorm(cpRefNome())){alert(f.nome+' é a referência do banco e não pode ser excluído.');return;}
+  const base=(S.categorias||[]).filter(c=>c.fornBase&&cpNorm(c.fornBase)===cpNorm(f.nome));
+  if(base.length){alert(f.nome+' é a referência de '+base.map(c=>catNomeBonito(c.nome)).join(', ')+'. Escolha outra referência lá antes de excluir.');return;}
+  if(S.fornecedores.length<=1){alert('É necessário manter ao menos um fornecedor.');return;}
+  const n=fornNumPrecos(f);
+  if(!confirm('Excluir o fornecedor "'+f.nome+'"?'+(n?'\n\nOs '+n+' preço(s) dele saem de todas as áreas.':'')+'\nOs orçamentos salvos continuam como estão.'))return;
+  S.fornecedores=S.fornecedores.filter(x=>x.id!==id);
+  (S.categorias||[]).forEach(c=>{if(c.fornCols)c.fornCols=c.fornCols.filter(x=>cpNorm(x)!==cpNorm(f.nome));});
+  if(S.fornecedorAtivo===id)S.fornecedorAtivo=S.fornecedores[0].id;
+  save();renderCatTabs();renderForn();renderDBTelhas();renderChapasKg();renderFornCad();renderDbNav();renderSupSelect();recompute();renderLines();toast('Fornecedor excluído');
+}
+
+/* ---------- o menu lateral ---------- */
+function renderDbNav(){
+  const nav=document.getElementById('dbNav');if(!nav)return;
+  const it=(t,nome,n,ex)=>'<button class="tab db-i" type="button" data-tab="'+escapeAttr(t)+'" onclick="showTab(\''+t+'\')"'+(ex||'')+'><span>'+escapeAttr(nome)+'</span>'+(n!=null?'<em>'+n+'</em>':'')+'</button>';
+  const cats=S.categorias||[],mats=cats.filter(c=>!catSemFornecedor(c)),servs=cats.filter(c=>catSemFornecedor(c));
+  nav.innerHTML='<div class="db-g">Materiais</div>'+it('perfis','Perfis',S.perfis.length)+it('telhas','Telhas',S.telhas.length)+it('chapas','Chapas e bobinas',(S.materiaisKg||[]).length)
+    +mats.map(c=>it('cat:'+c.id,catNomeBonito(c.nome),c.items.length)).join('')
+    +'<button class="db-add" type="button" onclick="addCategoria()">＋ Nova categoria</button>'
+    +(servs.length?'<div class="db-g">Serviços</div>'+servs.map(c=>it('cat:'+c.id,catNomeBonito(c.nome),c.items.length)).join(''):'')
+    +'<div class="db-g">Cadastros</div>'+it('fornecedores','Fornecedores',(S.fornecedores||[]).length)+it('forn','Preço por kg (perfis)',(S.espessuras||[]).length)
+    +'<div class="db-g">Ferramentas</div><button class="db-i" type="button" onclick="openImport()"><span>Importar planilha</span></button><button class="db-i" type="button" onclick="recAbrir()"><span>Recuperar o que sumiu</span></button>';
+  nav.querySelectorAll('.tab').forEach(x=>x.classList.toggle('on',x.dataset.tab===activeTab));
+}
+
+/* ---------- preço por kg: espessuras × fornecedores ---------- */
+function renderForn(){
+  const head=document.getElementById('fornHead'),body=document.getElementById('fornBody');if(!head||!body)return;
+  const cols=fornCols('kg'),fs=cols.map(n=>cpForn(n));
+  const sub=document.getElementById('kgSub');if(sub)sub.textContent=(S.espessuras||[]).length+' espessuras · '+cols.length+' fornecedor'+(cols.length===1?'':'es');
+  head.innerHTML='<tr><th>Espessura</th>'+cols.map((n,i)=>fornTh('kg',n,i)).join('')+'<th class="db-nova"><button type="button" class="db-novab" onclick="fornAdd(\'kg\',this)">＋ Fornecedor</button></th><th></th></tr>';
+  body.innerHTML=(S.espessuras||[]).map(esp=>{
+    const vs=fs.map(f=>f&&f.precos&&Number(f.precos[esp])>0?Number(f.precos[esp]):0),mn=menorDe(vs);
+    return '<tr><td class="mono">#'+escapeAttr(esp)+' mm</td>'+fs.map((f,i)=>'<td class="r'+(vs[i]>0&&vs[i]===mn?' cat-menor':'')+'">'+(f?'<input class="din mono r sm" value="'+(vs[i]>0?String(vs[i]).replace('.',','):'')+'" placeholder="—" title="R$/kg de '+escapeAttr(f.nome)+'" onchange="setPrecoKgDe(\''+escapeAttr(esp)+'\',\''+f.id+'\',this.value)">':'—')+'</td>').join('')
+      +'<td></td><td class="r db-ra"><button class="delx" type="button" title="Excluir a espessura" onclick="delEspessura(\''+escapeAttr(esp)+'\')">'+trash()+'</button></td></tr>';
+  }).join('')||'<tr><td colspan="99" class="db-vazio">Nenhuma espessura. Elas entram sozinhas ao cadastrar um perfil.</td></tr>';
+}
+function setPrecoKgDe(esp,fid,val){
+  const f=(S.fornecedores||[]).find(x=>x.id===fid);if(!f)return;
+  f.precos=f.precos||{};f.precos[esp]=String(val).trim()===''?null:parseNumLoose(val);
+  marcaAtual(f.nome,'kg');save();recompute();renderLines();renderForn();toast('Preço por kg de '+f.nome+' atualizado');
 }
 function delEspessura(esp){
   const usados=S.perfis.filter(p=>String(p.esp)===String(esp)).length;
@@ -7361,27 +7632,6 @@ function delEspessura(esp){
   S.espessuras=S.espessuras.filter(e=>String(e)!==String(esp));
   S.fornecedores.forEach(f=>{ if(f.precos) delete f.precos[esp]; });
   save(); renderForn(); recompute(); renderLines(); toast('Espessura #'+esp+' removida');
-}
-function addFornecedor(){
-  askText('Nome do novo fornecedor (começa sem nenhum preço cadastrado):','',function(nome){
-    if(!nome||!nome.trim())return;
-    nome=nome.trim();
-    // Não copia os preços de nenhum outro fornecedor -- fornecedor novo
-    // começa em branco pra evitar herdar preço errado sem querer.
-    const precos={}; S.espessuras.forEach(e=>precos[e]=null);
-    const id='f'+Date.now().toString(36);
-    S.fornecedores.push({id,nome,precos}); editForn=id; save();
-    renderForn();renderSupSelect();toast('Fornecedor adicionado — cadastre os preços por espessura');
-  },'Novo fornecedor');
-}
-function delFornecedor(){
-  if(S.fornecedores.length<=1){alert('É necessário manter ao menos um fornecedor.');return;}
-  const f=S.fornecedores.find(x=>x.id===editForn);
-  if(!confirm('Excluir o fornecedor "'+f.nome+'"?'))return;
-  S.fornecedores=S.fornecedores.filter(x=>x.id!==editForn);
-  if(S.fornecedorAtivo===editForn)S.fornecedorAtivo=S.fornecedores[0].id;
-  editForn=S.fornecedores[0].id; save();
-  renderForn();renderSupSelect();recompute();toast('Fornecedor excluído');
 }
 
 /* perfis panel */
@@ -7455,11 +7705,6 @@ function addPerfil(){
 
 /* telhas panel */
 /* Qual fornecedor esta' com os precos a mostra na aba Telhas. */
-let telhaFornSel='';
-function telhaFornAtual(){
-  const f=cpForn(telhaFornSel);
-  return f?f.nome:cpRefNome();
-}
 /* Preco da telha para um fornecedor. O de referencia continua guardando o
    preco na propria telha (t.preco), que e' onde ele sempre esteve -- mexer
    nisso quebraria orcamento salvo, catalogo e reajuste em massa. Os demais
@@ -7480,48 +7725,36 @@ function setTelhaPreco(id,nome,val){
   }
   if(/CUMEEIRA/i.test((t.cat||'')+' '+(t.desc||'')))t.precoManual=true;
   const cumeeiras=sincronizaPrecoCumeeiras();
-  save(); recompute(); renderLines(); if(cumeeiras)renderDBTelhas(); toast('Preço atualizado · '+nome+(cumeeiras?' · cumeeiras acompanharam':''));
+  marcaAtual(nome,'telhas');
+  save(); recompute(); renderLines(); renderDBTelhas(); toast('Preço atualizado · '+nome+(cumeeiras?' · cumeeiras acompanharam':''));
 }
 function renderDBTelhas(){
   document.getElementById('telhaCount').textContent=S.telhas.length;
-  const selF=document.getElementById('telhaForn');
-  if(selF){
-    if(selF.value) telhaFornSel=selF.value;
-    const nomes=(S.fornecedores||[]).map(f=>f.nome);
-    if(!nomes.length) nomes.push(cpRefNome());
-    const atual=telhaFornAtual();
-    selF.innerHTML=nomes.map(n=>'<option '+(cpNorm(n)===cpNorm(atual)?'selected':'')+'>'+escapeAttr(n)+'</option>').join('');
-    telhaFornSel=selF.value;
-    {const ff=cpForn(telhaFornSel);if(ff)editForn=ff.id;}
-    const nota=document.getElementById('telhaFornNota');
-    if(nota) nota.textContent=(cpNorm(telhaFornSel)===cpNorm(cpRefNome()))
-      ? 'Preço de referência — é contra ele que a economia é medida.'
-      : 'Em branco = sem cotação deste fornecedor para a telha (não herda o preço da referência).';
-  }
   const cont=document.getElementById('dbTelhaBody');
+  const cols=fornCols('telhas');
   const cats=[]; S.telhas.forEach(t=>{if(!cats.includes(t.cat))cats.push(t.cat);});
-  let html='';
   TELHA_CATS=cats;
+  let html='';
   cats.forEach((cat,ci)=>{
     /* A largura util e' do fabricante, e o grupo costuma ser a linha dele:
        editar o grupo inteiro de uma vez, e ver no titulo qual e' a largura,
        em vez de abrir telha por telha. Cumeeira e acessorio (0) nao contam. */
     const ls=[...new Set(S.telhas.filter(t=>t.cat===cat).map(telhaLarguraUtilMm).filter(v=>v>0))];
-    html+=`<div class="cat-h cat-larg"><span>${cat||'—'}</span><label title="Largura útil de todas as telhas deste grupo (cumeeiras e acessórios ficam como estão)">Largura útil
-      <input class="din mono r sm" inputmode="decimal" value="${ls.length===1?Math.round(ls[0]):''}" placeholder="${ls.length>1?'várias':'—'}" onchange="setTelhaCatLargura(${ci},this)"> mm</label></div><table class="dbtbl"><tbody>`;
+    html+=`<div class="cat-h cat-larg"><span>${escapeAttr(cat||'—')}</span><label title="Largura útil de todas as telhas deste grupo (cumeeiras e acessórios ficam como estão)">Largura útil
+      <input class="din mono r sm" inputmode="decimal" value="${ls.length===1?Math.round(ls[0]):''}" placeholder="${ls.length>1?'várias':'—'}" onchange="setTelhaCatLargura(${ci},this)"> mm</label></div>
+      <div class="db-tw"><table class="dbtbl limpa"><thead><tr><th>Telha</th>${cols.map((n,i)=>fornTh('telhas',n,i)).join('')}<th class="db-nova"><button type="button" class="db-novab" onclick="fornAdd('telhas',this)">＋ Fornecedor</button></th><th></th></tr></thead><tbody>`;
     S.telhas.filter(t=>t.cat===cat).forEach(t=>{
-      const largura=telhaLarguraUtilMm(t);
-      html+=`<tr><td>${t.codigo?'<span style="font-family:var(--mono);font-size:10.5px;color:var(--muted)">'+escapeAttr(t.codigo)+'</span>  ':''}${escapeAttr(t.desc)} <span style="font-family:var(--mono);font-size:10.5px;color:var(--muted)">· ${largura>0?Math.round(largura)+' mm úteis':'sem área'}</span></td>
-        <td class="r" style="width:120px">${(function(){const v=telhaPrecoDe(t,telhaFornAtual());const val=v==null?'':String(v).replace('.',',');const ref=t.precoRef&&telhaById(t.precoRef);
-          if(t.bras)return '<input class="din mono r sm" value="'+val+'" placeholder="—" readonly tabindex="-1" style="opacity:.6;cursor:pointer" title="Preço no Catálogo Brastelha" onclick="BRAS_SEL=Object.assign({},'+escapeAttr(JSON.stringify(t.bras))+');openBras()">';
-          return ref?'<input class="din mono r sm" value="'+val+'" placeholder="—" readonly tabindex="-1" style="opacity:.6;cursor:default" title="Segue o preço de: '+escapeAttr(ref.desc)+' — mude lá">'
-            :'<input class="din mono r sm" value="'+val+'" placeholder="—" onchange="setTelhaPreco(\''+t.id+'\',telhaFornAtual(),this.value)">';})()} <span style="font-size:11px;color:var(--muted)">/m</span>${t.precoRef&&telhaById(t.precoRef)?'<div style="font-size:10px;color:var(--muted);white-space:nowrap">segue '+(ehCumeeiraTelha(telhaById(t.precoRef))?'a cumeeira TP-40':'a telha simples')+'</div>':''}</td>
-        <td class="r" style="width:60px;white-space:nowrap">
-          <button class="editx" title="Editar telha" onclick="openEditTelha('${t.id}')">${editIcon()}</button>
-          <button class="delx" onclick="delTelha('${t.id}')">${trash()}</button>
-        </td></tr>`;
+      const ref=t.precoRef&&telhaById(t.precoRef),vs=cols.map(n=>telhaPrecoDe(t,n)||0),mn=menorDe(vs);
+      const cel=cols.map((n,i)=>{const v=vs[i],val=v>0?String(v).replace('.',','):'',r=cpNorm(n)===cpNorm(cpRefNome());
+        let inp;
+        if(t.bras)inp='<input class="din mono r sm" value="'+val+'" placeholder="—" readonly tabindex="-1" style="opacity:.6;cursor:pointer" title="Preço no Catálogo Brastelha" onclick="BRAS_SEL=Object.assign({},'+escapeAttr(JSON.stringify(t.bras))+');openBras()">';
+        else if(ref&&r)inp='<input class="din mono r sm" value="'+val+'" placeholder="—" readonly tabindex="-1" style="opacity:.6;cursor:default" title="Segue o preço de: '+escapeAttr(ref.desc)+' — mude lá">';
+        else inp='<input class="din mono r sm" value="'+val+'" placeholder="—" title="R$/m de '+escapeAttr(n)+'" onchange="setTelhaPreco(\''+t.id+'\',\''+escapeAttr(n).replace(/'/g,"\\'")+'\',this.value)">';
+        return '<td class="r'+(v>0&&v===mn?' cat-menor':'')+'">'+inp+'</td>';}).join('');
+      html+=`<tr><td>${t.codigo?'<span class="db-cod">'+escapeAttr(t.codigo)+'</span> ':''}${escapeAttr(t.desc)}<span class="db-sub">${telhaLarguraUtilMm(t)>0?Math.round(telhaLarguraUtilMm(t))+' mm úteis':'sem área'}${ref?' · segue '+(ehCumeeiraTelha(ref)?'a cumeeira TP-40':'a telha simples'):''}</span></td>${cel}<td></td>
+        <td class="r db-ra" style="white-space:nowrap"><button class="editx" title="Editar telha" onclick="openEditTelha('${t.id}')">${editIcon()}</button><button class="delx" onclick="delTelha('${t.id}')">${trash()}</button></td></tr>`;
     });
-    html+='</tbody></table>';
+    html+='</tbody></table></div>';
   });
   cont.innerHTML=html||'<p class="note">Nenhuma telha cadastrada.</p>';
 }
@@ -8557,58 +8790,33 @@ function imprimirRelatorio(){
 
 /* ---------- reajuste em massa por % + desfazer ---------- */
 function round2(x){return Math.round((x+Number.EPSILON)*100)/100;}
-function reajustarForn(){
-  const pct=parseNumLoose(document.getElementById('reajForn').value);
-  if(!pct){alert('Informe o percentual (ex.: 6 para +6%, -3 para baixar 3%).');return;}
-  const f=S.fornecedores.find(x=>x.id===editForn); if(!f)return;
-  if(!confirm('Aplicar '+(pct>0?'+':'')+pct+'% a todos os preços/kg de '+f.nome+'?'))return;
-  const before=JSON.parse(JSON.stringify(f.precos));
-  S.espessuras.forEach(e=>{ if(f.precos[e]!=null) f.precos[e]=round2(f.precos[e]*(1+pct/100)); });
-  S._undo={tipo:'forn',fornId:f.id,before};
-  document.getElementById('reajForn').value='';
-  save(); renderForn(); recompute(); toast('Reajuste de '+pct+'% aplicado');
-}
-function reajustarTelhas(){
-  const pct=parseNumLoose(document.getElementById('reajTelhas').value);
-  if(!pct){alert('Informe o percentual.');return;}
-  if(!confirm('Aplicar '+(pct>0?'+':'')+pct+'% a TODAS as telhas?'))return;
-  const before=S.telhas.map(t=>({id:t.id,preco:t.preco}));
-  S.telhas.forEach(t=>{ if(t.preco!=null) t.preco=round2(t.preco*(1+pct/100)); });
-  S._undo={tipo:'telhas',before};
-  document.getElementById('reajTelhas').value='';
-  save(); renderDBTelhas(); recompute(); renderLines(); toast('Reajuste de '+pct+'% aplicado');
-}
 /* chapas/bobinas R$/kg */
 function renderChapasKg(){
-  const tb=document.getElementById('chapasBody'); if(!tb)return;
-  const list=S.materiaisKg||[],fn=dbFornNome();
-  const sel=document.getElementById('chapasForn');
-  if(sel){sel.innerHTML=dbFornOpcoes(fn);const nt=document.getElementById('chapasFornNota');
-    if(nt)nt.textContent=cpNorm(fn)===cpNorm(cpRefNome())?'Preço de referência (tabela TBCOM-008).':'Em branco = sem preço deste fornecedor (não herda o da referência).';}
-  if(!list.length){tb.innerHTML='<tr><td colspan="3" style="padding:12px;color:var(--muted)">Nenhum material. Adicione abaixo.</td></tr>';return;}
-  tb.innerHTML=list.map(m=>{const v=matPrecoDe(m,fn);return `<tr>
-    <td class="l"><input class="cell-in cell-in-desc" value="${escapeAttr(m.nome)}" onchange="editMaterial('${m.id}','nome',this.value)"></td>
-    <td><input class="din mono r sm" value="${v==null?'':String(v).replace('.',',')}" placeholder="—" onchange="editMaterial('${m.id}','rkg',this.value)"> <span style="font-size:11px;color:var(--muted)">/kg</span></td>
-    <td class="r"><button class="delx" onclick="delMaterial('${m.id}')">${trash()}</button></td>
-  </tr>`;}).join('');
+  const tb=document.getElementById('chapasBody'),th=document.getElementById('chapasHead'); if(!tb)return;
+  const list=S.materiaisKg||[],cols=fornCols('chapas');
+  if(th)th.innerHTML='<tr><th>Material</th>'+cols.map((n,i)=>fornTh('chapas',n,i)).join('')+'<th class="db-nova"><button type="button" class="db-novab" onclick="fornAdd(\'chapas\',this)">＋ Fornecedor</button></th><th></th></tr>';
+  if(!list.length){tb.innerHTML='<tr><td colspan="99" class="db-vazio">Nenhum material. Adicione abaixo.</td></tr>';return;}
+  tb.innerHTML=list.map(m=>{const vs=cols.map(n=>matPrecoDe(m,n)||0),mn=menorDe(vs);return '<tr><td class="db-desc"><input class="din" value="'+escapeAttr(m.nome)+'" onchange="editMaterial(\''+m.id+'\',\'nome\',this.value)"></td>'
+    +cols.map((n,i)=>'<td class="r'+(vs[i]>0&&vs[i]===mn?' cat-menor':'')+'"><input class="din mono r sm" value="'+(vs[i]>0?String(vs[i]).replace('.',','):'')+'" placeholder="—" title="R$/kg de '+escapeAttr(n)+'" onchange="editMatPreco(\''+m.id+'\',\''+escapeAttr(n).replace(/'/g,"\\'")+'\',this.value)"></td>').join('')
+    +'<td></td><td class="r db-ra"><button class="delx" onclick="delMaterial(\''+m.id+'\')">'+trash()+'</button></td></tr>';}).join('');
 }
 function editMaterial(id,f,v){
   const m=(S.materiaisKg||[]).find(x=>x.id===id); if(!m)return;
-  if(f==='rkg'){
-    const fn=dbFornNome(),n=String(v).trim()===''?null:parseNumLoose(v);
-    if(cpNorm(fn)===cpNorm(cpRefNome())){ if(n!=null)m.rkg=n; }
-    else{const fo=cpForn(fn);if(!fo)return;if(!fo.matPrecos)fo.matPrecos={};if(n>0)fo.matPrecos[m.id]=n;else delete fo.matPrecos[m.id];}
-  } else m[f]=v.trim();
-  save();
+  m[f]=String(v).trim(); save();
+}
+function editMatPreco(id,nome,v){
+  const m=(S.materiaisKg||[]).find(x=>x.id===id); if(!m)return;
+  const n=String(v).trim()===''?null:parseNumLoose(v);
+  if(cpNorm(nome)===cpNorm(cpRefNome())){ m.rkg=n||0; }
+  else{const fo=cpForn(nome);if(!fo)return;if(!fo.matPrecos)fo.matPrecos={};if(n>0)fo.matPrecos[m.id]=n;else delete fo.matPrecos[m.id];}
+  marcaAtual(nome,'chapas');save();renderChapasKg();toast('Preço atualizado · '+nome);
 }
 function addMaterial(){
   const nome=document.getElementById('nm_nome').value.trim();
   const rkg=parseNumLoose(document.getElementById('nm_rkg').value);
   if(!nome||rkg==null){alert('Informe material e R$/kg.');return;}
   if(!S.materiaisKg)S.materiaisKg=[];
-  const fn=dbFornNome(),daRef=cpNorm(fn)===cpNorm(cpRefNome()),mid='m'+Date.now().toString(36);
-  S.materiaisKg.push({id:mid,nome,rkg:daRef?rkg:0});
-  if(!daRef){const fo=cpForn(fn);if(fo){if(!fo.matPrecos)fo.matPrecos={};fo.matPrecos[mid]=rkg;}}
+  S.materiaisKg.push({id:'m'+Date.now().toString(36),nome,rkg});
   document.getElementById('nm_nome').value='';document.getElementById('nm_rkg').value='';
   save(); renderChapasKg(); toast('Material adicionado');
 }
@@ -8616,40 +8824,6 @@ function delMaterial(id){
   if(!confirm('Remover este material?'))return;
   S.materiaisKg=(S.materiaisKg||[]).filter(x=>x.id!==id);
   save(); renderChapasKg();
-}
-function reajusteMateriais(){
-  const pct=parseNumLoose(document.getElementById('reajChapas').value);
-  if(!pct){alert('Informe o percentual.');return;}
-  if(!confirm('Aplicar '+(pct>0?'+':'')+pct+'% a TODOS os materiais (R$/kg)?'))return;
-  const fn=dbFornNome();
-  if(cpNorm(fn)!==cpNorm(cpRefNome())){
-    const fo=cpForn(fn);if(!fo)return;if(!fo.matPrecos)fo.matPrecos={};
-    S._undo={tipo:'matForn',forn:fn,before:JSON.parse(JSON.stringify(fo.matPrecos))};
-    Object.keys(fo.matPrecos).forEach(k=>{if(Number(fo.matPrecos[k])>0)fo.matPrecos[k]=round2(fo.matPrecos[k]*(1+pct/100));});
-  }else{
-  const before=(S.materiaisKg||[]).map(m=>({id:m.id,rkg:m.rkg}));
-  (S.materiaisKg||[]).forEach(m=>{m.rkg=round2(m.rkg*(1+pct/100));});
-  S._undo={tipo:'materiais',before};
-  }
-  document.getElementById('reajChapas').value='';
-  save(); renderChapasKg(); toast('Reajuste de '+pct+'% aplicado');
-}
-function reajustarCat(catId){
-  const cat=catById(catId); if(!cat)return;
-  const pct=parseNumLoose(document.getElementById('reajCat_'+catId).value);
-  if(!pct){alert('Informe o percentual.');return;}
-  const fn=((document.getElementById('reajForn_'+catId)||{}).value)||catFornBase(cat);
-  if(!confirm('Aplicar '+(pct>0?'+':'')+pct+'% aos preços de '+fn+' em '+cat.nome+'?'))return;
-  if(cpNorm(fn)!==cpNorm(catFornBase(cat))){
-    const f=cpForn(fn);if(!f)return;if(!f.catPrecos)f.catPrecos={};
-    S._undo={tipo:'catForn',catId,forn:fn,before:JSON.parse(JSON.stringify(f.catPrecos))};
-    cat.items.forEach(it=>{const k=catPrecoKey(cat,it);if(Number(f.catPrecos[k])>0)f.catPrecos[k]=round2(f.catPrecos[k]*(1+pct/100));});
-  }else{
-  const before=cat.items.map(it=>({id:it.id,valor:it.valor}));
-  cat.items.forEach(it=>{ if(it.valor!=null) it.valor=round2(it.valor*(1+pct/100)); });
-  S._undo={tipo:'cat',catId,before};
-  }
-  save(); renderCatTabs(); showTab('cat:'+catId); recompute(); renderLines(); toast('Reajuste de '+pct+'% aplicado');
 }
 function desfazerReajuste(){
   const u=S._undo; if(!u){toast('Nada para desfazer');return;}
@@ -8687,7 +8861,7 @@ function openImport(){
   /* De qual fornecedor e' a tabela colada. Comeca no que o banco de dados
      esta mostrando; o da referencia grava no proprio item, os outros na
      coluna deles -- sem apagar o preco de ninguem. */
-  const fs=document.getElementById('importForn');if(fs)fs.innerHTML=dbFornOpcoes(dbFornNome());
+  const fs=document.getElementById('importForn');if(fs)fs.innerHTML=dbFornOpcoes(cpRefNome());
   importFornVisivel();
   document.getElementById('importOverlay').classList.add('open');
 }
@@ -8695,7 +8869,7 @@ function importFornVisivel(){
   const t=(document.getElementById('importTarget')||{}).value||'',w=document.getElementById('importFornW');
   if(w)w.style.display=t.indexOf('forn:')===0?'none':'inline-flex';
 }
-function importFornNome(){return ((document.getElementById('importForn')||{}).value)||dbFornNome();}
+function importFornNome(){return ((document.getElementById('importForn')||{}).value)||cpRefNome();}
 function closeImport(){document.getElementById('importOverlay').classList.remove('open');}
 
 /* ===== Calculadora de perfil (fora de catálogo) ===== */
@@ -9023,7 +9197,7 @@ function applyImport(){
    publicacao, e ha uma prova automatica que falha se um subir sem o outro.
    Assim o numero na tela e' o mesmo do arquivo que o aparelho guardou, e
    dizer "estou na v15" passa a significar alguma coisa. */
-const APP_VER='v124';
+const APP_VER='v125';
 (function(){ try{ const p=document.getElementById('verPill'); if(p)p.textContent=APP_VER; }catch(e){} })();
 /* Versao nova assumiu com a pagina aberta: avisa, em vez de recarregar por
    conta propria e jogar fora um orcamento pela metade. */
