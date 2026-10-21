@@ -17408,7 +17408,7 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeAll();$('#prin
    juntos a cada publicacao, e ha uma prova automatica que falha se um subir
    sem o outro. Assim o numero na tela e o mesmo do arquivo que o aparelho
    guardou, e dizer "estou na v81" passa a significar alguma coisa. */
-const APP_VER='v266';
+const APP_VER='v267';
 (function(){var p=document.getElementById('verPill'); if(p)p.textContent=APP_VER;})();
 
 if('serviceWorker' in navigator){
@@ -18411,6 +18411,7 @@ initAuth();
 .epi-corr-tb{width:100%;border-collapse:collapse;font-size:13.5px}
 .epi-corr-tb th{text-align:left;font-size:11px;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);padding:0 6px 6px}
 .epi-corr-tb td{padding:5px 6px;border-top:1px solid var(--line);vertical-align:middle}
+.epi-corr-tb tr.epi-corr-fora td{opacity:.45;text-decoration:line-through}.epi-corr-tb tr.epi-corr-fora td:last-child{opacity:1;text-decoration:none}
 .epi-corr-tb td:nth-child(2){width:78px}.epi-corr-tb td:nth-child(3){width:110px}
 .epi-corr-tb input{padding:8px 9px}
 </style>
@@ -21011,7 +21012,8 @@ initAuth();
         +'<td data-label="Assinatura"><span class="epi-mov-status '+esc(m.status)+'">'+status(m)+'</span></td><td data-label="Ações"><div class="epi-mov-acoes">'
         +(m.status==='pendente'?'<button class="epi-btn" data-mconf="'+esc(m.id)+'" style="padding:6px 9px;font-size:11.5px">Assinar</button>':'')
         +'<button class="epi-btn" data-mpdf="'+esc(m.id)+'" style="padding:6px 9px;font-size:11.5px">Comprovante</button>'
-        +(m.status==='confirmado'?'<button class="epi-x" data-mcorr="'+esc(m.id)+'" title="Trocar tamanho ou quantidade sem pedir nova assinatura">Corrigir</button>':'')
+        +(m.status==='confirmado'?'<button class="epi-x" data-mcorr="'+esc(m.id)+'" title="Trocar tamanho ou quantidade sem pedir nova assinatura">Corrigir</button>'
+          :m.status==='pendente'?'<button class="epi-x" data-mcorr="'+esc(m.id)+'" title="Acertar quantidade, tamanho ou tirar item antes de assinar">Editar</button>':'')
         +(m.status!=='cancelado'?'<button class="epi-x" data-mcancel="'+esc(m.id)+'">Cancelar</button>':'')
         /* Excluir so enquanto ninguem assinou. Depois de confirmado o
            registro e o comprovante da entrega -- e o que segura a empresa
@@ -21064,25 +21066,30 @@ initAuth();
      sem nova assinatura -- mas nada some: cada mudanca fica em m.correcoes
      (o que era, o que ficou, quando, quem e por que) e sai no comprovante
      embaixo da assinatura, que continua sendo a do que foi entregue. */
+  /* AINDA SEM ASSINATURA ("quando a assinatura está pendente não tenho
+     opção de corrigir"): a mesma janela vira Editar. Nada foi entregue de
+     papel passado ainda, então muda direto -- sem o registro de correção --
+     e dá até para tirar um item lançado a mais. */
   function corrigir(id){
     var m=movimentos().filter(function(x){return x.id===id;})[0];
-    if(!m||m.status!=='confirmado')return;
-    var its=lista(m.itens);
+    if(!m||(m.status!=='confirmado'&&m.status!=='pendente'))return;
+    var assinada=m.status==='confirmado', its=lista(m.itens), tira={};
     var f=document.createElement('div');f.className='pg-fundo';
-    f.innerHTML='<div class="pg epi-corr" role="dialog" aria-modal="true"><div class="pg-cab">Corrigir movimentação assinada</div>'
-      +'<div class="pg-sub">'+esc(bonito(m.nome))+' · '+br(m.data)+'\nSem nova assinatura: a correção fica registrada no comprovante.</div>'
-      +'<div class="pg-corpo"><table class="epi-corr-tb"><thead><tr><th>Item</th><th>Qtd.</th><th>Tamanho</th></tr></thead><tbody>'
-      +its.map(function(i,k){return '<tr><td><b>'+esc(i.nome)+'</b><div class="epi-mov-mini">'+esc(i.unidade||'pç')+'</div></td>'
+    f.innerHTML='<div class="pg epi-corr" role="dialog" aria-modal="true"><div class="pg-cab">'+(assinada?'Corrigir movimentação assinada':'Editar movimentação')+'</div>'
+      +'<div class="pg-sub">'+esc(bonito(m.nome))+' · '+br(m.data)+(assinada?'\nSem nova assinatura: a correção fica registrada no comprovante.':'\nAinda não assinada: a mudança vale direto, e a assinatura cobre o que ficar.')+'</div>'
+      +'<div class="pg-corpo"><table class="epi-corr-tb"><thead><tr><th>Item</th><th>Qtd.</th><th>Tamanho</th>'+(assinada?'':'<th></th>')+'</tr></thead><tbody>'
+      +its.map(function(i,k){return '<tr data-ck="'+k+'"><td><b>'+esc(i.nome)+'</b><div class="epi-mov-mini">'+esc(i.unidade||'pç')+'</div></td>'
         +'<td><input data-cq="'+k+'" type="number" min="1" step="1" inputmode="numeric" value="'+esc(i.qtd)+'"></td>'
-        +'<td><input data-ct="'+k+'" autocomplete="off" value="'+esc(i.tamanho||'')+'" placeholder="—"></td></tr>';}).join('')
-      +'</tbody></table><label for="epiCorrMot" style="margin-top:12px">Motivo (opcional)</label>'
-      +'<input id="epiCorrMot" autocomplete="off" placeholder="ex.: entregue tamanho G, foi lançado M"><div class="pg-erro"></div></div>'
-      +'<div class="pg-pe"><button class="pg-bt" data-x>Cancelar</button><button class="pg-bt pri" data-ok>Salvar correção</button></div></div>';
+        +'<td><input data-ct="'+k+'" autocomplete="off" value="'+esc(i.tamanho||'')+'" placeholder="—"></td>'
+        +(assinada?'':'<td><button type="button" class="epi-x" data-ctira="'+k+'" title="Tirar este item da movimentação">Tirar</button></td>')+'</tr>';}).join('')
+      +'</tbody></table>'+(assinada?'<label for="epiCorrMot" style="margin-top:12px">Motivo (opcional)</label>'
+      +'<input id="epiCorrMot" autocomplete="off" placeholder="ex.: entregue tamanho G, foi lançado M">':'')+'<div class="pg-erro"></div></div>'
+      +'<div class="pg-pe"><button class="pg-bt" data-x>Cancelar</button><button class="pg-bt pri" data-ok>'+(assinada?'Salvar correção':'Salvar')+'</button></div></div>';
     document.body.appendChild(f);
     var err=f.querySelector('.pg-erro');
     function fechar(){document.removeEventListener('keydown',tecla);f.remove();}
     function salvar(){
-      var em=new Date().toISOString(),por=usuarioEpi(),mot=(f.querySelector('#epiCorrMot').value||'').trim(),novas=[],ruim='';
+      var em=new Date().toISOString(),por=usuarioEpi(),mot=((f.querySelector('#epiCorrMot')||{}).value||'').trim(),novas=[],ruim='';
       its.forEach(function(i,k){
         var qv=Number(f.querySelector('[data-cq="'+k+'"]').value),tv=(f.querySelector('[data-ct="'+k+'"]').value||'').trim();
         if(!(qv>=1)||Math.round(qv)!==qv){if(!ruim)ruim=i.nome;return;}
@@ -21090,6 +21097,15 @@ initAuth();
         if(tv!==String(i.tamanho||''))novas.push({k:k,campo:'tamanho',de:i.tamanho||'',para:tv});
       });
       if(ruim){err.textContent='Quantidade inválida em '+ruim+' (número inteiro, 1 ou mais).';err.style.display='block';return;}
+      if(!assinada){
+        if(its.every(function(i,k){return tira[k];})){err.textContent='Fica pelo menos um item. Para desistir de tudo, use Excluir.';err.style.display='block';return;}
+        if(!novas.length&&!Object.keys(tira).length){fechar();return;}
+        novas.forEach(function(c){var i=its[c.k];if(c.campo==='quantidade')i.qtd=Number(c.para);else i.tamanho=c.para;});
+        m.itens=its.filter(function(i,k){return !tira[k];});
+        fechar();selar(m,function(){renderTudo();});gravar();renderTudo();
+        aviso('Movimentação acertada — continua aguardando assinatura');
+        return;
+      }
       if(!novas.length){fechar();return;}
       m.correcoes=lista(m.correcoes).slice();
       novas.forEach(function(c){var i=its[c.k];
@@ -21100,6 +21116,8 @@ initAuth();
     }
     function tecla(e){if(e.key==='Escape'){e.preventDefault();fechar();}if(e.key==='Enter'&&f.contains(document.activeElement)){e.preventDefault();salvar();}}
     f.querySelector('[data-x]').onclick=fechar;f.querySelector('[data-ok]').onclick=salvar;
+    qa('[data-ctira]',f).forEach(function(b){b.onclick=function(){var k=b.getAttribute('data-ctira'),tr=f.querySelector('[data-ck="'+k+'"]');
+      tira[k]=!tira[k];tr.classList.toggle('epi-corr-fora',!!tira[k]);b.textContent=tira[k]?'Voltar':'Tirar';};});
     f.onclick=function(e){if(e.target===f)fechar();};document.addEventListener('keydown',tecla);
     var p1=f.querySelector('[data-ct="0"]')||f.querySelector('input');if(p1){p1.focus();p1.select();}
   }
