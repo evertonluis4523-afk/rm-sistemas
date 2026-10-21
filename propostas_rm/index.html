@@ -2760,6 +2760,13 @@ body:not(.com-doc) .docs-card,body:not(.com-doc) .ed-grid{display:none}
 .tipo-op b{font-size:15px;font-weight:800}
 .tipo-op span{font-size:13px;color:var(--muted);line-height:1.45}
 .tipo-lista{margin:10px 0 12px;padding-left:20px;line-height:1.5}
+.cfg-marca{display:flex;gap:14px;align-items:flex-start;flex-wrap:wrap}
+.cfg-marca canvas{width:240px;height:135px;border:1px solid var(--line);border-radius:8px;background:#fff;flex:none}
+.cfg-marca-c{flex:1;min-width:220px;display:flex;flex-direction:column;gap:6px}
+.cfg-marca-c label{font-size:13px;color:var(--muted)}
+.cfg-marca-c label b{color:var(--ink)}
+.cfg-marca-r{display:flex;align-items:center;gap:8px}
+.cfg-marca-r input[type=range]{flex:1;width:auto;accent-color:var(--red)}
 /* ---------- imagens da obra ---------- */
 .aba-n{display:inline-block;min-width:18px;padding:0 5px;margin-left:4px;border-radius:9px;background:var(--red-soft);color:var(--red-dark);font-size:11px;font-weight:800;text-align:center}
 .im-drop{display:flex;flex-direction:column;align-items:center;gap:4px;padding:16px;border:1.5px dashed var(--line);border-radius:12px;color:var(--muted);font-size:13px;text-align:center;background:var(--bg);cursor:pointer}
@@ -2801,7 +2808,7 @@ body:not(.com-doc) .docs-card,body:not(.com-doc) .ed-grid{display:none}
 .folha .tb2-tipo{margin-top:5mm;font-size:8px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:#D53309;-webkit-print-color-adjust:exact;print-color-adjust:exact}
 .folha .f-tit{margin:1mm 0 .5mm;font-size:calc(15px*var(--fe,1.15));font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:#141414;line-height:1.25}
 .folha .f-sub{color:#6E747C;font-size:calc(9.5px*var(--fe,1.15));margin-bottom:3mm}
-.folha .f-meta{display:grid;grid-template-columns:2fr 1.4fr 1fr 1fr;border-top:1px solid #eceef1;border-bottom:1px solid #eceef1;margin:2mm 0 5mm}
+.folha .f-meta{display:grid;grid-template-columns:1.3fr 2fr 1fr 1fr;border-top:1px solid #eceef1;border-bottom:1px solid #eceef1;margin:2mm 0 5mm}
 .folha .f-meta>div{padding:2mm 3mm 2mm 0;min-width:0}
 .folha .f-meta>div+div{padding-left:3mm;border-left:1px solid #eceef1}
 .folha .k{font-size:calc(7.5px*var(--fe,1.15));font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#6E747C}
@@ -3034,6 +3041,17 @@ body:not(.com-doc) .docs-card,body:not(.com-doc) .ed-grid{display:none}
       <div class="cfg-tit">Fonte no papel</div>
       <div class="seg" id="cfgFonte" role="radiogroup" aria-label="Fonte no papel"></div>
       <p class="nota">Vale para a folha na tela e o PDF. O Word sai sempre em Arial.</p>
+    </div>
+    <div class="cfg-bloco">
+      <div class="cfg-tit">Marca d'água das imagens da obra</div>
+      <div class="cfg-marca">
+        <canvas id="cfgMarcaPrev" width="480" height="270" aria-label="Amostra da marca d'água"></canvas>
+        <div class="cfg-marca-c">
+          <label for="cfgMarca">Intensidade <b id="cfgMarcaV"></b></label>
+          <div class="cfg-marca-r"><button type="button" class="btn btn-ghost btn-sm" id="cfgMarcaMenos" aria-label="Mais fraca">−</button><input type="range" id="cfgMarca" min="1" max="10" step="0.5"><button type="button" class="btn btn-ghost btn-sm" id="cfgMarcaMais" aria-label="Mais forte">＋</button></div>
+          <p class="nota">O símbolo da empresa no centro de cada imagem, gravado nela no PDF e no Word. Mudar aqui vale para todas as imagens, inclusive as já adicionadas. Padrão: 3,5%, a mesma do papel impresso.</p>
+        </div>
+      </div>
     </div>
     <div class="cfg-bloco">
       <div class="cfg-tit">Bens aceitos como parte do pagamento</div>
@@ -3516,7 +3534,7 @@ function normalizar(d) {
   o.titulo = d.titulo || '';
   const im = d.imgs || {};
   o.imgs = { titulo: im.titulo || '', desenhista: im.desenhista || '', anexar: !!im.anexar,
-    itens: lista(im.itens).filter(x => x && x.id).map(x => ({ id: String(x.id), tit: x.tit || '', desc: x.desc || '', tam: x.tam === 'inteira' ? 'inteira' : 'meia', w: lerValor(x.w) || 16, h: lerValor(x.h) || 9, nuvem: !!x.nuvem })) };
+    itens: lista(im.itens).filter(x => x && x.id).map(x => ({ id: String(x.id), tit: x.tit || '', desc: x.desc || '', tam: x.tam === 'inteira' ? 'inteira' : 'meia', w: lerValor(x.w) || 16, h: lerValor(x.h) || 9, nuvem: !!x.nuvem, orig: !!x.orig })) };
   o.rev = lerValor(d.rev);
   o.revisoes = lista(d.revisoes).map(r => ({ rev: lerValor(r.rev), em: r.em || 0, total: lerValor(r.total), json: r.json || '' })).filter(r => r.json);
   o.prazoDias = lerValor(d.prazoDias != null ? d.prazoDias : b.prazoDias);
@@ -3752,8 +3770,17 @@ function blocosProposta(d) {
      apagada quando nenhuma proposta nem revisão a cita mais.
    Teste propostas-imagens.
 ═══════════════════════════════════════════════════════════ */
-const IMG_LARG = 1800, IMG_QUAL = 0.85, MARCA_ALFA = 0.035, MARCA_LARG = 0.28;
-const IMG = {};   /* id -> dataURL já carregada */
+const IMG_LARG = 1800, IMG_QUAL = 0.85, MARCA_LARG = 0.28;
+/* INTENSIDADE DA MARCA em Configurações (padrão 3,5%, como no papel
+   impresso). Por isso a imagem é guardada SEM a marca e a marca entra na
+   saída -- tela, PDF e Word --, com a intensidade de agora: mudar vale
+   para todas as imagens, inclusive as já adicionadas. No PDF e no Word ela
+   continua gravada dentro da imagem. (Imagem da primeira versão, sem
+   "orig", já veio com a marca gravada e sai como está.) */
+function marcaPct() { const v = Number(config.marcaAlfa); return v >= 0.5 && v <= 15 ? v : 3.5; }
+const BRUTO = {};   /* id -> a imagem guardada (reduzida, sem a marca) */
+const IMG = {};     /* id -> a imagem como sai, com a marca de agora */
+const IMG_PCT = {}; /* id -> intensidade com que IMG[id] foi feita */
 const IDBI = {
   db: null,
   abre() { return this.db ? Promise.resolve(this.db) : new Promise((ok, erro) => {
@@ -3772,7 +3799,19 @@ function carregaImg(src) { return new Promise((ok, erro) => { const i = new Imag
 function lerArquivo(f) { return new Promise((ok, erro) => { const r = new FileReader(); r.onload = () => ok(r.result); r.onerror = () => erro(r.error); r.readAsDataURL(f); }); }
 /* o símbolo escuro da marca d'água do papel impresso (bloco comum) */
 function simboloMarca() { const i = document.querySelector('#rm-dagua-imp img'); return i && i.src ? i.src : ''; }
-/* reduz para o A4 e grava a marca d'água; devolve { dados, w, h } */
+/* aplica a marca d'água (o símbolo no centro) com a intensidade pct (%) */
+async function comMarca(src, pct) {
+  const im = await carregaImg(src), w = im.naturalWidth, h = im.naturalHeight;
+  const cv = document.createElement('canvas'); cv.width = w; cv.height = h;
+  const g = cv.getContext('2d'); g.drawImage(im, 0, 0);
+  const sm = simboloMarca();
+  if (!sm) throw new Error('sem o símbolo da marca d\'água');
+  const m = await carregaImg(sm), mw = w * MARCA_LARG, mh = mw * m.naturalHeight / m.naturalWidth;
+  g.globalAlpha = pct / 100; g.globalCompositeOperation = 'multiply';
+  g.drawImage(m, (w - mw) / 2, (h - mh) / 2, mw, mh);
+  return cv.toDataURL('image/jpeg', IMG_QUAL);
+}
+/* reduz para o A4 (sem a marca: ela entra na saída); devolve { dados, w, h } */
 async function prepararImagem(src) {
   const im = await carregaImg(src);
   const k = Math.min(1, IMG_LARG / im.naturalWidth), w = Math.round(im.naturalWidth * k), h = Math.round(im.naturalHeight * k);
@@ -3780,30 +3819,33 @@ async function prepararImagem(src) {
   const g = cv.getContext('2d');
   g.fillStyle = '#fff'; g.fillRect(0, 0, w, h);   /* PNG com fundo transparente: branco, como no papel */
   g.drawImage(im, 0, 0, w, h);
-  const sm = simboloMarca();
-  if (!sm) throw new Error('sem o símbolo da marca d\'água');
-  const m = await carregaImg(sm), mw = w * MARCA_LARG, mh = mw * m.naturalHeight / m.naturalWidth;
-  g.globalAlpha = MARCA_ALFA; g.globalCompositeOperation = 'multiply';
-  g.drawImage(m, (w - mw) / 2, (h - mh) / 2, mw, mh);
   return { dados: cv.toDataURL('image/jpeg', IMG_QUAL), w, h };
 }
 async function imgDados(id) {
-  if (IMG[id]) return IMG[id];
+  if (BRUTO[id]) return BRUTO[id];
   let v = null;
   try { v = await IDBI.pega(id); } catch (e) { }
   if (!v && fbDB && fbAuthReady) {
     try { const sn = await fbDB.ref(FB_NO + '/imagens/' + id).once('value'); const x = sn.val(); v = x && x.dados || null; if (v) IDBI.poe(id, v).catch(() => { }); } catch (e) { }
   }
-  if (v) IMG[id] = v;
+  if (v) BRUTO[id] = v;
   return v;
 }
+/* a imagem como sai: com a marca na intensidade de agora */
+async function imgPronta(x) {
+  const pct = x.orig ? marcaPct() : 0;
+  if (IMG[x.id] && IMG_PCT[x.id] === pct) return IMG[x.id];
+  const b = await imgDados(x.id); if (!b) return null;
+  IMG[x.id] = x.orig ? await comMarca(b, pct) : b; IMG_PCT[x.id] = pct;
+  return IMG[x.id];
+}
 /* as imagens da proposta, antes de imprimir ou montar o Word */
-async function carregaImagensDoc(d) { await Promise.all(((d && d.imgs && d.imgs.itens) || []).map(x => imgDados(x.id))); }
+async function carregaImagensDoc(d) { await Promise.all(((d && d.imgs && d.imgs.itens) || []).map(x => imgPronta(x))); }
 let tImgFolha = null;
 function pedeImagens(d) {
-  const falta = ((d && d.imgs && d.imgs.itens) || []).filter(x => !IMG[x.id]);
+  const falta = ((d && d.imgs && d.imgs.itens) || []).filter(x => !IMG[x.id] || IMG_PCT[x.id] !== (x.orig ? marcaPct() : 0));
   if (!falta.length) return;
-  Promise.all(falta.map(x => imgDados(x.id))).then(() => { clearTimeout(tImgFolha); tImgFolha = setTimeout(() => { if (atual() === d) { renderFolha(); if (aba === 'imagens') renderFicha(); } }, 50); });
+  Promise.all(falta.map(x => imgPronta(x))).then(() => { clearTimeout(tImgFolha); tImgFolha = setTimeout(() => { if (atual() === d) { renderFolha(); if (aba === 'imagens') renderFicha(); } }, 50); });
 }
 async function sobeImagem(id) {
   if (!fbDB || !fbAuthReady) return false;
@@ -3827,7 +3869,7 @@ function imagemCitada(id) {
 }
 function talvezApagarImagem(id) {
   if (imagemCitada(id)) return;
-  delete IMG[id]; IDBI.tira(id).catch(() => { });
+  delete IMG[id]; delete BRUTO[id]; IDBI.tira(id).catch(() => { });
   if (fbDB && fbAuthReady) fbDB.ref(FB_NO + '/imagens/' + id).remove().catch(() => { });
 }
 async function adicionarImagens(d, arquivos) {
@@ -3838,9 +3880,11 @@ async function adicionarImagens(d, arquivos) {
   for (const f of fs) {
     try {
       const r = await prepararImagem(await lerArquivo(f)), id = 'im' + uid();
-      IMG[id] = r.dados; await IDBI.poe(id, r.dados).catch(() => { });
+      BRUTO[id] = r.dados; await IDBI.poe(id, r.dados).catch(() => { });
       const tit = String(f.name || '').replace(/\.[^.]+$/, '').replace(/[_-]+/g, ' ').trim();
-      d.imgs.itens.push({ id, tit: /^(img|image|imagem|render|captura|screenshot)?\s*\d*$/i.test(tit) ? '' : tit, desc: '', tam: 'meia', w: r.w, h: r.h, nuvem: false });
+      const x = { id, tit: /^(img|image|imagem|render|captura|screenshot)?\s*\d*$/i.test(tit) ? '' : tit, desc: '', tam: 'meia', w: r.w, h: r.h, nuvem: false, orig: true };
+      await imgPronta(x);
+      d.imgs.itens.push(x);
       n++;
     } catch (e) { avisoTopo('Não consegui abrir ' + (f.name || 'a imagem') + ': ' + (e && e.message || e)); }
   }
@@ -3881,7 +3925,7 @@ function fichaImagens(d) {
       + '<div class="l2">No papel: ' + sel(i, x.tam) + (x.nuvem ? '' : '<span class="im-local" title="Sobe para a nuvem quando a internet voltar">só neste aparelho</span>') + '</div></div>'
       + bt('imgDel', '✕', { i, rot: 'Tirar a imagem', cls: 'icon-btn del im-del' }) + '</div>').join('') + '</div>'
     + '<label class="chk chk-bloco"><input type="checkbox" data-p="imgs.anexar" data-re="1"' + (im.anexar ? ' checked' : '') + '> anexar as imagens no fim da proposta (um PDF só)</label>'
-    + '<p class="nota">Cada imagem é reduzida para o papel A4 (continua nítida na impressão) e recebe a marca d\'água da empresa, gravada nela. Fica guardada à parte da proposta, para não pesar no salvar.</p>',
+    + '<p class="nota">Cada imagem é reduzida para o papel A4 (continua nítida na impressão) e sai com a marca d\'água da empresa gravada nela, na intensidade de Configurações. Fica guardada à parte da proposta, para não pesar no salvar.</p>',
     { extra: n ? n + ' ' + (n === 1 ? 'imagem' : 'imagens') + ' · ' + pags + ' ' + (pags === 1 ? 'página' : 'páginas') : 'nenhuma imagem' });
 }
 function blocosContrato(d) {
@@ -4063,7 +4107,8 @@ function wCorpo(bl) {
       case 'cab': return wPar(wRun(b.tipo, { b: true, caps: true, cor: 'D53309', sz: 16, esp: 30 }), { antes: 120, depois: 20, jc: 'left' })
         + wPar(wRun(b.titulo, { b: true, caps: true, sz: 28, cor: '141414' }), { depois: 20, jc: 'left' })
         + (b.sub ? wPar(wRun(b.sub, { sz: 18, cor: '6E747C' }), { depois: 160, jc: 'left' }) : '');
-      case 'meta': return wTab({ t: 'tab', semCab: true, cols: b.pares.map(() => ({ t: '' })), linhas: [b.pares.map(p => ({ rot: p[0], t: p[1] }))] });
+      /* mesma proporção do papel: cliente menor, local da obra maior (1,3 : 2 : 1 : 1) */
+      case 'meta': return wTab({ t: 'tab', semCab: true, cols: b.pares.map((p, i) => ({ t: '', w: b.pares.length === 4 ? [25, 37, 19, 19][i] : 0 })), linhas: [b.pares.map(p => ({ rot: p[0], t: p[1] }))] });
       case 'p': return wPar(wRuns(b.runs), { ind: b.ind ? 284 : 0, antes: b.antes ? 200 : 0 });
       case 'h2': return wPar(wRun(b.n + '  ', { b: true, cor: 'D53309', sz: 18 }) + wRun(b.txt, { b: true, caps: true, sz: 18, esp: 20, cor: '141414' }), { bordaEsq: true, antes: 240, depois: 100, keep: true, jc: 'left' });
       case 'h3': return wPar(wRun(b.txt, { b: true, caps: true, sz: 16, cor: '4A515B', esp: 10 }), { antes: 140, depois: 60, keep: true, jc: 'left' });
@@ -4685,6 +4730,23 @@ $('btnWord').addEventListener('click', async () => {
 });
 
 /* ---------- textos padrão ---------- */
+/* amostra da marca d'água em Configurações: um galpão de exemplo, a marca por cima */
+async function desenhaAmostraMarca(pct) {
+  const cv = $('cfgMarcaPrev'); if (!cv) return;
+  $('cfgMarcaV').textContent = String(pct).replace('.', ',') + '%';
+  const W = cv.width, H = cv.height, g = cv.getContext('2d');
+  const ceu = g.createLinearGradient(0, 0, 0, H); ceu.addColorStop(0, '#eef1f4'); ceu.addColorStop(1, '#fbfbfb'); g.globalAlpha = 1; g.globalCompositeOperation = 'source-over'; g.fillStyle = ceu; g.fillRect(0, 0, W, H);
+  const P = (pts, cor) => { g.beginPath(); pts.forEach((q, i) => i ? g.lineTo(q[0] * W, q[1] * H) : g.moveTo(q[0] * W, q[1] * H)); g.closePath(); g.fillStyle = cor; g.fill(); };
+  P([[.03, .8], [.6, .95], [.98, .76], [.42, .64]], '#e7e1d6'); P([[.1, .38], [.1, .76], [.55, .87], [.55, .47]], '#c4c8cd');
+  P([[.55, .47], [.55, .87], [.92, .71], [.92, .37]], '#aeb3b9'); P([[.1, .38], [.55, .47], [.92, .37], [.47, .29]], '#d9dce0');
+  P([[.6, .53], [.6, .8], [.73, .74], [.73, .48]], '#7895aa'); P([[.12, .73], [.12, .77], [.52, .86], [.52, .82]], '#3d7a38');
+  const sm = simboloMarca(); if (!sm) return;
+  try { const m = await carregaImg(sm), mw = W * MARCA_LARG, mh = mw * m.naturalHeight / m.naturalWidth;
+    g.globalAlpha = pct / 100; g.globalCompositeOperation = 'multiply'; g.drawImage(m, (W - mw) / 2, (H - mh) / 2, mw, mh); g.globalAlpha = 1; g.globalCompositeOperation = 'source-over'; } catch (e) { }
+}
+$('cfgMarca').addEventListener('input', () => desenhaAmostraMarca(+$('cfgMarca').value));
+[['cfgMarcaMenos', -0.5], ['cfgMarcaMais', 0.5]].forEach(([id, p]) => $(id).addEventListener('click', () => {
+  const r = $('cfgMarca'); r.value = Math.min(10, Math.max(1, +r.value + p)); desenhaAmostraMarca(+r.value); }));
 function renderFonte(escolha) {
   $('cfgFonte').innerHTML = Object.keys(FONTES).map(k => '<button type="button" role="radio" aria-checked="' + (k === escolha) + '" data-fonte="' + k + '" class="' + (k === escolha ? 'on' : '') + (k === 'arial' ? ' f-arial' : '') + '">' + FONTES[k].rot + '<span class="ex">' + FONTES[k].ex + '</span></button>').join('');
 }
@@ -4726,6 +4788,7 @@ $('btnModelo').addEventListener('click', () => {
   const m = modeloAtual();
   $('cfgLetra').dataset.escolha = config.letra || 'normal'; renderLetra($('cfgLetra').dataset.escolha);
   $('cfgFonte').dataset.escolha = config.fonte === 'arial' ? 'arial' : 'rm'; renderFonte($('cfgFonte').dataset.escolha);
+  $('cfgMarca').value = marcaPct(); desenhaAmostraMarca(marcaPct());
   let grupoAtual = '';
   $('modeloCorpo').innerHTML = Object.keys(ROTULOS_TEXTO).map(k => { const [g, c] = k.split('.'); const cab = g !== grupoAtual ? '<div class="cfg-grupo">' + esc(GRUPOS_TEXTO[g] || g) + '</div>' : ''; grupoAtual = g; return cab + campo(ROTULOS_TEXTO[k], '<textarea data-m="' + k + '" rows="' + Math.min(14, Math.max(2, Math.ceil(String(m[g][c]).length / 100))) + '">' + esc(m[g][c]) + '</textarea>'); }).join('');
   $('modeloTela').classList.add('on');
@@ -4736,6 +4799,8 @@ $('modeloSalvar').addEventListener('click', () => {
   if (letra !== (config.letra || 'normal')) { config.letra = letra; salvarConfig(); }
   const fonte = $('cfgFonte').dataset.escolha || 'rm';
   if (fonte !== (config.fonte === 'arial' ? 'arial' : 'rm')) { config.fonte = fonte; salvarConfig(); }
+  const marca = +$('cfgMarca').value;
+  if (marca && marca !== marcaPct()) { config.marcaAlfa = marca; salvarConfig(); }
   const bancoNovo = { banco: $('cfgBanco').value.trim(), agencia: $('cfgAgencia').value.trim(), conta: $('cfgConta').value.trim(), pix: $('cfgPix').value.trim() };
   if (JSON.stringify(bancoNovo) !== JSON.stringify(Object.assign({ banco: '', agencia: '', conta: '', pix: '' }, config.banco || {}))) { config.banco = bancoNovo; salvarConfig(); }
   if (JSON.stringify(bensEdit) !== JSON.stringify(bensLista())) { config.bens = bensEdit.slice(); salvarConfig(); renderFicha(); }
@@ -4790,7 +4855,7 @@ function salvarListas(n) {
 function salvarConfig() {
   guardarLocal();
   clearTimeout(tCfg);
-  tCfg = setTimeout(() => { if (fbDB && fbAuthReady) fbDB.ref(FB_NO + '/config').set({ rep: config.rep || '', repDoc: config.repDoc || '', letra: config.letra || 'normal', fonte: config.fonte === 'arial' ? 'arial' : 'rm', bens: bensLista(), banco: config.banco || null }).catch(e => { if (window.rmNuvemErro) rmNuvemErro('salvar as configurações', e); }); }, 700);
+  tCfg = setTimeout(() => { if (fbDB && fbAuthReady) fbDB.ref(FB_NO + '/config').set({ rep: config.rep || '', repDoc: config.repDoc || '', letra: config.letra || 'normal', fonte: config.fonte === 'arial' ? 'arial' : 'rm', marcaAlfa: config.marcaAlfa || null, bens: bensLista(), banco: config.banco || null }).catch(e => { if (window.rmNuvemErro) rmNuvemErro('salvar as configurações', e); }); }, 700);
 }
 function escalaLetra() { return (LETRAS[config.letra] || LETRAS.normal).k; }
 function editandoAqui() { const a = document.activeElement; return a && $('ficha').contains(a) && /INPUT|TEXTAREA|SELECT/.test(a.tagName); }
@@ -5770,7 +5835,7 @@ if ('serviceWorker' in navigator) {
 })();
 </script>
 <script>/* versão publicada (PADRAO_RM.md §3): sobe a cada publicação, junto com o CACHE do sw.js */
-const APP_VER='v15';
+const APP_VER='v16';
 </script>
 <script id="rmVersaoBloco">
 /* ===== SELO DE VERSÃO — igual em todos os sistemas (PADRAO_RM.md §3) =====
