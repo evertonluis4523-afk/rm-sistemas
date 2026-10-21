@@ -12275,6 +12275,7 @@ function telhaAbrir(){
         '<p>'+(skp?('SketchUp · '+escapeHtml(TLH.sketchupNome)):'DWG · esboço das faces')+'</p></div>'+
         '<button class="btn primary" id="tlOrc">Importar p/ Orçamento RM</button>'+
         '<button class="btn" id="tlDoc">Pedido ao fabricante</button>'+
+        '<button class="btn" id="tlMont" title="PDF por parede: onde vai cada telha, pelo comprimento">Ficha do montador</button>'+
         tlMaisMenu([
           ['tlDxf','⬇ DXF de conferência'],['tl3d','▦ Ver em 3D'],
           /* "Salvar obra" tambem aqui: o fechamento e' trabalho proprio e ele
@@ -12349,6 +12350,7 @@ function telhaAbrir(){
     document.getElementById('tlDxf').onclick=telhaBaixarDXF;
     document.getElementById('tl3d').onclick=tlh3dAbrir;
     document.getElementById('tlDoc').onclick=telhaDocumento;
+    document.getElementById('tlMont').onclick=telhaFichaMontador;
     const ob=document.getElementById('tlObra'), obGeral=document.getElementById('obra');
     if(ob){ ob.value=(obGeral&&obGeral.value)||'';
       ob.oninput=()=>{ if(obGeral){obGeral.value=ob.value; try{save();}catch(_){}} }; }
@@ -12731,6 +12733,158 @@ function telhaDocumento(){
   const ov=document.getElementById('tlov'); if(ov)ov.classList.remove('on');
   document.documentElement.classList.remove('ctaberto');
   pa.scrollIntoView({behavior:'smooth',block:'start'});
+}
+/* ===================== FICHA DO MONTADOR (TELHAS) =====================
+   O pedido ao fabricante diz QUANTO comprar; o montador precisa saber ONDE
+   cada telha vai. Cada peça ganha um código -- letra da parede e posição da
+   esquerda para a direita (B-05) -- que ele escreve com pincel na ponta da
+   telha ao descarregar. Folha 1: separação por comprimento de chapa, com os
+   códigos (a chapa que rende duas peças vizinhas aparece como "A-06+07",
+   cortar na obra). Depois, uma folha por parede: a vista de fora com cada
+   telha no lugar, o comprimento escrito nela, a cumeeira onde a montagem
+   começa, e a lista para ir marcando o que já subiu. */
+const TLH_LETRAS='ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+function tlhLetra(i){return i<26?TLH_LETRAS[i]:TLH_LETRAS[Math.floor(i/26)-1]+TLH_LETRAS[i%26];}
+function telhaCodigos(){
+  if(!TLH.faces||!TLH.faces.length)telhaMonta();
+  const faces=TLH.faces.filter(f=>f.telhas&&f.telhas.length);
+  const chapas=telhaChapas();
+  faces.forEach((f,fi)=>{
+    f.ordem=f.telhas.slice().sort((a,b)=>a.x0-b.x0||(a.abaixo?1:0)-(b.abaixo?1:0));
+    f.letra=tlhLetra(fi);
+    f.ordem.forEach((t,i)=>{t.cod=f.letra+'-'+String(i+1).padStart(2,'0');});
+  });
+  return {faces,chapas};
+}
+/* "B-01, B-02, B-03" -> "B-01 a 03": a lista da separação cabe numa linha */
+function tlhFaixasCod(cods){
+  const out=[];let ini=null,ant=null;
+  const parte=c=>{const i=c.lastIndexOf('-');return [c.slice(0,i),+c.slice(i+1)];};
+  const fecha=()=>{if(ini)out.push(ini===ant?ini:ini+' a '+ant.slice(ant.lastIndexOf('-')+1));};
+  cods.forEach(c=>{const [l,n]=parte(c);
+    if(ant){const [la,na]=parte(ant);if(la===l&&na+1===n){ant=c;return;}}
+    fecha();ini=ant=c;});
+  fecha();return out;
+}
+function telhaFichaHTML(){
+  const {faces,chapas}=telhaCodigos();
+  if(!faces.length)return '';
+  const e=Math.max(1,TLH.estruturas||1), util=TLH.util, n0=v=>Math.round(v).toLocaleString('pt-BR');
+  const obra=obraAtual()||'(sem obra)', dataBr=new Date().toLocaleDateString('pt-BR'), rot=telhaRotuloAtual();
+  const logo=(typeof LOGO_RM!=='undefined'&&LOGO_RM)?'<img src="'+LOGO_RM+'" alt="RM Estruturas">':'<b>RM Estruturas</b>';
+  const css='<style>.tmf{font-family:Arial,Helvetica,sans-serif;color:#141414;box-sizing:border-box;width:281mm;height:176mm;border:.35mm solid #141414;padding:5mm 7mm 3mm;display:grid;grid-template-rows:auto 1fr auto;gap:2.5mm;overflow:hidden;break-after:page;page-break-after:always;background:#fff}'
+    +'.tmf:last-child{break-after:auto;page-break-after:auto}.tmf *{box-sizing:border-box}'
+    +'.tmf-top{display:flex;justify-content:space-between;align-items:flex-start;gap:8mm}.tmf-tx{font-size:11pt;line-height:1.45}.tmf-tx .t{font-size:15pt;font-weight:700;margin-bottom:.5mm}.tmf-tx span{color:#444}.tmf-tx2{font-size:9pt;color:#333;margin-top:.5mm}'
+    +'.tmf-logo{text-align:right;font-size:8pt;color:#555;white-space:nowrap}.tmf-logo img{height:9mm;display:block;margin:0 0 1.5mm auto}'
+    +'.tmf-corpo{display:grid;grid-template-columns:1fr 78mm;gap:5mm;min-height:0}.tmf h5{margin:0 0 1.5mm;font-size:8pt;letter-spacing:.08em;text-transform:uppercase;color:#777}'
+    +'.tmf svg{width:100%;height:auto;max-height:112mm;display:block}.tmf text{font-family:Arial,Helvetica,sans-serif}'
+    +'#printArea .tmf table{width:100%;border-collapse:collapse;font-size:9pt;margin:0}.tmf tr{background:none}#printArea .tmf th{background:none;border:0;font-weight:700;text-align:left;font-size:7.5pt;color:#777;text-transform:uppercase;letter-spacing:.05em;border-bottom:.3mm solid #141414;padding:1mm}'
+    +'#printArea .tmf td{border:0;font-size:9pt;font-weight:400;color:#141414;padding:.6mm 1mm;border-bottom:.15mm solid #ddd;vertical-align:top;white-space:nowrap}#printArea .tmf td.tmf-ob,#printArea .tmf td.tmf-cod{white-space:normal}#printArea .tmf td.tmf-ob{font-size:7pt;color:#555}#printArea .tmf td.r,#printArea .tmf th.r{text-align:right}#printArea .tmf td b{font-size:10pt}.tmf-ob{font-size:7.5pt;color:#555}'
+    +'.tmf-ok{display:inline-block;width:3.2mm;height:3.2mm;border:.25mm solid #141414;border-radius:.6mm}'
+    +'.tmf-pe{display:flex;justify-content:space-between;gap:6mm;font-size:7.5pt;color:#777;border-top:.2mm solid #ccc;padding-top:1.5mm}'
+    +'#printArea .tmf-sep td{font-size:10pt;padding:1.2mm 1mm}.tmf-cod span{white-space:nowrap}'
+    +'.tmf-corpo.longa{grid-template-columns:1fr;grid-template-rows:auto 1fr}.tmf-corpo.longa svg{max-height:50mm}.tmf-corpo.longa .tmf-lst{columns:3;column-gap:6mm}.tmf-l{display:grid;grid-template-columns:11mm 12mm 1fr 4mm;gap:1.5mm;align-items:baseline;font-size:8.5pt;padding:.4mm 0;border-bottom:.15mm solid #ddd;break-inside:avoid}.tmf-l b{text-align:right;font-size:9.5pt}.tmf-l .tmf-ob{font-size:7pt;color:#555}</style>';
+  const topo=(t,l1,l2)=>'<div class="tmf-top"><div class="tmf-tx"><div class="t">'+t+'</div>'+l1+'<div class="tmf-tx2">'+l2+'</div></div>'
+    +'<div class="tmf-logo">'+logo+escapeHtml(obra)+' · '+dataBr+'</div></div>';
+  const vezes=e>1?' · <b>'+e+'</b> estruturas iguais (monte cada parede '+e+' vezes)':'';
+  /* ---- folha 1: separação ---- */
+  const por={};
+  chapas.forEach(c=>{const d=tlhDivide(c.mm),g=por[d.medida]||(por[d.medida]={qtd:0,soltas:[],juntas:[],partes:d.partes});
+    g.qtd+=d.partes*e;
+    const cs=c.cortes.map(t=>t.cod).filter(Boolean).sort();
+    if(cs.length>1)g.juntas.push(cs[0]+'+'+cs.slice(1).map(x=>x.slice(x.lastIndexOf('-')+1)).join('+'));
+    else if(cs.length)g.soltas.push(cs[0]);});
+  (TLH.avulsos||[]).forEach(a=>{const d=tlhDivide(a.mm),g=por[d.medida]||(por[d.medida]={qtd:0,soltas:[],juntas:[],partes:d.partes});
+    g.qtd+=a.qtd*d.partes*e;g.juntas.push('avulso'+(a.rot?' ('+a.rot+')':'')+' ×'+a.qtd*e);});
+  const mms=Object.keys(por).map(Number).sort((a,b)=>b-a);
+  const temJunta=chapas.some(c=>c.cortes.length>1), temDiv=mms.some(m=>por[m].partes>1);
+  const totalQtd=mms.reduce((s,m)=>s+por[m].qtd,0);
+  const sep='<article class="tmf">'+topo('TELHAS · SEPARAÇÃO NA OBRA',
+      '<span>Telha:</span> <b>'+escapeHtml(rot)+'</b> · <span>largura útil</span> <b>'+n0(util)+' mm</b> · <b>'+totalQtd+'</b> chapas · <b>'+faces.length+'</b> parede(s)'+vezes,
+      'Ao descarregar, escreva o código com pincel na ponta de cada telha e faça uma pilha por parede (A, B, C…). Depois é só seguir a folha de cada parede.')
+    +'<div style="min-height:0;overflow:hidden"><table class="tmf-sep"><thead><tr><th class="r">Compr. (mm)</th><th class="r">Qtd.</th><th>Códigos (onde vai)</th><th></th></tr></thead><tbody>'
+    +mms.map(m=>{const g=por[m];
+      const cods=tlhFaixasCod(g.soltas.sort()).concat(g.juntas.map(j=>j+(/^avulso/.test(j)?'':' ✂')));
+      return '<tr><td class="r"><b>'+n0(m)+'</b></td><td class="r">'+g.qtd+'</td><td class="tmf-cod">'
+        +cods.map(c=>'<span>'+escapeHtml(c)+'</span>').join(' · ')
+        +(g.partes>1?' <span class="tmf-ob">· cada uma em '+g.partes+' partes</span>':'')+'</td><td><span class="tmf-ok"></span></td></tr>';}).join('')
+    +'</tbody></table></div>'
+    +'<div class="tmf-pe"><span>Paredes: '+faces.map(f=>'<b>'+f.letra+'</b> '+escapeHtml(f.nome)).join(' · ')+'</span><span>'
+      +(temJunta?'✂ uma chapa rende as duas peças: cortar na obra. ':'')
+      +(temDiv?'Telha comprida sai em partes com transpasse de '+n0(TLH.traspasse||0)+' mm. ':'')+'Medidas em mm</span></div></article>';
+  /* ---- uma folha por parede ---- */
+  const obs=t=>{const o=[],d=tlhDivide(t.mm);
+    if(t.abaixo)o.push('sob janela');else if(t.porta)o.push('sobre abertura');
+    if(t.queda>0)o.push('corte '+n0(t.queda));
+    if(t.larg<util-2)o.push('larg. '+n0(t.larg));
+    if(t.chapa){const ir=chapas.find(c=>c.n===t.chapa);const outras=ir?ir.cortes.filter(q=>q!==t).map(q=>q.cod):[];if(outras.length)o.push('mesma chapa '+outras.join(', '));}
+    if(d.partes>1)o.push(d.partes+' × '+n0(d.medida));
+    return o.map(x=>'<span style="white-space:nowrap">'+x+'</span>').join(' · ');};
+  const folha=(f,ts,parte,partes)=>{
+    const x0=parte?Math.min(...ts.map(t=>t.x0)):f.xIni, x1=parte?Math.max(...ts.map(t=>t.x1)):f.xFim, longa=ts.length>18;
+    const yTop=Math.max(...ts.map(t=>Math.max(t.yA,t.yB))), yBase=f.baseY;
+    const W=1000,m=34;
+    /* a altura do desenho segue a parede: lateral comprida e baixa não deixa faixa vazia em cima */
+    const s=Math.min((W-2*m)/Math.max(1,x1-x0),(longa?300:460)/Math.max(1,yTop-yBase)), H=Math.round((yTop-yBase)*s+2*m+30);
+    const ox=(W-(x1-x0)*s)/2, X=x=>ox+(x-x0)*s, Y=y=>H-m-22-(y-yBase)*s, r1=v=>Math.round(v*10)/10;
+    let g='';
+    ts.forEach(t=>{
+      const a=r1(X(t.x0)),b=r1(X(t.x1)),pe=r1(Y(t.pe)),ya=r1(Y(t.yA)),yb=r1(Y(t.yB)),alto=Math.min(ya,yb);
+      const cor=t.porta&&!t.abaixo?'#dbe8f5':t.queda>0?'#fde5d6':'#eceef1';
+      g+='<polygon data-cod="'+t.cod+'" points="'+a+','+pe+' '+b+','+pe+' '+b+','+yb+' '+a+','+ya+'" fill="'+cor+'" stroke="#141414" stroke-width="1"/>';
+      /* o retângulo da telha passa da água: o triângulo tracejado é o que sai */
+      if(t.queda>0)g+='<polygon points="'+a+','+alto+' '+b+','+alto+' '+(ya>yb?a+','+ya:b+','+yb)+'" fill="none" stroke="#d53309" stroke-width=".8" stroke-dasharray="3 2"/>';
+      const cx=r1((a+b)/2),cy=r1((pe+Math.max(ya,yb))/2),w=b-a;
+      g+='<text x="'+cx+'" y="'+cy+'" font-size="'+r1(Math.max(7,Math.min(13,w*.55)))+'" font-weight="700" fill="#141414" text-anchor="middle" dominant-baseline="middle" transform="rotate(-90 '+cx+' '+cy+')">'+n0(t.mm)+'</text>';
+      /* posição: embaixo da linha do chão; a telha que fica sobre a porta
+         leva o número logo abaixo dela, dentro da abertura */
+      const noAlto=t.pe-yBase>50;
+      g+='<text x="'+cx+'" y="'+r1(noAlto?pe+11:Y(yBase)+13)+'" font-size="'+r1(Math.max(6.5,Math.min(9.5,w*.4)))+'" text-anchor="middle" fill="#555">'+t.cod.slice(t.cod.lastIndexOf('-')+1)+'</text>';
+    });
+    (f.vergas||[]).forEach(v=>{const pe=v.pe!=null?Math.max(v.pe,yBase):yBase;
+      if(Math.min(v.x1,x1)-Math.max(v.x0,x0)<=1)return;
+      g+='<rect x="'+r1(X(Math.max(v.x0,x0)))+'" y="'+r1(Y(v.y))+'" width="'+r1((Math.min(v.x1,x1)-Math.max(v.x0,x0))*s)+'" height="'+r1((v.y-pe)*s)+'" fill="url(#tmh'+f.letra+')" stroke="#141414" stroke-width=".8"/>';});
+    if(!f.topoReto&&f.cume>x0&&f.cume<x1){const c=r1(X(f.cume));
+      g+='<line x1="'+c+'" y1="'+(m-8)+'" x2="'+c+'" y2="'+(H-m-22)+'" stroke="#d53309" stroke-width="1.2" stroke-dasharray="6 4"/>'
+        +'<text x="'+c+'" y="'+(m-12)+'" font-size="11" font-weight="700" fill="#d53309" text-anchor="middle">CUMEEIRA · comece aqui ← →</text>';}
+    g+='<line x1="'+r1(X(x0))+'" y1="'+(H-12)+'" x2="'+r1(X(x1))+'" y2="'+(H-12)+'" stroke="#141414" stroke-width=".7"/>'
+      +'<text x="'+r1((X(x0)+X(x1))/2)+'" y="'+(H-15)+'" font-size="10" fill="#141414" text-anchor="middle">'+n0(x1-x0)+'</text>';
+    const svg='<svg viewBox="0 0 '+W+' '+H+'"><defs><pattern id="tmh'+f.letra+'" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="8" stroke="#9aa3ad" stroke-width="1.2"/></pattern></defs>'+g+'</svg>';
+    const linha=t=>'<tr><td>'+t.cod+'</td><td class="r"><b>'+n0(t.mm)+'</b></td><td class="tmf-ob">'+obs(t)+'</td><td><span class="tmf-ok"></span></td></tr>';
+    const lista=longa?ts.map(t=>'<div class="tmf-l"><span>'+t.cod+'</span><b>'+n0(t.mm)+'</b><span class="tmf-ob">'+obs(t)+'</span><span class="tmf-ok"></span></div>').join('')
+      :'<table><thead><tr><th>Nº</th><th class="r">Compr.</th><th>Obs.</th><th></th></tr></thead><tbody>'+ts.map(linha).join('')+'</tbody></table>';
+    const temCorte=ts.some(t=>t.queda>0), temAb=ts.some(t=>t.porta);
+    return '<article class="tmf" data-parede="'+f.letra+'">'+topo('PAREDE '+f.letra+' · '+escapeHtml(String(f.nome).toUpperCase())+(parte?' ('+parte+'/'+partes+')':''),
+        (parte?'<b>'+ts[0].cod+' a '+ts[ts.length-1].cod+'</b> · <b>'+ts.length+'</b> de '+f.ordem.length+' telhas · <span>trecho</span> <b>'+n0(x0-f.xIni)+' a '+n0(x1-f.xIni)+' mm</b>'
+          :'<b>'+ts.length+'</b> telhas · <span>altura</span> <b>'+n0(yTop-yBase)+' mm</b> · <span>comprimento</span> <b>'+n0(x1-x0)+' mm</b>')+vezes,
+        'Vista de fora. Número pequeno = posição ('+f.letra+'-01 à esquerda); número grande = comprimento da telha.'
+          +(temCorte?' Laranja: corte na diagonal (o tracejado é o que sai).':'')+(temAb?' Azul: telha sobre porta/janela.':''))
+      +'<div class="tmf-corpo'+(longa?' longa':'')+'"><div><h5>Vista da parede</h5>'+svg+'</div><div style="min-height:0;overflow:hidden"><h5>Telhas desta parede</h5><div class="tmf-lst">'+lista+'</div></div></div>'
+      +'<div class="tmf-pe"><span>Medidas em mm. Confira o código escrito na telha antes de subir.</span><span>'+escapeHtml(rot)+' · útil '+n0(util)+'</span></div></article>';
+  };
+  /* Parede com mais de 36 telhas não cabe numa folha (nem o desenho fica
+     legível): sai em trechos, cortando só entre colunas de telha -- a peça
+     de cima e a de baixo da janela ficam sempre no mesmo trecho. */
+  const MAX_FOLHA=36;
+  const folhas=f=>{
+    if(f.ordem.length<=MAX_FOLHA)return folha(f,f.ordem);
+    const cols=[];f.ordem.forEach(t=>{const c=cols[cols.length-1];if(c&&Math.abs(c[0].x0-t.x0)<1)c.push(t);else cols.push([t]);});
+    const nPartes=Math.ceil(f.ordem.length/30), alvo=f.ordem.length/nPartes, grupos=[[]];
+    cols.forEach(c=>{const g=grupos[grupos.length-1];if(g.length&&g.length+c.length>alvo+1&&grupos.length<nPartes)grupos.push([]);grupos[grupos.length-1].push(...c);});
+    return grupos.map((g,i)=>folha(f,g,i+1,grupos.length)).join('');
+  };
+  return css+sep+faces.map(folhas).join('');
+}
+async function telhaFichaMontador(){
+  const pa=document.getElementById('printArea'); if(!pa)return;
+  const html=telhaFichaHTML();
+  if(!html){alert('Nenhuma parede com telha para montar. Abra o desenho ou o SketchUp do fechamento primeiro.');return;}
+  pa.innerHTML=html; pa.classList.remove('hide'); document.body.classList.add('so-folha');
+  const pg=document.createElement('style'); pg.textContent='@page{size:A4 landscape;margin:8mm}'; document.head.appendChild(pg);
+  const fim=()=>{document.body.classList.remove('so-folha');pg.remove();pa.classList.add('hide');pa.innerHTML='';};
+  window.addEventListener('afterprint',fim,{once:true});
+  try{ sairEmPDF(nomeArquivoSeguro('Montagem telhas '+(obraAtual()||'obra'),90)); }
+  finally{ setTimeout(fim,2500); }
 }
 /* ===================== 3D DA FACE DE TELHA =====================
    Mesma receita do 3D do detalhamento: projecao axonometrica e pintor por
@@ -27900,7 +28054,7 @@ if('serviceWorker' in navigator && location.protocol.startsWith('http')){
 }
 </script>
 <script>/* versão publicada (PADRAO_RM.md §3): sobe a cada publicação, junto com o CACHE do sw.js */
-const APP_VER='v212';
+const APP_VER='v213';
 </script>
 <script id="rmVersaoBloco">
 /* ===== SELO DE VERSÃO — igual em todos os sistemas (PADRAO_RM.md §3) =====
