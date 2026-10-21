@@ -2949,7 +2949,7 @@ body:not(.com-doc) .docs-card,body:not(.com-doc) .ed-grid{display:none}
       <div class="ini-tit"><h2>Salvos</h2><p>Clique numa proposta ou num contrato para abrir e editar.</p></div>
       <div class="fld ini-busca"><label for="salvoBusca">Procurar</label><input id="salvoBusca" type="search" placeholder="cliente, número ou cidade" autocomplete="off"></div>
       <div class="ini-acoes">
-        <button class="btn btn-ghost btn-sm" id="iniImportar" type="button" title="Lê uma proposta ou um contrato em Word (.docx) e monta no layout novo">⇪ Importar Word</button>
+        <button class="btn btn-ghost btn-sm" id="iniImportar" type="button" title="Lê uma proposta ou um contrato em Word (.docx) ou PDF e monta no layout novo">⇪ Importar Word ou PDF</button>
         <button class="btn btn-sm ini-nova" id="iniNova" type="button">＋ Nova proposta</button>
       </div>
     </div>
@@ -2980,8 +2980,8 @@ body:not(.com-doc) .docs-card,body:not(.com-doc) .ed-grid{display:none}
         <button class="btn btn-ghost btn-sm" id="btnTipo" type="button" disabled title="O cliente mudou de ideia: passa a proposta para o outro tipo sem recomeçar">⇄ Passar para chave na mão</button>
         <button class="btn btn-ghost btn-sm" id="btnDup" type="button" disabled>⧉ Duplicar</button>
         <button class="btn btn-ghost btn-sm" id="btnDel" type="button" disabled>✕ Excluir</button>
-        <button class="btn btn-ghost btn-sm" id="btnImportar" type="button" title="Lê uma proposta ou um contrato em Word (.docx) e monta no layout novo">⇪ Importar Word</button>
-        <input type="file" id="arqWord" accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document" hidden>
+        <button class="btn btn-ghost btn-sm" id="btnImportar" type="button" title="Lê uma proposta ou um contrato em Word (.docx) ou PDF e monta no layout novo">⇪ Importar Word ou PDF</button>
+        <input type="file" id="arqWord" accept=".docx,.pdf,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document" hidden>
       </div>
     </div>
     <div class="abas" role="tablist">
@@ -4999,6 +4999,52 @@ async function lerDocx(buf) {
   });
   return linhas;
 }
+/* PDF: o mesmo que o Word, a partir do texto da página. No PDF cada linha
+   vem solta ("o preço certo e ajustado de" numa, o R$ na outra): junta de
+   volta em parágrafos -- outro começa quando a linha anterior fecha a frase
+   ou quando a linha abre item, cláusula, título, parcela ou marcador. O que
+   se repete no alto/pé de toda página (timbrado, número) sai. */
+function carregaPdfJs() {
+  return new Promise((ok, erro) => {
+    if (window.pdfjsLib) return ok();
+    const s = document.createElement('script'); s.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
+    s.onload = () => { try { pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js'; } catch (_) {} ok(); };
+    s.onerror = () => erro(new Error('não carregou o leitor de PDF (precisa de internet)')); document.head.appendChild(s);
+  });
+}
+async function lerPdf(buf) {
+  await carregaPdfJs();
+  const doc = await pdfjsLib.getDocument({ data: new Uint8Array(buf) }).promise, pags = [];
+  for (let i = 1; i <= doc.numPages; i++) {
+    const tc = await (await doc.getPage(i)).getTextContent(), lin = [];
+    tc.items.forEach(it => { if (!it.str || !it.str.trim()) return; const y = Math.round(it.transform[5]), l = lin.find(q => Math.abs(q.y - y) < 3); if (l) l.it.push(it); else lin.push({ y, it: [it] }); });
+    pags.push(lin.sort((a, b) => b.y - a.y).map(l => l.it.sort((a, b) => a.transform[4] - b.transform[4]).map(x => x.str).join(' ').replace(/\s+/g, ' ').trim()).filter(Boolean));
+  }
+  if (!pags.some(p => p.length)) throw new Error('o PDF não tem texto (é imagem escaneada): use o Word');
+  const vezes = {}; pags.forEach(p => new Set(p).forEach(x => { vezes[x] = (vezes[x] || 0) + 1; }));
+  const repete = x => (pags.length > 2 && vezes[x] >= Math.ceil(pags.length * 0.6)) || (pags.length === 2 && vezes[x] === 2 && x.length < 80);
+  const soltas = [].concat(...pags).filter(x => !repete(x) && !/^(p[áa]gina\s*)?\d+(\s*(de|\/)\s*\d+)?$/i.test(x));
+  /* título: maiúsculas e sem ponto final ("CONTRATANTE." no fim de uma frase não é título) */
+  const caixaAlta = x => /[A-ZÀ-Ú]/.test(x) && x === x.toUpperCase() && x.length < 90 && !/[.;]$/.test(x);
+  /* marcador: os de texto e os da fonte Symbol/Wingdings do Word, que vêm na área de uso privado (\uf0b7, \uf0fc...) */
+  const marca = /^[•●▪◦■□➢►✓✔\ue000-\uf8ff]\s*/;
+  const novo = x => marca.test(x) || /^(\d{1,2}(\.\d{1,2})+\.?(\s|(?=[A-Za-zÀ-ú]))|\d+\s*[-–]\s|[-–]\s|[a-z]\)\s|R\$|Entrada\b|CONTRATANTE\s*:|CONTRATAD[AO]\s*:|Pelo presente|A seguir|Estrela\b)/i.test(x) || caixaAlta(x) || /\.{3,}/.test(x);
+  /* continua a linha de cima com certeza: começa em minúscula (sem ser "a) item") ou é o pontilhado da peça */
+  const continua = x => /^\.{3,}/.test(x) || (/^[a-zà-ú,;)]/.test(x) && !/^[a-z]\)\s/.test(x));
+  const out = [];
+  soltas.forEach(x => {
+    const lista = marca.test(x), t = x.replace(marca, '').trim(), ant = out[out.length - 1];
+    if (!ant) { out.push({ t, lista }); return; }
+    /* as partes ("CONTRATANTE: ..., Bairro: Centro – ...") só fecham no ponto final */
+    const partes = /^(CONTRATANTE|CONTRATAD[AO])\s*:|^Pelo presente/i.test(ant.t);
+    const fechou = partes ? /\.$/.test(ant.t) : /[.:!?]$/.test(ant.t);
+    /* linha em maiúsculas é título -- a não ser que fique aberta (vírgula, parêntese) */
+    const titulo = caixaAlta(ant.t) && !/[,(–-]$/.test(ant.t) && ant.t.split('(').length <= ant.t.split(')').length;
+    if (!lista && (continua(t) || (!fechou && !titulo && !/\.{3,}/.test(ant.t) && !novo(x)))) ant.t += ' ' + t;
+    else out.push({ t, lista });
+  });
+  return out;
+}
 const NUM_EXT = { uma: 1, um: 1, duas: 2, dois: 2, tres: 3, 'três': 3, quatro: 4, cinco: 5, seis: 6, sete: 7, oito: 8, nove: 9, dez: 10, onze: 11, doze: 12, treze: 13, quatorze: 14, catorze: 14, quinze: 15, dezesseis: 16, dezoito: 18, vinte: 20, 'vinte e quatro': 24 };
 function frase(s) {
   /* TEXTO TODO EM MAIÚSCULAS vira frase, guardando CONTRATANTE/CONTRATADO, siglas e UF */
@@ -5121,7 +5167,7 @@ function interpretar(linhas) {
         }
         continue;
       }
-      if (i === 0 && /^CONTRATO\b/i.test(t)) { c.textos.titulo = frase(t); continue; }
+      if (i < 5 && /^CONTRATO\s+DE\b/i.test(t) && !/^CONTRATO\s+DE\b/i.test(String(c.textos._tit || ''))) { c.textos.titulo = frase(t); c.textos._tit = t; continue; }
       if (/^1\.1\.?\s*(?=[A-Za-zÀ-ú])/.test(t)) { objeto = t.replace(/^1\.1\.?\s*/, ''); lidos.push('Objeto (1.1)'); sec = null; continue; }
       if (/^1\.2\.?\s*(?=[A-Za-zÀ-ú])/.test(t)) continue;
       if (/^1\.3\.?\s*(?=[A-Za-zÀ-ú])/.test(t)) { fixo = true; cap = 'obrigContratada'; continue; }
@@ -5262,6 +5308,7 @@ function interpretar(linhas) {
   let mantidas = 0;
   if (contrato) {
     if (objeto) { c.textos.objeto = objeto; }
+    delete c.textos._tit;
     Object.keys(caps).forEach(k => { const x = caps[k].join('\n').trim(); if (x) { c.textos[k] = x; mantidas++; } });
     if (obsC.length) { c.textos.observacoes = obsC.join('\n'); mantidas++; }
     if (mantidas) lidos.push(mantidas + ' cláusula(s) como estão no contrato');
@@ -5283,8 +5330,12 @@ function interpretar(linhas) {
 }
 async function importarWord(arquivo) {
   let r;
-  try { r = interpretar(await lerDocx(await arquivo.arrayBuffer())); }
-  catch (e) { avisoTopo('Não consegui ler o Word: ' + (e && e.message || e)); return null; }
+  try {
+    const buf = await arquivo.arrayBuffer(), u = new Uint8Array(buf.slice(0, 5));
+    const pdf = /\.pdf$/i.test(arquivo.name || '') || String.fromCharCode.apply(null, u) === '%PDF-';
+    r = interpretar(pdf ? await lerPdf(buf) : await lerDocx(buf));
+  }
+  catch (e) { avisoTopo('Não consegui ler o arquivo: ' + (e && e.message || e)); return null; }
   const d = r.doc;
   docs[d.id] = d; aba = r.contrato ? 'contrato' : 'proposta';
   abrir(d.id); alterou(d, true);
@@ -5347,7 +5398,7 @@ function abrirRevisao(d, r, nome) {
 $('btnImportar').addEventListener('click', () => $('arqWord').click());
 $('arqWord').addEventListener('change', async e => { const f = e.target.files[0]; e.target.value = ''; if (f) await importarWord(f); });
 
-window.__prop = { lerDocx, interpretar, importarWord, abrirRevisao, novoDoc, novoContrato, normalizar, blocosProposta, blocosContrato, blocosHTML, extenso, totalProposta, totalContrato, parcelasContrato, avisos, docxBytes, lerValor,
+window.__prop = { lerDocx, lerPdf, interpretar, importarWord, abrirRevisao, novoDoc, novoContrato, normalizar, blocosProposta, blocosContrato, blocosHTML, extenso, totalProposta, totalContrato, parcelasContrato, avisos, docxBytes, lerValor,
   docs: () => docs, abrir, config: () => config };
 
 document.querySelectorAll('img.rm-logo,img.f-logo').forEach(i => { i.src = LOGO; });
@@ -5906,7 +5957,7 @@ if ('serviceWorker' in navigator) {
 })();
 </script>
 <script>/* versão publicada (PADRAO_RM.md §3): sobe a cada publicação, junto com o CACHE do sw.js */
-const APP_VER='v17';
+const APP_VER='v18';
 </script>
 <script id="rmVersaoBloco">
 /* ===== SELO DE VERSÃO — igual em todos os sistemas (PADRAO_RM.md §3) =====
