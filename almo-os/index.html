@@ -4120,7 +4120,50 @@ function aplicarDiretorioRecibos(remoto){
      Recibos e' o normal dele -- nao vira "sem ficha", nao vai para os
      afastados. Marca-se em Config -> Fora da folha. */
   DB.funcionarios.forEach(f=>{ if(!casados.has(f.id) && !f.foraRecibos && !f.semFolha){ f.foraRecibos=true; outros++; } });
-  return {mudou:novos+saiu+voltou+outros,novos,saiu,voltou};
+  let demissao=0, desfez=0;
+  DB.funcionarios.forEach(f=>{ const a=ajustaDemissao(f); demissao+=a.pos; desfez+=a.tirou; });
+  return {mudou:novos+saiu+voltou+outros+demissao+desfez,novos,saiu,voltou,demissao};
+}
+/* DEMISSÃO NAS MARCAÇÕES. Desligado ou pedido de demissão no Recibos com a
+   data X: o funcionário já descia para os afastados, mas as marcações
+   lançadas DEPOIS de X ficavam (almoço, abono...) e entravam na conta.
+   Agora, nos dias depois de X:
+     - o que estava marcado vira "Demissão";
+     - no mês da saída, os dias de trabalho vazios também (a grade mostra
+       até quando ele ficou).
+   O que estava antes fica guardado (M.demAuto) e volta sozinho se a data
+   mudar para depois ou se ele voltar a ativo no Recibos. Mês fechado não
+   muda. O dia X ainda é dele. Teste almocos-demissao-nas-marcacoes. */
+function ajustaDemissao(f){
+  const desl=f.motivo==='desligamento'||f.motivo==='demissao', dt=desl?String(f.desligamento||'').slice(0,10):'';
+  if(dt && !/^\d{4}-\d{2}-\d{2}$/.test(dt)) return {pos:0,tirou:0};
+  let n=0, tirou=0;
+  Object.keys(DB.meses||{}).forEach(mk=>{
+    const M=DB.meses[mk]; if(!M || (M.fechado&&M.fechado.em)) return;
+    M.marc=M.marc||{};
+    /* 1) desfaz o que a regra pôs e não vale mais */
+    const auto=M.demAuto&&M.demAuto[f.id];
+    if(auto){
+      Object.keys(auto).forEach(d=>{ if(dt && d>dt) return;
+        const mm=M.marc[f.id]=M.marc[f.id]||{};
+        if(mm[d]==='DEMISSAO'){ if(auto[d]) mm[d]=auto[d]; else delete mm[d]; }
+        delete auto[d]; tirou++; });
+      if(!Object.keys(auto).length) delete M.demAuto[f.id];
+      if(M.marc[f.id] && !Object.keys(M.marc[f.id]).length) delete M.marc[f.id];
+    }
+    if(!dt || mk<dt.slice(0,7)) return;
+    /* 2) depois da data */
+    const mm=M.marc[f.id]||{}, doMes=mk===dt.slice(0,7);
+    Object.keys(M.dias||{}).sort().forEach(d=>{
+      if(d<=dt || !M.dias[d].on) return;
+      const era=mm[d]||'';
+      if(era==='DEMISSAO' || (!era && (!doMes || M.dias[d].fer))) return;
+      M.demAuto=M.demAuto||{}; (M.demAuto[f.id]=M.demAuto[f.id]||{})[d]=era;
+      mm[d]='DEMISSAO'; n++;
+    });
+    if(Object.keys(mm).length) M.marc[f.id]=mm;
+  });
+  return {pos:n,tirou};
 }
 /* DE QUANDO E' A LISTA DE FUNCIONARIOS. A equipe vem da Folha, sozinha, ao
    abrir -- e quando a leitura falhava (sem internet, sem permissao, Folha
@@ -4160,6 +4203,7 @@ async function sincronizarEquipe(){
   if(r.novos) partes.push(r.novos+' entrou(aram)');
   if(r.saiu) partes.push(r.saiu+' saiu(íram)');
   if(r.voltou) partes.push(r.voltou+' voltou(aram)');
+  if(r.demissao) partes.push(r.demissao+' dia(s) depois da saída marcado(s) como demissão');
   if(partes.length) toast('Equipe atualizada pelo Recibos: '+partes.join(' · '));
 }
 /* ============ JUNTAR DUPLICADOS ============
@@ -4250,6 +4294,7 @@ function restaurarArquivado(a){
   let f=DB.funcionarios.find(x=>x.id===a.id);
   if(!f){ f={id:a.id||('f'+Date.now()), nome:a.nome, setor:a.setor, admissao:a.admissao, desligamento:'', motivo:''}; DB.funcionarios.push(f); }
   else { f.motivo=''; f.desligamento=''; }
+  ajustaDemissao(f);
   Object.keys(a.meses||{}).forEach(mk=>{
     const M=ensureMonth(mk);
     const marc=a.meses[mk].marc||{}, obs=a.meses[mk].obs||{};
@@ -5592,7 +5637,7 @@ fbInit();
 /* Sobe junto com o nome do cache do sw.js, sempre: se um subir sem o outro,
    o numero na tela deixa de significar alguma coisa. Ha uma prova automatica
    que falha quando os dois discordam. */
-const APP_VER='v93';
+const APP_VER='v94';
 (function(){var p=document.getElementById('verPill'); if(p)p.textContent=APP_VER;})();
 if('serviceWorker' in navigator){
   if(location.protocol.startsWith('http')){ navigator.serviceWorker.register('./sw.js').catch(()=>{}); }
