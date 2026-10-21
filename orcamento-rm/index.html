@@ -4863,6 +4863,9 @@ const FB={
 try{ window.RM_ORC_SYNC = FB; }catch(e){}
 let AUTH_USER=null; // usuário Firebase autenticado (null enquanto não logado)
 const META_KEYS=['_editedAt','_cloudAppliedAt','_updatedAt','_escritor'];
+/* Só deste aparelho: não sobe nem desce da nuvem. O orçamento aberto num
+   computador vinha para o outro, que estava montando um orçamento novo. */
+const SO_AQUI=['orcamentoAtualId'];
 // chaves que pertencem ao orçamento de trabalho (não são salvas ao recarregar)
 const QUOTE_KEYS=['numero','solicitacao','data','validade','vendedor','cliente','fornecedorDest','obra','obs','desc','linhasPerfil','linhasTelha','linhasCat','linhasAvulso','freteMetalica','freteTelhas','fretesMetalica','fretesTelhas','fornecedorMetalica','fornecedorTelhas','compras','esquadrias','chaveMao'];
 let storageOK=true; const mem={};
@@ -5008,6 +5011,13 @@ function freshQuote(){
     fornecedorMetalica:"",fornecedorTelhas:"",compras:{rates:{},profiles:{},grupos:{},imports:[]},esquadrias:[],chaveMao:cnmVazio()};
 }
 let S = Object.assign(freshDB(), freshQuote(), loadDB()||{});
+/* QUAL ORÇAMENTO ESTÁ ABERTO é coisa da tela, não do cadastro. Ele ficava
+   gravado junto com o cadastro: depois de fechar e abrir, a tela vinha vazia
+   (o orçamento em si não fica gravado), mas o sistema ainda achava que o
+   último salvo estava aberto -- e o orçamento novo, ao salvar, perguntava
+   "Atualizar este" ou "nova revisão" do antigo. Ao abrir começa sem nenhum;
+   o rascunho, se a pessoa continuar de onde parou, devolve o dele. */
+S.orcamentoAtualId=null;
 // ensure keys
 if(!S.fornecedores){Object.assign(S,freshDB());}
 if(!S.fornecedorAtivo) S.fornecedorAtivo=S.fornecedores[0].id;
@@ -5438,7 +5448,7 @@ function brasReajusta(){
   document.getElementById('brasReaj').value='';
   brasSincroniza(); save(); recompute(); renderLines(); renderBras(); toast('Reajuste de '+pct+'% aplicado à Brastelha');
 }
-if(normalizaTelhasCores()|migraChavesCatPrecos())save();
+if(normalizaTelhasCores()|migraChavesCatPrecos()|migraCatColsVazias())save();
 try{ cpMigrarChavesAntigas(); }catch(e){}
 // migração única: categoria SERVIÇOS (banheiro, hidráulica, pintura...),
 // com o acréscimo automático de 10% já configurado
@@ -6927,6 +6937,17 @@ function migraVergTelas5(){
   S._migVergTelas=S._migVergTelas2=S._migVergTelas3=S._migVergTelas4=true;
   return true;
 }
+/* Colunas vazias: a lista c.fornCols antiga juntou fornecedores que nunca
+   tiveram preço na categoria (PERFITEC, BRASTELHA em Vergalhões e telas),
+   e só ocupavam tela. Sai uma vez quem não tem preço ali; daqui em diante
+   fica só quem a pessoa marcar no cadastro ou pelo "＋ Fornecedor". */
+function migraCatColsVazias(){
+  if(S._migCatColsVazias)return false;
+  S._migCatColsVazias=true;
+  (S.categorias||[]).forEach(c=>{if(!c.fornCols||!c.fornCols.length)return;const pre=fbChave(c.id)+'~';
+    c.fornCols=c.fornCols.filter(n=>{const f=cpForn(n);return !!(f&&f.catPrecos&&Object.keys(f.catPrecos).some(k=>k.indexOf(pre)===0&&Number(f.catPrecos[k])>0));});});
+  return true;
+}
 function catTemFardo(c){return !!(c&&(c.items||[]).some(it=>Number(it.fardo)>0));}
 function fardoTexto(qtd,it){
   const f=Number(it&&it.fardo)||0,q=Number(qtd)||0;if(!f)return '';
@@ -7490,7 +7511,6 @@ function catUsarRef(catId,nome){
   cat.items.forEach(it=>{const k=catPrecoKey(cat,it),vv=Number(it.valor)>0?Number(it.valor):0,vn=Number(fn.catPrecos[k])>0?Number(fn.catPrecos[k]):0;
     if(vv>0)fv.catPrecos[k]=vv;else delete fv.catPrecos[k];
     delete fn.catPrecos[k];it.valor=vn;});
-  cat.fornCols=cat.fornCols||[];if(!cat.fornCols.some(x=>cpNorm(x)===cpNorm(velho)))cat.fornCols.push(velho);
   cat.fornBase=nome;
   save();dbRender('cat:'+catId);recompute();renderLines();toast('Referência de '+catNomeBonito(cat.nome)+': '+nome);
 }
@@ -8512,10 +8532,21 @@ function salvarOrcamento(){
   const atual=S.orcamentoAtualId?(S.orcamentosSalvos||[]).find(x=>x.id===S.orcamentoAtualId):null;
   if(atual){
     askEscolha('Este orçamento já está salvo como "'+atual.nome+'"'+(atual.numero?' (Nº '+atual.numero+')':'')+'.',
-      [['atualizar','Atualizar este','red'],['revisao','Salvar como nova revisão'],['','Cancelar']],
-      function(v){ if(v==='atualizar')atualizaSalvo(atual); else if(v==='revisao')novaRevisao(atual); },'Salvar orçamento');
+      [['atualizar','Atualizar este','red'],['revisao','Salvar como nova revisão'],['novo','Salvar como novo orçamento'],['','Cancelar']],
+      function(v){ if(v==='atualizar')atualizaSalvo(atual); else if(v==='revisao')novaRevisao(atual); else if(v==='novo')salvaComoNovo(atual); },'Salvar orçamento');
     return;
   }
+  salvaNovo();
+}
+/* "Salvar como novo orçamento": outra obra ou outro cliente montado em cima
+   do aberto. Ganha número próprio (se ainda está com o do aberto) e o
+   aberto fica como estava. */
+function salvaComoNovo(atual){
+  const n=String(S.numero||'').trim();
+  if(!n||n===String(atual.numero||'').trim()){S.numero=proximoNumero();const el=document.getElementById('q_numero');if(el)el.value=S.numero;}
+  S.orcamentoAtualId=null; salvaNovo();
+}
+function salvaNovo(){
   const entry=orcEntrada(nomeAutoOrc());
   if(!S.orcamentosSalvos)S.orcamentosSalvos=[];
   S.orcamentosSalvos.unshift(entry); S.orcamentoAtualId=entry.id; save(); descartarRascunho(); renderSavedCount(); toast('Orçamento Nº '+S.numero+' salvo ✓');
@@ -9197,7 +9228,7 @@ function applyImport(){
    publicacao, e ha uma prova automatica que falha se um subir sem o outro.
    Assim o numero na tela e' o mesmo do arquivo que o aparelho guardou, e
    dizer "estou na v15" passa a significar alguma coisa. */
-const APP_VER='v125';
+const APP_VER='v126';
 (function(){ try{ const p=document.getElementById('verPill'); if(p)p.textContent=APP_VER; }catch(e){} })();
 /* Versao nova assumiu com a pagina aberta: avisa, em vez de recarregar por
    conta propria e jogar fora um orcamento pela metade. */
@@ -12367,7 +12398,7 @@ function setSyncStatus(st){
   };
   const m=map[st]||map.local; el.textContent=m[0]; el.style.color=m[1]; el.style.background=m[2];
 }
-function cloudData(){ const d=dbSubset(); META_KEYS.forEach(k=>delete d[k]); d._updatedAt=S._editedAt||Date.now(); return d; }
+function cloudData(){ const d=dbSubset(); META_KEYS.concat(SO_AQUI).forEach(k=>delete d[k]); d._updatedAt=S._editedAt||Date.now(); return d; }
 /* Este computador ainda esta com o cadastro DE FABRICA -- ninguem mexeu em
    preco, fornecedor, categoria nem salvou orcamento nenhum aqui.
 
@@ -12423,7 +12454,7 @@ function fbStop(){
 const FB_BASE_KEY='rm_orc_base_v1', FB_DESC_KEY='rm_orc_descartados_v1';
 const LISTAS_JUNTAM=['orcamentosSalvos','esqHist','orcExcluidos'];
 function fbHash(v){const t=JSON.stringify(v===undefined?null:v)||'null';let h=5381;for(let i=0;i<t.length;i++)h=((h<<5)+h+t.charCodeAt(i))|0;return (h>>>0).toString(36)+'.'+t.length;}
-function fbChavesSync(o){return Object.keys(o||{}).filter(k=>!META_KEYS.includes(k)&&!LISTAS_JUNTAM.includes(k)&&!QUOTE_KEYS.includes(k));}
+function fbChavesSync(o){return Object.keys(o||{}).filter(k=>!META_KEYS.includes(k)&&!SO_AQUI.includes(k)&&!LISTAS_JUNTAM.includes(k)&&!QUOTE_KEYS.includes(k));}
 function fbBaseLe(){
   if(FB.base)return FB.base;
   try{const b=JSON.parse(localStorage.getItem(FB_BASE_KEY)||'null');if(b&&typeof b==='object')FB.base=b;}catch(e){}
@@ -12647,7 +12678,7 @@ function fbApply_(cloud,tudo){
   fbBaseMarca(cloud,fbChavesSync(cloud));
   /* A cópia da nuvem pode ter voltado com as cores juntas: separa de novo e
      devolve já separada, para os outros aparelhos receberem a correção. */
-  const corrigiuCores=normalizaTelhasCores()|migraChavesCatPrecos()|migraVergTelas()|migraVergTelas2()|migraVergTelas3()|migraVergTelas4()|migraVergTelas5();
+  const corrigiuCores=normalizaTelhasCores()|migraChavesCatPrecos()|migraVergTelas()|migraVergTelas2()|migraVergTelas3()|migraVergTelas4()|migraVergTelas5()|migraCatColsVazias();
   S._editedAt=meus.length?Date.now():(cloud._updatedAt||Date.now());
   save();
   FB.pending=null; FB.lastPushAt=FB.lastPushAt||0;
