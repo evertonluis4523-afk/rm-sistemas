@@ -15163,7 +15163,7 @@ async function kitMontaPdf(){
     pg.drawText(marca,{x,y,size:tam,font:f,color:cinza});
   };
   const dR=kitDataResc(emp), nome=titlePt(emp.nome||''), dataR=dR?dR.split('-').reverse().join('/'):'';
-  const rosto=(lado,itens,folhas)=>{
+  const rostoSimples=(lado,itens,folhas)=>{
     const pg=out.addPage([595.28,841.89]); let y=780;
     pg.drawText(lado==='emp'?'Pasta da empresa':'Pasta do funcionário',{x:56,y,size:22,font:fb,color:tinta}); y-=22;
     pg.drawText([nome,dataR?'rescisão de '+dataR:''].filter(Boolean).join(' · '),{x:56,y,size:11,font:f,color:cinza}); y-=38;
@@ -15189,12 +15189,28 @@ async function kitMontaPdf(){
     }
     pg.drawText((state.cfg.razao||'')+' · gerado em '+new Date().toLocaleDateString('pt-BR'),{x:56,y:40,size:8,font:f,color:cinza});
   };
+  /* A FOLHA DE ROSTO NO PAPEL DA RM: timbrado, tipo em laranja, tabela,
+     rodapé e marca d'água -- o mesmo HTML dos outros papéis do Recibos,
+     passado para imagem (288 dpi) e posto na folha do PDF. Desenhada à mão
+     no pdf-lib ela saía em Helvetica, sem logo nem timbrado. Por baixo vai o
+     texto invisível, para o PDF continuar pesquisável. Se o navegador não
+     deixar fazer a imagem, sai a folha simples de antes. */
+  KIT.rostoImg=0;
+  const rosto=async(lado,itens,folhas)=>{
+    const R=kitRostoDados(lado,itens,folhas,nome,dataR);
+    let png=null; try{ png=await kitRostoPng(kitRostoHTML(R)); }catch(e){ png=null; }
+    if(!png){ rostoSimples(lado,itens,folhas); return; }
+    const pg=out.addPage([595.28,841.89]), im=await out.embedPng(png);
+    pg.drawImage(im,{x:0,y:0,width:595.28,height:841.89});
+    let y=800; R.textos.forEach(t=>{ try{ pg.drawText(t,{x:40,y,size:6,font:f,opacity:0}); }catch(e){} y-=8; });
+    KIT.rostoImg++;
+  };
   for(const lado of ['emp','func']){
     const itens=KIT_TIPOS.filter(t=>kitVias(t.k)[lado]>0);
     const comArq=itens.filter(t=>emb[t.k].length);
     if(!comArq.length)continue;
     const folhas=comArq.reduce((s,t)=>s+emb[t.k].length*kitVias(t.k)[lado],0);
-    rosto(lado,itens,folhas);
+    await rosto(lado,itens,folhas);
     for(const t of comArq){
       const n=kitVias(t.k)[lado];
       for(let i=1;i<=n;i++){
@@ -15204,6 +15220,62 @@ async function kitMontaPdf(){
     }
   }
   return await out.save();
+}
+/* o que a folha de rosto diz: uma linha por documento, com a nota de apoio */
+function kitRostoDados(lado,itens,folhas,nome,dataR){
+  const temModelo=k=>lado==='func'&&kitVias(k).func>0&&kitFolhasDe(k)>0;
+  const linhas=itens.map(t=>{
+    const v=kitVias(t.k)[lado], n=kitFolhasDe(t.k);
+    const apoio=t.modelo?'como preencher':t.k==='quitacao'&&lado==='func'?'assinar conforme o modelo'
+      :t.k==='aviso'&&temModelo('modeloaviso')?'preencher conforme o modelo':t.semVia?'sem marca de via':'';
+    return {nome:t.nome,apoio,vias:t.modelo?'—':String(v),folhas:n?String(n*v):'',falta:!n};
+  });
+  const ms=lado==='func'?itens.filter(t=>t.modelo&&kitFolhasDe(t.k)).map(t=>t.k==='modeloaviso'?'o aviso prévio':'o termo de quitação'):[];
+  const notas=[folhas+' folhas nesta pasta, além desta. Confira as assinaturas antes de entregar.'];
+  if(ms.length)notas.push((ms.length>1?ms.join(' e ').replace(/^o/,'O')+' são preenchidos':ms[0].replace(/^o/,'O')+' é preenchido')+' seguindo o modelo que vem junto (o modelo não é via).');
+  const titulo=lado==='emp'?'Pasta da empresa':'Pasta do funcionário';
+  const sub=[nome,dataR?'rescisão de '+dataR:''].filter(Boolean).join(' · ');
+  return {titulo,sub,linhas,notas,
+    textos:[titulo,sub].concat(linhas.map(l=>l.nome+(l.apoio?' ('+l.apoio+')':'')+' · vias '+l.vias+' · folhas '+(l.falta?'falta':l.folhas)),notas)};
+}
+function kitRostoHTML(R){
+  const css=relPdfCSS('#D53309','#1d2127','#585758')
+    +'.kr{position:relative;width:794px;height:1123px;padding:45px 45px 0;background:#fff;overflow:hidden}'
+    +'.rm-dagua{position:absolute!important;inset:0}'
+    +'.kr table{margin-top:4px}.kr th.c,.kr td.c{text-align:center;width:70px}.kr td{vertical-align:middle}'
+    +'.kr .ap{display:block;font-size:8px;color:#6E747C;margin-top:1px}'
+    +'.kr .falta{color:#D53309;font-weight:700}'
+    +'.kr .ok{display:inline-block;width:11px;height:11px;border:1px solid #8a9099;border-radius:2px;vertical-align:middle}'
+    +'.kr .nt{margin-top:16px;font-size:10.5px;color:#1d2127;line-height:1.6}.kr .nt div+div{color:#6E747C}'
+    +'.kr-pe{position:absolute;left:45px;right:45px;bottom:30px}.kr-pe .foot{margin-top:0}';
+  const html='<div class="kr"><div class="wrap">'+relPdfHead(state.cfg,'Documentos da rescisão')
+    +'<div class="title">'+esc(R.titulo)+'</div><div class="subttl">'+esc(R.sub)+'</div>'
+    +'<table><thead><tr><th>Documento</th><th class="c">Vias</th><th class="c">Folhas</th><th class="c">Conferido</th></tr></thead><tbody>'
+    +R.linhas.map(l=>'<tr><td>'+esc(l.nome)+(l.apoio?'<span class="ap">'+esc(l.apoio)+'</span>':'')+'</td><td class="c">'+esc(l.vias)+'</td><td class="c">'
+      +(l.falta?'<span class="falta">falta</span>':esc(l.folhas))+'</td><td class="c"><span class="ok"></span></td></tr>').join('')
+    +'</tbody></table><div class="nt">'+R.notas.map(x=>'<div>'+esc(x)+'</div>').join('')+'</div></div>'
+    /* o pé e a marca d'água padrão são postos pelo docRelatorio, uma vez só */
+    +'<div class="kr-pe"><div class="foot">'+esc((state.cfg.razao||RM_EMPRESA.razao)+' · gerado em '+new Date().toLocaleDateString('pt-BR'))+'</div></div></div>';
+  /* as regras do papel (fonte, cores exatas) vêm do mesmo documento dos relatórios */
+  const dd=new DOMParser().parseFromString(docRelatorio(css,html,'rosto','portrait'),'text/html');
+  return {css:[...dd.querySelectorAll('style')].map(x=>x.textContent).join('\n').replace(/@media print\{[^{}]*(\{[^{}]*\}[^{}]*)*\}/g,''),corpo:dd.body.innerHTML};
+}
+/* HTML -> PNG pelo SVG (foreignObject): tudo o que a folha usa (fonte, logo,
+   símbolo) já está embutido como data:, então o canvas não fica bloqueado */
+async function kitRostoPng(F){
+  const W=794,H=1123,k=3;
+  const box=document.createElement('div'); box.setAttribute('xmlns','http://www.w3.org/1999/xhtml');
+  box.setAttribute('style','position:relative;width:'+W+'px;height:'+H+'px;overflow:hidden;background:#fff');
+  box.innerHTML='<style>'+F.css+'</style>'+F.corpo;
+  const svg='<svg xmlns="http://www.w3.org/2000/svg" width="'+W*k+'" height="'+H*k+'"><foreignObject x="0" y="0" width="'+W+'" height="'+H+'" transform="scale('+k+')">'
+    +new XMLSerializer().serializeToString(box)+'</foreignObject></svg>';
+  const img=new Image();
+  await new Promise((ok,er)=>{img.onload=ok;img.onerror=er;img.src='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(svg);});
+  const cv=document.createElement('canvas'); cv.width=W*k; cv.height=H*k;
+  const c=cv.getContext('2d'); c.fillStyle='#fff'; c.fillRect(0,0,cv.width,cv.height); c.drawImage(img,0,0);
+  const url=cv.toDataURL('image/png'), b=atob(url.split(',')[1]), u=new Uint8Array(b.length);
+  for(let i=0;i<b.length;i++)u[i]=b.charCodeAt(i);
+  return u;
 }
 function kitNomeArq(){
   const e=kitEmpDe(KIT.empId);
@@ -17336,7 +17408,7 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeAll();$('#prin
    juntos a cada publicacao, e ha uma prova automatica que falha se um subir
    sem o outro. Assim o numero na tela e o mesmo do arquivo que o aparelho
    guardou, e dizer "estou na v81" passa a significar alguma coisa. */
-const APP_VER='v265';
+const APP_VER='v266';
 (function(){var p=document.getElementById('verPill'); if(p)p.textContent=APP_VER;})();
 
 if('serviceWorker' in navigator){
