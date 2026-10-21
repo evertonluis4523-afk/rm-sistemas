@@ -1229,7 +1229,6 @@ else poe();
   .sheet .head .logo .mono{display:none;width:60px;height:60px;background:var(--red);border-radius:10px;align-items:center;justify-content:center;font-weight:800;font-size:20px;color:#fff}
   .sheet .head .co{text-align:right;font-size:12.5px;color:var(--muted);line-height:1.5;font-weight:505}
   .sheet .head .co .nm{font-size:15px;font-weight:700;color:var(--ink);letter-spacing:.02em;margin-bottom:2px}
-  .sheet .head .co .mut{font-family:var(--mono);font-size:11.5px;font-weight:530}
   .sheet .head .co .doc-tag{display:inline-block;margin-top:6px;font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--red);font-weight:700}
   /* .drop e' um <label>, que nasce inline: sem display:block o titulo e a
      explicacao saem cada um para um lado e o cartao se desmancha. */
@@ -1551,10 +1550,6 @@ else poe();
   .obra-item{display:flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:9px 11px;margin-bottom:8px;box-shadow:var(--shadow)}
   .obra-item .meta{flex:1}.obra-item .meta b{font-weight:700;font-size:14px;color:var(--ink)}
   .obra-item .dt{font-family:var(--mono);font-size:12px;color:var(--muted);font-weight:560}
-  .ob-tipo{display:inline-block;font-family:var(--sans,inherit);font-size:11px;font-weight:800;
-    letter-spacing:.07em;text-transform:uppercase;padding:1px 6px;border-radius:20px;margin-right:5px;
-    background:var(--surface-2);border:1px solid var(--line);color:var(--muted)}
-  .ob-tipo.tel{color:#176b43;background:#eaf6ef;border-color:#cbe6d7}
   .obra-item button{background:var(--surface);border:1px solid var(--line-2);color:var(--steel-2);border-radius:7px;padding:5px 10px;font-size:13px;cursor:pointer;font-weight:530}
   .obra-item button:hover{border-color:var(--red);color:var(--red)}
   #printArea{padding:20px;color:#111;background:#fff;border-radius:12px;margin-top:14px}
@@ -1581,7 +1576,6 @@ else poe();
   .rm-head::before{content:none;display:none;position:absolute;left:0;right:0;bottom:-4.5px;height:1.5px;background:#141414;opacity:.85;-webkit-print-color-adjust:exact;print-color-adjust:exact}
   .rm-head .rm-co{text-align:right;font-size:14px;color:#6c7480;line-height:1.5;font-weight:505}
   .rm-head .rm-co .nm{font-size:15px;font-weight:700;color:#1d2127;margin-bottom:2px}
-  .rm-head .rm-co .mut{font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:530}
   .rm-head .rm-co .doc-tag{display:inline-block;margin-top:6px;font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:#D53309;font-weight:700}
   /* timbrado em duas colunas (PADRAO_RM.md, Papel) */
   .rm-head:has(.tb2),.head:has(.tb2){align-items:center}
@@ -1716,8 +1710,6 @@ else poe();
   #printArea .lf-len{font-variant-numeric:tabular-nums;font-weight:700;font-size:14px;white-space:nowrap}
   #printArea .lf-qtd{font-variant-numeric:tabular-nums;font-weight:700}
   #printArea .lf-cod{font-size:12px;color:var(--ink);font-weight:600}
-  #printArea .lf-vao{font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums;font-weight:600}
-  #printArea .lf-g tr.lf-tot td{border-bottom:0;border-top:1.5px solid var(--line);font-weight:800}
   /* os desenhos comecam em folha nova: a ultima tabela nao divide pagina com
      a primeira prancha */
   #printArea .lf-desenhos{break-before:page;page-break-before:always;margin-top:0}
@@ -1781,23 +1773,8 @@ else poe();
     #printArea .rc-seta,#printArea .rc-abrir{display:none!important}
     #printArea .rc-sheet{border:0}}
   /* ---- Telha (redesenho) ---- */
-  .secttl-sm{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.12em;color:var(--steel-2);margin:0 0 8px;display:flex;align-items:center;gap:7px}
-  .secttl-sm::before{content:"";width:10px;height:2px;background:var(--red);flex:none}
   .telha-pick{display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--surface-2);border:1px solid var(--line);border-radius:9px;padding:10px 12px}
-  .telha-pick .tp-info{min-width:0;display:flex;flex-direction:column;gap:2px}
-  .telha-pick .tp-info b{font-size:14px;color:var(--ink);font-weight:700;line-height:1.25}
-  .telha-pick .tp-info span{font-size:12px;color:var(--steel-2);font-family:var(--mono);font-weight:560}
   .telha-res{margin-top:16px;background:var(--surface-2);border:1px solid var(--line);border-radius:10px;padding:4px 14px;overflow:hidden}
-  .telha-res .tr-empty{padding:14px 0;text-align:center;color:var(--muted);font-size:14px;font-weight:505}
-  .telha-res .tr-line{display:flex;justify-content:space-between;align-items:baseline;gap:10px;padding:9px 0;border-bottom:1px solid var(--line-2)}
-  .telha-res .tr-line span{font-size:14px;color:var(--steel-2);font-weight:505}
-  .telha-res .tr-line b{font-family:var(--mono);font-size:14px;color:var(--ink);font-weight:600}
-  .telha-res .tr-sub span{font-size:13px;color:var(--muted);font-family:var(--mono);font-weight:530}
-  .telha-res .tr-sub b{font-size:14px;color:var(--steel-2);font-weight:505}
-  .telha-res .tr-warn span{color:var(--warn);font-size:13px;font-weight:530}
-  .telha-res .tr-total{display:flex;justify-content:space-between;align-items:baseline;gap:10px;padding:12px 0 11px;border-bottom:0}
-  .telha-res .tr-total span{font-size:14px;font-weight:700;color:var(--ink)}
-  .telha-res .tr-total b{font-family:var(--mono);font-size:20px;font-weight:700;color:var(--red)}
   /* barra trocar arquivo */
   .filebar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:var(--surface);border:1px solid var(--line);border-radius:9px;padding:9px 12px;margin-bottom:14px}
   .filebar .fb-esp{flex:1}
@@ -1934,7 +1911,7 @@ input,select,textarea,button,option,optgroup{font-weight:inherit}
 /* A Satoshi e mais larga que a fonte do sistema na mesma altura, e coluna de
    dinheiro com largura cravada em px passou a quebrar o valor em duas linhas.
    Valor, data e documento nao quebram. */
-td.r,th.r,td.val,.money,.brl,.valor,.num{white-space:nowrap}
+td.r,th.r,td.val,.money,.valor,.num{white-space:nowrap}
 
 html,body,*{
   -webkit-font-smoothing:auto!important;
@@ -1943,8 +1920,8 @@ html,body,*{
   font-synthesis:weight;
 }
 body{font-variant-numeric:tabular-nums;letter-spacing:normal!important}
-input,select,textarea,button,table,th,td,.num,.valor,.money,.brl,.mono{font-variant-numeric:tabular-nums}
-kbd,code,pre,samp,.cod,.codigo,.chave,.chavenf,[data-mono]{
+input,select,textarea,button,table,th,td,.num,.valor,.money,.mono{font-variant-numeric:tabular-nums}
+kbd,code,pre,samp,.cod,.codigo,.chave,[data-mono]{
   font-family:var(--rm-mono)!important;
   font-variant-numeric:normal;
   letter-spacing:0;
@@ -2068,8 +2045,6 @@ html.ctaberto,html.ctaberto body{overflow:hidden}
   background:#eaf6ef;border:1px solid #cbe6d7}
 #tlov .tl-p-ok b{color:#176b43}
 #tlov .tl-parte{color:#176b43;font-weight:700}
-#tlov .tl-faces{display:flex;flex-wrap:wrap;gap:8px 18px;padding:12px 0 14px;font-size:13px;color:var(--muted);font-weight:530}
-#tlov .tl-faces b{color:var(--ink);font-weight:700}
 #tlov .ct-avisoagr{color:#7a2018;background:#fff5f4}
 #ctov .ct-avisoagr,#tlov .ct-avisoagr{display:none;padding:9px 18px;background:#fffbf0;border-bottom:1px solid var(--line);
   font-size:13px;color:#5d4a12;line-height:1.5;flex:none;font-weight:530}
@@ -2077,11 +2052,6 @@ html.ctaberto,html.ctaberto body{overflow:hidden}
 #ctov .ct-t input,#tlov .ct-t input{width:88px;text-align:right;padding:3px 7px;font-size:14px;border:1px solid var(--line);
   border-radius:6px;font-variant-numeric:tabular-nums;font-family:var(--mono);font-weight:505}
 /* A perda no papel: bloco proprio, antes da lista, para nao morrer no rodape. */
-#printArea .tl-perda-doc{border:1px solid #e3c9c6;background:#fff7f6;border-radius:6px;
-  padding:9px 12px;margin:10px 0 4px;font-size:11px;line-height:1.55;color:#5a3a37;
-  break-inside:avoid;-webkit-column-break-inside:avoid;font-weight:560}
-#printArea .tl-perda-doc>b{display:block;font-size:13px;color:#D53309;margin-bottom:3px;font-weight:530}
-#printArea .tl-perda-doc b{font-weight:700}
 /* ===================== PEDIDO DE TELHAS -- LAYOUT DA PROPOSTA =====================
    Duas colunas de verdade, e nao colunas de CSS: sao duas tabelas lado a
    lado, cada uma com o seu cabecalho. Com column-count o cabecalho aparece
@@ -4387,13 +4357,6 @@ function espDoPerfil(nome){const s=(nome||'');
   m=s.match(/([0-9]+,[0-9]{2})(?!\d)/);if(m)return m[1];
   // 3) fallback: decimal com ponto
   m=s.match(/([0-9]+\.[0-9]{2})(?!\d)/);return m?m[1].replace('.',','):'';}
-// detecta tipo de telha pelo nome e devolve largura útil padrão
-function largUtilDoNome(desc){const u=(desc||'').toUpperCase();
-  if(u.includes('TP-7')||u.includes('TP7'))return LARG_UTIL['TP-7'];
-  if(u.includes('TP-40')||u.includes('TP40'))return LARG_UTIL['TP-40'];
-  if(u.includes('ONDULAD'))return LARG_UTIL['ONDULADA'];
-  if(u.includes('TÉRMIC')||u.includes('TERMIC'))return LARG_UTIL['TERMICA'];
-  return 1.00;}
 loadPrecos();
 
 function renderDiag(){
@@ -5922,7 +5885,6 @@ function splitBanzo(f){
   }
   f.banzoMM=banzo;f.intMM=intr;f.intLens=intLens;f.banzoLens=banzoLens;
 }
-function invert(f){const c=CL[f.cluster];if(!c)return;let b=0,it=0;const intLens=[],banzoLens=[];for(const i of c.idxs){const s=SEG[i];s.cat=s.cat===1?2:1;const L=dist(s.a,s.b)*unitF;if(s.cat===1){b+=L;banzoLens.push(L);}else{it+=L;intLens.push(L);}}f.banzoMM=b;f.intMM=it;f.intLens=intLens;f.banzoLens=banzoLens;}
 
 /* ===================== RENDER DESENHO ===================== */
 let VB=null;
@@ -6209,7 +6171,6 @@ function renderFichas(){
       }
       prof+=linha+(aj?'<div class="fajustes'+(aberto?'':' hide')+'" data-fajustes="'+chave+'">'+aj+'</div>':'');
     });
-    const m1=v=>(v/1000).toFixed(2).replace('.',',');
     /* Rodapé numa linha: a estrutura (trocável) e de onde vem a medida. Os
        metros já estão em cada linha; aqui só o que precisa de atenção. */
     const seletor='<select data-link-f="'+fi+'" aria-label="Estrutura no desenho">'+
@@ -15304,9 +15265,6 @@ function htmlRelatorioCorte(d){
   const cu=cuCalcular(d);
   const cuBloqueado=!!(cu&&(cu.qtdIncompativel||(cu.perfilErros&&cu.perfilErros.length)||(d.vinculoErros&&d.vinculoErros.length)));
   const rs=v=>'R$ '+(Math.round(v*100)/100).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
-  /* O custo por corte sai em centavos de centavo (10,60/50 = 0,212). Com duas
-     casas viraria 0,21 e a linha pareceria não fechar com o total. */
-  const rs3=v=>'R$ '+v.toLocaleString('pt-BR',{minimumFractionDigits:3,maximumFractionDigits:3});
   const linha=(rot,val,cls)=>'<tr'+(cls?' class="'+cls+'"':'')+'><td>'+rot+'</td><td class="n">'+val+'</td></tr>';
   /* A quebra e' o argumento economico inteiro do detalhamento: com 10% a obra
      de referencia poupa R$ 18,7 mil, com 0% empata. Ela vale so na compra em
@@ -16070,8 +16028,6 @@ function rmChapasFactory(){
   const lotKey=(mat,esp)=>JSON.stringify([mat||'carbono',round(esp)]);
   const widthsFor=(mode,esp)=>mode==='1200'?[1200]:mode==='1500'?[1500]:mode==='regra'
     ?[[2.65,3,3.75].some(x=>Math.abs(esp-x)<0.011)?1500:1200]:[1200,1500];
-  const fits=(p,width,c)=>p.len<=3000-2*c.margin+EPS&&p.flat<=width-2*c.margin+EPS||
-    c.rotate&&p.flat<=3000-2*c.margin+EPS&&p.len<=width-2*c.margin+EPS;
   function lexLess(a,b){for(let i=0;i<a.length;i++){if(a[i]<b[i]-EPS)return true;if(a[i]>b[i]+EPS)return false;}return false;}
   function contactLength(x,y,netW,netH,placed,c,width){
     // Comprimento de borda que a peça encosta na chapa ou em peças já colocadas.
@@ -24165,17 +24121,7 @@ render();
   flex:none;border-radius:8px;background:var(--red);color:#fff;font-size:21px;font-weight:750}
 #pane-tel .cob-skp-direto b{display:block;font-size:14px;font-weight:700;color:var(--ink)}
 #pane-tel .cob-skp-direto small{display:block;margin-top:3px;font-size:12px;color:var(--muted);font-weight:520}
-#tlov .cob-cfg{display:grid;grid-template-columns:repeat(4,minmax(150px,1fr));gap:12px;
-  padding:16px 18px;border-bottom:1px solid var(--line);background:var(--surface-2)}
-#tlov .cob-cfg .fld{min-width:0;width:auto}
-#tlov .cob-cfg .fld.cob-span2{grid-column:span 2}
-#tlov .cob-cfg .fld.cob-span4{grid-column:1/-1}
-#tlov .cob-cfg input,#tlov .cob-cfg select,#tlov .cob-cat input{width:100%;min-width:0}
-#tlov .cob-grupo{grid-column:1/-1;display:flex;align-items:center;gap:9px;margin-top:2px;
-  padding-top:12px;border-top:1px solid var(--line);font-size:11px;letter-spacing:.11em;
-  text-transform:uppercase;color:var(--muted);font-weight:750}
-#tlov .cob-grupo:first-child{margin-top:0;padding-top:0;border-top:0}
-#tlov .cob-grupo:after{content:"";height:1px;background:var(--line);flex:1}
+#tlov .cob-cat input{width:100%;min-width:0}
 #tlov .cob-leitura{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(260px,.65fr);
   gap:14px;padding:16px 18px;border-bottom:1px solid var(--line)}
 #tlov .cob-prev{position:relative;min-height:330px;border:1px solid var(--line);border-radius:12px;
@@ -24199,9 +24145,6 @@ render();
 #tlov .cob-pendente{padding:9px 10px;border-radius:7px;background:#fff4ee;border:1px solid #f0cbbd;
   color:#884026;font-size:13px;line-height:1.45;font-weight:600}
 #tlov .cob-confirmar{width:100%;margin-top:auto}
-#tlov .cob-alertas{padding:0 18px;background:#fff8e8;color:#745717;font-size:13px;line-height:1.5}
-#tlov .cob-alertas>div{padding:8px 0;border-bottom:1px solid #efe1bc}
-#tlov .cob-alertas>div:last-child{border-bottom:0}
 #tlov .cob-cat{margin:0;border:0;border-bottom:1px solid var(--line);background:var(--surface)}
 #tlov .cob-cat summary{cursor:pointer;padding:11px 18px;font-size:13px;color:var(--ink);
   font-weight:600;list-style:none;display:flex;align-items:center;gap:8px}
@@ -24249,25 +24192,11 @@ render();
 #tlov .cob-result .ct-t .cob-badge.diag{background:#fff0eb;color:#a92f0b}
 #tlov .cob-result .ct-t .sub{display:block;font-size:12px;color:var(--muted);margin-top:2px}
 #tlov .cob-result .ct-t td[rowspan]{vertical-align:top;border-right:1px solid var(--line-2)}
-#tlov .cob-top-status{font-size:12px;color:var(--muted);margin-right:auto;font-weight:560}
 #tlov .ct-top button:disabled{opacity:.38;cursor:not-allowed}
-#tlov .cob-blocos{grid-column:1/-1;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
-#tlov .cob-bloco{border:1px solid var(--line);border-radius:9px;background:var(--surface);padding:11px}
-#tlov .cob-bloco-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:9px}
-#tlov .cob-bloco-head b{font-size:13px;color:var(--ink)}
-#tlov .cob-bloco-head span{font-size:11px;color:var(--muted);font-family:var(--mono)}
 /* O nome da face vem do SketchUp, e quem modela e a arquiteta -- "Agrupar#21"
    e o nome do grupo dela. Aqui ele se renomeia, do lado de ca', sem exigir
    padronizacao de fora. Parece titulo ate' o mouse chegar perto. */
-#tlov .cob-bloco-head .cob-nome{flex:1;min-width:0;font-size:13px;font-weight:700;color:var(--ink);
-  background:transparent;border:1px solid transparent;border-radius:6px;padding:3px 6px;
-  font-family:inherit;text-overflow:ellipsis}
-#tlov .cob-bloco-head .cob-nome:hover{border-color:var(--line)}
-#tlov .cob-bloco-head .cob-nome:focus{border-color:var(--red);background:var(--surface);outline:none}
-#tlov .cob-bloco .cob-origem{font-size:11px;color:var(--muted);margin-top:6px;font-family:var(--mono)}
 /* Excluir um grupo que veio junto (terça, lateral) e a faixa que traz de volta. */
-#tlov .cob-bloco-head .cob-excluir{flex:none;padding:3px 9px;font-size:11.5px;font-weight:600;color:#9a3f20}
-#tlov .cob-bloco-head .cob-excluir:hover{border-color:#d9a08a;background:#fff4ee}
 #tlov .cob-excluidas{grid-column:1/-1;display:flex;align-items:center;gap:10px;flex-wrap:wrap;
   padding:8px 11px;border-radius:8px;background:var(--surface-2,#f4f5f7);border:1px dashed var(--line);
   font-size:12px;line-height:1.5;color:var(--muted)}
@@ -24278,8 +24207,6 @@ render();
 #tlov .tl-dupla:hover{border-color:var(--ink)}
 #tlov .tl-ext-velha b{color:var(--red,#c2410c)}
 #tlov .cob-excluidas .btn{padding:4px 11px;font-size:12px}
-#tlov .cob-bloco-campos{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(125px,.7fr) minmax(100px,.42fr);gap:8px}
-#tlov .cob-bloco .cob-erro{margin-top:7px;color:#9a3f20;font-size:12px;line-height:1.4}
 #tlov .cob-planta-ajuda{grid-column:1/-1;padding:9px 11px;border-radius:8px;background:#fff4ee;
   border:1px solid #f0cbbd;color:#77422e;font-size:12px;line-height:1.5}
 #cob3ov{position:fixed;inset:0;z-index:130;background:var(--surface);display:none;
@@ -24397,7 +24324,6 @@ render();
 #tlov table.cob-topo .n{text-align:right;font-family:var(--mono);white-space:nowrap}
 #tlov table.cob-topo select{padding:4px 7px;font-size:12.5px;border:1px solid var(--line);border-radius:7px;background:var(--surface);color:var(--ink)}
 #pane-det .conf-card .bd{padding:10px}
-#pane-det .conf-svg{display:block;width:100%;height:340px;background:#fbfbf9;border:1px solid var(--line);border-radius:8px}
 #pane-det .conf-topo{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin:0 0 8px}
 #pane-det .conf-topo .conf-res{margin:0}
 #pane-det .conf-modo{display:inline-flex;border:1px solid var(--line);border-radius:9px;overflow:hidden}
@@ -24497,7 +24423,6 @@ render();
 #tlov details.tl-obs.erro{border-color:#f0cbbd;background:#fff4ee}
 #tlov details.tl-obs.erro>summary{color:#9a3f20}
 #tlov details.tl-obs .tl-det-corpo>div{padding:6px 0;border-top:1px solid rgba(116,87,23,.15);font-size:13px;line-height:1.5;color:#5d4a1c}
-#tlov .tl-tab-t{margin:14px 0 4px;font-size:12px;font-weight:700;color:var(--ink);letter-spacing:.04em}
 #tlov .tl-sec .ct-t{margin-top:4px}
 #tlov .tl-sec .cob-result{padding:0;overflow-x:auto}
 #tlov .tl-rolagem{overflow-x:auto}
@@ -24518,16 +24443,11 @@ render();
   #tlov .tl-mais-menu{left:0;right:auto}
 }
 @media(max-width:980px){
-  #tlov .cob-cfg{grid-template-columns:repeat(2,minmax(0,1fr))}
-  #tlov .cob-cfg .fld.cob-span4{grid-column:1/-1}
   #tlov .cob-leitura{grid-template-columns:1fr}
 }
 @media(max-width:650px){
   #pane-tel .tl-modos{align-items:stretch;flex-direction:column}
   #pane-tel .tl-modo-botoes{width:100%}#pane-tel .tl-modo{flex:1}
-  #tlov .cob-cfg{grid-template-columns:1fr}
-  #tlov .cob-cfg .fld.cob-span2,#tlov .cob-cfg .fld.cob-span4{grid-column:1}
-  #tlov .cob-blocos{grid-template-columns:1fr}#tlov .cob-bloco-campos{grid-template-columns:1fr}
   #cob3ov .d3corpo{flex-direction:column}#cob3ov .d3tela{min-height:54vh}
   #cob3ov .d3lado{width:auto;border-left:0;border-top:1px solid var(--line);max-height:38vh}
 }
@@ -25077,15 +24997,6 @@ render();
   }
   function cobClip(poly,a,b,sinal){
     const nx=-(b.y-a.y),ny=b.x-a.x,valor=p=>((p.x-a.x)*nx+(p.y-a.y)*ny)*sinal;
-    const out=[];
-    for(let i=0;i<poly.length;i++){
-      const p=poly[i],q=poly[(i+1)%poly.length],vp=valor(p),vq=valor(q),ip=vp>=-1e-7,iq=vq>=-1e-7;
-      if(ip)out.push({x:p.x,y:p.y});
-      if(ip!==iq){const t=vp/(vp-vq);out.push({x:p.x+(q.x-p.x)*t,y:p.y+(q.y-p.y)*t});}
-    }
-    return out.filter((p,i,a)=>!i||cobDist(p,a[i-1])>.01);
-  }
-  function cobClipValor(poly,valor){
     const out=[];
     for(let i=0;i<poly.length;i++){
       const p=poly[i],q=poly[(i+1)%poly.length],vp=valor(p),vq=valor(q),ip=vp>=-1e-7,iq=vq>=-1e-7;
@@ -26317,26 +26228,6 @@ render();
      faixas dela que a cumeeira segue. */
   function cumMundoLocal(b,P){
     const s=b.sketchup,w=cobVSub(P,s.origem);return {x:cobVDot(w,s.eixo),y:cobVDot(w,s.direcao)};
-  }
-  function cumRidgesSkp(blocos){
-    const rs=[];
-    (blocos||[]).forEach(b=>{
-      if(!b||!b.sketchup||!Array.isArray(b.arestasCompartilhadas))return;
-      const out=b.sketchup.worldOuter||[];if(out.length<3)return;
-      const C=[0,1,2].map(k=>out.reduce((s,p)=>s+(+p[k]||0),0)/out.length);
-      b.arestasCompartilhadas.forEach(a=>{
-        const A=cobLocalMundo(b,a.a),B=cobLocalMundo(b,a.b),L=cobVNorm(cobVSub(B,A));
-        if(!(L>1)||Math.abs(B[2]-A[2])>Math.max(15,L*.01))return;
-        const d=cobVMul(cobVSub(B,A),1/L),M=cobVMul([A[0]+B[0],A[1]+B[1],A[2]+B[2]],.5);
-        let v=cobVSub(C,M);v=cobVSub(v,cobVMul(d,cobVDot(v,d)));const vn=cobVNorm(v);if(!(vn>1))return;v=cobVMul(v,1/vn);
-        const r=rs.find(r=>Math.abs(cobVDot(r.d,d))>.999&&cobVNorm(cobVCross(cobVSub(A,r.A),r.d))<25);
-        if(r){
-          const t0=cobVDot(cobVSub(A,r.A),r.d),t1=cobVDot(cobVSub(B,r.A),r.d),lo=Math.max(0,Math.min(t0,t1)),hi=Math.min(r.L,Math.max(t0,t1));
-          if(hi-lo>1){r.A=cobVSub(r.A,cobVMul(r.d,-lo));r.L=hi-lo;r.B=cobVSub(r.A,cobVMul(r.d,-r.L));r.vs.push(v);}
-        }else rs.push({A,B,L,d,vs:[v],b0:b});
-      });
-    });
-    return rs.filter(r=>r.vs.length>=2);
   }
   /* O perfil da telha: passo e altura do gomo. A cumeeira tem o MESMO
      perfil, e cada gomo dela assenta sobre o gomo da telha. */
@@ -28009,7 +27900,7 @@ if('serviceWorker' in navigator && location.protocol.startsWith('http')){
 }
 </script>
 <script>/* versão publicada (PADRAO_RM.md §3): sobe a cada publicação, junto com o CACHE do sw.js */
-const APP_VER='v211';
+const APP_VER='v212';
 </script>
 <script id="rmVersaoBloco">
 /* ===== SELO DE VERSÃO — igual em todos os sistemas (PADRAO_RM.md §3) =====
@@ -28260,7 +28151,7 @@ const APP_VER='v211';
   }
 
   @media(prefers-reduced-motion:reduce){
-    .login-overlay,.login-card,.modal,.modal-box{animation:none!important;transition:none!important}
+    .login-overlay,.login-card,.modal{animation:none!important;transition:none!important}
   }
   @media print{ .login-card{animation:none!important}
     /* escondido de verdade no papel: um fixo do tamanho da tela, ainda que
@@ -28271,7 +28162,6 @@ const APP_VER='v211';
     radial-gradient(50% 40% at 0% 100%,rgba(140,29,24,.15),transparent 55%);}
   .login-card{position:relative;width:100%;max-width:380px;background:var(--surface,#fff);border-radius:16px;overflow:hidden;box-shadow:0 30px 80px rgba(0,0,0,.5);border-top:4px solid var(--rm-laranja);}
   .login-card .lc-head{padding:30px 30px 20px;text-align:center;border-bottom:1px solid var(--line);}
-  .login-card .lc-head .lc-icon{font-size:30px;margin-bottom:8px;}
   .login-card .lc-head .ttl{font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:var(--red);font-weight:800;}
   .login-card .lc-head .sub{font-size:13px;color:var(--muted,#5e6169);margin-top:4px;font-weight:530}
   .login-card .lc-body{padding:24px 30px 30px;}

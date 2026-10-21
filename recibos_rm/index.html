@@ -1275,8 +1275,6 @@ input,textarea,select{font-family:inherit;color:inherit}
 .tb2-tipo{margin-top:14px;font-size:10px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:#D53309;-webkit-print-color-adjust:exact;print-color-adjust:exact}
 .head .co{text-align:right;font-size:13px;color:var(--muted);line-height:1.6;letter-spacing:.02em;font-weight:530}
 .head .co .nm{font-size:12px;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.11em;margin-bottom:3px}
-.head .co .mut{font-family:var(--mono);font-size:13px;font-weight:530}
-.doc-tag{display:inline-block;margin-top:6px;font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--red);font-weight:700}
 
 /* Tabs */
 .viewtabs{display:flex;gap:2px;padding:0 30px;border-bottom:1px solid var(--line);background:#f7f8f9;flex-wrap:wrap}
@@ -1489,13 +1487,9 @@ table.list.ent-cfg th,table.list.ent-cfg td{padding:6px 8px}
 
 .rel-chart{display:flex;align-items:flex-end;gap:6px;height:140px;padding:16px 20px 6px;border-bottom:1px solid var(--line)}
 .rel-bar-col{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;min-width:0}
-.rel-bar{width:100%;max-width:28px;background:var(--brand,var(--red));border-radius:4px 4px 0 0;min-height:2px;transition:height .2s}
 .rel-bar-lab{font-size:11px;color:var(--muted);margin-top:6px;text-transform:uppercase;font-weight:700}
 .rel-pessoa-card{padding:12px 20px;border-bottom:1px solid var(--line-2)}
 .rel-pessoa-card .nm{font-weight:700;margin-bottom:6px}
-.rel-pessoa-meses{display:flex;flex-wrap:wrap;gap:6px;font-size:12px;font-weight:560}
-.rel-pessoa-meses span{background:var(--line-2,#f1f1f1);border-radius:6px;padding:3px 8px;color:var(--muted)}
-.rel-pessoa-meses span b{color:var(--text,#111);font-family:var(--mono)}
 /* Extrato por pessoa: faixa de totais por tipo e marcação do ano na tabela */
 .ext-chips{display:flex;flex-wrap:wrap;align-items:center;gap:7px;font-size:12px;margin-bottom:9px;font-weight:560}
 .ext-chip{border-radius:6px;padding:3px 9px;background:var(--line-2,#f1f1f1);color:var(--muted)}
@@ -1560,7 +1554,7 @@ tr.ext-ano td{background:#f4f5f6;font-weight:700;border-top:1.5px solid var(--li
 .sugg .it:hover,.sugg .it.active{background:var(--red-soft)}
 .sugg .it .d{font-size:14px;font-weight:700;color:var(--ink)}
 .sugg .it .g{font-size:12px;color:var(--muted);margin-top:1px;font-weight:560}
-.span1{grid-column:span 1}.span2{grid-column:span 2}.span3{grid-column:span 3}.span4{grid-column:span 4}.span5{grid-column:span 5}.span6{grid-column:span 6}.span7{grid-column:span 7}.span8{grid-column:span 8}.span9{grid-column:span 9}.span10{grid-column:span 10}.span11{grid-column:span 11}.span12{grid-column:span 12}
+.span2{grid-column:span 2}.span3{grid-column:span 3}.span4{grid-column:span 4}.span5{grid-column:span 5}.span6{grid-column:span 6}.span7{grid-column:span 7}.span8{grid-column:span 8}.span12{grid-column:span 12}
 /* Faltavam span5, span7 e span9 -- as cinco caixas que os usavam caiam numa
    coluna de 1/12 e o botao saia estreito e alto, com o texto quebrado em tres
    linhas. O min-width:0 no .f impede que um texto comprido estufe a coluna e
@@ -1838,8 +1832,6 @@ table.list.fv-tab th,table.list.fv-tab td{padding-left:7px;padding-right:7px}tab
 .fv-okv{color:#1f7a4d;font-weight:600}
 .fv-r{color:#b3261e}.fv-a{color:#a4570c}.fv-ok{color:var(--muted)}
 .form-grid .f.ex-acoes,.ex-acoes{display:flex;flex-direction:row;gap:8px;align-items:flex-end;justify-content:flex-start;flex-wrap:wrap}
-.ex-sug{font-size:12.5px;color:var(--gray);font-weight:560}
-.ex-sug:empty{display:none}
 .t-dica{margin-top:8px;font-size:12.5px;color:var(--gray);font-weight:560;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
 .t-nome{background:none;border:0;padding:0;font:inherit;color:inherit;cursor:pointer;text-align:left;text-decoration:underline;text-decoration-color:var(--line);text-underline-offset:3px}
 .t-nome:hover{color:var(--red);text-decoration-color:currentColor}
@@ -2136,9 +2128,6 @@ table.list.fv-tab th,table.list.fv-tab td{padding-left:7px;padding-right:7px}tab
 .cfg-l.livre .cfg-n{color:var(--muted);font-weight:530}
 .cfg-vazio{padding:16px 2px;color:var(--muted);font-size:14px;font-weight:530}
 @media (max-width:620px){ .cfg-grade{grid-template-columns:1fr;gap:0} }
-.fchip{display:inline-flex;align-items:center;gap:7px;background:#fff;border:1.5px solid var(--line);border-radius:20px;padding:5px 6px 5px 13px;font-size:14px;font-weight:600;color:var(--ink)}
-.fchip button{border:0;background:#f1f2f4;color:#6D737C;width:20px;height:20px;border-radius:50%;cursor:pointer;font-size:13px;line-height:1;display:flex;align-items:center;justify-content:center;font-weight:530}
-.fchip button:hover{background:var(--red-soft);color:var(--red)}
 
 .sortbox{display:flex;align-items:center;gap:16px;flex-wrap:wrap;background:linear-gradient(180deg,#fff,#fafbfc);border:1.5px solid var(--line);border-radius:12px;padding:16px 20px;margin:0 30px}
 .sortname{font-family:var(--mono);font-size:22px;font-weight:700;flex:1;min-width:180px;color:var(--muted);letter-spacing:.02em;transition:.1s}
@@ -2495,8 +2484,6 @@ tr.det-achado{animation:det-achado 1.6s ease-out}
 .pd-folha .carta-tit{margin:2mm 0 6mm}
 .pd-folha .carta-txt p{line-height:2.15;text-align:left;margin-bottom:2.5mm}
 .pd-lin{display:inline-block;border-bottom:1px solid #1d2127;height:1.1em;vertical-align:baseline}
-.pd-op{display:flex;align-items:center;gap:4mm;margin:2.5mm 0 2.5mm 6mm;line-height:1.5}
-.pd-caixa{display:inline-block;width:5mm;height:5mm;border:1.2px solid #1d2127;flex:0 0 auto}
 .pd-ass{margin-top:13mm;display:flex;justify-content:center;gap:12mm}
 .pd-ass .bloco{width:100mm;text-align:center}
 .pd-ass.dois .bloco{width:80mm}
@@ -2637,7 +2624,7 @@ html,body,*{
 }
 body{font-variant-numeric:tabular-nums;letter-spacing:normal!important}
 input,select,textarea,button,table,th,td,.num,.valor,.money,.brl,.mono{font-variant-numeric:tabular-nums}
-kbd,code,pre,samp,.cod,.codigo,.chave,.chavenf,[data-mono]{
+kbd,code,pre,samp,.codigo,.chave,[data-mono]{
   font-family:var(--rm-mono)!important;
   font-variant-numeric:normal;
   letter-spacing:0;
@@ -2646,7 +2633,6 @@ kbd,code,pre,samp,.cod,.codigo,.chave,.chavenf,[data-mono]{
 <style>
 /* ================= CONTROLE DE PAGAMENTOS / CONFERENCIA ================= */
 .pay-flow{display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-top:12px;padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:#fff}
-.pay-flow .flow-title{font-size:12px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-right:3px}
 .pay-flow .flow-step{display:inline-flex;align-items:center;gap:6px;padding:6px 9px;border-radius:999px;background:#f3f5f7;color:var(--rm-apagado,#5e6169);font-size:13px;font-weight:750;border:1px solid #e3e6ea}
 .pay-flow .flow-step:before{content:'';width:7px;height:7px;border-radius:50%;background:#aeb4bd}
 .pay-flow .flow-step.ok{background:#e8f5ee;color:#197148;border-color:#cde8d9}.pay-flow .flow-step.ok:before{background:#2b9563}
@@ -2693,9 +2679,6 @@ kbd,code,pre,samp,.cod,.codigo,.chave,.chavenf,[data-mono]{
    quatro em silêncio. Agora a própria célula diz de que ciclo ela é. */
 #salTable.mo-ad .so-pg{display:none}
 #salTable:not(.mo-ad) .so-ad{display:none}
-.adiant-pago{display:block;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
-  font-size:14px;font-weight:700;color:var(--gray)}
-.adiant-pago.zero{color:var(--muted);font-weight:600}
 
 /* ---------- Salários: tabela de leitura + ficha do funcionário ----------
    A tabela responde "quem falta" varrendo de cima a baixo. A ficha responde
@@ -2756,7 +2739,6 @@ kbd,code,pre,samp,.cod,.codigo,.chave,.chavenf,[data-mono]{
 .fh-pe .nav b{color:var(--ink)}
 .fh-pe .so-mob{display:none}
 .fh-pe .btn-act{padding:0 12px;min-height:30px;font-size:15px;line-height:1}
-.fh-vazio{padding:26px 18px;text-align:center;font-size:14px;color:var(--muted);line-height:1.6;font-weight:505}
 /* A linha vira alvo: o ponteiro avisa antes do clique, e a aberta fica marcada. */
 #salBody tr{cursor:pointer}
 #salBody tr.alvo>td{background:#fff6f2}
@@ -2816,9 +2798,8 @@ tr.sal-japago>td.conf,tr.sal-japago>td.chk{opacity:1}
 .pay-diff{font-weight:800;color:var(--red)}.pay-diff.zero{color:var(--ok)}
 .pay-modal-summary{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:0 0 14px}.pay-modal-summary>div{padding:10px 12px;background:#f6f7f9;border:1px solid var(--line);border-radius:10px}.pay-modal-summary small{display:block;color:var(--muted);font-size:11px;text-transform:uppercase;font-weight:800;letter-spacing:.05em}.pay-modal-summary b{display:block;margin-top:3px;font-size:15px}
 .audit-log{max-height:145px;overflow:auto;border:1px solid var(--line);border-radius:9px;background:#fafbfc}.audit-log .audit-line{padding:8px 10px;border-bottom:1px solid var(--line);font-size:12px;color:var(--muted);font-weight:560}.audit-log .audit-line:last-child{border-bottom:0}.audit-log b{color:var(--gray)}
-.terc-field{min-width:120px}.terc-field.sm{min-width:96px}.rel-filter-grid{display:grid;grid-template-columns:repeat(12,1fr);gap:10px;margin-top:10px}
-@media(max-width:1100px){.audit-cards{grid-template-columns:repeat(2,1fr)}.pay-modal-summary{grid-template-columns:1fr}.rel-filter-grid{grid-template-columns:repeat(2,1fr)}.rel-filter-grid .f{grid-column:auto!important}}
-@media(max-width:650px){.audit-cards{grid-template-columns:1fr}.pay-flow{align-items:flex-start}.pay-flow .flow-title{width:100%}}
+.terc-field{min-width:120px}.terc-field.sm{min-width:96px}@media(max-width:1100px){.audit-cards{grid-template-columns:repeat(2,1fr)}.pay-modal-summary{grid-template-columns:1fr}}
+@media(max-width:650px){.audit-cards{grid-template-columns:1fr}.pay-flow{align-items:flex-start}}
 </style>
 <style>
 /* ================= PONTO PF =================
@@ -2847,7 +2828,7 @@ tr.sal-japago>td.conf,tr.sal-japago>td.chk{opacity:1}
 .pf-table .pf-day{font-weight:800}.pf-table .pf-dow{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.03em;font-weight:560}
 .pf-legend{display:flex;gap:14px;align-items:center;flex-wrap:wrap;font-size:12px;color:var(--muted);margin-top:8px;font-weight:560}.pf-legend i{display:inline-block;width:11px;height:11px;border-radius:3px;margin-right:5px;vertical-align:-1px;border:1px solid #d9dde2}.pf-legend .we{background:#fff1c9}.pf-legend .bl{background:#eef0f2}.pf-legend .pd{background:#fff}
 .pf-empty{padding:34px 20px;text-align:center;color:var(--muted)}.pf-empty b{display:block;color:var(--ink);margin-bottom:5px}
-.pf-folha{font-family:"Satoshi","Segoe UI",Arial,sans-serif;color:#1d2127;padding:7mm 10mm 6mm!important;position:relative;display:flex;flex-direction:column}.pf-folha .head,.pf-relatorio .head{flex-direction:row;padding:0 0 3.2mm;gap:10mm;align-items:flex-start}.pf-folha .head .logo img,.pf-relatorio .head .logo img{height:34px}.pf-folha .head .co,.pf-relatorio .head .co{text-align:right;font-size:9.5px;line-height:1.6;color:#6E747C;font-weight:500}.pf-folha .head .co .nm,.pf-relatorio .head .co .nm{font-size:9.5px;color:#6c7480;margin-bottom:1px}.pf-folha .head .co .mut,.pf-relatorio .head .co .mut{font-family:inherit;font-size:9.5px;font-weight:500}.pf-folha .tb2-tipo,.pf-relatorio .tb2-tipo{margin-top:4mm;font-size:8px}.pf-folha .tb2-tipo+.pf-tit,.pf-relatorio .tb2-tipo+.pf-tit{margin-top:1mm}.pf-tit{margin-top:4mm;font-size:14px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;color:#141414}.pf-sub{font-size:9.5px;color:#6E747C;margin:1px 0 3mm}.pf-folha .foot,.pf-relatorio .foot{margin-top:auto;padding-top:2.6mm;border-top:1px solid #e6e6e1;font-size:7.5px;color:#6E747C;letter-spacing:.06em;text-transform:uppercase}.pf-folha .foot .lin,.pf-relatorio .foot .lin{display:grid;grid-template-columns:1fr 1fr 1fr;align-items:center;gap:10px}.pf-folha .foot .c,.pf-relatorio .foot .c{text-align:center;font-weight:700;color:#6c7480}.pf-folha .foot .d,.pf-relatorio .foot .d{text-align:right}.pf-folha .foot .d img,.pf-relatorio .foot .d img{height:18px;width:auto;display:inline-block;vertical-align:middle;opacity:.9}.pf-folha .foot .nota,.pf-relatorio .foot .nota{margin-top:1.5mm;text-align:center;font-size:7px;color:#6F747A;letter-spacing:.03em;text-transform:none}.pf-folha .pf-print-meta{display:grid;grid-template-columns:1fr 48mm;gap:1.2mm 8mm;margin-bottom:2.5mm;font-size:8.5pt}.pf-folha .pf-print-meta b{font-weight:800}.pf-folha .pf-print-meta .full{grid-column:1/-1}.pf-folha table{width:100%;border-collapse:collapse;font-size:7pt;table-layout:fixed;border-left:hidden;border-right:hidden}.pf-folha tbody td:nth-child(2){text-transform:uppercase}.pf-folha th,.pf-folha td{box-sizing:border-box;border:0;border-bottom:.75pt solid #d5d9de;border-left:.75pt solid #e1e4e8;padding:.5mm 1mm;text-align:center;height:6.1mm}.pf-folha th{background:#F2F4F7;color:#4A515B;font-size:6.3pt;font-weight:700;text-transform:uppercase;letter-spacing:.04em;height:5.4mm;border-bottom:1.2pt solid #c8ccd2;-webkit-print-color-adjust:exact;print-color-adjust:exact}.pf-folha th.pf-group{color:#D53309;border-bottom:1.5pt solid #F24619}.pf-folha td.obs{text-align:left}.pf-folha tr{page-break-inside:avoid}.pf-folha tr.weekend td,.pf-relatorio tr.weekend td{background:#FDEDE1;color:#6b4a36;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.pf-folha{font-family:"Satoshi","Segoe UI",Arial,sans-serif;color:#1d2127;padding:7mm 10mm 6mm!important;position:relative;display:flex;flex-direction:column}.pf-folha .head,.pf-relatorio .head{flex-direction:row;padding:0 0 3.2mm;gap:10mm;align-items:flex-start}.pf-folha .head .logo img,.pf-relatorio .head .logo img{height:34px}.pf-folha .head .co,.pf-relatorio .head .co{text-align:right;font-size:9.5px;line-height:1.6;color:#6E747C;font-weight:500}.pf-folha .head .co .nm,.pf-relatorio .head .co .nm{font-size:9.5px;color:#6c7480;margin-bottom:1px}.pf-folha .tb2-tipo,.pf-relatorio .tb2-tipo{margin-top:4mm;font-size:8px}.pf-folha .tb2-tipo+.pf-tit,.pf-relatorio .tb2-tipo+.pf-tit{margin-top:1mm}.pf-tit{margin-top:4mm;font-size:14px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;color:#141414}.pf-sub{font-size:9.5px;color:#6E747C;margin:1px 0 3mm}.pf-folha .foot,.pf-relatorio .foot{margin-top:auto;padding-top:2.6mm;border-top:1px solid #e6e6e1;font-size:7.5px;color:#6E747C;letter-spacing:.06em;text-transform:uppercase}.pf-folha .foot .lin,.pf-relatorio .foot .lin{display:grid;grid-template-columns:1fr 1fr 1fr;align-items:center;gap:10px}.pf-folha .foot .c,.pf-relatorio .foot .c{text-align:center;font-weight:700;color:#6c7480}.pf-folha .foot .d,.pf-relatorio .foot .d{text-align:right}.pf-folha .foot .d img,.pf-relatorio .foot .d img{height:18px;width:auto;display:inline-block;vertical-align:middle;opacity:.9}.pf-folha .foot .nota,.pf-relatorio .foot .nota{margin-top:1.5mm;text-align:center;font-size:7px;color:#6F747A;letter-spacing:.03em;text-transform:none}.pf-folha .pf-print-meta{display:grid;grid-template-columns:1fr 48mm;gap:1.2mm 8mm;margin-bottom:2.5mm;font-size:8.5pt}.pf-folha .pf-print-meta b{font-weight:800}.pf-folha .pf-print-meta .full{grid-column:1/-1}.pf-folha table{width:100%;border-collapse:collapse;font-size:7pt;table-layout:fixed;border-left:hidden;border-right:hidden}.pf-folha tbody td:nth-child(2){text-transform:uppercase}.pf-folha th,.pf-folha td{box-sizing:border-box;border:0;border-bottom:.75pt solid #d5d9de;border-left:.75pt solid #e1e4e8;padding:.5mm 1mm;text-align:center;height:6.1mm}.pf-folha th{background:#F2F4F7;color:#4A515B;font-size:6.3pt;font-weight:700;text-transform:uppercase;letter-spacing:.04em;height:5.4mm;border-bottom:1.2pt solid #c8ccd2;-webkit-print-color-adjust:exact;print-color-adjust:exact}.pf-folha th.pf-group{color:#D53309;border-bottom:1.5pt solid #F24619}.pf-folha td.obs{text-align:left}.pf-folha tr{page-break-inside:avoid}.pf-folha tr.weekend td,.pf-relatorio tr.weekend td{background:#FDEDE1;color:#6b4a36;-webkit-print-color-adjust:exact;print-color-adjust:exact}
 .pf-folha tr.feriado td,.pf-relatorio tr.feriado td{background:#E3EEFB;color:#2b4868;-webkit-print-color-adjust:exact;print-color-adjust:exact}
 .pf-folha tr.feriado td.obs{font-size:7pt;font-weight:700;text-align:left}.pf-folha tr.blocked td{background:#F2F4F7;color:#727a83;-webkit-print-color-adjust:exact;print-color-adjust:exact}.pf-folha tr.blocked td.write{font-size:11pt;font-weight:800;letter-spacing:.12em}.pf-folha tr.blocked td.write.msg{font-size:6.3pt;font-weight:700;letter-spacing:.01em;text-transform:none;padding:1mm 3mm}.pf-folha .pf-sign{margin:7mm auto 3mm;width:95mm;border-top:.75pt solid #272b30;text-align:center;padding-top:1.2mm;font-size:7.5pt;text-transform:uppercase;letter-spacing:.08em;page-break-inside:avoid}
 .pf-relatorio{font-family:"Satoshi","Segoe UI",Arial,sans-serif;color:#1d2127;padding:8mm 10mm 6mm!important;display:flex;flex-direction:column}.pf-relatorio .pf-rmeta{margin:0 0 4mm;font-size:9pt;display:grid;grid-template-columns:1fr 1fr;gap:2mm}.pf-relatorio .pf-rcards{display:grid;grid-template-columns:repeat(5,1fr);gap:2mm;margin:4mm 0}.pf-relatorio .pf-rcard{border:.75pt solid #cfd4d9;border-top:2.25pt solid #f24618;padding:2.4mm}.pf-relatorio .pf-rcard small{font-size:6.8pt;color:#6b737c;text-transform:uppercase;font-weight:800}.pf-relatorio .pf-rcard b{display:block;font-size:13pt;margin-top:1mm}.pf-relatorio table{width:100%;border-collapse:collapse;font-size:7pt}
@@ -5915,7 +5896,6 @@ function doLogin(){
     else { err.textContent='Usuário ou senha incorretos.'; loginAviso(err); }
   }
 }
-function doLogout(){ if(useFirebase){ fb.auth.signOut(); } else { sessionStorage.removeItem(AUTH_KEY); showLogin(true); } $('#li_pass').value=''; }
 /* Ações destrutivas (excluir funcionário de vez, apagar tudo) ficam visíveis
    só pra conta admin. Organização de interface, não é a camada de segurança
    real — quem edita ainda tem permissão de escrita no banco (senão nem o
@@ -6299,21 +6279,6 @@ function ctChipDe(e){
     +(c.dia?' · hoje é o dia '+c.dia+' de 90':' · o prazo ainda não começou')
     +(c.resolvido?' · '+esc(CONTRATO_DEC[c.resolvido]||c.resolvido):'')+'">'
     +(c.resolvido?'✓ ':'')+ctRotulo(c)+' · '+ctFrase(c)+'</span>'):'';
-}
-function camposDoFuncionario(e){
-  /* o data-c diz que campo e aquele mesmo quando o rotulo nao aparece */
-  const campo=(id,rot,dado,forte)=>dado?('<div class="campo" data-c="'+id+'">'
-    +(rot?'<span class="rot">'+rot+'</span>':'')
-    +'<span class="dado'+(forte?' forte':'')+'">'+dado+'</span></div>'):'';
-  const b=bancoMarca(e.banco);
-  const exp=ctChipDe(e);
-  const html=campo('funcao','',esc(frasePt(e.funcao)),true)
-    +campo('adm','Adm.',e.dtInicio?fmtDate(e.dtInicio):'')
-    +campo('carteira','Carteira',(e.dtCarteira?fmtDate(e.dtCarteira):'')+exp)
-    +campo('aniv','Aniv.',e.nascimento?fmtDate(e.nascimento).slice(0,5):'')
-    +(b?campo('banco','','<span class="bmarca" style="background:'+b.cor+'" aria-hidden="true">'
-        +esc(b.ini)+'</span>'+esc(b.rot)):'');
-  return html?'<div class="campos">'+html+'</div>':'';
 }
 function fmtDate(iso){if(!iso)return '';const p=String(iso).split('-');return p.length===3?p[2]+'/'+p[1]+'/'+p[0]:iso;}
 // Fechamentos feitos antes de a data de admissão passar a ser arquivada não
@@ -17345,7 +17310,7 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeAll();$('#prin
    juntos a cada publicacao, e ha uma prova automatica que falha se um subir
    sem o outro. Assim o numero na tela e o mesmo do arquivo que o aparelho
    guardou, e dizer "estou na v81" passa a significar alguma coisa. */
-const APP_VER='v263';
+const APP_VER='v264';
 (function(){var p=document.getElementById('verPill'); if(p)p.textContent=APP_VER;})();
 
 if('serviceWorker' in navigator){
@@ -17434,7 +17399,6 @@ function registrarMovimentosFolha(tipo,comp,list,reciboGerado){
   });
   return saida;
 }
-function ultimoMovimentoTerc(tid){return movLista().filter(m=>m.pessoaTipo==='terceiro'&&m.pessoaId===tid&&m.status!=='cancelado').sort((a,b)=>movTs(b)-movTs(a))[0]||null;}
 
 /* Importa o histórico que já existia sem afirmar que houve conferência.
    Ele fica marcado como Histórico, separado dos pagamentos confirmados nesta versão. */
@@ -18321,9 +18285,6 @@ initAuth();
 .epi-chk input{margin:0;width:auto}
 .epi-chk.on{border-color:var(--red);background:var(--red-soft);color:var(--rm-marca-escura,#9B2709);font-weight:600}
 
-/* previa da ficha, dentro da aba */
-.epi-previa{border:1px solid var(--line);border-radius:10px;overflow:hidden;background:#fff}
-.epi-previa iframe{width:100%;height:520px;border:0;display:block;background:#fff}
 </style>
 
 <style>
@@ -20088,9 +20049,6 @@ initAuth();
 
 <!-- ===== FICHA DE EPI · MOVIMENTACOES E ASSINATURA (VERSAO TESTE) ===== -->
 <style id="epiMovTesteCSS">
-.epi-mov-aviso{display:flex;gap:10px;align-items:flex-start;padding:12px 14px;margin:0 0 15px;
-  border:1px solid #efcf87;border-radius:10px;background:#fff8e8;color:#765000;font-size:14px;line-height:1.5;font-weight:505}
-.epi-mov-aviso b{color:#5e3f00}.epi-mov-aviso .ico{font-size:17px;line-height:1.2}
 .epi-mov-cards{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:16px}
 .epi-mov-card{border:1px solid var(--line);border-radius:10px;background:#fff;padding:12px 14px}
 .epi-mov-card .k{font-size:11px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
@@ -20133,11 +20091,6 @@ initAuth();
 .epi-ass-head h3{margin:0;font-size:16px}.epi-ass-x{border:0;background:none;font-size:20px;color:var(--muted);cursor:pointer}
 .epi-ass-corpo{padding:18px 20px}.epi-ass-resumo{border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin-bottom:13px}
 .epi-ass-resumo h4{margin:0 0 4px;font-size:14px}.epi-ass-resumo ul{margin:9px 0 0;padding-left:18px;font-size:14px;line-height:1.55;font-weight:505}
-.epi-codigo-linha{display:grid;grid-template-columns:1fr 150px;gap:9px;align-items:end;margin-top:13px}
-.epi-codigo-linha input{width:100%;font:inherit;font-size:16px;letter-spacing:.18em;padding:10px 12px;border:1px solid var(--line);border-radius:8px}
-.epi-codigo-mostra{margin-top:8px;padding:9px 12px;border-radius:8px;background:#f5f6f8;color:var(--muted);font-size:14px;display:none;font-weight:505}
-.epi-ass-aceite{display:flex;gap:9px;align-items:flex-start;margin-top:14px;font-size:14px;line-height:1.5;color:var(--ink);font-weight:505}
-.epi-ass-aceite input{margin-top:3px}.epi-ass-pe{display:flex;justify-content:flex-end;gap:8px;padding:0 20px 18px}
 /* ---- assinatura no aparelho ---- */
 .epi-ass-cab{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin:16px 0 4px}
 .epi-ass-cab b{font-size:14px}.epi-ass-cab span{font-size:13px;color:var(--muted);font-weight:530}

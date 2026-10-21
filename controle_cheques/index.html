@@ -1363,17 +1363,11 @@ input,select,textarea{font-family:inherit;font-size:14px}
 .appbar-spacer{flex:1}
 .appbar-actions{display:flex;gap:8px;align-items:center}
 .storage-pill{font-size:12px;font-weight:600;padding:4px 10px;border-radius:20px;background:var(--surface-2);color:var(--muted);border:1px solid var(--border);display:flex;align-items:center;gap:6px}
-.storage-pill .dot{width:7px;height:7px;border-radius:50%;background:#22c55e}
-.storage-pill.local .dot{background:#f59e0b}
-.storage-pill.off .dot{background:#f59e0b}
-.storage-pill.cloud .dot{background:#22c55e}
 
 .btn{border:1px solid var(--border);background:var(--surface);color:var(--ink);padding:9px 14px;border-radius:9px;font-weight:600;font-size:14px;display:inline-flex;align-items:center;gap:7px;transition:.12s;white-space:nowrap}
 .btn:hover{background:var(--surface-2);border-color:#d4d4d8}
 .btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
 .btn.primary:hover{background:var(--accent-dark);border-color:var(--accent-dark)}
-.btn.ghost-light{background:transparent;border-color:var(--border);color:var(--ink)}
-.btn.ghost-light:hover{background:var(--surface-2)}
 .btn.sm{padding:6px 10px;font-size:13px;border-radius:7px;font-weight:530}
 .btn.danger{color:var(--accent);border-color:#f0caca}
 .btn.danger:hover{background:var(--accent-soft);color:#C43108}
@@ -1402,7 +1396,6 @@ input,select,textarea{font-family:inherit;font-size:14px}
 .search input{width:100%;padding:9px 12px 9px 34px;border:1px solid var(--border);border-radius:9px;background:var(--surface)}
 .search svg{position:absolute;left:11px;top:50%;transform:translateY(-50%);color:var(--faint)}
 .filter-sel{padding:9px 12px;border:1px solid var(--border);border-radius:9px;background:var(--surface);font-weight:500;color:var(--ink)}
-.toolbar-spacer{flex-basis:100%;height:0}
 
 .sel-bar{display:none;align-items:center;gap:14px;justify-content:space-between;
   background:var(--ink);color:#fff;border-radius:11px;padding:10px 14px;margin-bottom:14px;
@@ -1444,8 +1437,6 @@ input,select,textarea{font-family:inherit;font-size:14px}
 .ch-table tbody tr:hover{background:var(--surface-2)}
 .ch-num{font-weight:600;font-size:14px}
 .ch-banco{font-size:13px;color:var(--muted);font-weight:530}
-.ch-emit{font-weight:600}
-.ch-emit .doc{font-size:12px;color:var(--faint);font-weight:560;font-family:'JetBrains Mono',monospace}
 .ch-dest{font-size:13px;color:var(--muted);font-weight:530}
 .ch-dest b{color:var(--ink);font-weight:600}
 .val-cell{font-weight:700;text-align:right;white-space:nowrap}
@@ -1742,7 +1733,7 @@ input,select,textarea,button,option,optgroup{font-weight:inherit}
 /* A Satoshi e mais larga que a fonte do sistema na mesma altura, e coluna de
    dinheiro com largura cravada em px passou a quebrar o valor em duas linhas.
    Valor, data e documento nao quebram. */
-td.r,th.r,td.val,.money,.brl,.valor,.num{white-space:nowrap}
+td.r,th.r,td.val,.brl,.valor,.num{white-space:nowrap}
 
 html,body,*{
   -webkit-font-smoothing:auto!important;
@@ -1751,8 +1742,8 @@ html,body,*{
   font-synthesis:weight;
 }
 body{font-variant-numeric:tabular-nums;letter-spacing:normal!important}
-input,select,textarea,button,table,th,td,.num,.valor,.money,.brl,.mono{font-variant-numeric:tabular-nums}
-kbd,code,pre,samp,.cod,.codigo,.chave,.chavenf,[data-mono]{
+input,select,textarea,button,table,th,td,.num,.valor,.brl,.mono{font-variant-numeric:tabular-nums}
+kbd,code,pre,samp,.codigo,.chave,[data-mono]{
   font-family:var(--rm-mono)!important;
   font-variant-numeric:normal;
   letter-spacing:0;
@@ -3182,10 +3173,6 @@ function doLogin(){
     .catch(e=>{ err.textContent=authMsg(e.code); loginAviso(err); })
     .finally(()=>{ loginOcupado(false); });
 }
-function doLogout(){
-  if(typeof firebase!=="undefined" && firebase.auth){ firebase.auth().signOut(); }
-  const p=$("li_pass"); if(p) p.value="";
-}
 // Inicializa o Firebase Auth e só conecta ao nó "cheques" depois de um login
 // real (e-mail/senha). Sem config de Firebase (modo 100% local, antes de
 // colar credenciais), não há dado na nuvem para proteger — o app funciona
@@ -3990,18 +3977,6 @@ window.addEventListener("afterprint",()=>{ const r=$("printRoot"); if(r) r.inner
 
 /* ---------- misc ---------- */
 function logHist(c,tipo,detalhe,data){ if(!c.hist) c.hist=[]; c.hist.push({tipo,detalhe,data:data||null,ts:Date.now()}); }
-function parseFirebaseConfig(text){
-  let t=String(text).trim();
-  const a=t.indexOf("{"), b=t.lastIndexOf("}");
-  if(a===-1||b===-1) throw new Error("não encontrei um objeto { ... }");
-  t=t.slice(a,b+1);
-  try{ return JSON.parse(t); }catch(e){}
-  const n=t
-    .replace(/([{,]\s*)([A-Za-z_$][\w$]*)\s*:/g,'$1"$2":')          // chaves sem aspas
-    .replace(/'/g,'"')                                              // aspas simples -> duplas
-    .replace(/,(\s*[}\]])/g,"$1");                                  // vírgula sobrando
-  return JSON.parse(n);
-}
 function show(id){ closeMenus(); $(id).classList.add("show"); }
 function closeAll(){ document.querySelectorAll(".overlay").forEach(o=>o.classList.remove("show")); closeMenus(); }
 /* declarado ANTES de closeMenus, que o zera: com `let`, usar antes da
@@ -4950,7 +4925,7 @@ window.app=app; window.updateBatchTotal=updateBatchTotal;
 })();
 </script>
 <script>/* versão publicada (PADRAO_RM.md §3): sobe a cada publicação, junto com o CACHE do sw.js */
-const APP_VER='v67';
+const APP_VER='v68';
 </script>
 <script>
 /* Service worker padrão da casa (PADRAO_RM.md §7). O sw.js existia mas nunca
