@@ -20,7 +20,7 @@
   "versao": "v39"
  },
  "central_rm": {
-  "commit": "b05200d",
+  "commit": "d39f673",
   "versao": "v133"
  },
  "controle_cheques": {
@@ -32,8 +32,8 @@
   "versao": "v71"
  },
  "controle_obras": {
-  "commit": "44722dc",
-  "versao": "v99"
+  "commit": "2ea53c0",
+  "versao": "v100"
  },
  "leitor_dwg": {
   "commit": "75392ae",
@@ -44,8 +44,8 @@
   "versao": "v127"
  },
  "propostas_rm": {
-  "commit": "8bf01de",
-  "versao": "v19"
+  "commit": "ceb6410",
+  "versao": "v20"
  },
  "recibos_rm": {
   "commit": "5bfe590",

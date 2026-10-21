@@ -1747,8 +1747,10 @@ select.ob2-in option{color:var(--ink);font-weight:500}
 .ob2-dtemps{font-size:13.5px;line-height:1.25;padding:0 8px}.ob2-dtemps b{font-weight:700}.ob2-dtemps .mut{color:var(--muted)}
 .ob2-partes{border-bottom:1px solid var(--line-2);padding:0 6px 8px}
 .ob2-ppgrid{display:grid;grid-template-columns:104px minmax(0,1fr) 150px 130px 112px 92px 32px;gap:8px;align-items:center;padding:2px 0}
-.ob2-ppgrid>.ob2-pt-n{grid-column:3;justify-self:end;font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
-.ob2-ppgrid>:nth-child(2){grid-column:4}.ob2-ppgrid>:nth-child(3){grid-column:5}.ob2-ppgrid>:nth-child(4){grid-column:6}.ob2-ppgrid>:nth-child(5){grid-column:7}
+.ob2-ppgrid>.ob2-pt-n{grid-column:2;justify-self:end;font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.ob2-ppgrid>:nth-child(2){grid-column:3}.ob2-ppgrid>:nth-child(3){grid-column:4}.ob2-ppgrid>:nth-child(4){grid-column:5}.ob2-ppgrid>:nth-child(5){grid-column:6}.ob2-ppgrid>:nth-child(6){grid-column:7}
+/* data da parte vazia: vale a da parcela, mostrada mais clara */
+.ob2-ppgrid .dateinp.herdada{color:var(--muted)}
 .ob2-ppgrid .ob2-in{border-color:var(--line);background:#fff}
 .ob2-ppgrid .del.mini,.ob2-ppgrid .del{justify-self:center}
 .ob2-partes-pe{display:flex;justify-content:flex-end;align-items:center;gap:14px;flex-wrap:wrap;padding:4px 40px 0 0;font-size:13px}
@@ -1845,8 +1847,8 @@ select.ob2-in option{color:var(--ink);font-weight:500}
   .ob2-fgrid>:nth-child(7){grid-area:del;justify-self:end}
   .ob2-in{border-color:var(--line);background:#fff}
   .ob2-p,.ob2-nf{padding:8px 4px}
-  .ob2-ppgrid{grid-template-columns:auto minmax(0,1fr) minmax(0,1fr) 32px;grid-template-areas:"n valor valor del" "forma forma temp temp"}
-  .ob2-ppgrid>.ob2-pt-n{grid-area:n;justify-self:start}.ob2-ppgrid>:nth-child(2){grid-area:valor}.ob2-ppgrid>:nth-child(3){grid-area:forma}.ob2-ppgrid>:nth-child(4){grid-area:temp}.ob2-ppgrid>:nth-child(5){grid-area:del}
+  .ob2-ppgrid{grid-template-columns:auto minmax(0,1fr) minmax(0,1fr) 32px;grid-template-areas:"n valor valor del" "data data data data" "forma forma temp temp"}
+  .ob2-ppgrid>.ob2-pt-n{grid-area:n;justify-self:start}.ob2-ppgrid>:nth-child(2){grid-area:data}.ob2-ppgrid>:nth-child(3){grid-area:valor}.ob2-ppgrid>:nth-child(4){grid-area:forma}.ob2-ppgrid>:nth-child(5){grid-area:temp}.ob2-ppgrid>:nth-child(6){grid-area:del}
   .ob2-partes{padding:0 4px 8px 16px;border-left:3px solid var(--line-2);margin-left:4px}
   .ob2-partes-pe{justify-content:flex-start;padding-right:0}
 }
@@ -3628,9 +3630,10 @@ function obCorToca(b,fn){ const el=b.closest('.ob2-cor'), v=el.dataset.v===b.dat
 function obPoeTempNaLinha(linha,t){ obCorMarca(linha&&linha.querySelector('.ob2-cor[data-k="temp"]'),t); }
 function obRotulo(lista,v){ const x=lista.find(a=>a[0]===v); return x?x[1]:''; }
 /* parcela dividida: o cliente pagou parte em dinheiro (frio) e parte no
-   banco (quente). As partes ficam em p.partes [{id,valor,forma,temp}] e
+   banco (quente). As partes ficam em p.partes [{id,data,valor,forma,temp}] e
    valem quando são 2 ou mais; a parcela continua com o valor dela e o
-   aviso diz quanto falta (ou passou) para as partes fecharem. */
+   aviso diz quanto falta (ou passou) para as partes fecharem. Uma parte
+   pode ser paga noutro dia: a data dela vazia vale a da parcela. */
 function obPartes(p){ const L=obArr(p&&p.partes); return L.length>1?L:null; }
 function obPartesOuInteira(p){ return obPartes(p)||[{valor:Number(p.valor)||0,forma:p.forma||'',temp:p.temp||''}]; }
 function obClsSel(k,v){ return 'ob2-in'+(k==='temp'&&v?' t-'+v:(v?'':' vazio')); }
@@ -3653,6 +3656,7 @@ function obParteRow(o,p,x,i){
   const a=`'${o.id}','${p.id}','${x.id}'`;
   return `<div class="ob2-parte ob2-ppgrid" data-pt="${x.id}">
     <span class="ob2-pt-n">Parte ${i+1}</span>
+    <input type="date" class="ob2-in dateinp${x.data?'':' herdada'}" data-k="data" value="${dateToISO(x.data||p.data)}" onchange="this.classList.toggle('herdada',!this.value);setParte(${a},'data',dateFromISO(this.value));if(!this.value)this.value=dateToISO(obParc('${o.id}','${p.id}').data)" title="Vazio: a data da parcela" aria-label="Data da parte">
     <input class="ob2-in money" data-k="valor" inputmode="decimal" value="${x.valor?num(x.valor):''}" onchange="setParteMoney(${a},this)" placeholder="0,00" aria-label="Valor da parte">
     ${obSelHTML('forma',x.forma||'',OB_FORMAS,'Forma…',`setParte(${a},'forma',this.value)`)}
     ${obCorHTML(x.temp||'',`setParte(${a},'temp',v)`)}
@@ -3682,7 +3686,7 @@ function obParc(id,pid){ const o=obraById(id); return o&&(o.parcelas||[]).find(x
 function obDividir(id,pid){
   const p=obParc(id,pid); if(!p) return;
   const v=Number(p.valor)||0, m=Math.round(v*50)/100;
-  p.partes=[{id:uid('pt'),valor:m,forma:p.forma||'',temp:p.temp||''},{id:uid('pt'),valor:Math.round((v-m)*100)/100,forma:'',temp:''}];
+  p.partes=[{id:uid('pt'),data:'',valor:m,forma:p.forma||'',temp:p.temp||''},{id:uid('pt'),data:'',valor:Math.round((v-m)*100)/100,forma:'',temp:''}];
   p.forma=''; p.temp=''; save(); render();
 }
 function obJuntar(id,pid,semPerguntar){
@@ -3692,7 +3696,7 @@ function obJuntar(id,pid,semPerguntar){
   if(L[0]){ p.forma=L[0].forma||''; p.temp=L[0].temp||''; }
   delete p.partes; save(); render();
 }
-function addParte(id,pid){ const p=obParc(id,pid); if(!p) return; p.partes=obArr(p.partes); const d=(Number(p.valor)||0)-p.partes.reduce((s,x)=>s+(Number(x.valor)||0),0); p.partes.push({id:uid('pt'),valor:d>0.005?Math.round(d*100)/100:0,forma:'',temp:''}); save(); render(); }
+function addParte(id,pid){ const p=obParc(id,pid); if(!p) return; p.partes=obArr(p.partes); const d=(Number(p.valor)||0)-p.partes.reduce((s,x)=>s+(Number(x.valor)||0),0); p.partes.push({id:uid('pt'),data:'',valor:d>0.005?Math.round(d*100)/100:0,forma:'',temp:''}); save(); render(); }
 function removeParte(id,pid,ptid){ const p=obParc(id,pid); if(!p) return; p.partes=obArr(p.partes).filter(x=>x.id!==ptid); if(p.partes.length<2) obJuntar(id,pid,true); else { save(); render(); } }
 function setParte(id,pid,ptid,k,v){ const p=obParc(id,pid); const x=p&&obArr(p.partes).find(y=>y.id===ptid); if(!x) return; x[k]=v;
   if(k==='forma'&&v){ x.temp=obTempDaForma(v); obPoeTempNaLinha(document.querySelector('.ob2-parte[data-pt="'+ptid+'"]'),x.temp); }
@@ -3716,10 +3720,12 @@ function obAtualizaPartes(id,pid){
 function obRelForma(p){ return obPartes(p)?'Dividida':(obRotulo(OB_FORMAS,p.forma)||'—'); }
 function obRelTq(t){ return t?`<span class="tq ${t}" title="${obRotulo(OB_TEMPS,t)}">●</span>`:'—'; }
 function obRelTemp(p){ return obPartes(p)?'':obRelTq(p.temp); }
-/* as partes de uma parcela dividida, uma sub-linha cada, alinhadas nas colunas Valor, Forma e Frio/Quente */
+/* as partes de uma parcela dividida, uma sub-linha cada, alinhadas nas colunas Data, Valor, Forma e Frio/Quente;
+   a data só aparece quando a parte foi paga noutro dia */
+function obParteData(p,x){ return x.data&&dateKey(x.data)!==dateKey(p.data)?esc(repData(x.data)):''; }
 function obRelPartes(p){
   const L=obPartes(p); if(!L) return '';
-  return L.map((x,i)=>`<tr class="pt"><td>&nbsp;&nbsp;&#8627; Parte ${i+1}</td><td></td><td class="r">${repBRL(x.valor)}</td><td>${obRotulo(OB_FORMAS,x.forma)||'—'}</td><td class="c">${obRelTq(x.temp)}</td><td></td></tr>`).join('');
+  return L.map((x,i)=>`<tr class="pt"><td>&nbsp;&nbsp;&#8627; Parte ${i+1}</td><td class="c">${obParteData(p,x)}</td><td class="r">${repBRL(x.valor)}</td><td>${obRotulo(OB_FORMAS,x.forma)||'—'}</td><td class="c">${obRelTq(x.temp)}</td><td></td></tr>`).join('');
 }
 function obTotaisTemp(o){
   const r={frio:0,quente:0,sem:0};
@@ -3998,6 +4004,7 @@ function setP(id,pid,k,v){ const o=obraById(id); if(!o)return; const p=(o.parcel
      softRefresh não o tocava, e "Recebida" ficava escrito em laranja até a
      próxima atualização da tela. Texto e cor mudam juntos, aqui. */
   if(k==='recebida'||k==='data')document.querySelectorAll('.ob2-p[data-p="'+pid+'"] .ob2-rec').forEach(l=>{l.classList.toggle('atrasada',obParcAtrasada(p)); l.querySelector('span').textContent=obRecTxt(p);});
+  if(k==='data')document.querySelectorAll('.ob2-partes[data-p="'+pid+'"] .dateinp.herdada').forEach(e=>{e.value=dateToISO(v);});
   save(); if(k==='recebida'||k==='data')softRefresh(id); }
 function setPMoney(id,pid,el){ const o=obraById(id); if(!o)return; const p=(o.parcelas||[]).find(x=>x.id===pid); if(!p)return; const v=parseNum(el&&el.value!==undefined?el.value:el); p.valor=v; if(el&&el.value!==undefined)el.value=v?num(v):''; save(); softRefresh(id); obAtualizaPartes(id,pid); }
 
@@ -6246,7 +6253,7 @@ if('serviceWorker' in navigator){
 })();
 </script>
 <script>/* versão publicada (PADRAO_RM.md §3): sobe a cada publicação, junto com o CACHE do sw.js */
-const APP_VER='v99';
+const APP_VER='v100';
 </script>
 <script id="rmVersaoBloco">
 /* ===== SELO DE VERSÃO — igual em todos os sistemas (PADRAO_RM.md §3) =====
