@@ -2286,23 +2286,28 @@ body:not([data-theme="escuro"]){
 </style>
 <script>
 /* ===== FUNDO EM MOVIMENTO E TOQUE AO CLICAR — igual em todos os sistemas =====
-   Fonte única: central_rm/comum/fundo-movimento.html. Duas escolhas das
+   Fonte única: central_rm/comum/fundo-movimento.html. Três escolhas das
    Preferências da Central, cada uma liga/desliga sozinha e vale para o
    conjunto (como o fundo e o tema):
-     rm_mov   = 'cotas'  -> A OBRA SE MONTANDO NA PRANCHETA: uma estrutura em
-                            3D aramado (galpão treliçado, mezanino com escada)
-                            montada peça por peça na ordem de obra -- pilares
-                            sobem, tesouras e vigas descem como do guindaste,
-                            terças e contraventos entram, as cotas aparecem,
-                            a câmera gira devagar; depois vem a outra. Em volta,
-                            cotas e perfis passam em três profundidades.
-                            Tinta e intensidade do fundo (--wm-marca, --wm-grid,
-                            --wm-op): a peça que está entrando vai na cor da
-                            marca e assenta no cinza.
-     rm_toque = '1'      -> clique com cara de CAD: o marcador de snap (o
-                            quadrado do "Extremidade"), a mira que corre e a
-                            coordenada, por meio segundo
-   As duas vêm DESLIGADAS. A Central grava as chaves comuns e avisa quem está
+     rm_mov   = A OBRA SE MONTANDO NA PRANCHETA, em 3D aramado, peça por peça
+                na ordem de obra, a câmera girando devagar:
+                'metalica'   galpão treliçado e mezanino com escada -- pilares
+                             sobem, tesouras e vigas descem como do guindaste,
+                             terças e contraventos entram, as cotas aparecem;
+                'premoldado' pavilhão pré-moldado -- pilares, vigas, e as
+                             placas descendo uma a uma entre os pilares, de
+                             baixo para cima (como na leitura das placas do
+                             Sistema PU), depois a cobertura e as cotas;
+                'alterna'    os dois, um depois do outro.
+                Tinta e intensidade do fundo (--wm-marca, --wm-grid, --wm-op):
+                a peça que está entrando vai na cor da marca e assenta no cinza.
+                ('cotas', a chave antiga, vale como metálica com as cotas.)
+     rm_cotas = '1'  -> cotas e perfis passando em três profundidades
+                (antes vinham sempre junto com a montagem; agora é opção)
+     rm_toque = '1'  -> clique com cara de CAD: o marcador de snap (o
+                quadrado do "Extremidade"), a mira que corre e a coordenada,
+                por meio segundo
+   Todas vêm DESLIGADAS. A Central grava as chaves comuns e avisa quem está
    no quadro ({rm:'movimento'}); aberto sozinho, o sistema lê as chaves.
 
    Para não pesar nem atrapalhar:
@@ -2320,18 +2325,25 @@ body:not([data-theme="escuro"]){
     'chapa #3/16"', 'h = 3,00', 'e = 1,2', '5.950', '12,5 m', 'N3', 'P1', 'V2', 'TR 1'];
   var reduz = window.matchMedia ? matchMedia('(prefers-reduced-motion: reduce)') : { matches: false };
   var celular = window.matchMedia ? matchMedia('(pointer: coarse) and (max-width: 760px)') : { matches: false };
-  var cfg = { mov: '', toque: '' }, cv = null, cx = null, pecas = [], laco = 0, ultimo = 0, cores = null, corT = 0;
+  var cfg = { mov: '', cotas: '', toque: '' }, cv = null, cx = null, pecas = [], laco = 0, ultimo = 0, cores = null, corT = 0;
   var t0 = 0, mx = 0, mxAlvo = 0, MODELOS = null;
   /* a proteção de tela do programa (electron/protetor.html) usa este mesmo
      bloco, com a montagem noutro lugar e sem pausar pela Central:
      window.RM_MOVIMENTO_OPCOES = { ox, oy, rw, rh, sempre } */
   var OPC = window.RM_MOVIMENTO_OPCOES || {};
 
-  function le() {
-    try { return { mov: localStorage.getItem('rm_mov') || '', toque: localStorage.getItem('rm_toque') || '' }; }
-    catch (e) { return { mov: '', toque: '' }; }
+  var MOVS = { metalica: 1, premoldado: 1, alterna: 1 };
+  /* a chave antiga ('cotas' = montagem metálica com as cotas) continua valendo */
+  function normal(c) {
+    c = c || {}; var mov = c.mov === 'cotas' ? 'metalica' : (MOVS[c.mov] ? c.mov : '');
+    var cotas = c.cotas === '1' || c.cotas === true ? '1' : (c.cotas == null && c.mov === 'cotas' ? '1' : '');
+    return { mov: mov, cotas: cotas, toque: c.toque === '1' ? '1' : '' };
   }
-  function grava(c) { try { localStorage.setItem('rm_mov', c.mov || ''); localStorage.setItem('rm_toque', c.toque || ''); } catch (e) { } }
+  function le() {
+    try { return normal({ mov: localStorage.getItem('rm_mov') || '', cotas: localStorage.getItem('rm_cotas'), toque: localStorage.getItem('rm_toque') || '' }); }
+    catch (e) { return normal({}); }
+  }
+  function grava(c) { c = normal(c); try { localStorage.setItem('rm_mov', c.mov); localStorage.setItem('rm_cotas', c.cotas); localStorage.setItem('rm_toque', c.toque); } catch (e) { } }
 
   /* ---- cores: as mesmas do fundo, relidas de vez em quando (tema/marca mudam) ---- */
   function leCores() {
@@ -2368,7 +2380,7 @@ body:not([data-theme="escuro"]){
     });
     m.cotas = [{ a: [-h, 0, -z0 + 2.2], b: [h, 0, -z0 + 2.2], t: '20.000' }, { a: [-h - 2.2, 0, -z0], b: [-h - 2.2, H, -z0], t: '6.000' },
       { a: [h + 2.2, 0, z0], b: [h + 2.2, 0, -z0], t: '30.000' }];
-    m.r = 19; m.cy = 3.5; return m;
+    m.r = 19; m.cy = 3.5; m.nome = 'galpao'; return m;
   }
   function mezanino() {
     var m = nova(), H = 3.2, X = [-6, 0, 6], Z = [-4, 0, 4], i, j;
@@ -2383,21 +2395,67 @@ body:not([data-theme="escuro"]){
     for (j = 1; j < D; j++) { var xx = 6 + L - j * L / D, yy = j * H / D; m.s([xx, yy, zA], [xx, yy, zB], 'escada', 3); }
     m.cotas = [{ a: [-6, 0, 5.6], b: [6, 0, 5.6], t: '12.000' }, { a: [-7.6, 0, 4], b: [-7.6, H, 4], t: '3.200' },
       { a: [-7.6, 0, -4], b: [-7.6, 0, 4], t: '8.000' }];
-    m.r = 10.5; m.cy = 1.8; return m;
+    m.r = 10.5; m.cy = 1.8; m.nome = 'mezanino'; return m;
+  }
+
+  /* O PAVILHÃO PRÉ-MOLDADO, montado como na obra: os pilares sobem, as
+     vigas assentam no topo, as placas descem do guindaste uma a uma e
+     encaixam entre os pilares de baixo para cima (as juntas entre elas são
+     as linhas que o Sistema PU lê), depois a cobertura. Cada placa é um
+     grupo (g): as quatro linhas entram juntas. */
+  function premoldado() {
+    var m = nova(), V = 20, C = 30, H = 8, F = 2, h = V / 2, c = C / 2, P = 5, PL = 2.5, g = 0, i, k;
+    var zs = []; for (i = -c; i <= c + 0.01; i += P) zs.push(i);
+    var xs = [-h, -h / 2, 0, h / 2, h];
+    var s = function (a, b, k2, e, gr) { m.L.push({ a: a, b: b, k: k2, e: e, g: gr }); };
+    var pilar = function (x, z) { g++; s([x - 0.18, 0, z], [x - 0.18, H, z], 'pilar', 0, g); s([x + 0.18, 0, z], [x + 0.18, H, z], 'pilar', 0, g); };
+    zs.forEach(function (z) { pilar(-h, z); pilar(h, z); });
+    xs.slice(1, -1).forEach(function (x) { pilar(x, -c); });
+    /* vigas no topo, um vão por vez */
+    var viga = function (a, b) { g++; s([a[0], H, a[1]], [b[0], H, b[1]], 'viga', 1, g); s([a[0], H - 0.5, a[1]], [b[0], H - 0.5, b[1]], 'viga', 1, g); };
+    for (i = 0; i < zs.length - 1; i++) { viga([-h, zs[i]], [-h, zs[i + 1]]); viga([h, zs[i]], [h, zs[i + 1]]); }
+    for (i = 0; i < xs.length - 1; i++) viga([xs[i], -c], [xs[i + 1], -c]);
+    /* placas: lados compridos e o oitão do fundo; a frente fica aberta (portão) */
+    var placa = function (p0, p1, y0) {
+      g++; var y1 = y0 + PL - 0.06;
+      s([p0[0], y0, p0[1]], [p1[0], y0, p1[1]], 'placa', 2, g); s([p0[0], y1, p0[1]], [p1[0], y1, p1[1]], 'placa', 2, g);
+      s([p0[0], y0, p0[1]], [p0[0], y1, p0[1]], 'placa', 2, g); s([p1[0], y0, p1[1]], [p1[0], y1, p1[1]], 'placa', 2, g);
+    };
+    var vaos = [];
+    for (i = 0; i < zs.length - 1; i++) { vaos.push([[-h, zs[i] + 0.2], [-h, zs[i + 1] - 0.2]]); vaos.push([[h, zs[i] + 0.2], [h, zs[i + 1] - 0.2]]); }
+    for (i = 0; i < xs.length - 1; i++) vaos.push([[xs[i] + 0.2, -c], [xs[i + 1] - 0.2, -c]]);
+    vaos.forEach(function (v) { for (k = 0; k * PL < H - 0.6; k++) placa(v[0], v[1], k * PL); });
+    /* cobertura: vigas inclinadas em cada linha de pilar e as terças */
+    zs.forEach(function (z) { g++; s([-h, H, z], [0, H + F, z], 'cobertura', 3, g); s([0, H + F, z], [h, H, z], 'cobertura', 3, g); });
+    for (k = 0; k <= 4; k++) { var x = -h + k * h / 2, y = H + F * (1 - Math.abs(x) / h); g++; s([x, y, -c], [x, y, c], 'terca', 3, g); }
+    m.cotas = [{ a: [-h, 0, c + 2.2], b: [h, 0, c + 2.2], t: '20.000' }, { a: [-h - 2.2, 0, c], b: [-h - 2.2, H, c], t: '8.000' },
+      { a: [h + 2.2, 0, -c], b: [h + 2.2, 0, c], t: '30.000' }];
+    /* a fase das placas é longa: são dezenas, uma de cada vez */
+    m.etapas = [3.4, 3.4, 15, 3.4];
+    m.r = 21; m.cy = 4.4; m.nome = 'premoldado'; return m;
   }
 
   /* ================= A MONTAGEM =================
      tempo de cada estrutura (s): etapas a cada 3,4 s, cotas aos 15 s,
      segura girando, some aos 31 s e começa a próxima */
-  var ETAPA = 3.4, DUR = 0.8, COTAS = 15, FIM = 31, CICLO = 33;
+  var ETAPA = 3.4, DUR = 0.8;
+  /* cada estrutura tem o seu tempo: etapas (padrão 3,4 s), cotas no fim da
+     última, segura girando 16 s e some. As linhas de um mesmo grupo (g, a
+     placa) entram juntas. */
   function prepara(m) {
-    var por = {};
-    m.L.forEach(function (p) { (por[p.e] = por[p.e] || []).push(p); });
-    Object.keys(por).forEach(function (e) {
-      var l = por[e];
-      l.forEach(function (p, i) { p.t = 0.6 + (+e) * ETAPA + (i / l.length) * (ETAPA - 0.9); });
+    var et = m.etapas || [], ini = [], acc = 0.6, por = {}, e;
+    for (e = 0; e < 4; e++) { ini[e] = acc; acc += et[e] || ETAPA; }
+    m.L.forEach(function (p, i) { var gr = p.g != null ? 'g' + p.g : 'l' + i; por[p.e] = por[p.e] || {}; (por[p.e][gr] = por[p.e][gr] || []).push(p); });
+    Object.keys(por).forEach(function (k) {
+      var gs = Object.keys(por[k]), d = et[k] || ETAPA;
+      gs.forEach(function (gr, i) { var t = ini[k] + (i / gs.length) * (d - 0.9); por[k][gr].forEach(function (p) { p.t = t; }); });
     });
+    m.cotasT = Math.max(15, acc + 0.4); m.fim = m.cotasT + 16; m.ciclo = m.fim + 2;
     return m;
+  }
+  function modelos(mov) {
+    var M = { metalica: [galpao, mezanino], premoldado: [premoldado], alterna: [galpao, premoldado, mezanino] }[mov] || [];
+    return M.map(function (f) { return prepara(f()); });
   }
   var ease = function (x) { x = Math.max(0, Math.min(1, x)); return 1 - Math.pow(1 - x, 3); };
 
@@ -2420,8 +2478,11 @@ body:not([data-theme="escuro"]){
   function linha(a, b) { cx.beginPath(); cx.moveTo(a[0], a[1]); cx.lineTo(b[0], b[1]); cx.stroke(); }
 
   function montagem(t, w, h) {
-    var qual = Math.floor(t / CICLO) % MODELOS.length, m = MODELOS[qual], tl = t % CICLO;
-    var geral = tl < 0.6 ? tl / 0.6 : tl > FIM ? Math.max(0, 1 - (tl - FIM) / 1.6) : 1;
+    if (!MODELOS || !MODELOS.length) return;
+    var tot = MODELOS.reduce(function (s, q) { return s + q.ciclo; }, 0), tl = t % tot, qual = 0;
+    while (qual < MODELOS.length - 1 && tl >= MODELOS[qual].ciclo) { tl -= MODELOS[qual].ciclo; qual++; }
+    var m = MODELOS[qual];
+    var geral = tl < 0.6 ? tl / 0.6 : tl > m.fim ? Math.max(0, 1 - (tl - m.fim) / 1.6) : 1;
     if (geral <= 0) return;
     var c = camera(m, tl, w, h), A = Math.min(0.75, cores.alfa * 3.2) * geral, r = m.r;
     cx.lineWidth = 1;
@@ -2436,7 +2497,7 @@ body:not([data-theme="escuro"]){
       if (quente > 0) { cx.strokeStyle = cores.marca; cx.globalAlpha = Math.min(0.9, A * 1.8) * quente * geral; cx.lineWidth = 1.6; linha(A2, B2); cx.lineWidth = 1; }
     }
     /* as cotas, como no desenho: linha, traços de chamada e a medida */
-    var ac = ease((tl - COTAS) / 1.5) * geral; if (ac <= 0) return;
+    var ac = ease((tl - m.cotasT) / 1.5) * geral; if (ac <= 0) return;
     cx.font = '600 11px ' + cores.fonte; cx.textAlign = 'center'; cx.textBaseline = 'bottom';
     m.cotas.forEach(function (q) {
       var P1 = proj(c, q.a), P2 = proj(c, q.b), dx = P2[0] - P1[0], dy = P2[1] - P1[1], L = Math.hypot(dx, dy) || 1, nx = -dy / L * 5, ny = dx / L * 5;
@@ -2477,7 +2538,7 @@ body:not([data-theme="escuro"]){
     var w = innerWidth, h = innerHeight, dpr = Math.min(2, window.devicePixelRatio || 1);
     cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr);
     cx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    var n = Math.max(5, Math.min(18, Math.round(w * h / 80000)));
+    var n = cfg.cotas === '1' ? Math.max(5, Math.min(18, Math.round(w * h / 80000))) : 0;
     while (pecas.length < n) pecas.push(sorteia({}, w, h, true));
     pecas.length = n;
   }
@@ -2525,12 +2586,14 @@ body:not([data-theme="escuro"]){
       if (p.y < -40) sorteia(p, w, h, false);
       solta(p);
     }
-    montagem(seg, w, h);
+    if (cfg.mov) montagem(seg, w, h);
     cx.globalAlpha = 1;
   }
+  var movAtual = null;
   function ligaMov() {
-    if (cv) return;
-    if (!MODELOS) MODELOS = [prepara(galpao()), prepara(mezanino())];
+    /* trocou a estrutura (metálica / pré-moldado / as duas): recomeça a montagem */
+    if (movAtual !== cfg.mov) { MODELOS = modelos(cfg.mov); movAtual = cfg.mov; t0 = 0; }
+    if (cv) { monta(); return; }
     cv = document.createElement('canvas'); cv.id = 'rmMovimento'; cv.setAttribute('aria-hidden', 'true');
     cv.style.cssText = 'position:fixed;inset:0;width:100%;height:100%;z-index:-1;pointer-events:none';
     cx = cv.getContext('2d'); document.body.insertBefore(cv, document.body.firstChild);
@@ -2539,7 +2602,7 @@ body:not([data-theme="escuro"]){
   }
   function desligaMov() {
     if (laco) cancelAnimationFrame(laco); laco = 0;
-    if (cv) cv.remove(); cv = null; cx = null; pecas = []; portaAtual = null;
+    if (cv) cv.remove(); cv = null; cx = null; pecas = []; portaAtual = null; movAtual = null;
   }
 
   /* ---- toque: o snap do CAD onde se clicou ---- */
@@ -2554,14 +2617,19 @@ body:not([data-theme="escuro"]){
   }
 
   function aplica(c) {
-    cfg = { mov: c.mov === 'cotas' ? 'cotas' : '', toque: c.toque === '1' ? '1' : '' };
+    cfg = normal(c);
     if (!document.body) return;
     document.documentElement.toggleAttribute('data-rm-toque', cfg.toque === '1');
-    if (cfg.mov && !reduz.matches && !celular.matches) ligaMov(); else desligaMov();
+    if ((cfg.mov || cfg.cotas) && !reduz.matches && !celular.matches) ligaMov(); else desligaMov();
   }
-  window.rmMovimento = { aplica: aplica, estado: function () { return { mov: cfg.mov, toque: cfg.toque, desenhando: !!cv }; },
+  var GALPAO = null;
+  window.rmMovimento = { aplica: aplica,
+    estado: function () { return { mov: cfg.mov, cotas: cfg.cotas, toque: cfg.toque, desenhando: !!cv, soltas: pecas.length,
+      estruturas: (MODELOS || []).map(function (q) { return q.nome; }) }; },
     /* para o teste: onde um ponto do galpão (metros) cai na tela, aos t s */
-    vista: function (p, t) { if (!MODELOS) MODELOS = [prepara(galpao()), prepara(mezanino())]; return proj(camera(MODELOS[0], t || 20, innerWidth || 1366, innerHeight || 768), p); } };
+    vista: function (p, t) { if (!GALPAO) GALPAO = prepara(galpao()); return proj(camera(GALPAO, t || 20, innerWidth || 1366, innerHeight || 768), p); },
+    /* para o teste: as peças de uma estrutura e o tempo de cada uma */
+    estrutura: function (nome) { var q = modelos(nome === 'premoldado' ? 'premoldado' : 'metalica')[0]; return { pecas: q.L.map(function (p) { return { k: p.k, e: p.e, g: p.g, t: p.t, a: p.a, b: p.b }; }), cotasT: q.cotasT, ciclo: q.ciclo }; } };
 
   var est = document.createElement('style'); est.id = 'rmMovimentoEstilo';
   est.textContent = '.rm-toque{position:fixed;width:0;height:0;pointer-events:none;z-index:2147483000;color:var(--wm-marca,#F24618)}'
@@ -2583,7 +2651,7 @@ body:not([data-theme="escuro"]){
   addEventListener('pointermove', function (e) { mxAlvo = innerWidth ? e.clientX / innerWidth - 0.5 : 0; }, { passive: true });
   addEventListener('resize', function () { if (cv) monta(); });
   addEventListener('message', function (e) { var m = e.data; if (!m || m.rm !== 'movimento') return; grava(m); aplica(m); });
-  addEventListener('storage', function (e) { if (e.key === 'rm_mov' || e.key === 'rm_toque') aplica(le()); });
+  addEventListener('storage', function (e) { if (e.key === 'rm_mov' || e.key === 'rm_cotas' || e.key === 'rm_toque') aplica(le()); });
   if (reduz.addEventListener) { reduz.addEventListener('change', function () { aplica(cfg); }); celular.addEventListener('change', function () { aplica(cfg); }); }
   function comeca() { aplica(le()); if (window.parent !== window) { try { window.parent.postMessage({ rm: 'movimento?' }, '*'); } catch (e) { } } }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', comeca); else comeca();
@@ -5957,7 +6025,7 @@ if ('serviceWorker' in navigator) {
 })();
 </script>
 <script>/* versão publicada (PADRAO_RM.md §3): sobe a cada publicação, junto com o CACHE do sw.js */
-const APP_VER='v18';
+const APP_VER='v19';
 </script>
 <script id="rmVersaoBloco">
 /* ===== SELO DE VERSÃO — igual em todos os sistemas (PADRAO_RM.md §3) =====
