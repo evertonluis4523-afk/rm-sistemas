@@ -14978,14 +14978,24 @@ $('#btnRescSim') && ($('#btnRescSim').onclick=rsAbrir);
    funcionário, logo antes dos termos.
    Os PDFs ficam só na memória enquanto a janela está aberta: têm CPF, salário
    e endereço, e o que interessa guardar é só que foram impressos. */
+/* Também vão no kit: a guia do FGTS e o valor por fora (só a empresa), o
+   aviso prévio (uma via de cada lado) com o modelo de como preencher (só o
+   funcionário, não é via) e o requerimento do seguro-desemprego -- este SEM a
+   marca de via no alto: ele segue para o pedido do seguro, e um "via do
+   funcionário" escrito no documento pode dar problema lá. */
 const KIT_TIPOS=[
   {k:'trct',nome:'Recibo de rescisão',emp:1,func:3},
   {k:'modelo',nome:'Modelo do termo de quitação',emp:0,func:1,modelo:true},
   {k:'quitacao',nome:'Termo de quitação',emp:1,func:3},
+  {k:'modeloaviso',nome:'Modelo do aviso prévio',emp:0,func:1,modelo:true},
+  {k:'aviso',nome:'Aviso prévio',emp:1,func:1},
+  {k:'seguro',nome:'Seguro-desemprego',emp:0,func:1,semVia:true},
   {k:'fgts',nome:'Extrato do FGTS',emp:1,func:1},
+  {k:'guiafgts',nome:'Guia do FGTS',emp:1,func:0},
   {k:'informe',nome:'Informe de rendimentos',emp:1,func:1},
   {k:'ppp',nome:'PPP',emp:1,func:1},
-  {k:'registro',nome:'Registro de empregado',emp:1,func:0}
+  {k:'registro',nome:'Registro de empregado',emp:1,func:0},
+  {k:'porfora',nome:'Valor por fora',emp:1,func:0}
 ];
 const KIT={empId:'',arqs:[]};
 function kitVias(k){
@@ -15002,14 +15012,24 @@ function kitNorm(s){return String(s||'').normalize('NFD').replace(/[̀-ͯ]/g,'')
    extrato da Caixa, que vem desenhado) é reconhecido pelo nome do arquivo. */
 function kitTipoDe(nomeArq,texto){
   const n=kitNorm(nomeArq), t=kitNorm(texto);
-  if(/MODELO/.test(n)) return 'modelo';
+  if(/MODELO/.test(n)) return /AVISO/.test(n)?'modeloaviso':'modelo';
+  /* o valor por fora lista as verbas (pode citar aviso prévio): vale o nome */
+  if(/POR.?FORA/.test(n)) return 'porfora';
   if(/TERMO DE QUITACAO/.test(t)) return 'quitacao';
   if(/TERMO DE RESCISAO DO CONTRATO DE TRABALHO/.test(t)) return 'trct';
+  if(/SEGURO.DESEMPREGO/.test(t)) return 'seguro';
+  if(/GUIA DO FGTS|FGTS DIGITAL|\bGRRF\b/.test(t)) return 'guiafgts';
   if(/COMPROVANTE DE RENDIMENTOS/.test(t)) return 'informe';
   if(/PERFIL PROFISSIOGRAFICO/.test(t)) return 'ppp';
   if(/REGISTRO DE EMPREGADO/.test(t)) return 'registro';
   if(/EXTRATO/.test(t)&&/FGTS|FUNDO DE GARANTIA|CONTA VINCULADA/.test(t)) return 'fgts';
+  /* o recibo de rescisão e o termo também falam em aviso prévio: vale só
+     como título, no começo da folha, e depois deles */
+  if(/AVISO PREVIO/.test(t.slice(0,80))) return 'aviso';
   if(/QUITA/.test(n)) return 'quitacao';
+  if(/SEGURO/.test(n)) return 'seguro';
+  if(/GUIA/.test(n)&&/FGTS/.test(n)) return 'guiafgts';
+  if(/AVISO/.test(n)) return 'aviso';
   if(/EXTRATO|FGTS/.test(n)) return 'fgts';
   if(/RESCIS|TRCT/.test(n)) return 'trct';
   if(/RENDIMENTO|INFORME/.test(n)) return 'informe';
@@ -15090,7 +15110,7 @@ function kitRender(){
     const as=KIT.arqs.filter(a=>a.tipo===t.k), v=kitVias(t.k);
     const arq=as.length?as.map(a=>'<div class="kit-arq"><span class="kit-ok">✓</span> '+esc(a.nome)+' · '+a.paginas+(a.paginas>1?' folhas':' folha')+' <button type="button" title="Tirar este arquivo" onclick="kitTira(\''+a.id+'\')">✕</button></div>').join('')
       :'<span class="kit-falta">● falta</span>';
-    return '<tr><td>'+esc(t.nome)+(t.modelo?'<div class="kit-arq">exemplo de como preencher · não é via</div>':'')+'</td><td>'+arq+'</td>'
+    return '<tr><td>'+esc(t.nome)+(t.modelo?'<div class="kit-arq">exemplo de como preencher · não é via</div>':t.semVia?'<div class="kit-arq">sai sem a marca de via no alto</div>':'')+'</td><td>'+arq+'</td>'
       +'<td class="c"><input inputmode="numeric" aria-label="Vias da empresa" value="'+v.emp+'" onchange="kitSetVias(\''+t.k+'\',\'emp\',this.value)"></td>'
       +'<td class="c"><input inputmode="numeric" aria-label="Vias do funcionário" value="'+v.func+'" onchange="kitSetVias(\''+t.k+'\',\'func\',this.value)"></td></tr>';
   }).join('');
@@ -15138,6 +15158,7 @@ async function kitMontaPdf(){
     const pg=out.addPage([W,H]);
     pg.drawPage(p,{x:(W-W*s)/2,y:BASE,xScale:s,yScale:s});
     const tam=7, tw=f.widthOfTextAtSize(marca,tam), x=W-22-tw, y=H-19;
+    if(!marca)return;
     pg.drawRectangle({x:x-5,y:y-3.5,width:tw+10,height:tam+6,borderColor:linha,borderWidth:.6,color:rgb(1,1,1)});
     pg.drawText(marca,{x,y,size:tam,font:f,color:cinza});
   };
@@ -15151,7 +15172,9 @@ async function kitMontaPdf(){
     pg.drawLine({start:{x:56,y},end:{x:540,y},thickness:.6,color:linha}); y-=20;
     itens.forEach(t=>{
       const v=kitVias(t.k)[lado], n=kitFolhasDe(t.k);
-      const rot=t.modelo?'Modelo do termo de quitação (como preencher)':(t.k==='quitacao'&&lado==='func'?'Termo de quitação (assinar conforme o modelo)':t.nome);
+      const temModelo=k=>lado==='func'&&kitVias(k).func>0&&kitFolhasDe(k)>0;
+      const rot=t.modelo?t.nome+' (como preencher)':t.k==='quitacao'&&lado==='func'?'Termo de quitação (assinar conforme o modelo)'
+        :t.k==='aviso'&&temModelo('modeloaviso')?'Aviso prévio (preencher conforme o modelo)':t.semVia?t.nome+' (sem marca de via)':t.nome;
       pg.drawText(rot,{x:col[0],y,size:11,font:f,color:tinta});
       pg.drawText(t.modelo?'—':String(v),{x:col[1]+8,y,size:11,font:fb,color:tinta});
       pg.drawText(n?String(n*v):'falta',{x:col[2]+8,y,size:11,font:n?f:fb,color:n?tinta:rgb(.7,.25,.05)});
@@ -15160,7 +15183,10 @@ async function kitMontaPdf(){
     });
     y-=10;
     pg.drawText(folhas+' folhas nesta pasta, além desta. Confira as assinaturas antes de entregar.',{x:56,y,size:10.5,font:f,color:tinta});
-    if(lado==='func'){y-=18;pg.drawText('O termo de quitação é preenchido e assinado seguindo o modelo que vem junto.',{x:56,y,size:10.5,font:f,color:cinza});}
+    if(lado==='func'){
+      const ms=itens.filter(t=>t.modelo&&kitFolhasDe(t.k)).map(t=>t.k==='modeloaviso'?'o aviso prévio':'o termo de quitação');
+      if(ms.length){y-=18;pg.drawText((ms.length>1?ms.join(' e ').replace(/^o/,'O')+' são preenchidos':ms[0].replace(/^o/,'O')+' é preenchido')+' seguindo o modelo que vem junto (o modelo não é via).',{x:56,y,size:10.5,font:f,color:cinza});}
+    }
     pg.drawText((state.cfg.razao||'')+' · gerado em '+new Date().toLocaleDateString('pt-BR'),{x:56,y:40,size:8,font:f,color:cinza});
   };
   for(const lado of ['emp','func']){
@@ -15172,7 +15198,7 @@ async function kitMontaPdf(){
     for(const t of comArq){
       const n=kitVias(t.k)[lado];
       for(let i=1;i<=n;i++){
-        const marca=t.modelo?'MODELO · COMO PREENCHER · NÃO É VIA':lado==='emp'?'VIA DA EMPRESA'+(n>1?' · '+i+' DE '+n:''):'VIA DO FUNCIONÁRIO'+(n>1?' · '+i+' DE '+n:'');
+        const marca=t.semVia?'':t.modelo?'MODELO · COMO PREENCHER · NÃO É VIA':lado==='emp'?'VIA DA EMPRESA'+(n>1?' · '+i+' DE '+n:''):'VIA DO FUNCIONÁRIO'+(n>1?' · '+i+' DE '+n:'');
         emb[t.k].forEach(p=>folha(p,marca));
       }
     }
@@ -17310,7 +17336,7 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeAll();$('#prin
    juntos a cada publicacao, e ha uma prova automatica que falha se um subir
    sem o outro. Assim o numero na tela e o mesmo do arquivo que o aparelho
    guardou, e dizer "estou na v81" passa a significar alguma coisa. */
-const APP_VER='v264';
+const APP_VER='v265';
 (function(){var p=document.getElementById('verPill'); if(p)p.textContent=APP_VER;})();
 
 if('serviceWorker' in navigator){
