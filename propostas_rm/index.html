@@ -2864,18 +2864,27 @@ body:not(.com-doc) .docs-card,body:not(.com-doc) .ed-grid{display:none}
 .cota-it.on{border-color:var(--red);color:var(--ink)}
 .corta-ops{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:13px;color:var(--muted)}
 .corta-ops .info{margin-left:auto}
+.real-tela{position:relative}
+.real-rot{position:absolute;top:14px;padding:2px 9px;border-radius:6px;font-size:12px;font-weight:700;background:var(--card);color:var(--ink);opacity:.92;pointer-events:none}
+.real-rot.a{left:14px}.real-rot.d{right:14px}
+#realCv{cursor:ew-resize}
+.corta-ops .seg button{padding:6px 12px}
 .cota-it input{width:96px;font:inherit;font-size:14px;padding:4px 7px;border:1px solid var(--line);border-radius:7px;background:var(--card);color:var(--ink)}
 .im-local{padding:2px 8px;border-radius:9px;background:#FFF6E5;color:#6B4A00;font-weight:700}
-.folha .f-fig{margin:0 0 5mm;break-inside:avoid}
+/* CADA IMAGEM NA SUA METADE: "meia página" é uma caixa fixa de meia folha,
+   com o título e a imagem no meio dela -- a segunda começa sempre na metade
+   de baixo, seja a primeira alta ou baixa (pedido de 22/10/2026). Na 1ª
+   folha o cabeçalho divide o espaço. Teste propostas-imagens-meia-folha. */
+.folha .f-fig{margin:0;break-inside:avoid;display:flex;flex-direction:column;justify-content:center;height:124mm;overflow:hidden}
+.folha .f-fig.p1{height:90mm}
+.folha .f-fig.inteira{height:248mm}
+.folha .f-fig.inteira.p1{height:180mm}
 .folha .f-figt{display:flex;align-items:center;gap:6px;margin:0 0 1.5mm;font-size:calc(9px*var(--fe,1.333));font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#141414;break-after:avoid}
 .folha .f-figt::before{content:'';flex:none;width:3px;height:1.1em;background:#F24619;-webkit-print-color-adjust:exact;print-color-adjust:exact}
 .folha .f-figd{margin:0 0 2mm;font-size:calc(9px*var(--fe,1.333));color:#4A515B;break-after:avoid}
 /* a imagem limpa, sem quadro em volta (pedido de 21/10/2026) */
-.folha .f-fig img{display:block;max-width:100%;max-height:106mm;width:auto;height:auto;margin:0 auto}
-.folha .f-fig.p1 img{max-height:86mm}
-.folha .f-fig.inteira img{max-height:215mm}
-.folha .f-fig.inteira.p1 img{max-height:180mm}
-.folha .f-fig-vazia{display:flex;align-items:center;justify-content:center;max-height:86mm;background:#f2f4f7;color:#6E747C;font-size:11px;border-radius:2px}
+.folha .f-fig img{display:block;max-width:100%;width:auto;height:auto;min-height:0;flex:0 1 auto;object-fit:contain;margin:0 auto}
+.folha .f-fig-vazia{display:flex;align-items:center;justify-content:center;max-height:80mm;background:#f2f4f7;color:#6E747C;font-size:11px;border-radius:2px}
 .folha .f-vazio{color:#6E747C;font-style:italic}
 .folha .f-quebra{margin:6mm -14mm;border-top:1.5px dashed #c9ccd1}
 /* a quebra ABRE a folha seguinte (break-before): com break-after, quando a
@@ -3126,6 +3135,16 @@ body:not(.com-doc) .docs-card,body:not(.com-doc) .ed-grid{display:none}
     <div class="cota-tela"><canvas id="cotaCv" aria-label="Imagem: arraste para desenhar a seta"></canvas></div>
     <div class="cota-lista" id="cotaLista"></div>
     <div class="mb-acoes"><button class="btn btn-ghost" id="cotaNao" type="button">Cancelar</button><button class="btn btn-red" id="cotaSim" type="button">Pronto</button></div>
+  </div>
+</div>
+<!-- realçar a imagem: nitidez, volume e cor do render, sem mudar o desenho -->
+<div class="modal no-print" id="realTela" role="dialog" aria-label="Realçar a imagem">
+  <div class="modal-box cota-box">
+    <div class="mb-txt"><b>Realçar</b> · amplia a imagem pequena, dá nitidez às texturas, volume e cor ao render, sem mudar o desenho e sem mexer no fundo branco. Arraste a linha sobre a imagem para comparar antes e depois.</div>
+    <div class="corta-ops"><div class="seg" id="realNivel" role="group" aria-label="Nível do realce"><button type="button" data-nivel="off">Desligado</button><button type="button" data-nivel="leve">Leve</button><button type="button" data-nivel="medio">Médio</button><button type="button" data-nivel="forte">Forte</button></div>
+      <label class="chk"><input type="checkbox" id="realGrao"> grão de foto (tira o aspecto de desenho)</label><span class="info" id="realInfo"></span></div>
+    <div class="cota-tela real-tela"><canvas id="realCv" aria-label="Antes e depois: arraste para comparar"></canvas><span class="real-rot a">Antes</span><span class="real-rot d">Depois</span></div>
+    <div class="mb-acoes"><button class="btn btn-ghost" id="realNao" type="button">Cancelar</button><button class="btn btn-red" id="realSim" type="button">Pronto</button></div>
   </div>
 </div>
 <!-- recortar a imagem: tirar as bordas e deixar a imagem maior no papel -->
@@ -3650,7 +3669,7 @@ function normalizar(d) {
   o.titulo = d.titulo || '';
   const im = d.imgs || {};
   o.imgs = { titulo: im.titulo || '', desenhista: im.desenhista || '', anexar: !!im.anexar,
-    itens: lista(im.itens).filter(x => x && x.id).map(x => ({ id: String(x.id), tit: x.tit || '', desc: x.desc || '', tam: x.tam === 'inteira' ? 'inteira' : 'meia', w: lerValor(x.w) || 16, h: lerValor(x.h) || 9, nuvem: !!x.nuvem, orig: !!x.orig, cotas: cotasDe(x), recorte: recorteDe(x) })) };
+    itens: lista(im.itens).filter(x => x && x.id).map(x => ({ id: String(x.id), tit: x.tit || '', desc: x.desc || '', tam: x.tam === 'inteira' ? 'inteira' : 'meia', w: lerValor(x.w) || 16, h: lerValor(x.h) || 9, nuvem: !!x.nuvem, orig: !!x.orig, cotas: cotasDe(x), recorte: recorteDe(x), realce: realceDe(x) })) };
   o.rev = lerValor(d.rev);
   o.revisoes = lista(d.revisoes).map(r => ({ rev: lerValor(r.rev), em: r.em || 0, total: lerValor(r.total), json: r.json || '' })).filter(r => r.json);
   o.prazoDias = lerValor(d.prazoDias != null ? d.prazoDias : b.prazoDias);
@@ -4038,12 +4057,72 @@ async function comRecorte(src, r) {
 }
 /* a imagem guardada já com o recorte (é sobre ela que se desenham as setas) */
 async function imgRecortada(x) { const b = await imgDados(x.id); if (!b) return null; const r = recorteDe(x); return r ? comRecorte(b, r) : b; }
-function imgChave(x) { return (x.orig ? marcaPct() : 0) + '|' + JSON.stringify(cotasDe(x)) + '|' + JSON.stringify(recorteDe(x)); }
+/* REALÇAR: o render do programa chega chapado e pequeno (600 a 800 px:
+   ~100 pontos por polegada na largura do A4). Sem mudar o desenho:
+   1) a imagem pequena (< 1500 px) dobra de tamanho, suave;
+   2) nitidez fina nas bordas e texturas (juntas, montantes, treliças);
+   3) contraste local, que dá volume ao concreto e às sombras;
+   4) tons (escuros mais fundos, claros limpos, curva suave) e cor (o que
+      está apagado ganha um pouco de vida, o que já é forte não estoura);
+   5) grão de foto, opcional, fixo (a mesma imagem sai sempre igual).
+   O fundo branco (e o branco do desenho) fica como está. Níveis Leve,
+   Médio e Forte; a imagem nova entra com Médio. A guardada continua como
+   veio. Entra depois do recorte e antes das setas e da marca. Teste
+   propostas-imagem-realce. */
+const REALCE = { leve: { nit: 0.45, cla: 0.15, s: 0.06, vib: 0.06 }, medio: { nit: 0.8, cla: 0.28, s: 0.12, vib: 0.12 }, forte: { nit: 1.2, cla: 0.45, s: 0.2, vib: 0.2 } };
+function realceDe(x) { const r = x && x.realce; return r && REALCE[r.nivel] ? { nivel: r.nivel, grao: !!r.grao } : null; }
+/* desfoque rápido (três caixas, perto de um gaussiano) numa camada só */
+function caixa(src, dst, w, h, r, horiz) {
+  const n = horiz ? w : h, m = horiz ? h : w, passo = horiz ? 1 : w, salto = horiz ? w : 1, inv = 1 / (2 * r + 1);
+  for (let j = 0; j < m; j++) {
+    const base = j * salto;
+    let s = 0;
+    for (let k = -r; k <= r; k++) s += src[base + Math.min(n - 1, Math.max(0, k)) * passo];
+    for (let i = 0; i < n; i++) {
+      dst[base + i * passo] = s * inv;
+      s += src[base + Math.min(n - 1, i + r + 1) * passo] - src[base + Math.max(0, i - r) * passo];
+    }
+  }
+}
+function desfoca(L, w, h, r) { const a = Float32Array.from(L), b = new Float32Array(L.length); for (let p = 0; p < 3; p++) { caixa(a, b, w, h, r, true); caixa(b, a, w, h, r, false); } return a; }
+async function comRealce(src, re) {
+  const P = REALCE[re && re.nivel]; if (!P) return src;
+  const im = await carregaImg(src), W0 = im.naturalWidth, H0 = im.naturalHeight;
+  const k = W0 < 1500 ? Math.min(2, IMG_LARG / W0) : 1, w = Math.round(W0 * k), h = Math.round(H0 * k);
+  const cv = document.createElement('canvas'); cv.width = w; cv.height = h;
+  const g = cv.getContext('2d'); g.imageSmoothingEnabled = true; g.imageSmoothingQuality = 'high'; g.drawImage(im, 0, 0, w, h);
+  const id = g.getImageData(0, 0, w, h), a = id.data, n = w * h;
+  const L = new Float32Array(n), hist = new Uint32Array(256);
+  for (let i = 0, p = 0; i < n; i++, p += 4) { const l = 0.299 * a[p] + 0.587 * a[p + 1] + 0.114 * a[p + 2]; L[i] = l; hist[l | 0]++; }
+  /* tons: estica entre o mais escuro e o mais claro (sem forçar imagem que já é contrastada) e curva suave */
+  let lo = 0, hi = 255, c = 0; const corte = n * 0.003;
+  while (lo < 254 && (c += hist[lo]) < corte) lo++;
+  c = 0; while (hi > 1 && (c += hist[hi]) < corte) hi--;
+  lo = Math.min(lo, 20); hi = Math.max(hi, 235);
+  const tab = new Float32Array(256);
+  for (let v = 0; v < 256; v++) { let t = Math.min(1, Math.max(0, (v - lo) / (hi - lo))); t -= P.s * Math.sin(2 * Math.PI * t) / (2 * Math.PI); tab[v] = t * 255; }
+  const b1 = desfoca(L, w, h, Math.max(1, Math.round(w / 1400))), b2 = desfoca(L, w, h, Math.max(4, Math.round(w / 60)));
+  let sem = 20261022; const rnd = () => { sem = (sem * 1664525 + 1013904223) >>> 0; return sem / 4294967296; };
+  for (let i = 0, p = 0; i < n; i++, p += 4) {
+    const R = a[p], G = a[p + 1], B = a[p + 2], mn = Math.min(R, G, B), mx = Math.max(R, G, B);
+    if (mn >= 248) continue;   /* o fundo branco fica como está */
+    const l = L[i], t = l / 255, meio = 1 - (2 * t - 1) * (2 * t - 1);
+    let d = l - b1[i]; if (Math.abs(d) < 1.5) d = 0;
+    let dl = P.nit * d + P.cla * meio * (l - b2[i]);
+    if (re.grao) dl += (rnd() + rnd() - 1) * 6 * meio;
+    const lt = tab[l | 0], f = 1 + P.vib * (1 - (mx - mn) / 255);
+    for (let q = 0; q < 3; q++) { const v = lt + (tab[a[p + q]] - lt) * f + dl; a[p + q] = v < 0 ? 0 : v > 255 ? 255 : v; }
+  }
+  g.putImageData(id, 0, 0);
+  return cv.toDataURL('image/jpeg', IMG_QUAL);
+}
+function imgChave(x) { return (x.orig ? marcaPct() : 0) + '|' + JSON.stringify(cotasDe(x)) + '|' + JSON.stringify(recorteDe(x)) + '|' + JSON.stringify(realceDe(x)); }
 /* a imagem como sai: recortada, com as setas e a marca na intensidade de agora */
 async function imgPronta(x) {
   const pct = x.orig ? marcaPct() : 0, ch = imgChave(x), cs = cotasDe(x);
   if (IMG[x.id] && IMG_PCT[x.id] === ch) return IMG[x.id];
   let b = await imgRecortada(x); if (!b) return null;
+  if (realceDe(x)) b = await comRealce(b, realceDe(x));
   if (cs.length) b = await comCotas(b, cs);
   IMG[x.id] = x.orig ? await comMarca(b, pct) : b; IMG_PCT[x.id] = ch;
   return IMG[x.id];
@@ -4091,7 +4170,7 @@ async function adicionarImagens(d, arquivos) {
       const r = await prepararImagem(await lerArquivo(f)), id = 'im' + uid();
       BRUTO[id] = r.dados; await IDBI.poe(id, r.dados).catch(() => { });
       const tit = String(f.name || '').replace(/\.[^.]+$/, '').replace(/[_-]+/g, ' ').trim();
-      const x = { id, tit: /^(img|image|imagem|render|captura|screenshot)?\s*\d*$/i.test(tit) ? '' : tit, desc: '', tam: 'meia', w: r.w, h: r.h, nuvem: false, orig: true };
+      const x = { id, tit: /^(img|image|imagem|render|captura|screenshot)?\s*\d*$/i.test(tit) ? '' : tit, desc: '', tam: 'meia', w: r.w, h: r.h, nuvem: false, orig: true, realce: { nivel: 'medio', grao: false } };
       await imgPronta(x);
       d.imgs.itens.push(x);
       n++;
@@ -4131,10 +4210,10 @@ function fichaImagens(d) {
       + (IMG[x.id] ? '<img class="im-th" src="' + IMG[x.id] + '" alt="">' : '<span class="im-th im-th-vazia">carregando…</span>')
       + '<div class="im-cp">' + inp('imgs.itens.' + i + '.tit', x.tit, { ph: 'Título (ex.: Fachada frontal)', rot: 'Título da imagem' })
       + area('imgs.itens.' + i + '.desc', x.desc, 2, 'Descrição da imagem').replace('<textarea', '<textarea placeholder="Descrição (opcional)"')
-      + '<div class="l2">No papel: ' + sel(i, x.tam) + bt('imgCorta', '✂ Recortar' + (recorteDe(x) ? ' ✓' : ''), { i, cls: 'btn btn-ghost btn-sm', rot: 'Recortar a imagem' }) + bt('imgCota', '↕ Seta de medida' + (cotasDe(x).length ? ' (' + cotasDe(x).length + ')' : ''), { i, cls: 'btn btn-ghost btn-sm', rot: 'Seta de medida na imagem' }) + (x.nuvem ? '' : '<span class="im-local" title="Sobe para a nuvem quando a internet voltar">só neste aparelho</span>') + '</div></div>'
+      + '<div class="l2">No papel: ' + sel(i, x.tam) + bt('imgReal', '✨ Realçar' + (realceDe(x) ? ' ✓' : ''), { i, cls: 'btn btn-ghost btn-sm', rot: 'Realçar a imagem' }) + bt('imgCorta', '✂ Recortar' + (recorteDe(x) ? ' ✓' : ''), { i, cls: 'btn btn-ghost btn-sm', rot: 'Recortar a imagem' }) + bt('imgCota', '↕ Seta de medida' + (cotasDe(x).length ? ' (' + cotasDe(x).length + ')' : ''), { i, cls: 'btn btn-ghost btn-sm', rot: 'Seta de medida na imagem' }) + (x.nuvem ? '' : '<span class="im-local" title="Sobe para a nuvem quando a internet voltar">só neste aparelho</span>') + '</div></div>'
       + bt('imgDel', '✕', { i, rot: 'Tirar a imagem', cls: 'icon-btn del im-del' }) + '</div>').join('') + '</div>'
     + '<label class="chk chk-bloco"><input type="checkbox" data-p="imgs.anexar" data-re="1"' + (im.anexar ? ' checked' : '') + '> anexar as imagens no fim da proposta (um PDF só)</label>'
-    + '<p class="nota">Cada imagem é reduzida para o papel A4 (continua nítida na impressão) e sai com a marca d\'água da empresa gravada nela, na intensidade de Configurações. "Recortar" tira as bordas (a imagem sai maior); "Seta de medida" desenha a altura (ou outra medida) sobre a imagem. Fica guardada à parte da proposta, para não pesar no salvar.</p>',
+    + '<p class="nota">Cada imagem é reduzida para o papel A4 (continua nítida na impressão) e sai com a marca d\'água da empresa gravada nela, na intensidade de Configurações. "Realçar" dá nitidez, volume e cor ao render (a imagem nova já entra realçada); "Recortar" tira as bordas (a imagem sai maior); "Seta de medida" desenha a altura (ou outra medida) sobre a imagem. Fica guardada à parte da proposta, para não pesar no salvar.</p>',
     { extra: n ? n + ' ' + (n === 1 ? 'imagem' : 'imagens') + ' · ' + pags + ' ' + (pags === 1 ? 'página' : 'páginas') : 'nenhuma imagem' });
 }
 function blocosContrato(d) {
@@ -4331,13 +4410,19 @@ function wCorpo(bl) {
       case 'h3': return wPar(wRun(b.txt, { b: true, caps: true, sz: 16, cor: '4A515B', esp: 10 }), { antes: 140, depois: 60, keep: true, jc: 'left' });
       case 'fig': {
         if (!IMG[b.id]) return '';
-        /* largura do texto, sem passar da altura de meia página ou da página inteira */
-        const rid = 'rIdIm' + W_IMGS.length, mw = W_LARG * 635, mh = (b.tam === 'inteira' ? (b.p1 ? 175 : 205) : (b.p1 ? 82 : 102)) * 36000;
+        /* cada imagem numa caixa de altura fixa (meia folha ou a folha toda),
+           com o título e a imagem no meio dela, como no PDF */
+        const caixaMm = b.tam === 'inteira' ? (b.p1 ? 180 : 226) : (b.p1 ? 88 : 112);
+        const rid = 'rIdIm' + W_IMGS.length, mw = W_LARG * 635, mh = (caixaMm - (b.tit ? 10 : 2) - (b.desc ? 8 : 0)) * 36000;
         const k = Math.min(mw / b.w, mh / b.h), cx = Math.round(b.w * k), cy = Math.round(b.h * k), n = 100 + W_IMGS.length;
         W_IMGS.push({ rid, id: b.id });
-        return (b.tit ? wPar(wRun(b.tit, { b: true, caps: true, sz: 18, esp: 20, cor: '141414' }), { bordaEsq: true, antes: 200, depois: 60, keep: true, jc: 'left' }) : '')
+        const nada = '<w:top w:val="nil"/><w:left w:val="nil"/><w:bottom w:val="nil"/><w:right w:val="nil"/><w:insideH w:val="nil"/><w:insideV w:val="nil"/>';
+        return '<w:tbl><w:tblPr><w:tblW w:w="' + W_LARG + '" w:type="dxa"/><w:tblLayout w:type="fixed"/><w:tblBorders>' + nada + '</w:tblBorders><w:tblCellMar><w:left w:w="0" w:type="dxa"/><w:right w:w="0" w:type="dxa"/></w:tblCellMar></w:tblPr>'
+          + '<w:tblGrid><w:gridCol w:w="' + W_LARG + '"/></w:tblGrid><w:tr><w:trPr><w:cantSplit/><w:trHeight w:val="' + Math.round(caixaMm * 56.7) + '" w:hRule="exact"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="' + W_LARG + '" w:type="dxa"/><w:vAlign w:val="center"/></w:tcPr>'
+          + (b.tit ? wPar(wRun(b.tit, { b: true, caps: true, sz: 18, esp: 20, cor: '141414' }), { bordaEsq: true, antes: 0, depois: 60, keep: true, jc: 'left' }) : '')
           + (b.desc ? wPar(wRun(b.desc, { sz: 17, cor: '4A515B' }), { depois: 80, keep: true, jc: 'left' }) : '')
-          + wPar('<w:r><w:drawing><wp:inline distT="0" distB="0" distL="0" distR="0"><wp:extent cx="' + cx + '" cy="' + cy + '"/><wp:docPr id="' + n + '" name="Imagem ' + n + '"/><a:graphic><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:pic><pic:nvPicPr><pic:cNvPr id="' + n + '" name="imagem' + n + '.jpeg"/><pic:cNvPicPr/></pic:nvPicPr><pic:blipFill><a:blip r:embed="' + rid + '"/><a:stretch><a:fillRect/></a:stretch></pic:blipFill><pic:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="' + cx + '" cy="' + cy + '"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></pic:spPr></pic:pic></a:graphicData></a:graphic></wp:inline></w:drawing></w:r>', { jc: 'center', depois: 200 });
+          + wPar('<w:r><w:drawing><wp:inline distT="0" distB="0" distL="0" distR="0"><wp:extent cx="' + cx + '" cy="' + cy + '"/><wp:docPr id="' + n + '" name="Imagem ' + n + '"/><a:graphic><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:pic><pic:nvPicPr><pic:cNvPr id="' + n + '" name="imagem' + n + '.jpeg"/><pic:cNvPicPr/></pic:nvPicPr><pic:blipFill><a:blip r:embed="' + rid + '"/><a:stretch><a:fillRect/></a:stretch></pic:blipFill><pic:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="' + cx + '" cy="' + cy + '"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></pic:spPr></pic:pic></a:graphicData></a:graphic></wp:inline></w:drawing></w:r>', { jc: 'center', depois: 0 })
+          + '</w:tc></w:tr></w:tbl><w:p><w:pPr><w:spacing w:before="0" w:after="0" w:line="20" w:lineRule="exact"/></w:pPr></w:p>';
       }
       case 'quebra': return '<w:p><w:r><w:br w:type="page"/></w:r></w:p>';
       case 'anexo': return wCorpo(b.blocos);
@@ -4794,6 +4879,7 @@ $('ficha').addEventListener('click', e => {
   };
   if (a === 'imgCota') { abrirCota(d, i); return; }
   if (a === 'imgCorta') { abrirCorte(d, i); return; }
+  if (a === 'imgReal') { abrirRealce(d, i); return; }
   if (!acoes[a]) return;
   const secs = () => [...$('ficha').querySelectorAll('details.sec')];
   const k = secs().indexOf(b.closest('details.sec'));
@@ -5047,6 +5133,59 @@ $('cortaSim').addEventListener('click', () => {
   });
   if (novo) x.recorte = novo; else delete x.recorte;
   x.w = Math.max(1, Math.round(CORTE.im.naturalWidth * n.w)); x.h = Math.max(1, Math.round(CORTE.im.naturalHeight * n.h));
+  imgPronta(x).then(() => alterou(d, true));
+});
+/* janela do realce: antes à esquerda, depois à direita da linha; a linha
+   arrasta. O resultado de cada nível fica guardado enquanto a janela está
+   aberta, para trocar sem esperar de novo. */
+const REAL = { d: null, x: null, antes: null, nivel: 'medio', grao: false, cache: {}, p: 0.5, w0: 0 };
+async function abrirRealce(d, i) {
+  const x = d.imgs.itens[i]; if (!x) return;
+  REAL.depois = null; REAL.x = null;
+  const b = await imgRecortada(x); if (!b) { avisoTopo('A imagem ainda não chegou neste aparelho.'); return; }
+  const r = realceDe(x);
+  Object.assign(REAL, { d, x, src: b, antes: await carregaImg(b), nivel: r ? r.nivel : 'medio', grao: r ? r.grao : false, cache: {}, p: 0.5 });
+  REAL.w0 = REAL.antes.naturalWidth;
+  $('realGrao').checked = REAL.grao;
+  $('realTela').classList.add('on');
+  await mostraRealce();
+}
+async function mostraRealce() {
+  [...$('realNivel').children].forEach(bb => bb.classList.toggle('on', bb.dataset.nivel === REAL.nivel));
+  $('realGrao').disabled = REAL.nivel === 'off';
+  const ch = REAL.nivel + '|' + REAL.grao;
+  if (!REAL.cache[ch]) {
+    $('realInfo').textContent = 'Realçando…';
+    await new Promise(ok => setTimeout(ok, 20));
+    REAL.cache[ch] = await carregaImg(REAL.nivel === 'off' ? REAL.src : await comRealce(REAL.src, { nivel: REAL.nivel, grao: REAL.grao }));
+  }
+  REAL.depois = REAL.cache[ch];
+  const w1 = REAL.depois.naturalWidth;
+  $('realInfo').textContent = 'Imagem de ' + REAL.w0 + ' px' + (w1 > REAL.w0 ? ': sai com ' + w1 + ' px' : '');
+  desenhaRealce();
+}
+function desenhaRealce() {
+  const cv = $('realCv'), dp = REAL.depois; if (!dp) return;
+  if (cv.width !== dp.naturalWidth || cv.height !== dp.naturalHeight) { cv.width = dp.naturalWidth; cv.height = dp.naturalHeight; }
+  const g = cv.getContext('2d'), w = cv.width, h = cv.height, xc = Math.round(REAL.p * w);
+  g.imageSmoothingQuality = 'high';
+  g.drawImage(REAL.antes, 0, 0, w, h);
+  g.drawImage(dp, xc, 0, w - xc, h, xc, 0, w - xc, h);
+  g.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--red').trim() || '#D53309';
+  g.fillRect(xc - Math.max(1, w * 0.0012), 0, Math.max(2, w * 0.0024), h);
+}
+let _realArr = false;
+const realPonto = e => { const r = $('realCv').getBoundingClientRect(); REAL.p = Math.min(1, Math.max(0, (e.clientX - r.left) / r.width)); desenhaRealce(); };
+$('realCv').addEventListener('pointerdown', e => { e.preventDefault(); _realArr = true; try { $('realCv').setPointerCapture(e.pointerId); } catch (er) { } realPonto(e); });
+$('realCv').addEventListener('pointermove', e => { if (_realArr) realPonto(e); });
+$('realCv').addEventListener('pointerup', () => { _realArr = false; });
+$('realNivel').addEventListener('click', e => { const bb = e.target.closest('[data-nivel]'); if (!bb) return; REAL.nivel = bb.dataset.nivel; mostraRealce(); });
+$('realGrao').addEventListener('change', () => { REAL.grao = $('realGrao').checked; mostraRealce(); });
+$('realNao').addEventListener('click', () => $('realTela').classList.remove('on'));
+$('realSim').addEventListener('click', () => {
+  const d = REAL.d, x = REAL.x; $('realTela').classList.remove('on');
+  if (!d || !x) return;
+  if (REAL.nivel === 'off') delete x.realce; else x.realce = { nivel: REAL.nivel, grao: !!REAL.grao };
   imgPronta(x).then(() => alterou(d, true));
 });
 $('cotaNao').addEventListener('click', () => $('cotaTela').classList.remove('on'));
@@ -6404,7 +6543,7 @@ if ('serviceWorker' in navigator) {
 })();
 </script>
 <script>/* versão publicada (PADRAO_RM.md §3): sobe a cada publicação, junto com o CACHE do sw.js */
-const APP_VER='v23';
+const APP_VER='v24';
 </script>
 <script id="rmVersaoBloco">
 /* ===== SELO DE VERSÃO — igual em todos os sistemas (PADRAO_RM.md §3) =====
