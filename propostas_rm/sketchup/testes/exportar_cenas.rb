@@ -41,7 +41,18 @@ module Sketchup
   def self.write_default(*_a) end
 
   Camera = Struct.new(:nome, :aspect_ratio)
-  Color = Struct.new(:red, :green, :blue)
+  Color = Struct.new(:red, :green, :blue, :alpha)
+
+  # lê o PNG gravado: o modelo diz em que caso a placa grava com 1/4 do brilho
+  # (o branco vira 64) -- escura_se recebe a gravação e diz se saiu escura
+  class ImageRep
+    def load_file(arq)
+      g = Sketchup.active_model.active_view.gravadas.reverse.find { |x| x[:filename] == arq }
+      se = Sketchup.active_model.escura_se
+      @v = g && se && se.call(g) ? 64 : 255
+    end
+    def color_at_uv(_u, _v) Color.new(@v, @v, @v, 255) end
+  end
 
   class Page
     attr_reader :name, :camera
@@ -76,6 +87,11 @@ module Sketchup
       raise 'placa de vídeo' if @falha_em && @gravadas.size == @falha_em
       @durante << yield_estado.call if yield_estado
       @gravadas << o.merge(camera: @camera.nome)
+      begin
+        File.write(o[:filename], 'png') if o[:filename]
+      rescue SystemCallError
+        return false
+      end
       true
     end
     attr_accessor :yield_estado
@@ -94,7 +110,7 @@ module Sketchup
     end
     # o exportador do "Exportar > Gráfico 2D": grava pela view de mentira,
     # anotando que foi ele (export_falha: o exportador não dá conta)
-    attr_accessor :export_falha
+    attr_accessor :export_falha, :escura_se
     # export(arquivo, false): com as opções da última vez no "Exportar 2D"
     def export(arquivo, o = nil)
       return false if @export_falha
@@ -248,17 +264,61 @@ m = modelo(cenas); v = m.active_view
 v.yield_estado = -> { m.rendering_options['BackgroundColor'] }
 antes = m.rendering_options.dup
 diag = Dir.mktmpdir
-linhas = RM_Cenas.diagnostico(diag)
+linhas, relatorio = RM_Cenas.diagnostico(diag)
 g = v.gravadas
-txt = File.read(File.join(diag, 'D0 - diagnóstico.txt'), encoding: 'UTF-8')
+txt = File.read(File.join(diag, 'D0 - diagnostico.txt'), encoding: 'UTF-8')
 ok = g.size == 8 && g.map { |x| File.basename(x[:filename])[0, 2] } == %w[D1 D2 D3 D4 D5 D6 D7 D8] &&
      g[0][:via] == :dialogo && [g[1][:width], g[1][:height]] == [1400, 700] && g[1][:antialias] == false &&
      [g[2][:width], g[2][:antialias]] == [3000, false] && g[3][:antialias] == true && g[3][:transparent] == false &&
      g[4][:transparent] == true && g[6][:via].nil? && g[1..5].all? { |x| x[:via] == :exportador } &&
      v.durante[0..6].all? { |c| c == 'azulado' } && v.durante[7] == Sketchup::Color.new(255, 255, 255) &&
      m.pages.visitadas.empty? && m.rendering_options == antes && m.ops == %i[inicio desfeita] &&
-     linhas.first(8).all? { |l| l.include?('gravou') } && txt.include?('BackgroundColor=azulado') && txt.include?('ShadowTime=meio-dia')
+     relatorio == File.join(diag, 'D0 - diagnostico.txt') && g.all? { |x| File.basename(x[:filename]).ascii_only? } &&
+     linhas.first(8).all? { |l| l.include?('gravou') && l.include?('ponto mais claro 255') } && txt.include?('BackgroundColor=azulado') && txt.include?('ShadowTime=meio-dia')
 puts(ok ? 'OK T' : "FALHA T #{[g, v.durante, linhas, m.ops].inspect}")
+
+# U: o relatório é gravado ANTES da primeira imagem; com tudo dando errado e a
+# pasta sem gravar, ele vai para a pasta do usuário e diz o erro de cada uma
+m = modelo(cenas); v = m.active_view
+casa = Dir.mktmpdir; ENV['HOME'] = casa
+diag = Dir.mktmpdir
+v.yield_estado = -> { File.exist?(File.join(diag, 'D0 - diagnostico.txt')) }
+RM_Cenas.diagnostico(diag)
+antes_da_imagem = v.durante.first == true
+v = (m = modelo(cenas)).active_view; v.falha_em = 0; m.export_falha = true
+linhas, relatorio = RM_Cenas.diagnostico(File.join(diag, 'nao', 'existe'))
+txt = relatorio && File.read(relatorio, encoding: 'UTF-8')
+ok = antes_da_imagem && relatorio == File.join(casa, 'D0 - diagnostico.txt') && linhas.size == 8 &&
+     linhas.none? { |l| l.include?('gravou') } && txt.to_s.include?('D8 - qualidade maxima') && m.ops.last == :desfeita
+puts(ok ? 'OK U' : "FALHA U #{[antes_da_imagem, relatorio, linhas].inspect}")
+
+# W: placa em que só a suavização escurece: percebe na 1ª imagem, regrava sem
+# suavizar e segue sem nas próximas (no tamanho escolhido), e avisa
+m = modelo(cenas); v = m.active_view; m.escura_se = ->(g) { g[:antialias] }
+arqs = RM_Cenas.exportar(pasta, suavizar: true)
+aa = v.gravadas.map { |x| [File.basename(x[:filename])[0, 2], x[:antialias], x[:width]] }
+ok = arqs.size == 3 && aa == [['01', true, 3000], ['01', false, 3000], ['02', false, 3000], ['03', false, 3000]] && RM_Cenas.forma_usada == :sem_suavizar
+puts(ok ? 'OK W' : "FALHA W #{aa.inspect}")
+
+# X: placa boa: suavizada em todas, sem regravar nem avisar
+m = modelo(cenas); v = m.active_view
+RM_Cenas.exportar(pasta, suavizar: true)
+puts(v.gravadas.size == 3 && v.gravadas.all? { |x| x[:antialias] } && RM_Cenas.forma_usada.nil? ? 'OK X' : "FALHA X #{v.gravadas.inspect}")
+
+# Y: o caso desta placa: maior que a tela sai escura, com ou sem suavizar ->
+# tenta sem suavizar (escura), depois no tamanho da tela (clara) e segue nele,
+# na proporção da cena, cabendo na tela (1400 x 700)
+m = modelo(cenas); v = m.active_view; m.escura_se = ->(g) { g[:width].to_i > 1400 || g[:height].to_i > 700 }
+arqs = RM_Cenas.exportar(pasta, suavizar: true)
+tam = v.gravadas.map { |x| [File.basename(x[:filename])[0, 2], x[:width], x[:height], x[:antialias]] }
+ok = arqs.size == 3 && RM_Cenas.forma_usada == :tela &&
+     tam == [['01', 3000, 1688, true], ['01', 3000, 1688, false], ['01', 1244, 700, true], ['02', 1400, 700, true], ['03', 1400, 700, true]]
+puts(ok ? 'OK Y' : "FALHA Y #{tam.inspect}")
+
+# Z: escura de todo jeito: tenta as formas só na 1ª, depois segue como escolhido e avisa
+m = modelo(cenas); v = m.active_view; m.escura_se = ->(_g) { true }
+RM_Cenas.exportar(pasta, suavizar: true)
+puts(v.gravadas.size == 6 && RM_Cenas.forma_usada == :nada && v.gravadas.last(2).all? { |x| x[:width] == 3000 && x[:antialias] } ? 'OK Z' : "FALHA Z #{v.gravadas.size}")
 
 # I: a versão do instalador e a da extensão são a mesma
 inst = File.read(File.expand_path('../RM_Cenas.rb', __dir__), encoding: 'UTF-8')[/extension\.version = '([\d.]+)'/, 1]
