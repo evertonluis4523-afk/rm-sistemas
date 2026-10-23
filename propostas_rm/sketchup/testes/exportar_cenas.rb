@@ -41,6 +41,7 @@ module Sketchup
   def self.write_default(*_a) end
 
   Camera = Struct.new(:nome, :aspect_ratio)
+  Color = Struct.new(:red, :green, :blue)
 
   class Page
     attr_reader :name, :camera
@@ -94,8 +95,10 @@ module Sketchup
     # o exportador do "Exportar > Gráfico 2D": grava pela view de mentira,
     # anotando que foi ele (export_falha: o exportador não dá conta)
     attr_accessor :export_falha
-    def export(arquivo, o)
+    # export(arquivo, false): com as opções da última vez no "Exportar 2D"
+    def export(arquivo, o = nil)
       return false if @export_falha
+      return @active_view.write_image(filename: arquivo, via: :dialogo) unless o.is_a?(Hash)
       @active_view.write_image(o.reject { |k, _| k == :show_summary }.merge(filename: arquivo, via: :exportador))
     end
     def start_operation(*_a) @ops << :inicio end
@@ -231,6 +234,31 @@ UI.avisos.clear
 RM_Cenas.exportar(pasta, espera: 1.5) { |arqs, _erro| UI.messagebox("#{arqs.size} imagens") }
 UI.roda_fila
 puts(UI.avisos == ['3 imagens'] && v.gravadas.size == 3 ? 'OK R' : "FALHA R #{[UI.avisos, v.gravadas.size].inspect}")
+
+# S: fundo branco (o padrão do diálogo): branco durante, sem transparência; depois, o fundo de antes
+m = modelo(cenas); v = m.active_view
+v.yield_estado = -> { m.rendering_options['BackgroundColor'] }
+RM_Cenas.exportar(pasta, transparente: false, fundo_branco: true)
+ok = v.durante.size == 3 && v.durante.all? { |c| c == Sketchup::Color.new(255, 255, 255) } && v.gravadas.none? { |g| g[:transparent] } && m.rendering_options['BackgroundColor'] == 'azulado'
+puts(ok ? 'OK S' : "FALHA S #{[v.durante, m.rendering_options['BackgroundColor']].inspect}")
+
+# T: Diagnóstico: a vista atual de 8 formas, uma diferença por vez, sem trocar de cena;
+# o .txt diz o que gravou e o que estava ligado (sem nome de cliente); tudo volta como estava
+m = modelo(cenas); v = m.active_view
+v.yield_estado = -> { m.rendering_options['BackgroundColor'] }
+antes = m.rendering_options.dup
+diag = Dir.mktmpdir
+linhas = RM_Cenas.diagnostico(diag)
+g = v.gravadas
+txt = File.read(File.join(diag, 'D0 - diagnóstico.txt'), encoding: 'UTF-8')
+ok = g.size == 8 && g.map { |x| File.basename(x[:filename])[0, 2] } == %w[D1 D2 D3 D4 D5 D6 D7 D8] &&
+     g[0][:via] == :dialogo && [g[1][:width], g[1][:height]] == [1400, 700] && g[1][:antialias] == false &&
+     [g[2][:width], g[2][:antialias]] == [3000, false] && g[3][:antialias] == true && g[3][:transparent] == false &&
+     g[4][:transparent] == true && g[6][:via].nil? && g[1..5].all? { |x| x[:via] == :exportador } &&
+     v.durante[0..6].all? { |c| c == 'azulado' } && v.durante[7] == Sketchup::Color.new(255, 255, 255) &&
+     m.pages.visitadas.empty? && m.rendering_options == antes && m.ops == %i[inicio desfeita] &&
+     linhas.first(8).all? { |l| l.include?('gravou') } && txt.include?('BackgroundColor=azulado') && txt.include?('ShadowTime=meio-dia')
+puts(ok ? 'OK T' : "FALHA T #{[g, v.durante, linhas, m.ops].inspect}")
 
 # I: a versão do instalador e a da extensão são a mesma
 inst = File.read(File.expand_path('../RM_Cenas.rb', __dir__), encoding: 'UTF-8')[/extension\.version = '([\d.]+)'/, 1]

@@ -6,27 +6,31 @@
 #     sai na proporção da própria cena (ou da tela, se a cena não tem uma);
 #   - 4K com suavização saía escura no vídeo integrado: a largura e a
 #     suavização são escolhas;
-#   - fundo do estilo cinza/azulado: sai transparente, e o sistema põe o
-#     branco do papel;
+#   - fundo do estilo cinza/azulado: sai branco como o papel (o fundo
+#     transparente fica como opção: em alguns computadores ele escurecia);
 #   - sol cena por cena: dá para usar as sombras de agora em todas;
 #   - "Qualidade máxima" (o padrão): o acabamento que testamos para a
 #     proposta -- texturas, arestas finas por material, perfil fino, sombras
 #     só nas faces (sem a mancha no chão), sol nas faces, sem céu nem chão,
 #     oclusão de ambiente quando a versão tem -- igual em todas as cenas,
 #     sem mudar o estilo nem as cenas.
+#   - imagem escura só pela extensão: o "Diagnóstico" grava a vista atual de
+#     várias formas (e um .txt com o que estava ligado) para achar a causa.
 # Tudo o que muda para exportar volta como estava no fim, mesmo com erro.
 # Teste: propostas_rm/sketchup/testes/exportar_cenas.rb.
 require 'sketchup.rb'
 
 module RM_Cenas
-  EXTENSION_VERSION = '1.4.1'
+  EXTENSION_VERSION = '1.5.0'
   LARGURAS = %w[1920 3000 3840].freeze
-  FUNDO_TRANSP = 'Transparente (fica branco no sistema)'.freeze
+  FUNDO_BRANCO = 'Branco (como o papel)'.freeze
+  FUNDO_TRANSP = 'Transparente'.freeze
   FUNDO_ESTILO = 'Como está no estilo'.freeze
   SOMBRA_CENA = 'As de cada cena'.freeze
   SOMBRA_AGORA = 'As de agora em todas as cenas'.freeze
   CENAS_TODAS = 'Todas as cenas'.freeze
   CENAS_ATUAL = 'Só a vista atual (sem trocar de cena)'.freeze
+  CENAS_DIAG = 'Diagnóstico: a vista atual de várias formas'.freeze
   ESPERA = 1.5
   QUAL_MAX = 'Máxima (para a proposta)'.freeze
   QUAL_MODELO = 'Como está no modelo'.freeze
@@ -45,7 +49,28 @@ module RM_Cenas
     'DisplayOnAllFaces' => true, 'DisplayOnGroundPlane' => false, 'EdgesCastShadows' => false
   }.freeze
 
+  # o Diagnóstico: a vista atual gravada de cada forma, uma diferença por vez
+  # [nome, por onde grava, largura (:tela = a da tela), suavizar, transparente, ajuste]
+  DIAG = [
+    ['D1 - com as opções do Exportar 2D', :dialogo, nil, nil, nil, {}],
+    ['D2 - tamanho da tela, sem suavizar', :exportador, :tela, false, false, {}],
+    ['D3 - 3000, sem suavizar', :exportador, 3000, false, false, {}],
+    ['D4 - 3000, suavizado', :exportador, 3000, true, false, {}],
+    ['D5 - 3000, suavizado, fundo transparente', :exportador, 3000, true, true, {}],
+    ['D6 - 3000, suavizado, sem oclusão de ambiente', :exportador, 3000, true, false, { 'AmbientOcclusion' => false }],
+    ['D7 - 3000, suavizado, pelo write_image', :write_image, 3000, true, false, {}],
+    ['D8 - qualidade máxima, fundo branco, 3000, suavizado', :exportador, 3000, true, false, :max]
+  ].freeze
+  # o que vai no .txt do Diagnóstico (nada do cliente: nem o nome do arquivo)
+  DIAG_ESTILO = %w[RenderMode Texture AmbientOcclusion DrawHorizon DrawGround BackgroundColor SkyColor GroundColor
+                   EdgeDisplayMode DrawSilhouettes MaterialTransparency].freeze
+  DIAG_SOL = %w[DisplayShadows UseSunForAllShading ShadowTime Light Dark DisplayOnAllFaces DisplayOnGroundPlane].freeze
+
   extend self
+
+  def branco
+    Sketchup::Color.new(255, 255, 255)
+  end
 
   # largura x altura na proporção da cena (câmera com proporção fixa) ou da tela
   def tamanho(view, largura)
@@ -126,7 +151,7 @@ module RM_Cenas
   # pegava a cena ainda sendo desenhada (imagem escura). No fim chama o bloco
   # com (arquivos, erro). Só a vista atual: grava a tela sem trocar de cena.
   def exportar(pasta, largura: 3000, suavizar: true, transparente: true, sombras_agora: false, qualidade_max: false,
-               espera: 0, so_atual: false, &fim)
+               espera: 0, so_atual: false, fundo_branco: false, &fim)
     model = Sketchup.active_model
     view = model.active_view
     pages = model.pages
@@ -165,6 +190,7 @@ module RM_Cenas
     model.start_operation('RM Cenas: exportar', true)
     lista = so_atual ? [] : pages.to_a
     acabamento = lambda do
+      aplica(model.rendering_options, 'BackgroundColor' => branco) if fundo_branco
       next unless qualidade_max
       aplica(model.rendering_options, ESTILO_MAX)
       aplica(model.shadow_info, SOMBRA_MAX)
@@ -206,8 +232,8 @@ module RM_Cenas
             p.use_style = false if p.respond_to?(:use_style=)
           end
         end
-        acabamento.call
       end
+      acabamento.call
     rescue StandardError => e
       return termina.call(e)
     end
@@ -233,6 +259,59 @@ module RM_Cenas
     arquivo
   end
 
+  # grava a vista atual de cada forma do DIAG, sem trocar de cena, e escreve o
+  # "D0 - diagnóstico.txt" com o resultado e o que estava ligado. Devolve as
+  # linhas do resultado. O estilo e o sol voltam como estavam.
+  def diagnostico(pasta)
+    model = Sketchup.active_model
+    view = model.active_view
+    ro = model.rendering_options
+    si = model.shadow_info
+    estilo = retrato(ro)
+    sol = retrato(si)
+    linhas = []
+    model.start_operation('RM Cenas: diagnóstico', true)
+    begin
+      DIAG.each do |nome, via, larg, suav, transp, ajuste|
+        devolve(ro, estilo)
+        devolve(si, sol)
+        if ajuste == :max
+          aplica(ro, ESTILO_MAX)
+          aplica(si, SOMBRA_MAX)
+          aplica(ro, 'BackgroundColor' => branco)
+        else
+          aplica(ro, ajuste)
+        end
+        view.refresh if view.respond_to?(:refresh)
+        arquivo = File.join(pasta, "#{nome}.png")
+        w, h = larg == :tela ? [view.vpwidth, view.vpheight] : tamanho(view, larg || 0)
+        resultado = begin
+          ok = case via
+               when :dialogo then model.export(arquivo, false)
+               when :write_image then view.write_image(filename: arquivo, width: w, height: h, antialias: suav, transparent: transp)
+               else model.export(arquivo, show_summary: false, width: w, height: h, antialias: suav, transparent: transp)
+               end
+          ok ? 'gravou' : 'o SketchUp recusou'
+        rescue StandardError => e
+          "erro: #{e.message}"
+        end
+        linhas << "#{nome}: #{resultado}#{larg ? " (#{w} x #{h})" : ''}"
+      end
+    ensure
+      devolve(ro, estilo)
+      devolve(si, sol)
+      model.abort_operation
+      view.refresh if view.respond_to?(:refresh)
+    end
+    linhas << ''
+    linhas << "RM Cenas #{EXTENSION_VERSION}#{Sketchup.respond_to?(:version) ? " - SketchUp #{Sketchup.version}" : ''}"
+    linhas << "Tela: #{view.vpwidth} x #{view.vpheight}"
+    linhas << 'Estilo: ' + DIAG_ESTILO.select { |k| estilo.key?(k) }.map { |k| "#{k}=#{estilo[k]}" }.join('; ')
+    linhas << 'Sol: ' + DIAG_SOL.select { |k| sol.key?(k) }.map { |k| "#{k}=#{sol[k]}" }.join('; ')
+    File.write(File.join(pasta, 'D0 - diagnóstico.txt'), linhas.join("\r\n"), mode: 'w:UTF-8')
+    linhas
+  end
+
   def lembra(chave, padrao)
     Sketchup.read_default('RM_Cenas', chave, padrao)
   end
@@ -242,17 +321,22 @@ module RM_Cenas
     return UI.messagebox('Abra um modelo antes.') unless model
     escolhas = UI.inputbox(
       ['Exportar', 'Qualidade', 'Largura (px)', 'Suavização', 'Fundo', 'Sombras (só em "Como está")'],
-      [lembra('cenas', CENAS_TODAS), lembra('qualidade', QUAL_MAX), lembra('largura', '3000'), lembra('suavizar', 'Sim'), lembra('fundo', FUNDO_TRANSP), lembra('sombras', SOMBRA_CENA)],
-      [[CENAS_TODAS, CENAS_ATUAL].join('|'), [QUAL_MAX, QUAL_MODELO].join('|'), LARGURAS.join('|'), 'Sim|Não', [FUNDO_TRANSP, FUNDO_ESTILO].join('|'), [SOMBRA_CENA, SOMBRA_AGORA].join('|')],
+      [lembra('cenas', CENAS_TODAS), lembra('qualidade', QUAL_MAX), lembra('largura', '3000'), lembra('suavizar', 'Sim'), lembra('fundo2', FUNDO_BRANCO), lembra('sombras', SOMBRA_CENA)],
+      [[CENAS_TODAS, CENAS_ATUAL, CENAS_DIAG].join('|'), [QUAL_MAX, QUAL_MODELO].join('|'), LARGURAS.join('|'), 'Sim|Não', [FUNDO_BRANCO, FUNDO_TRANSP, FUNDO_ESTILO].join('|'), [SOMBRA_CENA, SOMBRA_AGORA].join('|')],
       'RM Cenas: exportar as cenas'
     )
     return unless escolhas
     cenas, qualidade, largura, suav, fundo, sombras = escolhas
-    { 'cenas' => cenas, 'qualidade' => qualidade, 'largura' => largura, 'suavizar' => suav, 'fundo' => fundo, 'sombras' => sombras }.each { |k, v| Sketchup.write_default('RM_Cenas', k, v) }
+    { 'cenas' => cenas, 'qualidade' => qualidade, 'largura' => largura, 'suavizar' => suav, 'fundo2' => fundo, 'sombras' => sombras }.each { |k, v| Sketchup.write_default('RM_Cenas', k, v) }
     inicio = model.path.to_s.empty? ? nil : File.dirname(model.path)
     pasta = UI.select_directory(inicio ? { title: 'Pasta para salvar as imagens', directory: inicio } : { title: 'Pasta para salvar as imagens' })
     return unless pasta
-    exportar(pasta, largura: largura.to_i, suavizar: suav == 'Sim', transparente: fundo == FUNDO_TRANSP,
+    if cenas == CENAS_DIAG
+      linhas = diagnostico(pasta)
+      return UI.messagebox("Diagnóstico pronto em:\n#{pasta}\n\n#{linhas.first(DIAG.size).join("\n")}\n\n" \
+                           'Abra as imagens D1 a D8 e conte quais saíram escuras (ou mande a pasta com o "D0 - diagnóstico.txt").')
+    end
+    exportar(pasta, largura: largura.to_i, suavizar: suav == 'Sim', transparente: fundo == FUNDO_TRANSP, fundo_branco: fundo == FUNDO_BRANCO,
                     sombras_agora: sombras == SOMBRA_AGORA, qualidade_max: qualidade == QUAL_MAX,
                     so_atual: cenas == CENAS_ATUAL, espera: ESPERA) do |arqs, erro|
       if erro
@@ -273,7 +357,8 @@ module RM_Cenas
       "Exporta todas as cenas do modelo em PNG, uma imagem por cena, numeradas na ordem das cenas.\n\n" \
       "  - Qualidade máxima (o padrão): texturas, arestas finas, sombras e sol nas faces, sem céu nem chão, igual em todas as cenas. O sol é o da hora de agora (Janela > Sombras): escolha uma hora em que a fachada fica clara.\n" \
       "  - Largura: 3000 px é o bom para o papel A4.\n" \
-      "  - Fundo transparente: no sistema de Propostas vira o branco do papel.\n" \
+      "  - Fundo branco (o padrão): como o papel da proposta. O transparente fica de opção.\n" \
+      "  - Saiu escura? Exportar: \"Diagnóstico\" grava a vista atual de 8 formas (D1 a D8); conte quais saíram escuras.\n" \
       "  - Sombras \"as de agora em todas\": usa o sol e a hora de agora em todas as cenas, sem mudar as cenas.\n" \
       "  - A imagem sai na proporção da cena, sem as faixas cinza.\n\n" \
       'O modelo e as cenas ficam como estavam.'

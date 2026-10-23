@@ -7,7 +7,7 @@ module RM_Cenas
   unless file_loaded?(__FILE__)
     extension = SketchupExtension.new('RM Cenas', File.join(__dir__, 'RM_Cenas', 'main.rb'))
     extension.description = 'Exporta todas as cenas em PNG (uma imagem por cena) para as imagens da proposta.'
-    extension.version = '1.4.1'
+    extension.version = '1.5.0'
     extension.creator = 'RM Estruturas'
     extension.copyright = 'RM Estruturas Pré-Fabricadas'
     Sketchup.register_extension(extension, true)
