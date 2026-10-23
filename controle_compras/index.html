@@ -2837,7 +2837,7 @@ body:not([data-theme="escuro"]){
         <div class="f span" style="position:relative"><div class="lab">De quem comprei *</div><input id="i_forn" class="din" autocomplete="off" placeholder="Fornecedor"><div class="sugg" id="i_fornSugg"></div></div>
         <div class="f span"><div class="lab">O que comprei *</div><input id="i_desc" class="din" placeholder="Descrição do item / serviço"></div>
         <div class="f"><div class="lab">Valor total (R$)</div><input id="i_valor" class="din mono" inputmode="decimal" placeholder="0,00" oninput="onValorChange()"></div>
-        <div class="f" style="position:relative"><div class="lab">Categoria</div><input id="i_cat" class="din" autocomplete="off" placeholder="Ex.: EPI, ferramentas…"><div class="sugg" id="i_catSugg"></div></div>
+        <div class="f" style="position:relative"><div class="lab">Categoria *</div><input id="i_cat" class="din" autocomplete="off" placeholder="Ex.: EPI, ferramentas…"><div class="sugg" id="i_catSugg"></div></div>
         <div class="f"><div class="lab">Data da compra</div><input id="i_dcompra" class="din" type="date" onchange="if(parceladoOn())renderParcInfo()"></div>
         <div class="f"><div class="lab">Data de entrega</div><input id="i_dentrega" class="din" type="date"></div>
         <div class="f span" style="position:relative"><div class="lab">Prazo de pagamento</div><input id="i_prazo" class="din" autocomplete="off" placeholder="Ex.: 30/60/90"><div class="sugg" id="i_prazoSugg"></div></div>
@@ -3008,7 +3008,8 @@ function filterCompras(list,f){
   return list.filter(c=>{
     if(f.month && (c.dataCompra||'').slice(0,7)!==f.month) return false;
     if(f.forn && c.fornecedor!==f.forn) return false;
-    if(f.cat && c.categoria!==f.cat) return false;
+    if(f.cat===CAT_SEM){ if((c.categoria||'').trim()) return false; }
+    else if(f.cat && c.categoria!==f.cat) return false;
     if(f.pay==='pago' && !isPaid(c)) return false;
     if(f.pay==='pend' && isPaid(c)) return false;
     if(q){ const hay=((c.fornecedor||'')+' '+(c.descricao||'')+' '+(c.categoria||'')+' '+(c.obs||'')).toLowerCase(); if(hay.indexOf(q)<0) return false; }
@@ -3024,6 +3025,14 @@ function computeTotals(list){
   return {total:round2(total),pago:round2(pago),aPagar:round2(aPagar),over:round2(over),count:list.length};
 }
 function currentFilters(){ return {q:document.getElementById('q').value, month:document.getElementById('fMonth').value, forn:document.getElementById('fForn').value, cat:document.getElementById('fCat').value, pay:payFilter}; }
+const CAT_SEM='(sem categoria)';   // filtro das compras ainda sem categoria (a Central manda abrir nele)
+/* a Central abre o Compras já filtrado ("2 compras sem categoria — classificar") */
+window.addEventListener('message',function(ev){
+  const m=ev.data; if(!m||m.rm!=='filtro'||m.filtro!=='sem-categoria') return;
+  const s=document.getElementById('fCat'); if(!s) return;
+  if(![...s.options].some(o=>o.value===CAT_SEM)) s.add(new Option('Sem categoria',CAT_SEM),1);
+  s.value=CAT_SEM; render();
+});
 function allCategorias(){ const s=new Set(DB.categorias||[]); (DB.cfg.categorias||[]).forEach(x=>s.add(x)); return [...s].filter(Boolean).sort((a,b)=>a.localeCompare(b,'pt-BR')); }
 
 /* ================= LISTA SUSPENSA PRESA AO CAMPO ================= */
@@ -3072,7 +3081,8 @@ function render(){
   selF.innerHTML='<option value="">Todos fornecedores</option>'+DB.fornecedores.map(f=>`<option value="${esc(f)}">${esc(rmNomePt(f))}</option>`).join('');
   if([...selF.options].some(o=>o.value===cf))selF.value=cf;
   const selC=document.getElementById('fCat'),cc=selC.value, cats=allCategorias();
-  selC.innerHTML='<option value="">Todas categorias</option>'+cats.map(c=>`<option value="${esc(c)}">${esc(c)}</option>`).join('');
+  const nSem=DB.compras.filter(c=>!(c.categoria||'').trim()).length;
+  selC.innerHTML='<option value="">Todas categorias</option>'+(nSem||cc===CAT_SEM?`<option value="${CAT_SEM}">Sem categoria (${nSem})</option>`:'')+cats.map(c=>`<option value="${esc(c)}">${esc(c)}</option>`).join('');
   if([...selC.options].some(o=>o.value===cc))selC.value=cc;
 
   const f=currentFilters();
@@ -3196,6 +3206,9 @@ function saveForm(){
   const forn=g('i_forn').trim(), desc=g('i_desc').trim();
   if(!forn){alert('Informe de quem você comprou.');return;}
   if(!desc){alert('Informe o que você comprou.');return;}
+  /* categoria obrigatória: é ela que separa os gastos nos indicadores da
+     Central ("Sem categoria" virava a maior fatia e o gráfico não dizia nada) */
+  if(!g('i_cat').trim()){alert('Informe a categoria da compra (ex.: matéria-prima, frete, serviços).');document.getElementById('i_cat').focus();return;}
   const total=round2(parseBRL(g('i_valor')));
   const rec={ fornecedor:forn, descricao:desc, valor:total, categoria:g('i_cat').trim(),
     dataCompra:g('i_dcompra')||todayISO(), dataEntrega:g('i_dentrega'), prazo:g('i_prazo').trim(),
@@ -4405,7 +4418,7 @@ if('serviceWorker' in navigator){
 })();
 </script>
 <script>/* versão publicada (PADRAO_RM.md §3): sobe a cada publicação, junto com o CACHE do sw.js */
-const APP_VER='v72';
+const APP_VER='v73';
 </script>
 <script id="rmVersaoBloco">
 /* ===== SELO DE VERSÃO — igual em todos os sistemas (PADRAO_RM.md §3) =====

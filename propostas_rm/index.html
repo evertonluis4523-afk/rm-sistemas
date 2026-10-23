@@ -4967,7 +4967,12 @@ $('inicio').addEventListener('click', e => { const b = e.target.closest('[data-a
 $('iniNova').addEventListener('click', () => $('btnNova').click());
 $('iniImportar').addEventListener('click', () => $('arqWord').click());
 $('btnFechar').addEventListener('click', () => fecharDoc(true));
-$('docStatus').addEventListener('change', e => { const d = atual(); if (!d) return; d.status = e.target.value; alterou(d, true); });
+$('docStatus').addEventListener('change', e => {
+  const d = atual(); if (!d) return; d.status = e.target.value;
+  /* a data em que fechou: o "Aprovado no mês" da Central conta por ela */
+  if (d.status === 'aprovada' || d.status === 'assinado') { if (!d.aprovadaEm) d.aprovadaEm = rmDiaISO(); } else delete d.aprovadaEm;
+  alterou(d, true);
+});
 /* janela da seta de medida. Arrastar numa parte vazia põe uma seta nova
    (quantas quiser, cada uma com a sua medida); arrastar a seta muda ela de
    lugar, e arrastar uma ponta muda o tamanho. Perto de em pé ou de deitada,
@@ -5480,8 +5485,35 @@ async function salvarDoc(id) {
   const quando = d.alterado;
   try {
     await fbDB.ref(FB_NO + '/docs/' + id).set(JSON.parse(JSON.stringify(d)));
+    agendarResumo();
     if (pendentes[id] === quando) { delete pendentes[id]; guardarLocal(); }
   } catch (e) { if (window.rmNuvemErro) rmNuvemErro('salvar a proposta ' + (d.numero || ''), e); }
+}
+/* RESUMO para os indicadores da Central (funil de propostas, aprovado no
+   mês): situação, valor e datas de cada proposta num nó leve
+   (propostas_rm/resumo), sem a Central baixar as propostas inteiras.
+   É refeito a partir das propostas daqui, então se corrige sozinho; a
+   lixeira fica de fora. Teste central-indicadores. */
+function resumoDoc(d) {
+  const r = { s: d.status || 'negociacao', t: totalProposta(d) || 0, d: d.data || '', c: (d.cliente && d.cliente.nome) || '', n: numeroRev(d) };
+  if (d.contrato) { const tc = totalContrato(d); if (tc) r.tc = tc; if (d.contrato.data) r.cd = d.contrato.data; }
+  if (d.aprovadaEm) r.ap = d.aprovadaEm;
+  return r;
+}
+function resumoTodos() {
+  const m = {};
+  Object.values(docs).forEach(d => { if (d && d.id && !d.lixeira) { try { m[d.id] = resumoDoc(d); } catch (e) { } } });
+  return m;
+}
+let tResumo = null, resumoGravado = '';
+function agendarResumo() {
+  clearTimeout(tResumo);
+  tResumo = setTimeout(() => {
+    if (!fbDB || !fbAuthReady) return;
+    const m = resumoTodos(), j = JSON.stringify(m);
+    if (j === resumoGravado) return;
+    fbDB.ref(FB_NO + '/resumo').set(m).then(() => { resumoGravado = j; }).catch(() => { });
+  }, 1500);
 }
 let tCfg = null;
 function salvarListas(n) {
@@ -5512,6 +5544,7 @@ function aplicarRemoto(v) {
   });
   Object.keys(docs).forEach(id => { if (!v[id] && !pendentes[id]) { delete docs[id]; if (id === atualId) { atualId = null; mudouAberta = true; } } });
   guardarLocal();
+  agendarResumo();
   if (mudouAberta && editandoAqui()) { remotoEsperando = true; renderLista(); renderFolha(); return; }
   if (mudouAberta) redesenhar(); else renderLista();
 }
@@ -6594,7 +6627,7 @@ if ('serviceWorker' in navigator) {
 })();
 </script>
 <script>/* versão publicada (PADRAO_RM.md §3): sobe a cada publicação, junto com o CACHE do sw.js */
-const APP_VER='v29';
+const APP_VER='v30';
 </script>
 <script id="rmVersaoBloco">
 /* ===== SELO DE VERSÃO — igual em todos os sistemas (PADRAO_RM.md §3) =====
