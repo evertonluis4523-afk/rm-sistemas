@@ -3111,7 +3111,7 @@ const DB_NODE = "maquinas_rm";
    visivel, nenhum de nos dois tinha como saber se o aparelho estava rodando o
    que foi publicado ou uma copia velha do cache do app instalado. Diagnostico
    por adivinhacao custa mais caro que um rodape. */
-const APP_VER='v31';
+const APP_VER='v32';
 const STORE_KEY = "rm_maquinas_v1";
 
 const CORES = [
@@ -3152,22 +3152,34 @@ function mescla3(b, l, r){
   });
   return out;
 }
+/* "Meus resultados" da Central (so o dono): quantas conferencias, movimentos
+   e termos houve em cada mes. Vai junto da gravacao, em maquinas_rm/resumo,
+   sem nome de maquina nem de pessoa. Teste maquinas-publica-resultados. */
+function resumoMaquinas(d){
+  const m = {}, um = (dia, k) => { const mes = String(dia || '').slice(0, 7); if (!/^\d{4}-\d{2}$/.test(mes)) return; (m[mes] = m[mes] || { mov: 0, conf: 0, termo: 0 })[k]++; };
+  listaNuvem(d && d.eventos).forEach(e => { if (e && e.tipo !== 'conferencia') um(e.data, 'mov'); });
+  listaNuvem(d && d.auditorias).forEach(a => { if (a) um(a.data, 'conf'); });
+  listaNuvem(d && d.termos).forEach(t => { if (t) um(t.data, 'termo'); });
+  return m;
+}
 function nuvemGrava(){
   if (!fdb || !fdbLido) return;
   const local = JSON.parse(JSON.stringify(db)), base = fdbBase ? JSON.parse(JSON.stringify(fdbBase)) : null;
   fdb.transaction(cur => {
-    if (!cur || (!listaNuvem(cur.setores).length && !listaNuvem(cur.maquinas).length && !cur.iniciado)) return local;
+    if (!cur || (!listaNuvem(cur.setores).length && !listaNuvem(cur.maquinas).length && !cur.iniciado)) return Object.assign(local, { resumo: resumoMaquinas(local) });
     const rem = { setores: listaNuvem(cur.setores), maquinas: listaNuvem(cur.maquinas), auditorias: listaNuvem(cur.auditorias),
                   eventos: listaNuvem(cur.eventos), termos: listaNuvem(cur.termos) };
     const b = base || rem;
     /* histórico e termos entram na mesma junção item por item: o que um
        aparelho registrou não apaga o que o outro registrou ao mesmo tempo */
-    return { setores: mescla3(b.setores, local.setores, rem.setores),
+    const novo = { setores: mescla3(b.setores, local.setores, rem.setores),
              maquinas: mescla3(b.maquinas, local.maquinas, rem.maquinas),
              auditorias: mescla3(b.auditorias, local.auditorias, rem.auditorias),
              eventos: mescla3(b.eventos || [], local.eventos || [], rem.eventos),
              termos: mescla3(b.termos || [], local.termos || [], rem.termos),
              iniciado: true };
+    novo.resumo = resumoMaquinas(novo);
+    return novo;
   }, err => { if (err) rmNuvemErro('salvar o estoque de máquinas (maquinas_rm)', err); }, false);
 }
 

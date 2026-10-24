@@ -27801,6 +27801,7 @@ function aplica(c,valor){
 
   if(c.id==='obras'){
     if(typeof window.rmRecarregaObras==='function') window.rmRecarregaObras();
+    publicaResumo();
   } else if(c.id==='planificacao'){
     if(typeof window.rmRecarregaPlanificacao==='function') window.rmRecarregaPlanificacao();
   } else if(c.id==='pln_k'){
@@ -27846,10 +27847,39 @@ function envia(quais){
   raiz.update(pacote).then(function(){
     feitas.forEach(function(f){marca(f.c.id,agora,f.imp);});
     nuvemVazia=false; ultimoErro='';
+    publicaResumo();
   }).catch(function(e){
     ultimoErro=recado(e);
   }).then(function(){ enviando=false; pinta(); });
 }
+
+/* "Meus resultados" da Central (so' o dono): a contagem dos detalhamentos
+   por mes -- cada obra conta uma vez, no mes em que foi salva pela primeira
+   vez. Vai em corte_estruturas/resumo, ao lado das colecoes, e nao leva
+   nada da obra: so' o mes e quantas. Teste corte-publica-resultados. */
+function resumoObras(){
+  var arr=[]; try{arr=JSON.parse(localStorage.getItem('corteRM_obras')||'[]');}catch(e){}
+  var prim={};
+  (Array.isArray(arr)?arr:[]).forEach(function(o){
+    if(!o||!(o.date>0)) return;
+    var k=String(o.obra||'').trim().toLowerCase();
+    if(!prim[k]||o.date<prim[k]) prim[k]=o.date;
+  });
+  var m={};
+  Object.keys(prim).forEach(function(k){
+    var d=new Date(prim[k]), mes=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');
+    m[mes]=(m[mes]||0)+1;
+  });
+  return m;
+}
+var resumoMandado='';
+function publicaResumo(){
+  if(!raiz) return;
+  var m=resumoObras(), j=JSON.stringify(m);
+  if(j===resumoMandado) return;
+  raiz.child('resumo').set(m).then(function(){resumoMandado=j;}).catch(function(){});
+}
+window.__corteResumo=resumoObras;   // para a bateria de testes
 
 /* ---------- descer ---------- */
 function baixa(c,quando){
@@ -27902,6 +27932,7 @@ function liga(){
     metaRef=raiz.child('_meta');
     ligado=true;
     escuta();
+    publicaResumo();
   }catch(e){ ultimoErro=recado(e); }
   pinta();
 }
@@ -28126,7 +28157,7 @@ if('serviceWorker' in navigator && location.protocol.startsWith('http')){
 }
 </script>
 <script>/* versão publicada (PADRAO_RM.md §3): sobe a cada publicação, junto com o CACHE do sw.js */
-const APP_VER='v215';
+const APP_VER='v216';
 </script>
 <script id="rmVersaoBloco">
 /* ===== SELO DE VERSÃO — igual em todos os sistemas (PADRAO_RM.md §3) =====

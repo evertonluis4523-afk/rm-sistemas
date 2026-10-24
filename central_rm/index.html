@@ -4537,7 +4537,7 @@ try { var _e = localStorage.getItem('rm_estilo_ultimo'); if (_e === 'viva' || _e
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js" crossorigin="anonymous"></script>
 
 <script>/* versão publicada (PADRAO_RM.md §3): sobe a cada publicação, junto com o CACHE do sw.js */
-const APP_VER='v135';
+const APP_VER='v136';
 </script>
 <script>
   /* ===== LOGIN (Firebase Authentication) =====
@@ -9497,7 +9497,7 @@ const APP_VER='v135';
   if (!window.firebase || !firebase.database) return;
 
   var db = firebase.database();
-  var D = { obras: null, compras: null, inbox: null, orc: null, contas: null, cheques: null, pu: null, almocos: null, equipe: null, perfitec: null, indic: null, contabil: null, prop: null, recres: null, meus: null };
+  var D = { obras: null, compras: null, inbox: null, orc: null, contas: null, cheques: null, pu: null, almocos: null, equipe: null, perfitec: null, indic: null, contabil: null, prop: null, recres: null, meus: null, corte: null, maqres: null };
   var refs = [], tickTimer = null, renderT = null, mounted = false;
 
   var COR = {
@@ -10409,7 +10409,11 @@ const APP_VER='v135';
     { k: 'prop_nova', rot: 'Proposta comercial (criar)', sis: 'Propostas', antes: 'Word', m: 120, s: 25 },
     { k: 'prop_rev', rot: 'Proposta comercial (revisão)', sis: 'Propostas', antes: 'Word', m: 30, s: 5 },
     { k: 'contrato', rot: 'Contrato', sis: 'Propostas', antes: 'Word', m: 90, s: 10 },
-    { k: 'orcamento', rot: 'Orçamento', sis: 'Orçamento RM', antes: 'Excel', m: 60, s: 20 },
+    { k: 'orcamento', rot: 'Orçamento (com o banco de preços)', sis: 'Orçamento RM', antes: 'Excel', m: 60, s: 20 },
+    { k: 'detalhe_cnm', rot: 'Chave na mão: serviços detalhados', sis: 'Orçamento RM', antes: 'Excel', m: 120, s: 30 },
+    { k: 'detalhamento', rot: 'Detalhamento da obra (mapa de montagem e lista de corte)', sis: 'Leitor DWG', antes: 'à mão, ~3 dias', m: 1440, s: 120 },
+    { k: 'pu', rot: 'Cálculo de PU (projeto)', sis: 'Sistema PU', antes: 'Excel', m: 90, s: 20 },
+    { k: 'perfitec', rot: 'Pedido Perfitec lançado', sis: 'Pedidos Perfitec', antes: 'Excel', m: 10, s: 3 },
     { k: 'obra_parc', rot: 'Planilha de obra: parcela recebida', sis: 'Obras', antes: 'Excel', m: 5, s: 1 },
     { k: 'obra_nf', rot: 'Planilha de obra: nota fiscal lançada', sis: 'Obras', antes: 'Excel', m: 6, s: 1 },
     { k: 'recibo', rot: 'Recibo de pagamento, adiantamento, 13º e férias', sis: 'Recibos', antes: 'Word', m: 8, s: 1 },
@@ -10423,9 +10427,21 @@ const APP_VER='v135';
     { k: 'conta', rot: 'Conta a pagar lançada', sis: 'Contas a Pagar', antes: 'Excel', m: 3, s: 1 },
     { k: 'compra', rot: 'Compra lançada', sis: 'Compras', antes: 'Excel', m: 5, s: 2 },
     { k: 'pedido', rot: 'Pedido do orçamento importado no Compras', sis: 'Compras', antes: 'redigitado', m: 10, s: 0 },
-    { k: 'cheque', rot: 'Cheque lançado', sis: 'Cheques', antes: 'Excel', m: 3, s: 1 }
+    { k: 'cheque', rot: 'Cheque lançado', sis: 'Cheques', antes: 'Excel', m: 3, s: 1 },
+    { k: 'maq_conf', rot: 'Conferência de máquinas (um setor)', sis: 'Estoque de Máquinas', antes: 'papel e Excel', m: 60, s: 15 },
+    { k: 'maq_mov', rot: 'Máquina: entrada, baixa ou conserto', sis: 'Estoque de Máquinas', antes: 'Excel', m: 4, s: 1 },
+    { k: 'maq_termo', rot: 'Termo de responsabilidade', sis: 'Estoque de Máquinas', antes: 'Word', m: 20, s: 2 }
   ];
-  var RES_PADRAO = { salario: 10000, horas: 220, multaOn: true, multaPct: 2 };
+  /* esperaDias: quanto se esperava a cotação dos fornecedores antes do banco
+     de preços -- conta em dias de prazo, não em horas de trabalho */
+  var RES_PADRAO = { salario: 10000, horas: 220, multaOn: true, multaPct: 2, esperaDias: 2 };
+  /* orçamento com chave na mão (serviços com valor, metragem ou cidade) e
+     orçamento com itens: um salvo pode ter os dois */
+  function temCnm(q) {
+    var d = q && q.chaveMao;
+    return !!d && (!!String(d.cidade || '').trim() || n(d.m2) > 0 || vals(d.servicos).some(function (s) { return vals(s.itens).length || n(s.rm2) > 0 || n(s.total) > 0; }));
+  }
+  function temItens(q) { return !!q && ['linhasPerfil', 'linhasTelha', 'linhasCat', 'linhasAvulso', 'esquadrias'].some(function (k) { return vals(q[k]).length; }); }
 
   function ehDono() {
     var em = String((typeof CURRENT_EMAIL !== 'undefined' && CURRENT_EMAIL) || ((firebase.auth().currentUser || {}).email) || '').toLowerCase();
@@ -10453,7 +10469,16 @@ const APP_VER='v135';
       (p.rv || []).forEach(function (t) { if (mesDe(t) === mes) um('prop_rev'); });
       if (mesDe(p.cd) === mes) um('contrato');
     });
-    vals(D.orc).forEach(function (e) { if (mesDe(n(e.ts)) === mes) um('orcamento'); });
+    vals(D.orc).forEach(function (e) {
+      if (mesDe(n(e.ts)) !== mes) return;
+      var cnm = temCnm(e.quote);
+      if (!cnm || temItens(e.quote)) um('orcamento');
+      if (cnm) um('detalhe_cnm');
+    });
+    var cr = (D.corte || {})[mes]; if (cr) um('detalhamento', n(cr));
+    vals(D.pu).forEach(function (p) { if (mesDe(p.criadoEm) === mes) um('pu'); });
+    vals(D.perfitec).forEach(function (x) { if (x && mesDe(n(x.criadoEm)) === mes) um('perfitec'); });
+    var mq = (D.maqres || {})[mes]; if (mq) { um('maq_conf', n(mq.conf)); um('maq_mov', n(mq.mov)); um('maq_termo', n(mq.termo)); }
     vals(D.obras).forEach(function (o) {
       (o.parcelas || []).forEach(function (p) { if (p.recebida && mesDe(p.data) === mes) um('obra_parc'); });
       (o.fornecedores || []).forEach(function (f) { if (mesDe(f.dataNF) === mes) um('obra_nf'); });
@@ -10503,7 +10528,7 @@ const APP_VER='v135';
   var fotoGravando = false;
   function fotografar() {
     if (!ehDono() || fotoGravando || NEGADO.meus) return;
-    var nos = ['obras', 'compras', 'orc', 'contas', 'cheques', 'almocos', 'contabil', 'prop', 'recres', 'meus'];
+    var nos = ['obras', 'compras', 'orc', 'contas', 'cheques', 'almocos', 'contabil', 'prop', 'pu', 'perfitec', 'recres', 'corte', 'maqres', 'meus'];
     if (!nos.every(function (k) { return RESPONDEU[k]; })) return;
     var atual = mesAtual(), ini = addD(atual + '-01', -730).slice(0, 7), muda = {};
     mesesEntre(ini + '-01', addD(atual + '-01', -1)).forEach(function (mes) {
@@ -10540,6 +10565,7 @@ const APP_VER='v135';
       r.multaN += d.multa.n; r.multaBase += d.multa.base; r.cheqN += d.cheq.n; r.cheqV += d.cheq.v;
     });
     r.multa = cfg.multaOn ? r.multaBase * n(cfg.multaPct) / 100 : 0;
+    r.espera = n(r.vezes.orcamento) * n(cfg.esperaDias);
     return r;
   }
   function horasTxt(h) { return h.toLocaleString('pt-BR', { maximumFractionDigits: h < 10 ? 1 : 0 }) + ' h'; }
@@ -10553,7 +10579,7 @@ const APP_VER='v135';
   window.rmResSalvar = function () {
     var g = function (id) { var e = document.getElementById(id); return e ? e.value : ''; };
     var num = function (v) { return Number(String(v).replace(/\./g, '').replace(',', '.')) || 0; };
-    var cfg = { salario: num(g('res-sal')), horas: num(g('res-hrs')), multaOn: !!(document.getElementById('res-mon') || {}).checked, multaPct: num(g('res-mpc')), min: {} };
+    var cfg = { salario: num(g('res-sal')), horas: num(g('res-hrs')), multaOn: !!(document.getElementById('res-mon') || {}).checked, multaPct: num(g('res-mpc')), esperaDias: num(g('res-esp')), min: {} };
     ATIV.forEach(function (a) { cfg.min[a.k] = { m: num(g('res-m-' + a.k)), s: num(g('res-s-' + a.k)) }; });
     D.meus = D.meus || {}; D.meus.config = cfg; resEditando = false; renderResultados();
     firebase.database().ref('central_resultados/config').set(cfg).catch(function () {
@@ -10570,6 +10596,7 @@ const APP_VER='v135';
       '<div class="ri-card ri-b"><div class="ri-kl">Horas economizadas</div><div class="ri-kv">' + horasTxt(at.horas) + (parcial ? '<span class="ri-var">parcial</span>' : resVar(at.horas, ant.horas)) + '</div><div class="ri-ks">≈ ' + (at.horas / 8).toLocaleString('pt-BR', { maximumFractionDigits: 1 }) + ' dias de 8 h · ' + ivA.rot + ': ' + horasTxt(ant.horas) + '</div></div>' +
       '<div class="ri-card ri-b"><div class="ri-kl">Valor das horas economizadas</div><div class="ri-kv">' + brl(at.horas * vh) + '</div><div class="ri-ks">' + horasTxt(at.horas) + ' × ' + brl(vh) + '/h (salário ' + brl(cfg.salario) + ' ÷ ' + cfg.horas + ' h)</div></div>' +
       (cfg.multaOn ? '<div class="ri-card ri-b"><div class="ri-kl">Multas evitadas (estimativa)</div><div class="ri-kv">' + brl(at.multa) + '</div><div class="ri-ks">' + at.multaN + ' conta' + (at.multaN === 1 ? '' : 's') + ' paga' + (at.multaN === 1 ? '' : 's') + ' até o vencimento × ' + String(cfg.multaPct).replace('.', ',') + '%</div></div>' : '') +
+      (n(cfg.esperaDias) > 0 ? '<div class="ri-card ri-b"><div class="ri-kl">Espera por cotação evitada</div><div class="ri-kv">' + at.espera.toLocaleString('pt-BR', { maximumFractionDigits: 1 }) + ' dia' + (at.espera === 1 ? '' : 's') + '</div><div class="ri-ks">' + n(at.vezes.orcamento) + ' orçamento' + (n(at.vezes.orcamento) === 1 ? '' : 's') + ' × ' + String(cfg.esperaDias).replace('.', ',') + ' dia' + (n(cfg.esperaDias) === 1 ? '' : 's') + ' esperando a cotação dos fornecedores</div></div>' : '') +
       '<div class="ri-card ri-b"><div class="ri-kl">Cheques vencidos depositados</div><div class="ri-kv">' + brlC(at.cheqV) + '</div><div class="ri-ks">' + at.cheqN + ' cheque' + (at.cheqN === 1 ? '' : 's') + ' que passaram do bom para e foram depositados</div></div></div>';
     var linhas = ATIV.map(function (a) {
       var q = at.vezes[a.k] || 0, mm = cfg.min[a.k];
@@ -10594,7 +10621,8 @@ const APP_VER='v135';
     if (resEditando) {
       conf = '<div class="res-conf"><div class="res-conf-h"><b>Valores de referência</b><span>o tempo que cada tarefa levava antes e leva no sistema; a contagem é sozinha</span></div>' +
         '<div class="res-conf-l"><label>Salário (R$) <input id="res-sal" value="' + String(cfg.salario).replace('.', ',') + '"></label><label>Horas por mês <input id="res-hrs" value="' + cfg.horas + '"></label>' +
-        '<label class="res-chk"><input type="checkbox" id="res-mon"' + (cfg.multaOn ? ' checked' : '') + '> Contar multa evitada</label><label>Multa (%) <input id="res-mpc" value="' + String(cfg.multaPct).replace('.', ',') + '"></label></div>' +
+        '<label class="res-chk"><input type="checkbox" id="res-mon"' + (cfg.multaOn ? ' checked' : '') + '> Contar multa evitada</label><label>Multa (%) <input id="res-mpc" value="' + String(cfg.multaPct).replace('.', ',') + '"></label>' +
+        '<label>Espera por cotação (dias por orçamento) <input id="res-esp" value="' + String(cfg.esperaDias).replace('.', ',') + '"></label></div>' +
         '<table class="res-t sem-faixa"><thead><tr><th>Atividade</th><th class="n">Antes (min)</th><th class="n">No sistema (min)</th></tr></thead><tbody>' + ATIV.map(function (a) {
           return '<tr><td>' + esc(a.rot) + '<i> · ' + esc(a.sis) + '</i></td><td class="n"><input id="res-m-' + a.k + '" value="' + cfg.min[a.k].m + '"></td><td class="n"><input id="res-s-' + a.k + '" value="' + cfg.min[a.k].s + '"></td></tr>';
         }).join('') + '</tbody></table><div class="res-conf-b"><button type="button" class="docs-bt" onclick="rmResConfig()">Cancelar</button><button type="button" class="docs-bt pri" onclick="rmResSalvar()">Salvar</button></div></div>';
@@ -10607,7 +10635,7 @@ const APP_VER='v135';
       '<button type="button" class="docs-bt" onclick="rmResConfig()">⚙ Valores de referência</button><button type="button" class="docs-bt pri" onclick="rmResImprimir()">Imprimir / PDF</button></div></div>' +
       '<div class="res-aviso" id="res-aviso"></div>' + conf + cards +
       '<div class="ri-linha2"><div class="ri-card"><div class="ri-h"><b>Horas economizadas por atividade</b><span>vezes × (antes − no sistema)</span></div><div class="ri-b">' + tabela +
-      '<div class="ri-nota">Recibos, cartões PF, EPI e rescisões vêm do Recibos; propostas, revisões e contratos, do Propostas. Os minutos são estimativas: ajuste em Valores de referência.</div></div></div>' +
+      '<div class="ri-nota">Recibos, cartões PF, EPI e rescisões vêm do Recibos; propostas, revisões e contratos, do Propostas; detalhamentos, do Leitor DWG; conferências e termos, do Estoque de Máquinas. Os minutos são estimativas: ajuste em Valores de referência.</div></div></div>' +
       '<div class="ri-col"><div class="ri-card"><div class="ri-h"><b>Horas economizadas por mês</b><span>últimos 6 meses</span></div><div class="ri-b">' + barras + '</div></div>' +
       '<div class="ri-card"><div class="ri-h"><b>Horas por sistema</b><span>' + esc(iv.rot) + '</span></div><div class="ri-b">' + sistemas + '</div></div></div></div></div>';
   }
@@ -10683,7 +10711,7 @@ const APP_VER='v135';
     /* o resumo leve que o sistema de Propostas grava (funil e aprovado no mês) */
     watch('propostas_rm/resumo', 'prop');
     /* Meus resultados: só o dono escuta (nos fechados para os outros) */
-    if (ehDono()) { watch('recibos_resultados', 'recres'); watch('central_resultados', 'meus'); }
+    if (ehDono()) { watch('recibos_resultados', 'recres'); watch('central_resultados', 'meus'); watch('corte_estruturas/resumo', 'corte'); watch('maquinas_rm/resumo', 'maqres'); }
     tickTimer = setInterval(render, 60000);
     agendar();
   }
@@ -10692,7 +10720,7 @@ const APP_VER='v135';
     refs.forEach(function (r) { try { r.off(); } catch (e) { } });
     refs = [];
     limpaResumo();
-    D = { obras: null, compras: null, inbox: null, orc: null, contas: null, cheques: null, pu: null, almocos: null, equipe: null, perfitec: null, indic: null, contabil: null, prop: null, recres: null, meus: null };
+    D = { obras: null, compras: null, inbox: null, orc: null, contas: null, cheques: null, pu: null, almocos: null, equipe: null, perfitec: null, indic: null, contabil: null, prop: null, recres: null, meus: null, corte: null, maqres: null };
     Object.keys(RESPONDEU).forEach(function (k) { delete RESPONDEU[k]; });
     clearInterval(tickTimer); tickTimer = null;
     try { ajustaResultados(); } catch (e) { }

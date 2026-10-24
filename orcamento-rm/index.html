@@ -1882,6 +1882,56 @@ table.items tbody tr.dragover td{box-shadow:inset 0 2px 0 var(--red)}
 .si-status.st-enviado{color:#b4690e;border-color:#f0d39a;background:#fff8ec}
 .si-status.st-aprovado{color:#1f7a4d;border-color:#bfe3cf;background:#eef9f2}
 .si-status.st-perdido{color:#B3123C;border-color:#eec7c4;background:#fdf1f0}
+/* Salvos com prévia: lista à esquerda, o orçamento escolhido à direita */
+.saved-modal{max-width:1180px}
+/* a lista e a prévia rolam cada uma por si; a caixa em volta não corta */
+.saved-modal .mbody{max-height:none;overflow:visible}
+.saved-grid{display:grid;grid-template-columns:minmax(300px,400px) minmax(0,1fr);gap:16px;align-items:start}
+#savedList{max-height:calc(100vh - 290px);overflow:auto;padding-right:2px}
+.saved-item{cursor:pointer;transition:border-color .12s,background-color .12s}
+.saved-item:hover{border-color:#cfd3da}
+.saved-item.sel{border-color:var(--red);box-shadow:inset 3px 0 0 var(--red)}
+.saved-item:focus-visible{outline:2px solid var(--red);outline-offset:1px}
+.saved-prev{border:1px solid var(--line);border-radius:12px;padding:16px 18px;max-height:calc(100vh - 290px);overflow:auto;min-height:220px}
+.sp-vazio{color:var(--muted);font-size:13.5px;padding:24px 4px;text-align:center}
+.sp-volta{display:none;margin-bottom:10px}
+.sp-num{font-size:12.5px;color:var(--muted);font-weight:650;display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.sp-st{font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;border-radius:20px;padding:1px 8px;background:#eef1f4;color:var(--gray)}
+.sp-st.st-enviado{background:#e8f0fb;color:#1a5fa8}.sp-st.st-aprovado{background:#eaf5ef;color:#1f7a4d}.sp-st.st-perdido{background:#fbeeed;color:#8a3a36}
+.sp-tit{font-size:19px;font-weight:750;margin-top:4px;line-height:1.25}
+.sp-obra{font-size:14px;color:var(--gray);margin-top:2px}
+.sp-info{display:flex;flex-wrap:wrap;gap:4px 16px;font-size:12.5px;margin-top:8px}
+.sp-info i{font-style:normal;color:var(--muted)}
+.sp-acoes{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}
+.sp-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px;margin-bottom:10px}
+.sp-kpis div{background:var(--line-2);border-radius:9px;padding:8px 10px}
+.sp-kpis i{display:block;font-style:normal;font-size:11.5px;color:var(--muted);font-weight:650}
+.sp-kpis b{font-size:16px;font-variant-numeric:tabular-nums}
+.sp-aviso{background:#fff6ec;border:1px solid #f3d3b4;color:#7a3a10;border-radius:9px;padding:7px 10px;font-size:12.5px;margin-bottom:8px}
+.sp-sec{margin-top:12px}
+.sp-sec-t{font-size:11.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:4px}
+.sp-sec-t span{font-weight:600;letter-spacing:0}
+.sp-t{width:100%;border-collapse:collapse;font-size:13px}
+.sp-t th{font-size:11px;color:var(--muted);font-weight:650;text-align:right;padding:4px 6px;border-bottom:1px solid var(--line)}
+.sp-t th.l,.sp-t td.l{text-align:left}
+.sp-t td{padding:6px;border-bottom:1px solid var(--line-2);vertical-align:top}
+.sp-t td.n{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
+.sp-t tfoot td{font-weight:700;border-bottom:0}
+.sp-d{font-weight:600}.sp-falta{color:var(--warn,#a4400c)}
+.sp-x{font-size:12px;color:var(--muted);margin-top:1px}
+.sp-tot{margin-top:12px;border-top:1px solid var(--line);padding-top:8px;font-size:13.5px}
+.sp-tot div{display:flex;justify-content:space-between;padding:2px 0}
+.sp-tot b{font-variant-numeric:tabular-nums}
+.sp-tot .sp-tot-f{font-size:16px;font-weight:750}
+.sp-obs{font-size:13px;white-space:pre-wrap;line-height:1.5}
+@media (max-width:860px){
+  .saved-grid{grid-template-columns:1fr}
+  #savedList,.saved-prev{max-height:none}
+  .saved-prev{display:none}
+  .saved-grid.com-previa #savedList{display:none}
+  .saved-grid.com-previa .saved-prev{display:block}
+  .sp-volta{display:inline-flex}
+}
 .saved-tools{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;align-items:center}
 .saved-tools input[type=text]{flex:1;min-width:160px;border:1px solid var(--line);border-radius:8px;padding:8px 10px;font-size:14px;font-weight:505}
 .saved-tools select{border:1px solid var(--line);border-radius:8px;padding:8px 10px;font-size:14px;background:#fff;font-weight:505}
@@ -4488,7 +4538,7 @@ body:not([data-theme="escuro"]){
  </div>
 </div>
 <div class="overlay" id="savedOverlay">
- <div class="modal" style="max-width:640px">
+ <div class="modal saved-modal">
   <div class="mhead">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:18px;height:18px"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
     <h2>Orçamentos salvos</h2>
@@ -4506,7 +4556,10 @@ body:not([data-theme="escuro"]){
       </select>
     </div>
     <div id="savedSync" class="saved-sync"></div>
-    <div id="savedList"></div>
+    <div class="saved-grid" id="savedGrid">
+      <div id="savedList"></div>
+      <div class="saved-prev" id="savedPrev" aria-live="polite"></div>
+    </div>
   </div>
   <div class="mfoot"><span class="note">Sincronizam entre os aparelhos pela nuvem (anexos ficam neste dispositivo). Use “Exportar” no topo para um backup em arquivo.</span><span class="spacer"></span><button class="btn-sm red" onclick="closeSaved()">Fechar</button></div>
  </div>
@@ -8632,7 +8685,7 @@ function atualizaSalvo(atual){
   atual.fornecedorAtivo=S.fornecedorAtivo; atual.quote=snapshotQuote();
   save(); descartarRascunho(); renderSavedCount(); toast('Orçamento atualizado ✓');
 }
-function abrirSalvos(){document.getElementById('savedOverlay').classList.add('open');renderSaved();}
+function abrirSalvos(){SAVED_SEL=null;document.getElementById('savedOverlay').classList.add('open');renderSaved();}
 function closeSaved(){document.getElementById('savedOverlay').classList.remove('open');}
 function renderSavedCount(){const el=document.getElementById('savedCount');if(el)el.textContent=(S.orcamentosSalvos||[]).length;try{if(typeof cnmSalvosRender==='function')cnmSalvosRender();}catch(e){}}
 const STATUS_ORC={aberto:'Aberto',enviado:'Enviado',aprovado:'Aprovado',perdido:'Perdido'};
@@ -8689,7 +8742,7 @@ function renderSaved(){
   try{ renderSavedSync(); }catch(e){}
   const host=document.getElementById('savedList');
   const all=(S.orcamentosSalvos||[]).slice().sort((a,b)=>orcCriadoEm(b)-orcCriadoEm(a));
-  if(!all.length){host.innerHTML='<p class="note">Nenhum orçamento salvo ainda. Monte um orçamento e clique em “Salvar orçamento”.</p>';return;}
+  if(!all.length){host.innerHTML='<p class="note">Nenhum orçamento salvo ainda. Monte um orçamento e clique em “Salvar orçamento”.</p>';SAVED_SEL=null;renderSalvoPrevia();return;}
   const q=semAcento((document.getElementById('savedSearch')||{}).value||'').trim().toLowerCase();
   const fst=((document.getElementById('savedFilter')||{}).value||'');
   const list=all.filter(e=>{
@@ -8697,7 +8750,7 @@ function renderSaved(){
     if(q&&![e.nome,e.cliente,e.obra,e.numero].some(v=>semAcento(v||'').toLowerCase().includes(q)))return false;
     return true;
   });
-  if(!list.length){host.innerHTML='<p class="note">Nada encontrado com esse filtro — confira a busca ou o status.</p>';return;}
+  if(!list.length){host.innerHTML='<p class="note">Nada encontrado com esse filtro — confira a busca ou o status.</p>';SAVED_SEL=null;renderSalvoPrevia();return;}
   /* COBRAR RESPOSTA. Orçamento enviado e esquecido é venda perdida sem
      ninguém decidir perder. Passou de ORC_COBRAR_DIAS sem mudar de status,
      ganha a etiqueta; no topo, quantos são e um atalho para vê-los. */
@@ -8709,15 +8762,17 @@ function renderSaved(){
     const dsr=orcDiasSemResposta(e);
     const sub=e.substituidoPor&&porId[e.substituidoPor];
     const idTxt=String(e.nome||'').indexOf(idOrc(e))===0?'':escapeAttr(idOrc(e))+' · ';
-    return `<div class="saved-item${e.substituidoPor?' substituido':''}">
+    return `<div class="saved-item${e.substituidoPor?' substituido':''}${e.id===SAVED_SEL?' sel':''}" data-sid="${e.id}" tabindex="0" role="button" aria-pressed="${e.id===SAVED_SEL}" onclick="salvoEscolhe('${e.id}')" ondblclick="loadOrcamento('${e.id}')" onkeydown="if(event.key==='Enter'&&event.target===this)salvoEscolhe('${e.id}')">
     <div><div class="si-nome">${escapeAttr(e.nome)}${(typeof cnmEhDetalhamento==='function'&&cnmEhDetalhamento(e))?' <span class="si-tag">chave na mão</span>':''}${e.id===S.orcamentoAtualId?' <span class="si-tag">aberto</span>':''}${dsr>=ORC_COBRAR_DIAS?' <span class="si-tag cobrar" title="Enviado há '+dsr+' dias sem mudar de status">cobrar · '+dsr+' dias</span>':''}${orcValidadeVencida(e)?' <span class="si-tag cobrar" title="A validade do preço já passou">validade vencida</span>':''}${e.substituidoPor?' <span class="si-tag" title="Fica guardado, mas não conta no relatório">substituído'+(sub&&sub.numero?' por '+escapeAttr(sub.numero):'')+'</span>':''}</div>
       <div class="si-sub">${e.numero?'Nº '+escapeAttr(e.numero)+' · ':''}${idTxt}${quando}${e.total?' · '+e.total:''}${(e.status==='perdido'&&e.motivo)?' · <b>Perdido: '+escapeAttr(e.motivo)+'</b>':''}</div></div>
-    <div class="si-act">
+    <div class="si-act" onclick="event.stopPropagation()">
       ${statusSelHtml(e)}
-      <button class="btn-sm" onclick="loadOrcamento('${e.id}')">Abrir</button>
       <button class="delx" title="Excluir" onclick="delOrcamento('${e.id}')">${trash()}</button>
     </div></div>`;
   }).join('');
+  if(!list.some(e=>e.id===SAVED_SEL)) SAVED_SEL=(list.find(e=>e.id===S.orcamentoAtualId)||list[0]).id;
+  host.querySelectorAll('.saved-item').forEach(el=>{ const on=el.dataset.sid===SAVED_SEL; el.classList.toggle('sel',on); el.setAttribute('aria-pressed',on); });
+  renderSalvoPrevia();
 }
 function loadOrcamento(id){
   const e=(S.orcamentosSalvos||[]).find(x=>x.id===id); if(!e)return;
@@ -8726,7 +8781,119 @@ function loadOrcamento(id){
   QUOTE_KEYS.forEach(k=>{ S[k]=(e.quote&&e.quote[k]!=null)?JSON.parse(JSON.stringify(e.quote[k])):fq[k]; });
   if(e.fornecedorAtivo&&S.fornecedores.some(f=>f.id===e.fornecedorAtivo))S.fornecedorAtivo=e.fornecedorAtivo;
   S.orcamentoAtualId=e.id;
-  save();closeSaved();initRender();toast('Orçamento aberto');
+  save();closeSaved();initRender();if(window.orcAba)orcAba('orc');toast('Orçamento aberto');
+}
+/* SALVOS COM PRÉVIA. Antes, para saber se era aquele mesmo, era preciso
+   abrir o orçamento na tela principal -- e abrir já trocava o que estava
+   lá. Agora a lista fica à esquerda e o orçamento escolhido aparece inteiro
+   ao lado: cabeçalho, cada item com quantidade e valor, fretes, desconto,
+   total, chave na mão e esquadrias. Para mexer: "Editar orçamento" (abre
+   este na tela principal) ou "Revisar" (abre como nova revisão, R1, R2...,
+   e a versão enviada fica guardada como estava). Teste orcamento-salvos-previa. */
+let SAVED_SEL=null;
+function salvoEscolhe(id){
+  SAVED_SEL=id;
+  document.querySelectorAll('#savedList .saved-item').forEach(el=>{ const on=el.dataset.sid===id; el.classList.toggle('sel',on); el.setAttribute('aria-pressed',on); });
+  const g=document.getElementById('savedGrid'); if(g) g.classList.add('com-previa');
+  renderSalvoPrevia();
+}
+function salvoVoltaLista(){ const g=document.getElementById('savedGrid'); if(g) g.classList.remove('com-previa'); }
+/* As contas são as da tela principal, feitas com o orçamento salvo no lugar
+   do aberto e devolvidas logo em seguida. Nada é gravado: cópias, e o save()
+   desligado enquanto isso (uma migração antiga gravaria o salvo por cima do
+   orçamento aberto). */
+function orcPrevia(e){
+  const q=(e&&e.quote)||{}, fq=freshQuote(), ks=QUOTE_KEYS.concat(['fornecedorAtivo']), guarda={};
+  ks.forEach(k=>{ guarda[k]=S[k]; });
+  const r={perf:[],telha:[],cat:[],av:[],fretes:[],esq:[],cnm:null,sub:0,peso:0,area:0,semPreco:0,cab:{}};
+  const salva=window.save; window.save=function(){};
+  try{
+    QUOTE_KEYS.forEach(k=>{ S[k]=(q[k]!=null)?JSON.parse(JSON.stringify(q[k])):fq[k]; });
+    if(e.fornecedorAtivo&&(S.fornecedores||[]).some(f=>f.id===e.fornecedorAtivo)) S.fornecedorAtivo=e.fornecedorAtivo;
+    ['numero','data','validade','vendedor','cliente','obra','obs'].forEach(k=>{ r.cab[k]=S[k]||''; });
+    freteMigra();
+    (S.linhasPerfil||[]).forEach(l=>{
+      const p=perfilById(l.perfilId);
+      if(!p){ r.perf.push({d:'Item removido do cadastro',x:'',q:l.qtd,tot:0,falta:true}); return; }
+      const c=perfilCalc(l,p); r.peso+=c.pesoTot||0; r.sub+=c.tot||0; if(c.semPreco) r.semPreco++;
+      r.perf.push({d:p.dims+' '+p.tipo,x:[p.grupo,p.esp+' mm',(l.comp||p.comp)+' mm'].filter(Boolean).join(' · '),q:l.qtd,peso:c.pesoTot,tot:c.tot,sp:c.semPreco});
+    });
+    (S.linhasTelha||[]).forEach(l=>{
+      const t=telhaById(l.telhaId);
+      if(!t){ r.telha.push({d:'Telha removida do cadastro',x:'',q:l.qtd,tot:0,falta:true}); return; }
+      const c=telhaCalc(l,t), a=telhaAreaM2(l,t,c.metros); r.area+=a; r.sub+=c.tot||0; if(c.semPreco) r.semPreco++;
+      r.telha.push({d:t.desc,x:[(l.comp!=null?l.comp+' mm':''),num(a,2)+' m²',l.obs||''].filter(Boolean).join(' · '),q:l.qtd,tot:c.tot,sp:c.semPreco});
+    });
+    (S.linhasCat||[]).forEach(l=>{
+      const cat=catById(l.catId), it=cat?catItemById(cat,l.itemId):null; if(!it) return;
+      const tot=catLineTotal(cat,it,l); r.sub+=tot; if(catLinhaSemPreco(cat,it,l)) r.semPreco++;
+      r.cat.push({d:catItemLabel(it),x:cat.nome,q:l.qtd,tot:tot});
+    });
+    (S.linhasAvulso||[]).forEach(l=>{
+      const tot=avulsoLineTotal(l); r.sub+=tot;
+      r.av.push({d:l.nome||'Item avulso',x:[l.tamanho,l.esp].filter(Boolean).join(' · '),q:l.qtd,tot:tot});
+    });
+    [['Metalica','Frete da metálica'],['Telhas','Frete das telhas']].forEach(([g,rot])=>{
+      freteLista(g).forEach(x=>{ if(x.v>0){ r.sub+=x.v; r.fretes.push({d:rot,x:x.n,tot:x.v}); } });
+    });
+    (S.esquadrias||[]).forEach(x=>{ let m=''; try{ m=esqMed(x); }catch(err){} r.esq.push({d:x.tipo||'sem tipo',x:m,q:x.qtd}); });
+    if(cnmTemConteudoDe(S.chaveMao)){
+      const d=S.chaveMao, m2=cnmNum(d.m2);
+      r.cnm={cidade:d.cidade||'',m2:m2,total:cnmTotalDe(d),serv:cnmLista(d.servicos).map(x=>({d:x.nome||'Serviço',v:cnmSubCom(x,m2)})).filter(x=>x.v>0)};
+    }
+    r.descPct=parseNumLoose(S.desc)||0;
+  }finally{
+    ks.forEach(k=>{ S[k]=guarda[k]; });
+    window.save=salva;
+  }
+  r.desc=r.sub*r.descPct/100; r.total=r.sub-r.desc;
+  if(!(r.total>0)&&r.cnm&&r.cnm.total>0) r.total=r.cnm.total;
+  return r;
+}
+function renderSalvoPrevia(){
+  const host=document.getElementById('savedPrev'); if(!host) return;
+  const e=SAVED_SEL&&(S.orcamentosSalvos||[]).find(x=>x.id===SAVED_SEL);
+  if(!e){ host.innerHTML='<div class="sp-vazio">Escolha um orçamento na lista para ver ele aqui.</div>'; return; }
+  let r; try{ r=orcPrevia(e); }catch(err){ host.innerHTML='<div class="sp-vazio">Não deu para montar a prévia deste orçamento. Ele abre normalmente em “Editar orçamento”.</div>'+salvoAcoesHTML(e); return; }
+  const c=r.cab, st=e.status||'aberto';
+  const linha=(x,qtd)=>'<tr><td class="l"><div class="sp-d'+(x.falta?' sp-falta':'')+'">'+escapeAttr(x.d)+(x.sp?' <span class="warnote">sem preço</span>':'')+'</div>'+(x.x?'<div class="sp-x">'+escapeAttr(x.x)+'</div>':'')+'</td>'
+    +(qtd?'<td class="n">'+(x.q!=null?escapeAttr(String(x.q).replace('.',',')):'')+'</td>':'')+'<td class="n">'+(x.tot!=null?brl(x.tot):'')+'</td></tr>';
+  const sec=(tit,lst,qtd)=>lst.length?'<div class="sp-sec"><div class="sp-sec-t">'+tit+' <span>'+lst.length+'</span></div><table class="sp-t"><thead><tr><th class="l">Item</th>'+(qtd?'<th class="n">Qtd</th>':'')+'<th class="n">Total</th></tr></thead><tbody>'+lst.map(x=>linha(x,qtd)).join('')+'</tbody></table></div>':'';
+  const salvoNum=Number(e.totalNum)||0;
+  const difere=salvoNum>0&&Math.abs(salvoNum-r.total)>=1;
+  const info=[['Data',c.data],['Validade',c.validade],['Vendedor',c.vendedor],['Salvo em',String(e.salvoEm||'').replace(/(\d{2}:\d{2}):\d{2}$/,'$1')]].filter(x=>x[1]);
+  const tags=[];
+  if(e.revDe) tags.push('<span class="si-tag">revisão</span>');
+  if(e.substituidoPor) tags.push('<span class="si-tag">substituído</span>');
+  if(orcValidadeVencida(e)) tags.push('<span class="si-tag cobrar">validade vencida</span>');
+  if(e.id===S.orcamentoAtualId) tags.push('<span class="si-tag">aberto na tela</span>');
+  host.innerHTML='<div class="sp-top"><button type="button" class="btn-sm sp-volta" onclick="salvoVoltaLista()">← Lista</button>'
+    +'<div class="sp-num">'+(c.numero?'Nº '+escapeAttr(c.numero):'Sem número')+' <span class="sp-st st-'+st+'">'+(STATUS_ORC[st]||st)+'</span>'+tags.join(' ')+'</div>'
+    +'<div class="sp-tit">'+escapeAttr(c.cliente||'Sem cliente')+'</div>'+(c.obra?'<div class="sp-obra">'+escapeAttr(c.obra)+'</div>':'')
+    +(info.length?'<div class="sp-info">'+info.map(x=>'<span><i>'+x[0]+'</i> '+escapeAttr(x[1])+'</span>').join('')+'</div>':'')+'</div>'
+    +salvoAcoesHTML(e)
+    +'<div class="sp-kpis"><div><i>Total</i><b>'+(e.total?escapeAttr(e.total):brl(r.total))+'</b></div>'
+    +(r.peso>0?'<div><i>Peso</i><b>'+kg(r.peso)+' kg</b></div>':'')+(r.area>0?'<div><i>Telhas</i><b>'+m2(r.area)+'</b></div>':'')
+    +'<div><i>Itens</i><b>'+(r.perf.length+r.telha.length+r.cat.length+r.av.length+r.esq.length)+'</b></div></div>'
+    +(difere?'<div class="sp-aviso">Com os preços de hoje este orçamento daria <b>'+brl(r.total)+'</b> (foi salvo com '+escapeAttr(e.total||brl(salvoNum))+'). Ao editar, valem os preços de hoje.</div>':'')
+    +(r.semPreco?'<div class="sp-aviso">'+r.semPreco+' item(ns) sem preço.</div>':'')
+    +sec('Perfis',r.perf,true)+sec('Telhas',r.telha,true)+sec('Itens',r.cat,true)+sec('Avulsos',r.av,true)+sec('Fretes',r.fretes,false)
+    +(r.esq.length?'<div class="sp-sec"><div class="sp-sec-t">Esquadrias <span>'+r.esq.length+'</span></div><table class="sp-t"><tbody>'+r.esq.map(x=>'<tr><td class="l"><div class="sp-d">'+escapeAttr(x.d)+'</div>'+(x.x?'<div class="sp-x">'+escapeAttr(x.x)+'</div>':'')+'</td><td class="n">'+(x.q!=null?escapeAttr(String(x.q)):'')+'</td></tr>').join('')+'</tbody></table></div>':'')
+    +(r.cnm?'<div class="sp-sec"><div class="sp-sec-t">Chave na mão'+(r.cnm.cidade?' · '+escapeAttr(r.cnm.cidade):'')+(r.cnm.m2>0?' · '+num(r.cnm.m2,2)+' m²':'')+'</div><table class="sp-t"><tbody>'+r.cnm.serv.map(x=>'<tr><td class="l"><div class="sp-d">'+escapeAttr(x.d)+'</div></td><td class="n">'+brl(x.v)+'</td></tr>').join('')+'</tbody><tfoot><tr><td class="l">Total do chave na mão</td><td class="n">'+brl(r.cnm.total)+'</td></tr></tfoot></table></div>':'')
+    +((r.sub>0)?'<div class="sp-tot"><div><span>Subtotal</span><b>'+brl(r.sub)+'</b></div>'+(r.desc>0?'<div><span>Desconto '+num(r.descPct,2).replace(/,00$/,'')+'%</span><b>− '+brl(r.desc)+'</b></div>':'')+'<div class="sp-tot-f"><span>Total</span><b>'+brl(r.sub-r.desc)+'</b></div></div>':'')
+    +(c.obs?'<div class="sp-sec"><div class="sp-sec-t">Observações</div><div class="sp-obs">'+escapeAttr(c.obs)+'</div></div>':'');
+}
+function salvoAcoesHTML(e){
+  return '<div class="sp-acoes"><button type="button" class="btn-sm red" onclick="loadOrcamento(\''+e.id+'\')" title="Abre este orçamento na tela principal para mudar">Editar orçamento</button>'
+    +'<button type="button" class="btn-sm" onclick="revisarOrcamento(\''+e.id+'\')" title="Abre como nova revisão (R1, R2...). A versão enviada fica guardada como está.">Revisar</button></div>';
+}
+/* Revisar: abre na tela principal e já salva como a próxima revisão (o mesmo
+   que "Salvar como nova revisão"), marcando a anterior como substituída. */
+function revisarOrcamento(id){
+  const e=(S.orcamentosSalvos||[]).find(x=>x.id===id); if(!e) return;
+  loadOrcamento(id);
+  if(S.orcamentoAtualId!==id) return;   // desistiu de trocar o orçamento aberto
+  novaRevisao(e);
 }
 // Identifica o orçamento por cliente e obra -- é o que distingue duas versões
 // do mesmo cliente ("CWR" e "CWR - atualizada") na hora de escolher qual sai.
@@ -9296,7 +9463,7 @@ function applyImport(){
    publicacao, e ha uma prova automatica que falha se um subir sem o outro.
    Assim o numero na tela e' o mesmo do arquivo que o aparelho guardou, e
    dizer "estou na v15" passa a significar alguma coisa. */
-const APP_VER='v127';
+const APP_VER='v128';
 (function(){ try{ const p=document.getElementById('verPill'); if(p)p.textContent=APP_VER; }catch(e){} })();
 /* Versao nova assumiu com a pagina aberta: avisa, em vez de recarregar por
    conta propria e jogar fora um orcamento pela metade. */
