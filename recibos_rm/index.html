@@ -7680,7 +7680,18 @@ function dataArq(v){
   const d=new Date(); return String(d.getDate()).padStart(2,'0')+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+d.getFullYear();
 }
 function mesArq(mesIdx,ano){ return String(Number(mesIdx)+1).padStart(2,'0')+'-'+ano; }
+/* Documentos do RH que não ficam guardados (advertência, pedido de demissão,
+   solicitação, benefícios, carta): ao abrir para imprimir, conta um por
+   documento e dia em recibos_resultados/_emitidos -- só a marca, sem nome. */
+const DOC_RH=/^(Advertência|Pedido de demissão|Solicitação|Benefícios|Carta)/;
+function contaDocRH(texto){
+  if(!DOC_RH.test(String(texto||''))||!useFirebase||!fb||!fb.db)return;
+  const d=new Date(),dia=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+  let h=5381;const t=texto+'|'+dia;for(let i=0;i<t.length;i++)h=((h*33)^t.charCodeAt(i))>>>0;
+  fb.db.ref('recibos_resultados/_emitidos/'+dia.slice(0,7)+'/d'+h.toString(36)).set(1).catch(()=>{});
+}
 function infoImpressao(texto,nome){
+  try{contaDocRH(texto);}catch(e){}
   const i=$('#printInfo'); if(!i)return;
   i.textContent=texto; i.dataset.para=texto;
   i.dataset.nome=[].concat(nome).filter(Boolean).join(' ');
@@ -16799,7 +16810,7 @@ function publishContabil(){
    contabilidade, para a Central não baixar o Recibos inteiro. Teste
    recibos-publica-resultados. */
 function contagemResultados(){
-  const m={},c=k=>(m[k]=m[k]||{pag:0,terc:0,resc:0,pf:0,epi:0});
+  const m={},c=k=>(m[k]=m[k]||{pag:0,terc:0,resc:0,pf:0,epi:0,fadm:0,entrev:0,assid:0,bh:0});
   const mesDe=v=>{const d=new Date(typeof v==='number'?v:String(v||''));return isNaN(d)?'':d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');};
   Object.values(state.historico||{}).forEach(h=>{
     if(!h||!h.ano||h.mes==null)return;
@@ -16809,6 +16820,10 @@ function contagemResultados(){
   (state.rescisoes||[]).forEach(r=>{const k=mesDe(r&&r.ts);if(k)c(k).resc++;});
   Object.values(state.pfPontos||{}).forEach(p=>{Object.keys(p||{}).forEach(k=>{if(/^\d{4}-\d{2}$/.test(k)&&p[k]&&Object.keys(p[k]).length)c(k).pf++;});});
   Object.values(state.epiMovimentos||{}).forEach(x=>{if(x&&x.confirmadoEm){const k=mesDe(x.confirmadoEm);if(k)c(k).epi++;}});
+  Object.values(state.fichasAdm||{}).forEach(f=>{const k=mesDe(f&&f.criadaEm);if(k)c(k).fadm++;});
+  Object.values(state.entrevistas||{}).forEach(x=>{const k=mesDe(x&&x.criadaEm);if(k)c(k).entrev++;});
+  Object.keys(state.assiduidade||{}).forEach(k=>{const r=state.assiduidade[k];if(/^\d{4}-\d{2}$/.test(k)&&r&&(Object.keys(r.faltou||{}).length||Object.keys(r.assid||{}).length))c(k).assid++;});
+  Object.keys(state.bancoHoras||{}).forEach(k=>{if(!/^\d{4}-\d{2}$/.test(k))return;Object.values(state.bancoHoras[k]||{}).forEach(p=>{if(p&&((p.faltas||[]).length||(p.recuperacoes||[]).length))c(k).bh++;});});
   return m;
 }
 let tResultados=null,resultadosPublicados='';
@@ -16818,7 +16833,7 @@ function agendarResultados(){
   tResultados=setTimeout(()=>{
     const m=contagemResultados(),j=JSON.stringify(m);
     if(j===resultadosPublicados)return;
-    fb.db.ref('recibos_resultados').set(m).then(()=>{resultadosPublicados=j;}).catch(()=>{});
+    fb.db.ref('recibos_resultados').update(m).then(()=>{resultadosPublicados=j;}).catch(()=>{});
   },3000);
 }
 function pfFechaPassos(comp){
@@ -17507,7 +17522,7 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeAll();$('#prin
    juntos a cada publicacao, e ha uma prova automatica que falha se um subir
    sem o outro. Assim o numero na tela e o mesmo do arquivo que o aparelho
    guardou, e dizer "estou na v81" passa a significar alguma coisa. */
-const APP_VER='v269';
+const APP_VER='v270';
 (function(){var p=document.getElementById('verPill'); if(p)p.textContent=APP_VER;})();
 
 if('serviceWorker' in navigator){

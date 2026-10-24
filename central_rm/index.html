@@ -4537,7 +4537,7 @@ try { var _e = localStorage.getItem('rm_estilo_ultimo'); if (_e === 'viva' || _e
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js" crossorigin="anonymous"></script>
 
 <script>/* versão publicada (PADRAO_RM.md §3): sobe a cada publicação, junto com o CACHE do sw.js */
-const APP_VER='v136';
+const APP_VER='v137';
 </script>
 <script>
   /* ===== LOGIN (Firebase Authentication) =====
@@ -9497,7 +9497,7 @@ const APP_VER='v136';
   if (!window.firebase || !firebase.database) return;
 
   var db = firebase.database();
-  var D = { obras: null, compras: null, inbox: null, orc: null, contas: null, cheques: null, pu: null, almocos: null, equipe: null, perfitec: null, indic: null, contabil: null, prop: null, recres: null, meus: null, corte: null, maqres: null };
+  var D = { obras: null, compras: null, inbox: null, orc: null, contas: null, cheques: null, pu: null, almocos: null, equipe: null, perfitec: null, indic: null, contabil: null, prop: null, recres: null, meus: null, corte: null, maqres: null, metal: null, docs: null, etq: null, pmres: null };
   var refs = [], tickTimer = null, renderT = null, mounted = false;
 
   var COR = {
@@ -10409,10 +10409,15 @@ const APP_VER='v136';
     { k: 'prop_nova', rot: 'Proposta comercial (criar)', sis: 'Propostas', antes: 'Word', m: 120, s: 25 },
     { k: 'prop_rev', rot: 'Proposta comercial (revisão)', sis: 'Propostas', antes: 'Word', m: 30, s: 5 },
     { k: 'contrato', rot: 'Contrato', sis: 'Propostas', antes: 'Word', m: 90, s: 10 },
+    { k: 'img', rot: 'Imagem da obra preparada (marca d\'água, realce)', sis: 'Propostas', antes: 'editor de imagem', m: 15, s: 2 },
     { k: 'orcamento', rot: 'Orçamento (com o banco de preços)', sis: 'Orçamento RM', antes: 'Excel', m: 60, s: 20 },
     { k: 'detalhe_cnm', rot: 'Chave na mão: serviços detalhados', sis: 'Orçamento RM', antes: 'Excel', m: 120, s: 30 },
+    { k: 'esq', rot: 'Pedido de esquadrias (por orçamento)', sis: 'Orçamento RM', antes: 'Word e e-mail', m: 45, s: 10 },
     { k: 'detalhamento', rot: 'Detalhamento da obra (mapa de montagem e lista de corte)', sis: 'Leitor DWG', antes: 'à mão, ~3 dias', m: 1440, s: 120 },
+    { k: 'pln', rot: 'Planificação de peças (projeto)', sis: 'Leitor DWG', antes: 'à mão no AutoCAD', m: 120, s: 20 },
     { k: 'pu', rot: 'Cálculo de PU (projeto)', sis: 'Sistema PU', antes: 'Excel', m: 90, s: 20 },
+    { k: 'metal', rot: 'Cálculo da estrutura metálica (obra)', sis: 'Sistema PU', antes: 'Excel', m: 90, s: 20 },
+    { k: 'pm', rot: 'Cálculo de pré-moldado impresso', sis: 'Cálculo Pré-moldados', antes: 'Excel', m: 90, s: 20 },
     { k: 'perfitec', rot: 'Pedido Perfitec lançado', sis: 'Pedidos Perfitec', antes: 'Excel', m: 10, s: 3 },
     { k: 'obra_parc', rot: 'Planilha de obra: parcela recebida', sis: 'Obras', antes: 'Excel', m: 5, s: 1 },
     { k: 'obra_nf', rot: 'Planilha de obra: nota fiscal lançada', sis: 'Obras', antes: 'Excel', m: 6, s: 1 },
@@ -10422,6 +10427,11 @@ const APP_VER='v136';
     { k: 'cartao_pf', rot: 'Cartão de ponto PF (por pessoa no mês)', sis: 'Recibos', antes: 'Excel', m: 25, s: 3 },
     { k: 'epi', rot: 'Ficha de EPI (entrega ou troca)', sis: 'Recibos', antes: 'papel e Excel', m: 12, s: 2 },
     { k: 'contabil', rot: 'Fechamento da contabilidade (PDF + Excel)', sis: 'Recibos', antes: 'Excel', m: 240, s: 30 },
+    { k: 'fadm', rot: 'Ficha de admissão', sis: 'Recibos', antes: 'Word', m: 30, s: 8 },
+    { k: 'entrev', rot: 'Entrevista de candidato registrada', sis: 'Recibos', antes: 'papel', m: 10, s: 3 },
+    { k: 'doc_rh', rot: 'Documento do RH (advertência, pedido de demissão, solicitação)', sis: 'Recibos', antes: 'Word', m: 20, s: 3 },
+    { k: 'assid', rot: 'Assiduidade e sorteio do prêmio (mês)', sis: 'Recibos', antes: 'Excel', m: 60, s: 10 },
+    { k: 'bh', rot: 'Banco de horas (por pessoa no mês)', sis: 'Recibos', antes: 'Excel', m: 15, s: 3 },
     { k: 'almoco_mes', rot: 'Almoços: marcação do mês', sis: 'Almoços', antes: 'Excel', m: 220, s: 40 },
     { k: 'almoco_func', rot: 'Almoços: reembolso por funcionário', sis: 'Almoços', antes: 'Excel', m: 4, s: 0 },
     { k: 'conta', rot: 'Conta a pagar lançada', sis: 'Contas a Pagar', antes: 'Excel', m: 3, s: 1 },
@@ -10430,7 +10440,10 @@ const APP_VER='v136';
     { k: 'cheque', rot: 'Cheque lançado', sis: 'Cheques', antes: 'Excel', m: 3, s: 1 },
     { k: 'maq_conf', rot: 'Conferência de máquinas (um setor)', sis: 'Estoque de Máquinas', antes: 'papel e Excel', m: 60, s: 15 },
     { k: 'maq_mov', rot: 'Máquina: entrada, baixa ou conserto', sis: 'Estoque de Máquinas', antes: 'Excel', m: 4, s: 1 },
-    { k: 'maq_termo', rot: 'Termo de responsabilidade', sis: 'Estoque de Máquinas', antes: 'Word', m: 20, s: 2 }
+    { k: 'maq_termo', rot: 'Termo de responsabilidade', sis: 'Estoque de Máquinas', antes: 'Word', m: 20, s: 2 },
+    { k: 'doc', rot: 'Documento arquivado (CRLV, contrato…)', sis: 'Central', antes: 'pasta no computador', m: 8, s: 2 },
+    { k: 'etiq', rot: 'Lote de etiquetas impresso', sis: 'Central', antes: 'Word', m: 20, s: 3 },
+    { k: 'lemb', rot: 'Lembrete com aviso na agenda', sis: 'Central', antes: 'anotação solta', m: 3, s: 1 }
   ];
   /* esperaDias: quanto se esperava a cotação dos fornecedores antes do banco
      de preços -- conta em dias de prazo, não em horas de trabalho */
@@ -10468,23 +10481,36 @@ const APP_VER='v136';
       if (mesDe(p.cr || p.d) === mes) um('prop_nova');
       (p.rv || []).forEach(function (t) { if (mesDe(t) === mes) um('prop_rev'); });
       if (mesDe(p.cd) === mes) um('contrato');
+      (p.im || []).forEach(function (t) { if (mesDe(t) === mes) um('img'); });
     });
     vals(D.orc).forEach(function (e) {
       if (mesDe(n(e.ts)) !== mes) return;
       var cnm = temCnm(e.quote);
       if (!cnm || temItens(e.quote)) um('orcamento');
       if (cnm) um('detalhe_cnm');
+      if (e.quote && vals(e.quote.esquadrias).length) um('esq');
     });
-    var cr = (D.corte || {})[mes]; if (cr) um('detalhamento', n(cr));
+    /* corte_estruturas/resumo: {det, pln}; o formato antigo era só {mes: n} dos detalhamentos */
+    var co = D.corte || {}, det = co.det ? co.det[mes] : (typeof co[mes] === 'number' ? co[mes] : 0);
+    if (det) um('detalhamento', n(det));
+    if (co.pln && co.pln[mes]) um('pln', n(co.pln[mes]));
+    vals(D.metal).forEach(function (o) { if (o && mesDe(o.criadoEm) === mes) um('metal'); });
+    if (D.pmres && D.pmres[mes]) um('pm', Object.keys(D.pmres[mes]).length);
     vals(D.pu).forEach(function (p) { if (mesDe(p.criadoEm) === mes) um('pu'); });
     vals(D.perfitec).forEach(function (x) { if (x && mesDe(n(x.criadoEm)) === mes) um('perfitec'); });
+    vals(D.docs).forEach(function (x) { if (x && mesDe(n(x.criadoEm)) === mes) um('doc'); });
+    if (D.etq && D.etq[mes]) um('etiq', Object.keys(D.etq[mes]).length);
+    /* os lembretes são de cada conta: aqui, os do dono */
+    try { vals(typeof _lembretes !== 'undefined' ? _lembretes : null).forEach(function (x) { if (x && x.text && mesDe(n(x.createdAt)) === mes) um('lemb'); }); } catch (e) { }
     var mq = (D.maqres || {})[mes]; if (mq) { um('maq_conf', n(mq.conf)); um('maq_mov', n(mq.mov)); um('maq_termo', n(mq.termo)); }
     vals(D.obras).forEach(function (o) {
       (o.parcelas || []).forEach(function (p) { if (p.recebida && mesDe(p.data) === mes) um('obra_parc'); });
       (o.fornecedores || []).forEach(function (f) { if (mesDe(f.dataNF) === mes) um('obra_nf'); });
     });
     var rr = (D.recres || {})[mes];
-    if (rr) { um('recibo', n(rr.pag)); um('recibo_terc', n(rr.terc)); um('rescisao', n(rr.resc)); um('cartao_pf', n(rr.pf)); um('epi', n(rr.epi)); }
+    if (rr) { um('recibo', n(rr.pag)); um('recibo_terc', n(rr.terc)); um('rescisao', n(rr.resc)); um('cartao_pf', n(rr.pf)); um('epi', n(rr.epi));
+      um('fadm', n(rr.fadm)); um('entrev', n(rr.entrev)); um('assid', n(rr.assid)); um('bh', n(rr.bh)); }
+    var emit = D.recres && D.recres._emitidos && D.recres._emitidos[mes]; if (emit) um('doc_rh', Object.keys(emit).length);
     if (D.contabil && D.contabil[mes] && D.contabil[mes].enviadoEm) um('contabil');
     if (D.almocos && D.almocos[mes]) { um('almoco_mes'); um('almoco_func', vals(D.almocos[mes]).length); }
     vals(D.contas).forEach(function (x) { if (mesDe(n(x.criadoEm)) === mes) um('conta'); });
@@ -10528,7 +10554,7 @@ const APP_VER='v136';
   var fotoGravando = false;
   function fotografar() {
     if (!ehDono() || fotoGravando || NEGADO.meus) return;
-    var nos = ['obras', 'compras', 'orc', 'contas', 'cheques', 'almocos', 'contabil', 'prop', 'pu', 'perfitec', 'recres', 'corte', 'maqres', 'meus'];
+    var nos = ['obras', 'compras', 'orc', 'contas', 'cheques', 'almocos', 'contabil', 'prop', 'pu', 'perfitec', 'recres', 'corte', 'maqres', 'metal', 'docs', 'etq', 'pmres', 'meus'];
     if (!nos.every(function (k) { return RESPONDEU[k]; })) return;
     var atual = mesAtual(), ini = addD(atual + '-01', -730).slice(0, 7), muda = {};
     mesesEntre(ini + '-01', addD(atual + '-01', -1)).forEach(function (mes) {
@@ -10635,7 +10661,7 @@ const APP_VER='v136';
       '<button type="button" class="docs-bt" onclick="rmResConfig()">⚙ Valores de referência</button><button type="button" class="docs-bt pri" onclick="rmResImprimir()">Imprimir / PDF</button></div></div>' +
       '<div class="res-aviso" id="res-aviso"></div>' + conf + cards +
       '<div class="ri-linha2"><div class="ri-card"><div class="ri-h"><b>Horas economizadas por atividade</b><span>vezes × (antes − no sistema)</span></div><div class="ri-b">' + tabela +
-      '<div class="ri-nota">Recibos, cartões PF, EPI e rescisões vêm do Recibos; propostas, revisões e contratos, do Propostas; detalhamentos, do Leitor DWG; conferências e termos, do Estoque de Máquinas. Os minutos são estimativas: ajuste em Valores de referência.</div></div></div>' +
+      '<div class="ri-nota">Cada linha conta sozinha do sistema ao lado. Documento do RH, cálculo de pré-moldado e etiquetas contam ao abrir para imprimir (um por documento e dia); imagens da obra, as adicionadas desta versão em diante. Os minutos são estimativas: ajuste em Valores de referência.</div></div></div>' +
       '<div class="ri-col"><div class="ri-card"><div class="ri-h"><b>Horas economizadas por mês</b><span>últimos 6 meses</span></div><div class="ri-b">' + barras + '</div></div>' +
       '<div class="ri-card"><div class="ri-h"><b>Horas por sistema</b><span>' + esc(iv.rot) + '</span></div><div class="ri-b">' + sistemas + '</div></div></div></div></div>';
   }
@@ -10711,7 +10737,8 @@ const APP_VER='v136';
     /* o resumo leve que o sistema de Propostas grava (funil e aprovado no mês) */
     watch('propostas_rm/resumo', 'prop');
     /* Meus resultados: só o dono escuta (nos fechados para os outros) */
-    if (ehDono()) { watch('recibos_resultados', 'recres'); watch('central_resultados', 'meus'); watch('corte_estruturas/resumo', 'corte'); watch('maquinas_rm/resumo', 'maqres'); }
+    if (ehDono()) { watch('recibos_resultados', 'recres'); watch('central_resultados', 'meus'); watch('corte_estruturas/resumo', 'corte'); watch('maquinas_rm/resumo', 'maqres');
+      watch('controle_metalica/obras', 'metal'); watch('rm_documentos/docs', 'docs'); watch('rm_documentos/etiquetas', 'etq'); watch('pre_moldados/resumo', 'pmres'); }
     tickTimer = setInterval(render, 60000);
     agendar();
   }
@@ -10720,7 +10747,7 @@ const APP_VER='v136';
     refs.forEach(function (r) { try { r.off(); } catch (e) { } });
     refs = [];
     limpaResumo();
-    D = { obras: null, compras: null, inbox: null, orc: null, contas: null, cheques: null, pu: null, almocos: null, equipe: null, perfitec: null, indic: null, contabil: null, prop: null, recres: null, meus: null, corte: null, maqres: null };
+    D = { obras: null, compras: null, inbox: null, orc: null, contas: null, cheques: null, pu: null, almocos: null, equipe: null, perfitec: null, indic: null, contabil: null, prop: null, recres: null, meus: null, corte: null, maqres: null, metal: null, docs: null, etq: null, pmres: null };
     Object.keys(RESPONDEU).forEach(function (k) { delete RESPONDEU[k]; });
     clearInterval(tickTimer); tickTimer = null;
     try { ajustaResultados(); } catch (e) { }
@@ -12788,6 +12815,16 @@ const APP_VER='v136';
     }
     return '<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8"><title>Etiquetas RM</title><style>' + fonte + CSS_ETQ + css + '</style></head><body>' + corpo + '</body></html>';
   }
+  /* "Meus resultados" (só o dono): cada lote impresso conta uma vez por dia
+     em rm_documentos/etiquetas/{mes} -- só a marca e quantas etiquetas. */
+  function contaLote(ok) {
+    try {
+      var d = new Date(), dia = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+      var t = JSON.stringify(ok) + '|' + dia, h = 5381;
+      for (var i = 0; i < t.length; i++) h = ((h * 33) ^ t.charCodeAt(i)) >>> 0;
+      firebase.database().ref('rm_documentos/etiquetas/' + dia.slice(0, 7) + '/l' + h.toString(36)).set(ok.length).catch(function () { });
+    } catch (e) { }
+  }
   function imprimir(lista) {
     var ok = lista.filter(function (l) { return String(l.nome || '').trim(); });
     if (!ok.length) { avisar('Escreva o nome do item antes de imprimir', 'err'); return; }
@@ -12795,6 +12832,7 @@ const APP_VER='v136';
     var nome = (ok.length === 1 ? 'Etiqueta ' + String(ok[0].nome).trim().toUpperCase() : 'Etiquetas RM') + ' '
       + d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
     window.__etqUltimo = { html: html, nome: nome };
+    contaLote(ok);
     if (typeof window.rmImprimirHTML === 'function' && window.rmImprimirHTML(html, nome)) return;
     var w = window.open('', '_blank');
     if (!w) { avisar('O navegador bloqueou a janela das etiquetas', 'err'); return; }
@@ -12830,7 +12868,7 @@ const APP_VER='v136';
     if (!pode) { var ev = q('#etiq-view'); if (ev && ev.style.display !== 'none') { ev.style.display = 'none'; try { showDashboard(); } catch (e) {} } }
     else montado = false; // outra conta pode ter outra lista guardada
   }
-  window.__etqTeste = { ajustarVisibilidade: ajustarVisibilidade, ajuste: ajuste, docHTML: docHTML, st: st };
+  window.__etqTeste = { ajustarVisibilidade: ajustarVisibilidade, ajuste: ajuste, docHTML: docHTML, st: st, imprimir: imprimir };
   function iniciar(n) {
     if (!q('[data-etiq]') || typeof firebase === 'undefined') {
       if ((n || 0) < 60) setTimeout(function () { iniciar((n || 0) + 1); }, 400);
