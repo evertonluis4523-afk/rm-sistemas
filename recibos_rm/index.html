@@ -5746,6 +5746,7 @@ function startData(){
          Republicar não inventa nada: é uma projeção do que já está
          sincronizado em state.contabil. */
       if(!contabilPublicado){ contabilPublicado=true; try{ publishContabil(); }catch(e){} }
+      try{ agendarResultados(); }catch(e){}
     }, err=>{ toast('Erro de leitura: '+rmErroPt(err),'err'); });
   }else{
     const raw=store.load();
@@ -5847,6 +5848,7 @@ function persist(){
      nao em cada handler, garante que nenhuma edicao se perca -- inclusive se
      a pagina for recarregada sem trocar de ciclo. */
   if(typeof salCiclo!=='undefined'&&salCiclo&&state.ciclos)cicloGravarBuffer(salCiclo);
+  try{agendarResultados();}catch(e){}
   const agora=retratoDados();
   if(useFirebase){
     /* Nada sobe antes da primeira leitura chegar.
@@ -16790,6 +16792,35 @@ function publishContabil(){
     if(r&&r.enviadoEm)m[k]={enviadoEm:r.enviadoEm,por:r.por||'',funcionarios:r.funcionarios||0};});
   fb.db.ref('recibos_contabilidade').set(m).catch(e=>rmNuvemErro('publicar as competências para a Central (recibos_contabilidade)',e));
 }
+/* CONTAGEM PARA "MEUS RESULTADOS" DA CENTRAL (só o dono vê): quantos
+   documentos o Recibos fez em cada competência -- recibos por tipo, cartões
+   de ponto PF, fichas de EPI confirmadas e rescisões. Só números: nome de
+   ninguém, valor nenhum. Num nó enxuto (recibos_resultados), como o da
+   contabilidade, para a Central não baixar o Recibos inteiro. Teste
+   recibos-publica-resultados. */
+function contagemResultados(){
+  const m={},c=k=>(m[k]=m[k]||{pag:0,terc:0,resc:0,pf:0,epi:0});
+  const mesDe=v=>{const d=new Date(typeof v==='number'?v:String(v||''));return isNaN(d)?'':d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');};
+  Object.values(state.historico||{}).forEach(h=>{
+    if(!h||!h.ano||h.mes==null)return;
+    const k=h.ano+'-'+String(Number(h.mes)+1).padStart(2,'0'),q=Number(h.qtd)||0;
+    if(h.tipo==='terceiros')c(k).terc+=q;else if(h.tipo!=='rescisao')c(k).pag+=q;
+  });
+  (state.rescisoes||[]).forEach(r=>{const k=mesDe(r&&r.ts);if(k)c(k).resc++;});
+  Object.values(state.pfPontos||{}).forEach(p=>{Object.keys(p||{}).forEach(k=>{if(/^\d{4}-\d{2}$/.test(k)&&p[k]&&Object.keys(p[k]).length)c(k).pf++;});});
+  Object.values(state.epiMovimentos||{}).forEach(x=>{if(x&&x.confirmadoEm){const k=mesDe(x.confirmadoEm);if(k)c(k).epi++;}});
+  return m;
+}
+let tResultados=null,resultadosPublicados='';
+function agendarResultados(){
+  if(!useFirebase||!fb.db||!contabilPublicado)return;
+  clearTimeout(tResultados);
+  tResultados=setTimeout(()=>{
+    const m=contagemResultados(),j=JSON.stringify(m);
+    if(j===resultadosPublicados)return;
+    fb.db.ref('recibos_resultados').set(m).then(()=>{resultadosPublicados=j;}).catch(()=>{});
+  },3000);
+}
 function pfFechaPassos(comp){
   const rh=pfRhidMes(comp),lista=pfFuncionarios(comp),env=pfContabilMes(comp);
   const nCart=rh&&Array.isArray(rh.itens)?rh.itens.length:0;
@@ -17476,7 +17507,7 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeAll();$('#prin
    juntos a cada publicacao, e ha uma prova automatica que falha se um subir
    sem o outro. Assim o numero na tela e o mesmo do arquivo que o aparelho
    guardou, e dizer "estou na v81" passa a significar alguma coisa. */
-const APP_VER='v268';
+const APP_VER='v269';
 (function(){var p=document.getElementById('verPill'); if(p)p.textContent=APP_VER;})();
 
 if('serviceWorker' in navigator){

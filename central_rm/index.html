@@ -1693,6 +1693,39 @@ var RM_FONTE="@font-face{font-family:'Satoshi';src:url(data:font/woff2;base64,d0
   .ri-conv b { display: block; font-size: 18px; }
   .ri-conv span { font-size: 11.5px; color: var(--text-muted); }
   .ri-nota { font-size: 12px; color: var(--text-muted); margin-top: 8px; }
+  /* MEUS RESULTADOS (só o dono): horas e valores economizados com os sistemas */
+  .res { display: grid; gap: 14px; }
+  .res-top { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 10px 16px; }
+  .res-tit { font-size: 21px; font-weight: 750; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .res-so { font-size: 12px; font-weight: 700; color: var(--rm-marca); background: var(--rm-marca-suave); border-radius: var(--rm-raio-pilula); padding: 3px 10px; }
+  .res-sub { color: var(--text-muted); font-size: 13px; margin-top: 4px; }
+  .res-acoes { margin-left: auto; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+  .res-acoes .ri-chip:disabled { opacity: .4; cursor: default; }
+  .res-nav { display: inline-flex; align-items: center; gap: 6px; }
+  .res-per { font-size: 13px; padding: 0 4px; white-space: nowrap; }
+  .res-aviso:empty { display: none; }
+  .res-aviso { background: var(--rm-aviso-suave); color: var(--rm-aviso); border-radius: var(--rm-raio); padding: 8px 11px; font-size: 13px; font-weight: 650; }
+  .res-t { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .res-t th { text-align: left; font-size: 11.5px; text-transform: uppercase; letter-spacing: .4px; color: var(--text-muted); font-weight: 700; padding: 7px 6px; border-bottom: 1px solid var(--divider); }
+  .res-t td { padding: 7px 6px; border-bottom: 1px solid var(--divider); }
+  .res-t .n { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .res-t i { font-style: normal; color: var(--text-muted); font-size: 12px; }
+  .res-t tr.zero td { color: var(--text-muted); }
+  .res-t tfoot td { border-bottom: 0; }
+  .res-t input { width: 64px; text-align: right; font: inherit; padding: 4px 6px; border: 1px solid var(--divider); border-radius: var(--rm-raio); background: var(--card); color: var(--text); }
+  .res-bars { display: flex; align-items: flex-end; gap: 14px; height: 170px; padding: 6px 4px 0; }
+  .res-bars div { flex: 1; height: 100%; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; gap: 4px; font-size: 12px; }
+  .res-bars span { width: 100%; min-height: 2px; border-radius: 6px 6px 0 0; background: var(--rm-info); }
+  .res-bars span.at { background: var(--rm-marca); }
+  .res-bars i { font-style: normal; color: var(--text-muted); }
+  .res-conf { background: var(--card); border: 1px solid var(--rm-marca); border-radius: var(--rm-raio-g); padding: 14px 16px; display: grid; gap: 12px; }
+  .res-conf-h { display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: baseline; }
+  .res-conf-h span { font-size: 12px; color: var(--text-muted); }
+  .res-conf-l { display: flex; flex-wrap: wrap; gap: 10px 18px; align-items: center; font-size: 13px; }
+  .res-conf-l input:not([type]) { width: 110px; margin-left: 6px; font: inherit; padding: 5px 8px; border: 1px solid var(--divider); border-radius: var(--rm-raio); background: var(--card); color: var(--text); }
+  .res-chk { display: flex; align-items: center; gap: 6px; }
+  .res-conf-b { display: flex; justify-content: flex-end; gap: 8px; }
+  @media (max-width: 700px) { .res-acoes { margin-left: 0; } .res-t th:nth-child(2), .res-t td:nth-child(2) { display: none; } }
   .ri-vazio { font-size: 13px; color: var(--text-muted); padding: 8px 0; }
   .ri-big { font-size: 22px; font-weight: 750; }
   .ri-lista { margin-top: 10px; border-top: 1px solid var(--divider); }
@@ -3918,6 +3951,12 @@ try { var _e = localStorage.getItem('rm_estilo_ultimo'); if (_e === 'viva' || _e
         </svg>
         <span class="nav-name">Etiquetas</span>
       </div>
+      <div class="nav-item" data-res data-tooltip="Meus resultados" tabindex="0" role="button" onclick="showResultados(this)" style="display:none">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>
+        </svg>
+        <span class="nav-name">Meus resultados</span>
+      </div>
     </div>
     <div class="nav-divider"></div>
     <div id="nav-sections"></div>
@@ -4067,6 +4106,7 @@ try { var _e = localStorage.getItem('rm_estilo_ultimo'); if (_e === 'viva' || _e
 
     <div class="dashboard" id="docs-view" style="display:none"><div id="docs-body"></div></div>
     <div class="dashboard" id="etiq-view" style="display:none"><div id="etiq-body"></div></div>
+    <div class="dashboard" id="res-view" style="display:none"><div id="res-body"></div></div>
     <div class="dashboard" id="agenda-view" style="display:none">
       <div class="dash-header agenda-cab">
         <div>
@@ -4497,7 +4537,7 @@ try { var _e = localStorage.getItem('rm_estilo_ultimo'); if (_e === 'viva' || _e
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js" crossorigin="anonymous"></script>
 
 <script>/* versão publicada (PADRAO_RM.md §3): sobe a cada publicação, junto com o CACHE do sw.js */
-const APP_VER='v134';
+const APP_VER='v135';
 </script>
 <script>
   /* ===== LOGIN (Firebase Authentication) =====
@@ -6308,6 +6348,7 @@ const APP_VER='v134';
     document.getElementById('dashboard').style.display = 'none';
     { const dv = document.getElementById('docs-view'); if (dv) dv.style.display = 'none'; }
     { const ev = document.getElementById('etiq-view'); if (ev) ev.style.display = 'none'; }
+    { const rv = document.getElementById('res-view'); if (rv) rv.style.display = 'none'; }
     document.getElementById('agenda-view').style.display = 'block';
     document.getElementById('topbar-title').textContent = 'Minha Agenda';
     const tg = document.getElementById('topbar-tag'); tg.textContent = 'PESSOAL'; tg.style.color = '';
@@ -6610,7 +6651,7 @@ const APP_VER='v134';
      Leitor DWG (corte_estruturas), o Controle de Compras (compras_rm -- só a
      caixa de entrada entrava), o Sistema PU (controle_metalica e
      controle_pu), os Pré-Moldados, as Máquinas e a contabilidade do Recibos. */
-  const NOS_DADOS = ['recibos', 'recibos_diretorio', 'recibos_contabilidade', 'obras_rm', 'obras_rm_historico', 'contas_pagar', 'contas_pagar_acesso',
+  const NOS_DADOS = ['recibos', 'recibos_diretorio', 'recibos_contabilidade', 'recibos_resultados', 'central_resultados', 'obras_rm', 'obras_rm_historico', 'contas_pagar', 'contas_pagar_acesso',
     'compras_inbox', 'compras_rm', 'cheques', 'orcamentos_cadastro', 'almocos', 'almocos_totais',
     'faltas_horas', 'perfitec-pedidos', 'central_lembretes', 'rm_documentos',
     'corte_estruturas', 'controle_metalica', 'controle_pu', 'pre_moldados', 'maquinas_rm',
@@ -7116,7 +7157,7 @@ const APP_VER='v134';
      a Central guarda uma cópia de como o servidor está agora. Sem essa cópia
      gravada, não restaura -- é ela que transforma um engano em "desfaz". */
   const BACKUP_SISTEMAS = [
-    { nome: 'Folha de Pagamento', nos: ['recibos', 'recibos_diretorio', 'recibos_contabilidade'] },
+    { nome: 'Folha de Pagamento', nos: ['recibos', 'recibos_diretorio', 'recibos_contabilidade', 'recibos_resultados'] },
     { nome: 'Controle de Obras', nos: ['obras_rm', 'obras_rm_historico', 'obras_rm_anexos'] },
     { nome: 'Contas a Pagar', nos: ['contas_pagar', 'contas_pagar_acesso', 'contas_pagar_anexos'] },
     { nome: 'Controle de Compras', nos: ['compras_rm', 'compras_inbox'] },
@@ -7132,7 +7173,7 @@ const APP_VER='v134';
        de uma vez. As novas trazem as partes (as imagens vão com os anexos). */
     { nome: 'Propostas e Contratos', nos: ['propostas_rm/docs', 'propostas_rm/config', 'propostas_rm/modelo', 'propostas_rm/listas', 'propostas_rm/resumo', 'propostas_rm/imagens', 'propostas_rm'] },
     { nome: 'Estoque de Máquinas', nos: ['maquinas_rm'] },
-    { nome: 'Central (lembretes e documentos)', nos: ['central_lembretes', 'rm_documentos', 'rm_documentos_arq'] },
+    { nome: 'Central (lembretes e documentos)', nos: ['central_lembretes', 'rm_documentos', 'rm_documentos_arq', 'central_resultados'] },
   ];
   window.BACKUP_SISTEMAS = BACKUP_SISTEMAS;
   window.__bkNos = NOS_DADOS.concat(NOS_ANEXOS);
@@ -8040,6 +8081,7 @@ const APP_VER='v134';
     document.getElementById('agenda-view').style.display = 'none';
     { const dv = document.getElementById('docs-view'); if (dv) dv.style.display = 'none'; }
     { const ev = document.getElementById('etiq-view'); if (ev) ev.style.display = 'none'; }
+    { const rv = document.getElementById('res-view'); if (rv) rv.style.display = 'none'; }
 
     // Toggle iframe layers
     document.querySelectorAll('.iframe-layer').forEach(l => l.classList.remove('active'));
@@ -8238,6 +8280,7 @@ const APP_VER='v134';
     document.getElementById('agenda-view').style.display = 'none';
     { const dv = document.getElementById('docs-view'); if (dv) dv.style.display = 'none'; }
     { const ev = document.getElementById('etiq-view'); if (ev) ev.style.display = 'none'; }
+    { const rv = document.getElementById('res-view'); if (rv) rv.style.display = 'none'; }
     document.getElementById('dashboard').style.display = 'block';
     document.getElementById('topbar-title').textContent = 'Painel Geral';
     const tg = document.getElementById('topbar-tag'); tg.textContent = 'CENTRAL'; tg.style.color = '';
@@ -8258,6 +8301,8 @@ const APP_VER='v134';
       document.querySelector('[data-agenda]')?.classList.add('active');
     } else if (activeNative === 'etiq') {
       document.querySelector('[data-etiq]')?.classList.add('active');
+    } else if (activeNative === 'res') {
+      document.querySelector('[data-res]')?.classList.add('active');
     } else {
       document.querySelector('[data-home]')?.classList.add('active');
     }
@@ -9452,7 +9497,7 @@ const APP_VER='v134';
   if (!window.firebase || !firebase.database) return;
 
   var db = firebase.database();
-  var D = { obras: null, compras: null, inbox: null, orc: null, contas: null, cheques: null, pu: null, almocos: null, equipe: null, perfitec: null, indic: null, contabil: null, prop: null };
+  var D = { obras: null, compras: null, inbox: null, orc: null, contas: null, cheques: null, pu: null, almocos: null, equipe: null, perfitec: null, indic: null, contabil: null, prop: null, recres: null, meus: null };
   var refs = [], tickTimer = null, renderT = null, mounted = false;
 
   var COR = {
@@ -10316,7 +10361,7 @@ const APP_VER='v134';
     try { document.dispatchEvent(new CustomEvent('rm:dados')); } catch (e) { }
   }
 
-  function agendar() { clearTimeout(renderT); renderT = setTimeout(render, 120); }
+  function agendar() { clearTimeout(renderT); renderT = setTimeout(function () { render(); try { ajustaResultados(); } catch (e) { } }, 120); }
   // para o teste: desenha o painel com dados dados (fictícios), sem banco
   window.__painelTeste = function (dados) { Object.keys(D).forEach(function (k) { D[k] = null; }); Object.assign(D, dados); render(); };
 
@@ -10349,6 +10394,270 @@ const APP_VER='v134';
     refs.push(r);
   }
 
+  /* ============================ MEUS RESULTADOS ============================
+     Só na conta do dono (interface aqui; quem fecha os dados é a regra do
+     banco: central_resultados só o dono lê e grava). Conta sozinha o que os
+     sistemas registraram em cada mês e transforma em horas economizadas:
+     cada atividade tem o tempo de como era feito antes (Word/Excel/papel) e
+     o tempo no sistema; a diferença × as vezes do mês. O valor da hora sai
+     do salário ÷ horas do mês (padrão R$ 10.000 ÷ 220 h). Mais a multa
+     evitada (estimativa, pode desligar) e o valor dos cheques vencidos que
+     foram depositados. No fim de cada mês a contagem fica guardada
+     (central_resultados/meses): o relatório não muda se depois alguém
+     apagar algo num sistema. Teste central-meus-resultados. */
+  var ATIV = [
+    { k: 'prop_nova', rot: 'Proposta comercial (criar)', sis: 'Propostas', antes: 'Word', m: 120, s: 25 },
+    { k: 'prop_rev', rot: 'Proposta comercial (revisão)', sis: 'Propostas', antes: 'Word', m: 30, s: 5 },
+    { k: 'contrato', rot: 'Contrato', sis: 'Propostas', antes: 'Word', m: 90, s: 10 },
+    { k: 'orcamento', rot: 'Orçamento', sis: 'Orçamento RM', antes: 'Excel', m: 60, s: 20 },
+    { k: 'obra_parc', rot: 'Planilha de obra: parcela recebida', sis: 'Obras', antes: 'Excel', m: 5, s: 1 },
+    { k: 'obra_nf', rot: 'Planilha de obra: nota fiscal lançada', sis: 'Obras', antes: 'Excel', m: 6, s: 1 },
+    { k: 'recibo', rot: 'Recibo de pagamento, adiantamento, 13º e férias', sis: 'Recibos', antes: 'Word', m: 8, s: 1 },
+    { k: 'recibo_terc', rot: 'Recibo de terceiros', sis: 'Recibos', antes: 'Word', m: 6, s: 1 },
+    { k: 'rescisao', rot: 'Rescisão (cálculo e documentos)', sis: 'Recibos', antes: 'Excel e Word', m: 120, s: 25 },
+    { k: 'cartao_pf', rot: 'Cartão de ponto PF (por pessoa no mês)', sis: 'Recibos', antes: 'Excel', m: 25, s: 3 },
+    { k: 'epi', rot: 'Ficha de EPI (entrega ou troca)', sis: 'Recibos', antes: 'papel e Excel', m: 12, s: 2 },
+    { k: 'contabil', rot: 'Fechamento da contabilidade (PDF + Excel)', sis: 'Recibos', antes: 'Excel', m: 240, s: 30 },
+    { k: 'almoco_mes', rot: 'Almoços: marcação do mês', sis: 'Almoços', antes: 'Excel', m: 220, s: 40 },
+    { k: 'almoco_func', rot: 'Almoços: reembolso por funcionário', sis: 'Almoços', antes: 'Excel', m: 4, s: 0 },
+    { k: 'conta', rot: 'Conta a pagar lançada', sis: 'Contas a Pagar', antes: 'Excel', m: 3, s: 1 },
+    { k: 'compra', rot: 'Compra lançada', sis: 'Compras', antes: 'Excel', m: 5, s: 2 },
+    { k: 'pedido', rot: 'Pedido do orçamento importado no Compras', sis: 'Compras', antes: 'redigitado', m: 10, s: 0 },
+    { k: 'cheque', rot: 'Cheque lançado', sis: 'Cheques', antes: 'Excel', m: 3, s: 1 }
+  ];
+  var RES_PADRAO = { salario: 10000, horas: 220, multaOn: true, multaPct: 2 };
+
+  function ehDono() {
+    var em = String((typeof CURRENT_EMAIL !== 'undefined' && CURRENT_EMAIL) || ((firebase.auth().currentUser || {}).email) || '').toLowerCase();
+    return !!em && typeof CENTRAL_ACCESS !== 'undefined' && CENTRAL_ACCESS[em] === null;
+  }
+  function mesDe(v) {
+    if (!v) return '';
+    if (typeof v === 'number') { var d = new Date(v); return isNaN(d) ? '' : isoDe(d).slice(0, 7); }
+    return toISO(v).slice(0, 7);
+  }
+  function resCfg() {
+    var c = (D.meus && D.meus.config) || {}, o = {};
+    Object.keys(RES_PADRAO).forEach(function (k) { o[k] = c[k] != null ? c[k] : RES_PADRAO[k]; });
+    o.min = {};
+    ATIV.forEach(function (a) { var x = (c.min || {})[a.k] || {}; o.min[a.k] = { m: x.m != null ? n(x.m) : a.m, s: x.s != null ? n(x.s) : a.s }; });
+    return o;
+  }
+  function valorHora(c) { return n(c.horas) > 0 ? n(c.salario) / n(c.horas) : 0; }
+
+  /* o que os sistemas registraram num mês (aaaa-mm) */
+  function contagemMes(mes) {
+    var c = {}, um = function (k, q) { c[k] = (c[k] || 0) + (q == null ? 1 : q); };
+    vals(D.prop).forEach(function (p) {
+      if (mesDe(p.cr || p.d) === mes) um('prop_nova');
+      (p.rv || []).forEach(function (t) { if (mesDe(t) === mes) um('prop_rev'); });
+      if (mesDe(p.cd) === mes) um('contrato');
+    });
+    vals(D.orc).forEach(function (e) { if (mesDe(n(e.ts)) === mes) um('orcamento'); });
+    vals(D.obras).forEach(function (o) {
+      (o.parcelas || []).forEach(function (p) { if (p.recebida && mesDe(p.data) === mes) um('obra_parc'); });
+      (o.fornecedores || []).forEach(function (f) { if (mesDe(f.dataNF) === mes) um('obra_nf'); });
+    });
+    var rr = (D.recres || {})[mes];
+    if (rr) { um('recibo', n(rr.pag)); um('recibo_terc', n(rr.terc)); um('rescisao', n(rr.resc)); um('cartao_pf', n(rr.pf)); um('epi', n(rr.epi)); }
+    if (D.contabil && D.contabil[mes] && D.contabil[mes].enviadoEm) um('contabil');
+    if (D.almocos && D.almocos[mes]) { um('almoco_mes'); um('almoco_func', vals(D.almocos[mes]).length); }
+    vals(D.contas).forEach(function (x) { if (mesDe(n(x.criadoEm)) === mes) um('conta'); });
+    /* compra que veio do orçamento (a caixa de entrada é limpa ao importar; fica a observação) */
+    vals(D.compras).forEach(function (x) { if (mesDe(n(x.criadoEm)) === mes) um(/^(Importado do orçamento|Lote do orçamento)/.test(String(x.obs || '')) ? 'pedido' : 'compra'); });
+    if (D.cheques) vals(D.cheques.cheques).forEach(function (x) { if (mesDe(n(x.criadoEm)) === mes) um('cheque'); });
+    Object.keys(c).forEach(function (k) { if (!c[k]) delete c[k]; });
+    return c;
+  }
+  /* economia (estimativa): conta paga até o vencimento × % da multa evitada;
+     ganho: cheque vencido em carteira que foi depositado depois */
+  function dinheiroMes(mes) {
+    var multa = { n: 0, base: 0 }, cheq = { n: 0, v: 0 };
+    vals(D.contas).forEach(function (x) {
+      var pg = toISO(x.dataPagamento), vc = toISO(x.venc);
+      if (x.pago && pg && vc && pg <= vc && pg.slice(0, 7) === mes) { multa.n++; multa.base += n(x.valor); }
+    });
+    if (D.cheques) vals(D.cheques.cheques).forEach(function (x) {
+      var dep = toISO(x.depositadoEm), bom = toISO(x.bomPara);
+      if (dep && bom && dep > bom && dep.slice(0, 7) === mes) { cheq.n++; cheq.v += n(x.valor); }
+    });
+    return { multa: multa, cheq: cheq };
+  }
+  function mesesEntre(ini, fim) { var r = [], d = new Date(+ini.slice(0, 4), +ini.slice(5, 7) - 1, 1), f = fim.slice(0, 7); while (isoDe(d).slice(0, 7) <= f) { r.push(isoDe(d).slice(0, 7)); d.setMonth(d.getMonth() + 1); } return r; }
+  /* mês já fechado: a contagem guardada (a maior entre a guardada e a de agora,
+     para o que chega atrasado contar e o que for apagado não sumir) */
+  function dadosMes(mes) {
+    var vivo = contagemMes(mes), din = dinheiroMes(mes), foto = D.meus && D.meus.meses && D.meus.meses[mes];
+    if (!foto || mes >= mesAtual()) return { c: vivo, multa: din.multa, cheq: din.cheq };
+    var c = {}, fc = foto.c || {};
+    Object.keys(fc).concat(Object.keys(vivo)).forEach(function (k) { c[k] = Math.max(n(fc[k]), n(vivo[k])); });
+    var mx = function (a, b, k) { return Math.max(n(a && a[k]), n(b && b[k])); };
+    return { c: c, multa: { n: mx(foto.multa, din.multa, 'n'), base: mx(foto.multa, din.multa, 'base') }, cheq: { n: mx(foto.cheq, din.cheq, 'n'), v: mx(foto.cheq, din.cheq, 'v') } };
+  }
+  /* compara sem depender da ordem das chaves (o banco devolve em ordem alfabética) */
+  function canon(v) {
+    if (!v || typeof v !== 'object') return JSON.stringify(v == null ? null : v);
+    return '{' + Object.keys(v).sort().map(function (k) { return JSON.stringify(k) + ':' + canon(v[k]); }).join(',') + '}';
+  }
+  /* guarda os meses fechados que mudaram -- só o dono, e só depois de tudo ter chegado */
+  var fotoGravando = false;
+  function fotografar() {
+    if (!ehDono() || fotoGravando || NEGADO.meus) return;
+    var nos = ['obras', 'compras', 'orc', 'contas', 'cheques', 'almocos', 'contabil', 'prop', 'recres', 'meus'];
+    if (!nos.every(function (k) { return RESPONDEU[k]; })) return;
+    var atual = mesAtual(), ini = addD(atual + '-01', -730).slice(0, 7), muda = {};
+    mesesEntre(ini + '-01', addD(atual + '-01', -1)).forEach(function (mes) {
+      var d = dadosMes(mes); if (!Object.keys(d.c).length && !d.multa.n && !d.cheq.n) return;
+      var foto = D.meus && D.meus.meses && D.meus.meses[mes];
+      var novo = { c: d.c, multa: d.multa, cheq: d.cheq };
+      if (!foto || canon({ c: foto.c || {}, multa: foto.multa, cheq: foto.cheq }) !== canon(novo)) { novo.em = Date.now(); muda[mes] = novo; }
+    });
+    if (!Object.keys(muda).length) return;
+    fotoGravando = true;
+    var up = {}; Object.keys(muda).forEach(function (m) { up['meses/' + m] = muda[m]; });
+    firebase.database().ref('central_resultados').update(up).then(function () { fotoGravando = false; }, function () { fotoGravando = false; });
+  }
+
+  function resPeriodo() { try { var p = localStorage.getItem(chave('rm_res_periodo')); return { mes: 1, tri: 1, ano: 1 }[p] ? p : 'mes'; } catch (e) { return 'mes'; } }
+  var resDesloc = 0;
+  window.rmResPeriodo = function (p) { try { localStorage.setItem(chave('rm_res_periodo'), p); } catch (e) { } resDesloc = 0; renderResultados(); };
+  window.rmResAnda = function (k) { resDesloc = Math.max(0, resDesloc + k); renderResultados(); };
+  function resIntervalo(p, desloc) {
+    var iv = intervalo(p, desloc);
+    if (p !== 'ano') iv.rot += ' de ' + iv.ini.slice(0, 4);
+    return iv;
+  }
+  function somaPeriodoRes(iv, cfg) {
+    var r = { horas: 0, vezes: {}, horasK: {}, multaN: 0, multaBase: 0, cheqN: 0, cheqV: 0 };
+    mesesEntre(iv.ini, iv.fim).forEach(function (mes) {
+      if (mes > mesAtual()) return;
+      var d = dadosMes(mes);
+      ATIV.forEach(function (a) {
+        var q = n(d.c[a.k]); if (!q) return;
+        var h = q * Math.max(0, cfg.min[a.k].m - cfg.min[a.k].s) / 60;
+        r.vezes[a.k] = (r.vezes[a.k] || 0) + q; r.horasK[a.k] = (r.horasK[a.k] || 0) + h; r.horas += h;
+      });
+      r.multaN += d.multa.n; r.multaBase += d.multa.base; r.cheqN += d.cheq.n; r.cheqV += d.cheq.v;
+    });
+    r.multa = cfg.multaOn ? r.multaBase * n(cfg.multaPct) / 100 : 0;
+    return r;
+  }
+  function horasTxt(h) { return h.toLocaleString('pt-BR', { maximumFractionDigits: h < 10 ? 1 : 0 }) + ' h'; }
+  function resVar(at, ant) {
+    if (!ant) return '';
+    var p = Math.round((at - ant) / ant * 100);
+    return '<span class="ri-var ' + (p >= 0 ? 'bom' : 'ruim') + '">' + (p >= 0 ? '▲ ' : '▼ ') + Math.abs(p) + '%</span>';
+  }
+  var resEditando = false;
+  window.rmResConfig = function () { resEditando = !resEditando; renderResultados(); };
+  window.rmResSalvar = function () {
+    var g = function (id) { var e = document.getElementById(id); return e ? e.value : ''; };
+    var num = function (v) { return Number(String(v).replace(/\./g, '').replace(',', '.')) || 0; };
+    var cfg = { salario: num(g('res-sal')), horas: num(g('res-hrs')), multaOn: !!(document.getElementById('res-mon') || {}).checked, multaPct: num(g('res-mpc')), min: {} };
+    ATIV.forEach(function (a) { cfg.min[a.k] = { m: num(g('res-m-' + a.k)), s: num(g('res-s-' + a.k)) }; });
+    D.meus = D.meus || {}; D.meus.config = cfg; resEditando = false; renderResultados();
+    firebase.database().ref('central_resultados/config').set(cfg).catch(function () {
+      var el = document.getElementById('res-aviso'); if (el) el.textContent = 'Não consegui gravar na nuvem: as regras do banco ainda não têm "central_resultados". Os valores valem só até fechar a Central.';
+    });
+  };
+
+  function resHTML(paraPapel) {
+    var cfg = resCfg(), p = resPeriodo(), iv = resIntervalo(p, resDesloc), ivA = resIntervalo(p, resDesloc + 1);
+    var at = somaPeriodoRes(iv, cfg), ant = somaPeriodoRes(ivA, cfg), vh = valorHora(cfg);
+    /* o período de agora ainda não acabou: comparar com um inteiro daria sempre queda */
+    var parcial = iv.fim >= hoje();
+    var cards = '<div class="ri-kpis">' +
+      '<div class="ri-card ri-b"><div class="ri-kl">Horas economizadas</div><div class="ri-kv">' + horasTxt(at.horas) + (parcial ? '<span class="ri-var">parcial</span>' : resVar(at.horas, ant.horas)) + '</div><div class="ri-ks">≈ ' + (at.horas / 8).toLocaleString('pt-BR', { maximumFractionDigits: 1 }) + ' dias de 8 h · ' + ivA.rot + ': ' + horasTxt(ant.horas) + '</div></div>' +
+      '<div class="ri-card ri-b"><div class="ri-kl">Valor das horas economizadas</div><div class="ri-kv">' + brl(at.horas * vh) + '</div><div class="ri-ks">' + horasTxt(at.horas) + ' × ' + brl(vh) + '/h (salário ' + brl(cfg.salario) + ' ÷ ' + cfg.horas + ' h)</div></div>' +
+      (cfg.multaOn ? '<div class="ri-card ri-b"><div class="ri-kl">Multas evitadas (estimativa)</div><div class="ri-kv">' + brl(at.multa) + '</div><div class="ri-ks">' + at.multaN + ' conta' + (at.multaN === 1 ? '' : 's') + ' paga' + (at.multaN === 1 ? '' : 's') + ' até o vencimento × ' + String(cfg.multaPct).replace('.', ',') + '%</div></div>' : '') +
+      '<div class="ri-card ri-b"><div class="ri-kl">Cheques vencidos depositados</div><div class="ri-kv">' + brlC(at.cheqV) + '</div><div class="ri-ks">' + at.cheqN + ' cheque' + (at.cheqN === 1 ? '' : 's') + ' que passaram do bom para e foram depositados</div></div></div>';
+    var linhas = ATIV.map(function (a) {
+      var q = at.vezes[a.k] || 0, mm = cfg.min[a.k];
+      return '<tr' + (q ? '' : ' class="zero"') + '><td>' + esc(a.rot) + '<i> · ' + esc(a.sis) + '</i></td><td><i>' + esc(a.antes) + '</i></td><td class="n">' + q + '</td><td class="n">' + mm.m + '</td><td class="n">' + mm.s + '</td><td class="n"><b>' + (q ? horasTxt(at.horasK[a.k]) : '—') + '</b></td></tr>';
+    }).join('');
+    var tabela = '<table class="res-t sem-faixa"><thead><tr><th>Atividade</th><th>Antes</th><th class="n">Vezes</th><th class="n">Min. antes</th><th class="n">Min. no sistema</th><th class="n">Economia</th></tr></thead><tbody>' + linhas +
+      '</tbody><tfoot><tr><td colspan="5"><b>Total</b></td><td class="n"><b>' + horasTxt(at.horas) + '</b></td></tr></tfoot></table>';
+    if (paraPapel) return { cards: cards, tabela: tabela, iv: iv, ivA: ivA };
+    var porSis = {};
+    ATIV.forEach(function (a) { if (at.horasK[a.k]) porSis[a.sis] = (porSis[a.sis] || 0) + at.horasK[a.k]; });
+    var sisOrd = Object.keys(porSis).sort(function (a, b) { return porSis[b] - porSis[a]; }), sisMax = sisOrd.length ? porSis[sisOrd[0]] : 1;
+    var sistemas = sisOrd.length ? sisOrd.map(function (k) {
+      return '<div class="ri-fl"><span>' + esc(k) + '</span><div class="ri-trilho"><span style="width:' + (porSis[k] / sisMax * 100).toFixed(1) + '%;background:var(--rm-info)"></span></div><b>' + horasTxt(porSis[k]) + '</b></div>';
+    }).join('') : '<div class="ri-vazio">Nada registrado neste período.</div>';
+    /* barras: horas dos últimos 6 meses */
+    var seis = mesesEntre(addD(mesAtual() + '-01', -160).slice(0, 7) + '-01', mesAtual() + '-01').slice(-6);
+    var hs = seis.map(function (m) { return somaPeriodoRes({ ini: m + '-01', fim: m + '-28' }, cfg).horas; }), mx = Math.max.apply(null, hs.concat([1]));
+    var barras = '<div class="res-bars">' + seis.map(function (m, i) {
+      return '<div><b>' + Math.round(hs[i]) + '</b><span' + (m === mesAtual() ? ' class="at"' : '') + ' style="height:' + (hs[i] / mx * 100).toFixed(1) + '%"></span><i>' + MES[+m.slice(5, 7) - 1] + '</i></div>';
+    }).join('') + '</div>';
+    var conf = '';
+    if (resEditando) {
+      conf = '<div class="res-conf"><div class="res-conf-h"><b>Valores de referência</b><span>o tempo que cada tarefa levava antes e leva no sistema; a contagem é sozinha</span></div>' +
+        '<div class="res-conf-l"><label>Salário (R$) <input id="res-sal" value="' + String(cfg.salario).replace('.', ',') + '"></label><label>Horas por mês <input id="res-hrs" value="' + cfg.horas + '"></label>' +
+        '<label class="res-chk"><input type="checkbox" id="res-mon"' + (cfg.multaOn ? ' checked' : '') + '> Contar multa evitada</label><label>Multa (%) <input id="res-mpc" value="' + String(cfg.multaPct).replace('.', ',') + '"></label></div>' +
+        '<table class="res-t sem-faixa"><thead><tr><th>Atividade</th><th class="n">Antes (min)</th><th class="n">No sistema (min)</th></tr></thead><tbody>' + ATIV.map(function (a) {
+          return '<tr><td>' + esc(a.rot) + '<i> · ' + esc(a.sis) + '</i></td><td class="n"><input id="res-m-' + a.k + '" value="' + cfg.min[a.k].m + '"></td><td class="n"><input id="res-s-' + a.k + '" value="' + cfg.min[a.k].s + '"></td></tr>';
+        }).join('') + '</tbody></table><div class="res-conf-b"><button type="button" class="docs-bt" onclick="rmResConfig()">Cancelar</button><button type="button" class="docs-bt pri" onclick="rmResSalvar()">Salvar</button></div></div>';
+    }
+    var chips = ['mes', 'tri', 'ano'].map(function (k) { return '<button type="button" class="ri-chip' + (k === p ? ' on' : '') + '" onclick="rmResPeriodo(\'' + k + '\')">' + { mes: 'Mês', tri: 'Trimestre', ano: 'Ano' }[k] + '</button>'; }).join('');
+    return '<div class="res">' +
+      '<div class="res-top"><div><div class="res-tit">Meus resultados <span class="res-so">🔒 só no seu login</span></div>' +
+      '<div class="res-sub">Contado sozinho a partir do que os sistemas registraram · ' + dmy(iv.ini) + '/' + iv.ini.slice(0, 4) + ' a ' + (parcial ? dmy(hoje()) + ' (parcial)' : dmy(iv.fim) + '/' + iv.fim.slice(0, 4)) + ' · comparado com ' + ivA.rot + '</div></div>' +
+      '<div class="res-acoes">' + chips + '<span class="res-nav"><button type="button" class="ri-chip" onclick="rmResAnda(1)" title="Período anterior">◀</button><b class="res-per">' + esc(iv.rot) + '</b><button type="button" class="ri-chip" onclick="rmResAnda(-1)"' + (resDesloc ? '' : ' disabled') + ' title="Período seguinte">▶</button></span>' +
+      '<button type="button" class="docs-bt" onclick="rmResConfig()">⚙ Valores de referência</button><button type="button" class="docs-bt pri" onclick="rmResImprimir()">Imprimir / PDF</button></div></div>' +
+      '<div class="res-aviso" id="res-aviso"></div>' + conf + cards +
+      '<div class="ri-linha2"><div class="ri-card"><div class="ri-h"><b>Horas economizadas por atividade</b><span>vezes × (antes − no sistema)</span></div><div class="ri-b">' + tabela +
+      '<div class="ri-nota">Recibos, cartões PF, EPI e rescisões vêm do Recibos; propostas, revisões e contratos, do Propostas. Os minutos são estimativas: ajuste em Valores de referência.</div></div></div>' +
+      '<div class="ri-col"><div class="ri-card"><div class="ri-h"><b>Horas economizadas por mês</b><span>últimos 6 meses</span></div><div class="ri-b">' + barras + '</div></div>' +
+      '<div class="ri-card"><div class="ri-h"><b>Horas por sistema</b><span>' + esc(iv.rot) + '</span></div><div class="ri-b">' + sistemas + '</div></div></div></div></div>';
+  }
+  function renderResultados() {
+    var b = document.getElementById('res-body'), v = document.getElementById('res-view');
+    if (!b || !v || v.style.display === 'none') return;
+    b.innerHTML = ehDono() ? resHTML(false) : '';
+  }
+  window.rmResImprimir = function () {
+    var r = resHTML(true), fonte = typeof RM_FONTE === 'string' ? RM_FONTE : '';
+    var css = '@page{size:A4;margin:14mm}body{font-family:Satoshi,Arial,sans-serif;color:#16171a;font-size:10pt;margin:0}' +
+      'h1{font-size:16pt;margin:0}.sub{color:#5e6169;margin:2mm 0 6mm}.ri-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:3mm;margin-bottom:6mm}' +
+      '.ri-card{border:.3mm solid #E4E6EA;border-radius:3mm;padding:3mm}.ri-kl{font-size:8pt;color:#5e6169}.ri-kv{font-size:15pt;font-weight:700;margin-top:1mm}.ri-ks{font-size:7.5pt;color:#5e6169;margin-top:1mm}' +
+      '.ri-var{font-size:8pt;margin-left:2mm;color:#1f7a4d}.ri-var.ruim{color:#B3123C}table{width:100%;border-collapse:collapse;font-size:9pt}th{text-align:left;font-size:7.5pt;color:#5e6169;text-transform:uppercase;border-bottom:.3mm solid #cfd3da;padding:1.5mm}' +
+      'td{padding:1.5mm;border-bottom:.2mm solid #E4E6EA}.n{text-align:right}tr.zero td{color:#9aa0a8}i{font-style:normal;color:#5e6169}.rod{margin-top:6mm;font-size:7.5pt;color:#5e6169}';
+    var html = '<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8"><title>Resultados dos sistemas</title><style>' + fonte + css + '</style></head><body>' +
+      '<h1>Resultados dos sistemas RM · ' + esc(r.iv.rot) + '</h1><div class="sub">Horas e valores economizados com os sistemas, contados a partir do que cada um registrou · comparado com ' + esc(r.ivA.rot) + '</div>' +
+      r.cards + r.tabela + '<div class="rod">"Antes" é o tempo da tarefa feita em Word, Excel ou papel; "no sistema", o tempo com os sistemas RM. Multa evitada é estimativa.</div></body></html>';
+    var nome = 'Resultados ' + r.iv.rot;
+    if (typeof window.rmImprimirHTML === 'function' && window.rmImprimirHTML(html, nome)) return;
+    var w = window.open('', '_blank'); if (!w) return;
+    w.document.write(html); w.document.close();
+    setTimeout(function () { try { w.focus(); w.print(); } catch (e) { } }, 500);
+  };
+  window.showResultados = function () {
+    if (!ehDono()) return;
+    try { activeTabId = null; activeNative = 'res'; } catch (e) { }
+    document.querySelectorAll('.iframe-layer').forEach(function (l) { l.classList.remove('active'); });
+    ['dashboard', 'agenda-view', 'docs-view', 'etiq-view'].forEach(function (id) { var x = document.getElementById(id); if (x) x.style.display = 'none'; });
+    var v = document.getElementById('res-view'); if (v) v.style.display = 'block';
+    var t = document.getElementById('topbar-title'); if (t) t.textContent = 'Meus resultados';
+    var tg = document.getElementById('topbar-tag'); if (tg) { tg.textContent = 'SÓ VOCÊ'; tg.style.color = ''; }
+    var po = document.getElementById('btn-popout'); if (po) po.style.display = 'none';
+    renderResultados();
+    try { renderTabs(); } catch (e) { }
+    document.querySelectorAll('.nav-item').forEach(function (i) { i.classList.remove('active'); });
+    var nav = document.querySelector('[data-res]'); if (nav) nav.classList.add('active');
+    try { toggleMobileSidebar(false); } catch (e) { }
+  };
+  function ajustaResultados() {
+    var nav = document.querySelector('[data-res]'); if (nav) nav.style.display = ehDono() ? '' : 'none';
+    var v = document.getElementById('res-view');
+    if (v && v.style.display !== 'none' && !ehDono()) { v.style.display = 'none'; try { showDashboard(); } catch (e) { } }
+    renderResultados();
+    try { fotografar(); } catch (e) { }
+  }
+  // para o teste: as contas do mês e da tela
+  window.__resTeste = { contagemMes: contagemMes, dinheiroMes: dinheiroMes, resCfg: resCfg, somaPeriodoRes: somaPeriodoRes, fotografar: fotografar, canon: canon, ajusta: ajustaResultados,
+    dados: function (o) { Object.keys(D).forEach(function (k) { D[k] = null; }); Object.assign(D, o); Object.keys(D).forEach(function (k) { RESPONDEU[k] = true; }); } };
+
   function start() {
     if (mounted) return;
     mounted = true;
@@ -10373,6 +10682,8 @@ const APP_VER='v134';
     watch('perfitec-pedidos', 'perfitec');
     /* o resumo leve que o sistema de Propostas grava (funil e aprovado no mês) */
     watch('propostas_rm/resumo', 'prop');
+    /* Meus resultados: só o dono escuta (nos fechados para os outros) */
+    if (ehDono()) { watch('recibos_resultados', 'recres'); watch('central_resultados', 'meus'); }
     tickTimer = setInterval(render, 60000);
     agendar();
   }
@@ -10381,8 +10692,10 @@ const APP_VER='v134';
     refs.forEach(function (r) { try { r.off(); } catch (e) { } });
     refs = [];
     limpaResumo();
-    D = { obras: null, compras: null, inbox: null, orc: null, contas: null, cheques: null, pu: null, almocos: null, equipe: null, perfitec: null, indic: null, contabil: null, prop: null };
+    D = { obras: null, compras: null, inbox: null, orc: null, contas: null, cheques: null, pu: null, almocos: null, equipe: null, perfitec: null, indic: null, contabil: null, prop: null, recres: null, meus: null };
+    Object.keys(RESPONDEU).forEach(function (k) { delete RESPONDEU[k]; });
     clearInterval(tickTimer); tickTimer = null;
+    try { ajustaResultados(); } catch (e) { }
     var h = document.getElementById('rm-host');
     if (h) h.innerHTML = '';
     document.body.classList.remove('rm-open');
@@ -12137,6 +12450,7 @@ const APP_VER='v134';
     if (ag) ag.style.display = 'none';
     if (dv) dv.style.display = 'block';
     var ev = q('#etiq-view'); if (ev) ev.style.display = 'none';
+    var rv = q('#res-view'); if (rv) rv.style.display = 'none';
     var t = q('#topbar-title'); if (t) t.textContent = 'Documentos';
     var tg = q('#topbar-tag'); if (tg) { tg.textContent = 'ARQUIVO'; tg.style.color = ''; }
     var po = q('#btn-popout'); if (po) po.style.display = 'none';
@@ -12465,7 +12779,7 @@ const APP_VER='v134';
     if (typeof podeEtiquetas === 'function' && !podeEtiquetas()) return;
     try { activeTabId = null; activeNative = 'etiq'; } catch (e) {}
     qa('.iframe-layer').forEach(function (l) { l.classList.remove('active'); });
-    ['#dashboard', '#agenda-view', '#docs-view'].forEach(function (s) { var x = q(s); if (x) x.style.display = 'none'; });
+    ['#dashboard', '#agenda-view', '#docs-view', '#res-view'].forEach(function (s) { var x = q(s); if (x) x.style.display = 'none'; });
     var ev = q('#etiq-view'); if (ev) ev.style.display = 'block';
     var t = q('#topbar-title'); if (t) t.textContent = 'Etiquetas';
     var tg = q('#topbar-tag'); if (tg) { tg.textContent = 'IMPRESSÃO'; tg.style.color = ''; }
@@ -12820,13 +13134,13 @@ const APP_VER='v134';
   css.textContent = '.rm-view-enter{animation:rmConteudoEntra .3s var(--rm-motion-ease) both}';
   document.head.appendChild(css);
 
-  ['showDashboard','showAgenda','showDocumentos','showEtiquetas'].forEach(function (nome) {
+  ['showDashboard','showAgenda','showDocumentos','showEtiquetas','showResultados'].forEach(function (nome) {
     var original = window[nome];
     if (typeof original !== 'function') return;
     window[nome] = function () {
       var retorno = original.apply(this, arguments);
       requestAnimationFrame(function () {
-        var id = nome === 'showDashboard' ? 'dashboard' : (nome === 'showAgenda' ? 'agenda-view' : (nome === 'showEtiquetas' ? 'etiq-view' : 'docs-view'));
+        var id = nome === 'showDashboard' ? 'dashboard' : (nome === 'showAgenda' ? 'agenda-view' : (nome === 'showEtiquetas' ? 'etiq-view' : (nome === 'showResultados' ? 'res-view' : 'docs-view')));
         revelar(document.getElementById(id));
       });
       return retorno;

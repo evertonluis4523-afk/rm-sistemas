@@ -5498,6 +5498,10 @@ function resumoDoc(d) {
   const r = { s: d.status || 'negociacao', t: totalProposta(d) || 0, d: d.data || '', c: (d.cliente && d.cliente.nome) || '', n: numeroRev(d) };
   if (d.contrato) { const tc = totalContrato(d); if (tc) r.tc = tc; if (d.contrato.data) r.cd = d.contrato.data; }
   if (d.aprovadaEm) r.ap = d.aprovadaEm;
+  /* criada em e as revisões (quando cada uma foi guardada): "Meus resultados" separa proposta nova de revisão */
+  if (d.criado) r.cr = d.criado;
+  const rv = (Array.isArray(d.revisoes) ? d.revisoes : []).map(x => x && x.em).filter(Boolean);
+  if (rv.length) r.rv = rv;
   return r;
 }
 function resumoTodos() {
@@ -6627,7 +6631,7 @@ if ('serviceWorker' in navigator) {
 })();
 </script>
 <script>/* versão publicada (PADRAO_RM.md §3): sobe a cada publicação, junto com o CACHE do sw.js */
-const APP_VER='v30';
+const APP_VER='v31';
 </script>
 <script id="rmVersaoBloco">
 /* ===== SELO DE VERSÃO — igual em todos os sistemas (PADRAO_RM.md §3) =====
