@@ -3625,13 +3625,14 @@ function novoDoc(tipo) {
     pre: [{ titulo: '', itens: [{ desc: '', qtd: '', un: 'un' }] }],
     met: [{ titulo: '', linhas: MET_CAMPOS.map(k => ({ k, v: '' })) }],
     comp: clone(m.complementares).map(c => Object.assign({ valor: 0 }, c)),
-    compCfg: { mostrar: true, somar: true },
+    compCfg: { mostrar: true, somar: true, pct: 0 },
     prazoDias: 120,
     pagProp: clone(m.pagamentoProposta).map(x => Object.assign({ forma: '', bem: '' }, x)),
     valores: m.valores.map(e => ({ etapa: e, valor: 0, opcional: false, contrato: true, mostrar: true, cortesia: false })),
     cnm: { itens: tipo === 'chave' ? CNM_NOVA.map(cnmServico) : [], pct: 0, somar: true, titulo: '' },
-    /* total digitado à mão (vale mesmo sem as etapas com valor) e acréscimo (%) */
-    tot: { manual: 0, pct: 0 },
+    /* total digitado à mão (vale mesmo sem as etapas com valor), acréscimo (%)
+       das etapas e acréscimo geral (%), sobre todos os valores */
+    tot: { manual: 0, pct: 0, geral: 0 },
     textos: clone(m.proposta),
     imgs: { titulo: '', desenhista: '', anexar: false, itens: [] },
     contrato: null
@@ -3660,14 +3661,14 @@ function normalizar(d) {
   o.pre = lista(d.pre).map(g => ({ titulo: g.titulo || '', itens: lista(g.itens).map(i => ({ desc: i.desc || '', qtd: i.qtd == null ? '' : String(i.qtd), un: i.un || 'un' })) }));
   o.met = lista(d.met).map(g => ({ titulo: g.titulo || '', linhas: lista(g.linhas).map(l => ({ k: l.k || '', v: l.v || '' })) }));
   o.comp = d.comp ? lista(d.comp).map(c => ({ item: c.item || '', sit: SITUACOES[c.sit] ? c.sit : 'incluso', valor: lerValor(c.valor) })) : b.comp;
-  o.compCfg = { mostrar: !(d.compCfg && d.compCfg.mostrar === false), somar: !(d.compCfg && d.compCfg.somar === false) };
+  o.compCfg = { mostrar: !(d.compCfg && d.compCfg.mostrar === false), somar: !(d.compCfg && d.compCfg.somar === false), pct: lerValor(d.compCfg && d.compCfg.pct) };
   o.pagProp = d.pagProp ? lista(d.pagProp).map(p => ({ pct: lerValor(p.pct), quando: p.quando || '', forma: p.forma || '', bem: p.bem || '' })) : b.pagProp;
   o.valores = d.valores ? lista(d.valores).map(v => ({ etapa: v.etapa || '', valor: lerValor(v.valor), opcional: !!v.opcional, contrato: v.contrato !== false, mostrar: v.mostrar !== false, cortesia: !!v.cortesia })) : b.valores;
   const cn = d.cnm || {};
   o.cnm = { itens: lista(cn.itens).map(x => ({ nome: x.nome || '', valor: lerValor(x.valor), mostrar: x.mostrar !== false, texto: x.texto || '',
     itens: lista(x.itens).map(i => ({ desc: i.desc || '', qtd: i.qtd == null ? '' : String(i.qtd), un: i.un || 'un' })) })), pct: lerValor(cn.pct), somar: cn.somar !== false, titulo: cn.titulo || '' };
   const tt = d.tot || {};
-  o.tot = { manual: lerValor(tt.manual), pct: lerValor(tt.pct) };
+  o.tot = { manual: lerValor(tt.manual), pct: lerValor(tt.pct), geral: lerValor(tt.geral) };
   /* proposta anterior aos tipos: com serviços preenchidos, é de chave na mão */
   o.tipo = d.tipo === 'chave' || d.tipo === 'padrao' ? d.tipo : (o.cnm.itens.some(x => x.nome.trim() || x.valor) ? 'chave' : 'padrao');
   o.titulo = d.titulo || '';
@@ -3695,14 +3696,23 @@ function normalizar(d) {
    proposta (piso, escada, projeto) entraram no contrato. */
 /* Chave na mão: cada serviço já com o acréscimo (%) aplicado -- é assim que
    sai no papel, e o total é a soma do que aparece. */
-function cnmFinal(d, x) { return centavos(lerValor(x.valor) * (1 + lerValor(d.cnm && d.cnm.pct) / 100)); }
+/* ACRÉSCIMO GERAL (%), no fim de Valores: vai sobre TODOS os valores --
+   etapas, opcionais, chave na mão, itens complementares e o total digitado
+   --, por cima do acréscimo de cada bloco. Como os outros, sai distribuído:
+   cada valor no papel já vem com ele, e o total é a soma do que aparece.
+   Teste propostas-acrescimo-complementares-e-geral. */
+function geralPct(d) { return lerValor(d.tot && d.tot.geral); }
+function comAcrescimo(d, v, pct) { return centavos(lerValor(v) * (1 + lerValor(pct) / 100) * (1 + geralPct(d) / 100)); }
+function cnmFinal(d, x) { return comAcrescimo(d, x.valor, d.cnm && d.cnm.pct); }
 function cnmItens(d) { return d.cnm && d.tipo === 'chave' ? d.cnm.itens.filter(x => String(x.nome || '').trim() || lerValor(x.valor)) : []; }
 function totalCnm(d) { return centavos(cnmItens(d).reduce((s, x) => s + cnmFinal(d, x), 0)); }
 /* ITENS COMPLEMENTARES COM VALOR: somam à parte, num subtotal; "Não
    incluso" e "Cortesia" ficam fora. O subtotal pode entrar ou não no total
-   da obra, e os valores podem sair ou não no papel. */
+   da obra, e os valores podem sair ou não no papel. O acréscimo (%) do bloco
+   vai distribuído nos itens, como no chave na mão. */
 function compContam(d) { return (d.comp || []).filter(c => c.sit !== 'nao' && c.sit !== 'cortesia' && lerValor(c.valor)); }
-function totalComp(d) { return centavos(compContam(d).reduce((s, c) => s + lerValor(c.valor), 0)); }
+function compFinal(d, c) { return comAcrescimo(d, c.valor, d.compCfg && d.compCfg.pct); }
+function totalComp(d) { return centavos(compContam(d).reduce((s, c) => s + compFinal(d, c), 0)); }
 function compNoTotal(d) { return d.compCfg && d.compCfg.somar === false ? 0 : totalComp(d); }
 function cnmNoTotal(d) { return d.cnm && d.cnm.somar !== false ? totalCnm(d) : 0; }
 /* TOTAL DIGITADO E ACRÉSCIMO (%), em Valores. O total digitado vale mesmo
@@ -3713,19 +3723,24 @@ function cnmNoTotal(d) { return d.cnm && d.cnm.somar !== false ? totalCnm(d) : 0
    digitado, vai sobre ele. Teste propostas-total-digitado-e-acrescimo. */
 function totPct(d) { return lerValor(d.tot && d.tot.pct); }
 function totManual(d) { return lerValor(d.tot && d.tot.manual); }
-function valFinal(d, x) { return centavos(lerValor(x.valor) * (1 + totPct(d) / 100)); }
+function valFinal(d, x) { return comAcrescimo(d, x.valor, totPct(d)); }
 function somaEtapas(d, f) { return d.valores.filter(f).reduce((s, v) => s + valFinal(d, v), 0); }
 /* cortesia: o item aparece, mas o valor não entra em total nenhum */
 function totalProposta(d) {
   const m = totManual(d);
-  return m > 0 ? centavos(m * (1 + totPct(d) / 100)) : centavos(somaEtapas(d, v => !v.opcional && !v.cortesia) + cnmNoTotal(d) + compNoTotal(d));
+  return m > 0 ? comAcrescimo(d, m, totPct(d)) : centavos(somaEtapas(d, v => !v.opcional && !v.cortesia) + cnmNoTotal(d) + compNoTotal(d));
 }
+function fmtPct(x) { return fmtNum(x, x % 1 ? 2 : 0) + '%'; }
+function notaGeral(d) { return geralPct(d) ? ' + ' + fmtPct(geralPct(d)) + ' geral' : ''; }
 function notaTotal(d) {
-  const m = totManual(d), pc = totPct(d), p = fmtNum(pc, pc % 1 ? 2 : 0) + '%';
-  if (m > 0) return 'digitado ' + brl(m) + (pc ? ' + ' + p : '');
-  if (!pc) return '';
+  const m = totManual(d), pc = totPct(d), g = geralPct(d);
+  if (m > 0) return 'digitado ' + brl(m) + (pc ? ' + ' + fmtPct(pc) : '') + notaGeral(d);
+  if (!pc && !g) return '';
   const base = centavos(d.valores.filter(v => !v.opcional && !v.cortesia).reduce((s, v) => s + lerValor(v.valor), 0));
-  return 'etapas ' + brl(base) + ' + ' + p;
+  if (!g) return 'etapas ' + brl(base) + ' + ' + fmtPct(pc);
+  /* com o geral: o total antes dele (com o acréscimo de cada bloco) + o geral */
+  const sem = totalProposta(Object.assign({}, d, { tot: Object.assign({}, d.tot, { geral: 0 }) }));
+  return (pc ? 'etapas ' + brl(base) + ' + ' + fmtPct(pc) + ' · ' : '') + 'antes do geral ' + brl(sem) + notaGeral(d);
 }
 /* o contrato soma o que foi marcado "no contrato" (e o chave na mão); com
    desconto, vale o valor ajustado -- guardado no contrato, a proposta fica
@@ -3864,7 +3879,7 @@ function blocosProposta(d) {
   if (comp.length) {
     sec('Itens complementares');
     const tabC = { t: 'tab', cls: compVal ? 'tot' : '', cols: [{ t: 'Item' }, { t: 'Situação', w: 28 }].concat(compVal ? [{ t: 'Valor', dir: true, w: 22 }] : []),
-      linhas: comp.map(c => [c.item, { t: SITUACOES[c.sit], fraco: c.sit === 'nao' }].concat(compVal ? [c.sit !== 'nao' && c.sit !== 'cortesia' && lerValor(c.valor) ? brl(c.valor) : ''] : [])) };
+      linhas: comp.map(c => [c.item, { t: SITUACOES[c.sit], fraco: c.sit === 'nao' }].concat(compVal ? [c.sit !== 'nao' && c.sit !== 'cortesia' && lerValor(c.valor) ? brl(compFinal(d, c)) : ''] : [])) };
     if (compVal) { tabC.total = ['Subtotal dos itens complementares', '', brl(totComp)]; tabC.totalSub = extenso(totComp); }
     bl.push(tabC);
     if (totComp > 0 && d.compCfg.somar === false) bl.push({ t: 'p', runs: [{ t: 'Os itens complementares com valor são à parte, fora do total da obra.' }] });
@@ -4620,8 +4635,9 @@ function fichaHTML(d) {
       + inp('comp.' + i + '.valor', lerValor(c.valor) ? fmtNum(c.valor, 2) : '', { tipo: 'valor', mode: 'decimal', ph: 'valor (opcional)', rot: 'Valor', cls: 'val' }) + '</div></div>').join('')
     + bt('compAdd', '＋ Item', { cls: 'btn btn-ghost btn-sm' })
     + '<div class="l-ops"><label class="chk"><input type="checkbox" data-p="compCfg.mostrar" data-re="1"' + (d.compCfg.mostrar !== false ? ' checked' : '') + '> mostrar os valores na proposta</label><label class="chk"><input type="checkbox" data-p="compCfg.somar" data-re="1"' + (d.compCfg.somar !== false ? ' checked' : '') + '> somar ao total da obra</label></div>'
+    + '<div class="g2">' + campo('Acréscimo sobre o total (%)', inp('compCfg.pct', lerValor(d.compCfg.pct) ? fmtNum(d.compCfg.pct, lerValor(d.compCfg.pct) % 1 ? 2 : 0) : '', { tipo: 'num', mode: 'decimal', ph: '0', rot: 'Acréscimo (%)' })) + '</div>'
     + '<div class="tot-linha" data-tot="comp">Subtotal dos itens complementares <b>' + brl(totalComp(d)) + '</b><span>' + esc(notaComp(d)) + '</span></div>'
-    + '<p class="nota">O valor é opcional. Somam no subtotal os itens com valor, menos os "Não incluso" e "Cortesia".</p>', { extra: totalComp(d) ? brl(totalComp(d)) : '' });
+    + '<p class="nota">O valor é opcional. Somam no subtotal os itens com valor, menos os "Não incluso" e "Cortesia". O acréscimo vai distribuído nos itens (cada valor sai no papel já com ele).</p>', { extra: totalComp(d) ? brl(totalComp(d)) : '' });
   const pct = d.pagProp.reduce((s, x) => s + lerValor(x.pct), 0);
   h += secao('Pagamento da proposta', d.pagProp.map((p, i) => '<div class="linha l-pag">' + inp('pagProp.' + i + '.pct', p.pct, { tipo: 'num', mode: 'decimal', rot: 'Percentual', cls: 'pct' }) + '<span class="un">%</span>' + inp('pagProp.' + i + '.quando', p.quando, { rot: 'Quando' }) + formaSel('pagProp.' + i, p) + bt('pagDel', '✕', { i, rot: 'Excluir parcela', cls: 'icon-btn del' }) + '</div>' + bemCampo('pagProp.' + i, p)).join('') + bt('pagAdd', '＋ Parcela', { cls: 'btn btn-ghost btn-sm' })
     + '<p class="nota">Forma: dinheiro, depósito ou um bem como parte do pagamento (terreno, imóvel, carro...). A lista dos bens se muda em Configurações.</p>', { extra: fmtNum(pct, pct % 1 ? 1 : 0) + '%' });
@@ -4654,9 +4670,11 @@ function fichaHTML(d) {
     + bt('valAdd', '＋ Valor', { cls: 'btn btn-ghost btn-sm' })
     + '<div class="g2 tot-campos">' + campo('Total digitado (R$)', inp('tot.manual', totManual(d) ? fmtNum(d.tot.manual, 2) : '', { tipo: 'valor', mode: 'decimal', ph: 'pela soma das etapas', rot: 'Total digitado' }))
     + campo('+ Acréscimo (%)', inp('tot.pct', totPct(d) ? fmtNum(d.tot.pct, totPct(d) % 1 ? 2 : 0) : '', { tipo: 'num', mode: 'decimal', ph: '0', rot: 'Acréscimo (%)' })) + '</div>'
+    + '<div class="g2 tot-campos tot-geral">' + campo('Acréscimo geral (%)', inp('tot.geral', geralPct(d) ? fmtNum(d.tot.geral, geralPct(d) % 1 ? 2 : 0) : '', { tipo: 'num', mode: 'decimal', ph: '0', rot: 'Acréscimo geral (%)' }))
+    + '<p class="nota">Sobre todos os valores: etapas, opcionais' + (d.tipo === 'chave' ? ', chave na mão' : '') + ' e itens complementares, por cima do acréscimo de cada bloco.</p></div>'
     + '<div class="tot-linha" data-tot="proposta">Total da proposta <b>' + brl(totalProposta(d)) + '</b><span>' + esc(notaProposta(d)) + '</span></div>'
     + '<p class="nota">"Opcional" sai na proposta à parte, fora do total. "No contrato" entra no valor do contrato. "Mostrar valor" desmarcado: a etapa aparece sem o valor, e o total continua. "Cortesia": a etapa sai como brinde, e o valor fica fora do total.' + (cnmNoTotal(d) && !totManual(d) ? ' O total inclui os serviços da chave na mão (' + brl(cnmNoTotal(d)) + ').' : '')
-    + ' "Total digitado": vale mesmo sem as etapas com valor, e no papel elas saem sem valor, só o total. "Acréscimo": vai distribuído nas etapas (cada valor sai no papel já com ele); com o total digitado, vai sobre ele.</p>', { extra: brl(totalProposta(d)) });
+    + ' "Total digitado": vale mesmo sem as etapas com valor, e no papel elas saem sem valor, só o total. "Acréscimo": vai distribuído nas etapas (cada valor sai no papel já com ele); com o total digitado, vai sobre ele. "Acréscimo geral": o mesmo, em todos os valores da proposta.</p>', { extra: brl(totalProposta(d)) });
   h += secao('Textos da proposta', Object.keys(d.textos).map(k => k === 'fundacoes' || k === 'fundacoesObs' ? '' : campo(ROTULOS_TEXTO['proposta.' + k] || k, area('textos.' + k, d.textos[k], Math.min(8, Math.max(2, Math.ceil(String(d.textos[k]).length / 90))), ROTULOS_TEXTO['proposta.' + k]))).join('')
     + '<p class="nota">Mudanças aqui valem só para esta proposta. Para mudar o padrão das próximas, use "Textos padrão".</p>', { aberta: false });
   return h;
@@ -4828,10 +4846,14 @@ function notaDesconto(d) {
     + 'Vale só para o contrato: a proposta continua com os valores dela.';
 }
 function notaProposta(d) { const n = notaTotal(d), e = extenso(totalProposta(d)); return n ? n + ' · ' + e : e; }
-function notaComp(d) { return (d.compCfg.somar !== false ? 'somado ao total da obra' : 'fora do total da obra') + (d.compCfg.mostrar === false ? ' · valores ocultos no papel' : ''); }
+function notaComp(d) {
+  const base = centavos(compContam(d).reduce((s, c) => s + lerValor(c.valor), 0)), pc = lerValor(d.compCfg.pct);
+  return (base && (pc || geralPct(d)) ? 'itens ' + brl(base) + (pc ? ' + ' + fmtPct(pc) : '') + notaGeral(d) + ' · ' : '')
+    + (d.compCfg.somar !== false ? 'somado ao total da obra' : 'fora do total da obra') + (d.compCfg.mostrar === false ? ' · valores ocultos no papel' : '');
+}
 function notaCnm(d) {
   const base = centavos(d.cnm.itens.reduce((s, x) => s + lerValor(x.valor), 0)), pc = lerValor(d.cnm.pct);
-  return (pc ? 'serviços ' + brl(base) + ' + ' + fmtNum(pc, pc % 1 ? 2 : 0) + '% · ' : '') + (d.cnm.somar !== false ? 'somado ao total da obra' : 'fora do total da obra');
+  return (base && (pc || geralPct(d)) ? 'serviços ' + brl(base) + (pc ? ' + ' + fmtPct(pc) : '') + notaGeral(d) + ' · ' : '') + (d.cnm.somar !== false ? 'somado ao total da obra' : 'fora do total da obra');
 }
 function atualizarResumos() {
   /* os totais da ficha mudam enquanto se digita, sem redesenhar os campos */
@@ -6628,7 +6650,7 @@ if ('serviceWorker' in navigator) {
 })();
 </script>
 <script>/* versão publicada (PADRAO_RM.md §3): sobe a cada publicação, junto com o CACHE do sw.js */
-const APP_VER='v33';
+const APP_VER='v34';
 </script>
 <script id="rmVersaoBloco">
 /* ===== SELO DE VERSÃO — igual em todos os sistemas (PADRAO_RM.md §3) =====
