@@ -12,7 +12,7 @@
      ASSETS (ex.: o jsPDF da Telha, guardado para funcionar sem internet).
    Medido: com este arquivo a versão publicada aparece na próxima abertura;
    com o anterior, e sem service worker nenhum, voltava a versão velha. */
-const CACHE = 'controle-pu-rm-v100';
+const CACHE = 'controle-pu-rm-v101';
 const ASSETS = ['./', './index.html', './medicao.html', './painel.html', './three.module.min.js', './addons/controls/OrbitControls.js', './manifest.webmanifest', './rm-logo.svg', './icon-192.png', './icon-512.png', './icon-maskable-512.png', './favicon.png'];
 const PAGINA = './index.html';
 
