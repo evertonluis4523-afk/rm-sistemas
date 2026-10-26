@@ -3111,7 +3111,7 @@ const DB_NODE = "maquinas_rm";
    visivel, nenhum de nos dois tinha como saber se o aparelho estava rodando o
    que foi publicado ou uma copia velha do cache do app instalado. Diagnostico
    por adivinhacao custa mais caro que um rodape. */
-const APP_VER='v32';
+const APP_VER='v33';
 const STORE_KEY = "rm_maquinas_v1";
 
 const CORES = [
@@ -3161,6 +3161,16 @@ function resumoMaquinas(d){
   listaNuvem(d && d.auditorias).forEach(a => { if (a) um(a.data, 'conf'); });
   listaNuvem(d && d.termos).forEach(t => { if (t) um(t.data, 'termo'); });
   return m;
+}
+/* Ao abrir: a contagem sobe já com o histórico inteiro, sem esperar alguém
+   mexer no estoque (só a gravação a levava). Compara sem depender da ordem
+   das chaves -- o banco devolve em ordem alfabética. */
+function canonResumo(o){ return JSON.stringify(Object.keys(o || {}).sort().map(k => [k, ['conf', 'mov', 'termo'].map(c => Number((o[k] || {})[c]) || 0)])); }
+function publicaResumo(v){
+  if (!fdb) return;
+  const novo = resumoMaquinas(v);
+  if (canonResumo(novo) === canonResumo(v && v.resumo)) return;
+  try { fdb.child('resumo').set(novo).catch(() => {}); } catch (e) {}
 }
 function nuvemGrava(){
   if (!fdb || !fdbLido) return;
@@ -6437,6 +6447,7 @@ function conectar(){
              const migrouPreco = normalizarPrecos();
              try { localStorage.setItem(STORE_KEY, JSON.stringify(db)); } catch(e){}
              if (migrouPreco) setTimeout(nuvemGrava, 0);
+             publicaResumo(v);
              render(); }
       cloud = true; pill('nuvem', false);
     }, e => { console.warn(e); pill('local', true); });
