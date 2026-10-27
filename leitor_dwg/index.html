@@ -1695,19 +1695,21 @@ else poe();
     font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.07em;color:var(--red)}
   #printArea .lf-famh span{margin-left:auto;font-weight:600;text-transform:none;
     letter-spacing:0;color:var(--muted);font-size:12px}
-  #printArea .lf-cols{display:flex;gap:14px;padding:0 12px 10px;align-items:flex-start}
+  #printArea .lf-cols{padding:0 12px 10px}
   /* Com uma familia curta a tabela nao deve esticar de ponta a ponta: a
      coluna de comprimento ficaria longe da quantidade e a leitura se perde. */
-  #printArea .lf-cols>table{flex:1 1 230px;min-width:0;max-width:380px}
+  #printArea .lf-cols>table.lf-t{width:auto;min-width:min(100%,calc(var(--lf-n) * 300px));max-width:calc(var(--lf-n) * 400px)}
+  #printArea .lf-t [data-sep]{border-left:14px solid transparent;background-clip:padding-box}
   #printArea .lf-g table{width:100%;border-collapse:collapse;font-size:13px;font-weight:530}
   #printArea .lf-g th{text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.06em;
     color:var(--muted);padding:4px 6px;border-bottom:1px solid var(--line);font-weight:600}
   #printArea .lf-g th.n,#printArea .lf-g td.n{text-align:right}
   #printArea .lf-g th:last-child,#printArea .lf-g td:last-child{text-align:left}
   #printArea .lf-g td{padding:3px 6px;border-bottom:1px solid #f2efe9}
-  /* a faixa e' que e' indivisivel; a familia inteira pode atravessar paginas */
-  #printArea .lf-fam{break-inside:auto;page-break-inside:auto}
-  #printArea .lf-cols{break-inside:avoid;page-break-inside:avoid}
+  /* a família atravessa páginas linha a linha; o cabeçalho vai junto */
+  #printArea .lf-fam,#printArea .lf-cols,#printArea .lf-g{break-inside:auto;page-break-inside:auto}
+  #printArea .lf-t thead{display:table-header-group}
+  #printArea .lf-t tr{break-inside:avoid;page-break-inside:avoid}
   #printArea .lf-famh{break-after:avoid;page-break-after:avoid}
   #printArea .lf-cont{font-size:11px;color:var(--muted);text-align:right;padding:0 12px 6px;
     text-transform:uppercase;letter-spacing:.06em;font-weight:600}
@@ -1745,7 +1747,7 @@ else poe();
   /* O pé e a marca d'água da papelaria (bloco comum, #rm-pe-imp e
      #rm-dagua-imp) também ficam fora do #printArea: sem a exceção eles sumiam
      junto com a tela, e a folha da planificação saía sem rodapé. */
-  body *{visibility:hidden}#printArea,#printArea *,#rm-pe-imp,#rm-pe-imp *,#rm-dagua-imp,#rm-dagua-imp *{visibility:visible}#printArea{position:static;left:auto;top:auto;width:100%;margin:0;border-radius:0;display:block!important}#printArea button{display:none}#printArea .pa-topo{display:none!important}
+  body *{visibility:hidden}#printArea,#printArea *,#rm-pe-imp,#rm-pe-imp *,#rm-dagua-imp,#rm-dagua-imp *{visibility:visible}#printArea{position:static;left:auto;top:auto;width:100%;margin:0;border-radius:0;display:block!important}#printArea button{display:none}#printArea .lf-opc{display:none!important}#printArea .pa-topo{display:none!important}
     #printArea select,#printArea .dxf-ctrl,#printArea #dxfAviso{display:none}
     /* uma estrutura por folha, e a prancha ocupa a folha inteira */
     /* Quebra ANTES de cada prancha menos a primeira. Quebrar depois deixava
@@ -15340,7 +15342,10 @@ function htmlListaFornecedor(d){
        comprimento da peça, e separar por ela dividia a mesma medida em duas
        linhas do pedido sem nenhuma diferença de fabricação. */
     {id:'vertical', rot:'Verticais',                  ok:p=>p.tipo==='vertical'},
-    {id:'outros',   rot:'Demais peças',               ok:p=>!eDiag(p)&&p.tipo!=='vertical'}
+    /* só entram quando o pedido marca "Incluir banzos" -- ver lfComBanzos */
+    {id:'bsup',     rot:'Banzo superior',             ok:p=>p.tipo==='banzo_sup'},
+    {id:'binf',     rot:'Banzo inferior',             ok:p=>p.tipo==='banzo_inf'},
+    {id:'outros',   rot:'Demais peças',               ok:p=>!eDiag(p)&&p.tipo!=='vertical'&&!/^banzo_/.test(p.tipo)}
   ];
   /* Quebra a lista em colunas de altura parecida. Numa folha deitada cabem
      três, e o U 60x180 sai de 106 linhas numa coluna para 36 em cada. */
@@ -15362,12 +15367,25 @@ function htmlListaFornecedor(d){
     if(letras.length===1)return ord(porLetra[letras[0]]).join(', ');
     return letras.sort().map(k=>k+': '+ord(porLetra[k]).join(', ')).join(' · ');
   };
-  const tabela=itens=>'<table><thead><tr><th class="n">Comp.</th>'+
-      '<th class="n">Qtd</th><th>Peças (P)</th></tr></thead><tbody>'+
-    itens.map(x=>'<tr><td class="n lf-len">'+nb(x.len)+'</td>'+
-      '<td class="n lf-qtd">'+nb(x.qty)+'</td>'+
-      '<td class="lf-cod">'+escapeHtml(juntaMarcas(x.marcas,'pos')||x.cods.join(', ')||'—')+'</td></tr>').join('')+
-    '</tbody></table>';
+  /* ---- uma tabela só por família, com as colunas lado a lado ----
+     Eram várias tabelas dentro de uma caixa flex. O navegador não parte essa
+     caixa entre páginas: quando a família não cabia no resto da folha, ela
+     pulava inteira e a folha ficava em branco embaixo do cabeçalho do perfil
+     ("O pedido para o fabricante está gerando espaçamento em branco"). Numa
+     tabela única a quebra é linha a linha e o cabeçalho se repete na página
+     seguinte. A leitura continua coluna a coluna, de cima para baixo. */
+  const celulas=(x,sep)=>{const s=sep?' data-sep="1"':'';
+    return x?('<td class="n lf-len"'+s+'>'+nb(x.len)+'</td><td class="n lf-qtd">'+nb(x.qty)+'</td>'+
+      '<td class="lf-cod">'+escapeHtml(juntaMarcas(x.marcas,'pos')||x.cods.join(', ')||'—')+'</td>')
+    :'<td'+s+'></td><td></td><td></td>';};
+  const tabela=(itens,n)=>{
+    const cols=emColunas(itens,n),linhas=cols[0]?cols[0].length:0;
+    const cab=sep=>'<th class="n"'+(sep?' data-sep="1"':'')+'>Comp.</th><th class="n">Qtd</th><th>Peças (P)</th>';
+    let corpo='';
+    for(let i=0;i<linhas;i++)corpo+='<tr>'+cols.map((c,k)=>celulas(c[i],k>0)).join('')+'</tr>';
+    return '<table class="lf-t" style="--lf-n:'+cols.length+'"><thead><tr>'+cols.map((c,k)=>cab(k>0)).join('')+
+      '</tr></thead><tbody>'+corpo+'</tbody></table>';
+  };
 
   d.grupos.forEach(g=>{
     const kg=kgmLookup(g.perfil), kgm=(kg&&kg.kgm>0)?kg.kgm:0;
@@ -15406,22 +15424,9 @@ function htmlListaFornecedor(d){
       const metros=itens.reduce((s,x)=>s+x.len*x.qty,0)/1000;
       nPecasG+=nPecas; metrosG+=metros;
       const nCols=itens.length>34?3:(itens.length>14?2:1);
-      /* ---- por que a família sai em faixas ----
-         Uma família inteira era um bloco só, indivisível na impressão. Com 64
-         medidas ela ocupava 623 px numa página de 733: não cabia no que
-         sobrava da primeira folha e pulava inteira para a segunda, deixando
-         437 px de papel em branco. Quebrando em faixas de até 14 linhas por
-         coluna, cada faixa escorrega para o buraco que houver, e o cabeçalho
-         da família fica preso à primeira delas. */
-      const POR_FAIXA=14*nCols;
-      const faixas=[];
-      for(let i=0;i<itens.length;i+=POR_FAIXA)faixas.push(itens.slice(i,i+POR_FAIXA));
       blocos+='<div class="lf-fam"><div class="lf-famh">'+f.rot+
         '<span>'+nb(itens.length)+' medidas · '+nb(nPecas)+' peças</span></div>'+
-        faixas.map((fx,i)=>'<div class="lf-cols">'+
-          emColunas(fx,Math.min(nCols,fx.length)).map(c=>tabela(c)).join('')+'</div>'+
-          (i<faixas.length-1?'<div class="lf-cont">'+escapeHtml(f.rot)+' · continua</div>':'')
-        ).join('')+'</div>';
+        '<div class="lf-cols">'+tabela(itens,Math.min(nCols,itens.length))+'</div></div>';
     });
     if(!blocos)return;
     const peso=metrosG*kgm;
@@ -16145,10 +16150,31 @@ document.getElementById('trocarArq').addEventListener('click',()=>trocarArquivoD
  if(t)t.addEventListener('click',()=>trocarArquivoDaAba('tel'));}
 document.getElementById('btnCotas').addEventListener('click',cotaAbrir);
 document.getElementById('cutReport').addEventListener('click',gerarRelatorioCorte);
+/* ---- banzos no pedido, se marcado ----
+   O pedido levava só as internas. Quando o mesmo fabricante corta também os
+   banzos, eles entram no perfil deles como duas famílias, superior e
+   inferior, nos pedaços do plano de emenda (barra cheia + resto) que o
+   detalhamento já calcula. Na coluna P vai a linha inteira e a parte, para
+   quem recebe saber que os dois pedaços formam um banzo só. */
+const LF_BANZOS_KEY='rm_lf_banzos';
+function lfComBanzos(d,secoes){
+  const grupos=d.grupos.map(g=>({...g,lista:g.lista.slice()}));
+  const nb=v=>Math.round(v).toLocaleString('pt-BR');
+  secoes.forEach(s=>{
+    const br=s.banzosResumo;if(!br)return;
+    const perfil=cleanProfile(s.nomeExt),mat=s.matExt||'';
+    let g=grupos.find(x=>cleanProfile(x.perfil)===perfil&&(x.mat||'')===mat&&!x.fora);
+    if(!g){g={perfil,mat,fora:null,lista:[]};grupos.push(g);}
+    br.linhas.forEach(l=>l.segmentos.forEach((len,k)=>g.lista.push({cod:'',len,qty:l.qtdTotal,
+      tipo:l.pos==='Superior'?'banzo_sup':'banzo_inf',interna:'',
+      marcas:[{letra:detLetraIdent(s),pos:['banzo '+nb(l.comp)+(l.segmentos.length>1?' · '+(k+1)+'/'+l.segmentos.length:'')]}]})));
+  });
+  return {...d,grupos};
+}
 document.getElementById('listaForn').addEventListener('click',()=>{
-  const d=dadosRelatorioCorte();
-  if(!d.grupos.length){alert('Nenhuma peça interna disponível para o pedido.');return;}
-  if((d.vinculoErros||[]).length){alert('Pedido bloqueado — o fornecedor receberia uma lista menor que a obra:\n\n'+d.vinculoErros.join('\n'));return;}
+  const d0=dadosRelatorioCorte();
+  if(!d0.grupos.length){alert('Nenhuma peça interna disponível para o pedido.');return;}
+  if((d0.vinculoErros||[]).length){alert('Pedido bloqueado — o fornecedor receberia uma lista menor que a obra:\n\n'+d0.vinculoErros.join('\n'));return;}
   const pa=document.getElementById('printArea');if(!pa)return;
   pa.classList.remove('hide');
   /* O pedido vai com os desenhos junto: primeiro as tabelas, que e o que o
@@ -16160,9 +16186,20 @@ document.getElementById('listaForn').addEventListener('click',()=>{
     ? '<div class="pranchas lf-desenhos">'+detPranchasGrupos(secoes)+
       detPranchas(secoes,dxfFolhaEscolhida(),DXF_PARTES)+'</div>'
     : '';
-  pa.innerHTML=htmlListaFornecedor(d)+desenhos+
-    '<div class="lf-botoes" style="margin-top:12px"><button class="btn" id="lfPrint">Imprimir / PDF</button> '+
-    '<button class="btn ghost" id="lfClose">Fechar</button></div>';
+  let comBanzos=false;try{comBanzos=localStorage.getItem(LF_BANZOS_KEY)==='1';}catch(_){}
+  const monta=()=>{
+    const d=comBanzos?lfComBanzos(d0,secoes):d0;
+    pa.innerHTML=htmlListaFornecedor(d)+desenhos+
+      '<div class="lf-botoes" style="margin-top:12px"><label class="lf-opc" style="display:inline-flex;align-items:center;gap:6px;margin-right:12px">'+
+      '<input type="checkbox" id="lfBanzos"'+(comBanzos?' checked':'')+'> Incluir banzos (superior e inferior)</label>'+
+      '<button class="btn" id="lfPrint">Imprimir / PDF</button> '+
+      '<button class="btn ghost" id="lfClose">Fechar</button></div>';
+    liga();
+  };
+  const liga=()=>{
+  document.getElementById('lfBanzos').addEventListener('change',e=>{
+    comBanzos=e.target.checked;try{localStorage.setItem(LF_BANZOS_KEY,comBanzos?'1':'0');}catch(_){}
+    monta();});
   /* Paisagem, pelo mesmo caminho da prancha: @page nao aceita seletor, entao
      a regra entra e sai junto com a impressao. Deitada cabem tres colunas de
      medidas, e as 106 do U 60x180 saem em uma folha em vez de tres. */
@@ -16175,6 +16212,8 @@ document.getElementById('listaForn').addEventListener('click',()=>{
     setTimeout(()=>{const e=document.getElementById('pgPedido');if(e)e.remove();},3000);
   });
   document.getElementById('lfClose').addEventListener('click',()=>{pa.classList.add('hide');pa.innerHTML='';});
+  };
+  monta();
   pa.scrollIntoView({behavior:'smooth',block:'start'});
 });
 CU_CAMPOS.forEach(([id])=>{const e=document.getElementById(id);
@@ -28413,7 +28452,7 @@ if('serviceWorker' in navigator && location.protocol.startsWith('http')){
 }
 </script>
 <script>/* versão publicada (PADRAO_RM.md §3): sobe a cada publicação, junto com o CACHE do sw.js */
-const APP_VER='v225';
+const APP_VER='v226';
 </script>
 <script id="rmVersaoBloco">
 /* ===== SELO DE VERSÃO — igual em todos os sistemas (PADRAO_RM.md §3) =====
