@@ -1643,6 +1643,7 @@ else poe();
   #printArea .pranchas{margin-top:16px}
   #printArea .prancha{background:#fff;border:1px solid var(--line);border-radius:8px;padding:10px;margin-bottom:14px}
   #printArea .prancha svg{display:block;width:100%;height:auto}
+  #printArea .pa-dup{display:none!important}
   #printArea .pa-topo{position:sticky;z-index:30;display:flex;justify-content:flex-end;gap:8px;padding:8px 0;margin:-4px 0 8px;
     background:linear-gradient(var(--bg,#f4f5f7) 80%,transparent)}
   #printArea .rc-econ{border:1.5px solid var(--red);border-radius:10px;padding:14px 16px;margin:18px 0 6px;background:var(--red-soft)}
@@ -1754,6 +1755,11 @@ else poe();
        prancha. No modo prancha o resto sai do fluxo de verdade, e aí o
        documento tem exatamente a altura dos desenhos. */
     body.so-prancha .appbar,body.so-prancha .wrap>*:not(#printArea){display:none!important}
+    /* Dentro do #printArea também: a fileira de botões some no papel mas
+       ficava no fluxo com altura zero, numa página "sem nome" -- e a folha
+       A3 da tesoura completa (página com nome própria) abria o PDF com uma
+       folha em branco antes dela. Teste leitor-prancha-completa-legivel. */
+    body.so-prancha #printArea>*:not(.pranchas){display:none!important}
     body.so-prancha #printArea{position:static}
     body.so-prancha,body.so-prancha html{height:auto}
     /* cabeçalho de tabela se repete a cada página e um grupo não é partido no meio se couber */
@@ -1865,6 +1871,7 @@ else poe();
 /* Opções de divisão, posições e rastreabilidade das partes. */
 .cp-rotation-control{margin-top:14px;padding:12px;background:#fff;border:1px solid #b9d2c1;border-radius:6px;font-weight:700}
 .cp-scan-controls{margin:14px 0;padding:12px;border:1px solid #b9d2c1;border-radius:6px;background:#fff}.cp-scan-controls .cp-actions{flex-wrap:wrap}.cp-scan-controls input{width:90px}.cp-scan-controls progress{display:block;width:100%;margin:10px 0}.cp-scan-controls [hidden]{display:none!important}.cp-scan-controls .hint{margin-top:9px;line-height:1.6}
+.cp-mais{margin:6px 0 10px}.cp-mais summary{cursor:pointer;font-size:12px;font-weight:600;color:var(--muted)}.cp-mais summary::before{content:"? ";font-weight:700}.cp-mais p{margin:6px 0 0}.cp-fin>.cp-mais{padding:0 16px 14px}@media print{.cp-mais summary{display:none}}
 .cp-nesting{border:1px solid #b9d2c1;border-top:3px solid #3a7150;border-radius:9px;padding:18px;margin:2px 0 20px;background:#f5faf7}.cp-nesting>p{font-size:13px;line-height:1.6;margin:8px 0 12px;font-weight:530}.cp-nesting .cp-split-title b{font-size:13px;color:#285d37;font-weight:530}.cp-nesting>.hint{font-size:12px;color:#50685a;font-weight:560}.cp-nesting .cp-notice{border:1px solid #efdfba;border-radius:5px;padding:12px;margin-bottom:0}.cp-nesting .btn:disabled{opacity:.55;cursor:default}#cpSheetInfo{line-height:1.6;margin-top:10px}@media(max-width:720px){.cp-nesting{padding:12px}.cp-nesting .btn{max-width:100%;white-space:normal}}
 .cp-split{border:1px solid #d1d9df;border-top:3px solid var(--rm-laranja);border-radius:9px;padding:18px;margin:2px 0 20px;background:var(--surface-2)}.cp-split-title{display:flex;align-items:baseline;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:7px}.cp-split-title h3{font-size:17px}.cp-split-title span{font-size:12px;color:var(--muted);font-weight:560}.cp-split>.settings{margin:14px 0}.cp-split .cp-notice{margin-top:12px;border:1px solid #efdfba;border-radius:5px;padding:10px}.cp-alternatives{min-width:780px;background:var(--surface)}.cp-alternatives td,.cp-alternatives th{padding:10px;font-size:12px;font-weight:560}.cp-alternatives .btn{padding:7px 10px;font-size:12px;font-weight:560}.cp-selected{background:#edf6ed}.cp-split-adjust{margin-top:14px}.cp-split-adjust summary{cursor:pointer;font-weight:700;font-size:13px}.cp-split-adjust table{min-width:800px;margin-top:10px}.cp-split-adjust input{width:120px}.cp-split-adjust select{min-width:180px}.cp-split-ledger{margin:20px 0;border:1px solid var(--line);border-radius:8px;overflow:hidden}.cp-ret{border-color:#b9d2c1}.cp-ret h3{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;background:#f5faf7!important;color:#24603c}.cp-ret h3 span{font-family:var(--mono);font-size:13px}.cp-dot-ret:before{background:#9cc9ab;outline:1px dashed #2f7d4f}.cp-split-ledger h3{padding:12px 14px;font-size:14px;background:var(--surface-2)}.cp-split-ledger table{min-width:650px}.cp-split-ledger th,.cp-split-ledger td{padding:9px 12px;font-size:12px;font-weight:560}.cp-split-ledger .cp-notice{margin:0}.cp-mark-legend{padding:14px 16px;border-left:4px solid #174d81;background:#f0f5fb;margin:18px 0;font-size:13px;color:#1d3757;font-weight:530}.cp-mark-legend b{font-family:var(--mono);display:block;font-size:14px}.cp-mark-legend span{display:block;font-size:11px;margin:5px 0;font-weight:600}.cp-mark-legend p{font-size:12px;line-height:1.5;margin-top:8px;font-weight:560}.cp-splice-approval{background:#fff7e8;border-color:#efdfba}.cp-stats small{display:block;font-size:11px;color:var(--muted);margin-top:4px;font-weight:600}#cpSheetList table{min-width:840px}#cpSheetList td:first-child{font-family:var(--mono);font-size:12px;font-weight:560}
 @media(max-width:720px){.cp-split{padding:12px}.cp-split-title h3{font-size:15px}.cp-mark-legend{padding:12px}.cp-mark-legend b{font-size:13px;overflow-wrap:anywhere;font-weight:530}}
@@ -3721,6 +3728,10 @@ body:not([data-theme="escuro"]){
       if(fechar) fechar.click(); else pa.classList.add('hide');
     });
     if(imprimir) d.querySelector('[data-pa="imp"]').addEventListener('click',()=>imprimir.click());
+    /* Os do pé continuam existindo (a barra aperta eles), mas não aparecem:
+       "Imprimir / PDF" e "Fechar" duas vezes na mesma folha. Teste
+       leitor-botoes-sem-repeticao. */
+    [fechar,imprimir].forEach(b=>{if(b)b.classList.add('pa-dup');});
     const ab=document.querySelector('.appbar');
     d.style.top=(ab&&getComputedStyle(ab).position==='sticky'?ab.offsetHeight:0)+'px';
     pa.insertBefore(d,pa.firstChild);
@@ -3740,7 +3751,11 @@ body:not([data-theme="escuro"]){
    LAYER, STYLE, VIEW, UCS, APPID, DIMSTYLE, BLOCK_RECORD, os blocos de espaço
    e a seção OBJECTS. */
 const dxfN=(c,v)=>c+'\n'+v+'\n';
-function rmDxf2000(ent,bb,layers,estilo){
+/* `unid`: o $INSUNITS do arquivo (4 = mm). Sem ele o AutoCAD não sabe a
+   unidade e, num desenho em cm, o DXF do detalhamento (em mm) entrava 10
+   vezes maior. Quem não passa continua como antes. Teste
+   leitor-dxf-montagem-cotas. */
+function rmDxf2000(ent,bb,layers,estilo,unid){
   bb={minx:Number(bb.minx),miny:Number(bb.miny),maxx:Number(bb.maxx),maxy:Number(bb.maxy)};
   const N=(c,v)=>dxfN(c,String(v).replace(/[\u0080-\uffff]/g,x=>'\\U+'+x.charCodeAt(0).toString(16).toUpperCase().padStart(4,'0')));
   const tags=ps=>ps.map(p=>N(p[0],p[1])).join('');
@@ -3858,6 +3873,7 @@ function rmDxf2000(ent,bb,layers,estilo){
   ].map(c=>N(0,'CLASS')+tags([[1,c[0]],[2,c[1]],[3,'ObjectDBX Classes'],[90,0],[280,0],[281,0]])).join('');
   const header=tags([[9,'$ACADVER'],[1,'AC1015'],[9,'$DWGCODEPAGE'],[3,'ANSI_1252'],
     [9,'$HANDSEED'],[5,seq.toString(16).toUpperCase()],[9,'$TEXTSTYLE'],[7,est.nome],[9,'$TILEMODE'],[70,1],
+    ...(unid?[[9,'$INSUNITS'],[70,unid],[9,'$MEASUREMENT'],[70,1],[9,'$LUNITS'],[70,2]]:[]),
     [9,'$INSBASE'],[10,0],[20,0],[30,0],[9,'$EXTMIN'],[10,bb.minx],[20,bb.miny],[30,0],
     [9,'$EXTMAX'],[10,bb.maxx],[20,bb.maxy],[30,0]]);
   return section('HEADER',header)+section('CLASSES',classes)+
@@ -8330,30 +8346,99 @@ const DET_TOL_AGRUPA=4;
    Os pedacos de todas as linhas sao encaixados nas barras como os internos
    (o mesmo FFD do plano de corte), e lista e detalhamento usam este numero. */
 const DET_EMENDA_MIN=500, DET_EMENDA_NO=150;
+/* Emenda de cima e emenda de baixo na mesma prumada enfraquecem a tesoura
+   no mesmo ponto: a de baixo foge da de cima por pelo menos isto, quando o
+   pedaço tem folga para crescer. Teste leitor-emenda-ponta-baixa. */
+const DET_EMENDA_DESENC=300;
 function detBarraAtual(){const v=num((document.getElementById('barra')||{}).value);return v>0?v:6000;}
-function detPlanoEmenda(L,barra,nos){
-  if(!(L>barra+0.5))return {segs:[L],sobreNo:[]};
+/* `desvios`: posições (a partir do início do plano) de onde a emenda deve
+   ficar longe, além dos nós -- as emendas do banzo de cima, para a de baixo
+   não cair na mesma prumada. */
+function detPlanoEmenda(L,barra,nos,desvios){
+  if(!(L>barra+0.5))return {segs:[L],sobreNo:[],cortes:[]};
   const n=Math.ceil(L/barra-1e-9),segs=[];
   for(let i=0;i<n-1;i++)segs.push(barra);
   segs.push(L-(n-1)*barra);
   if(segs[n-1]<DET_EMENDA_MIN&&n>1){const f=DET_EMENDA_MIN-segs[n-1];segs[n-2]-=f;segs[n-1]=DET_EMENDA_MIN;}
   /* foge do no: encurta o pedaco de antes e passa o excesso adiante; se o
      de depois estourar a barra, o excesso desce ate o ultimo, que tem folga */
+  const obst=(nos||[]).map(t=>({t,r:DET_EMENDA_NO})).concat((desvios||[]).map(t=>({t,r:DET_EMENDA_DESENC})));
   let pos=0;
   for(let i=0;i<segs.length-1;i++){
     pos+=segs[i];
-    const no=(nos||[]).find(t=>Math.abs(t-pos)<DET_EMENDA_NO);
-    if(no==null)continue;
-    const d=pos-(no-DET_EMENDA_NO);
+    const ob=obst.find(o=>Math.abs(o.t-pos)<o.r);
+    if(!ob)continue;
+    const d=pos-(ob.t-ob.r);
     if(segs[i]-d<DET_EMENDA_MIN)continue;
+    /* não troca um nó por outro: o ponto novo também tem de estar livre */
+    if(obst.some(o=>o!==ob&&Math.abs(o.t-(pos-d))<o.r))continue;
     const teste=segs.slice();teste[i]-=d;teste[i+1]+=d;
     for(let j=i+1;j<teste.length-1;j++)if(teste[j]>barra){const x=teste[j]-barra;teste[j]=barra;teste[j+1]+=x;}
     if(teste[teste.length-1]>barra+0.5)continue;
     segs.splice(0,segs.length,...teste);pos-=d;
   }
-  const sobreNo=[];pos=0;
-  for(let i=0;i<segs.length-1;i++){pos+=segs[i];if((nos||[]).some(t=>Math.abs(t-pos)<DET_EMENDA_NO))sobreNo.push(pos);}
-  return {segs:segs.map(v=>Math.round(v*10)/10),sobreNo};
+  const sobreNo=[],cortes=[];pos=0;
+  for(let i=0;i<segs.length-1;i++){
+    pos+=segs[i];
+    const noNo=(nos||[]).some(t=>Math.abs(t-pos)<DET_EMENDA_NO);
+    if(noNo)sobreNo.push(pos);
+    cortes.push({pos,sobreNo:noNo});
+  }
+  return {segs:segs.map(v=>Math.round(v*10)/10),sobreNo,cortes};
+}
+/* ---- de que ponta o plano de emenda começa ----
+   O plano enche barra cheia a partir do início e o pedaço curto sobra no
+   fim. Começar pela ponta a do desenho deixava o curto na cumeeira numa água
+   e na ponta baixa na outra: a mesma peça cortada ao contrário. Regra do
+   Everton: o pedaço curto fica na PONTA BAIXA, então o plano começa na ponta
+   alta. Banzo deitado (o de baixo, ou a treliça de banzos paralelos) não tem
+   ponta alta: o de cima começa na esquerda e o de baixo na direita, e as
+   emendas dos dois já nascem desencontradas.
+   Teste leitor-emenda-ponta-baixa. */
+function detInicioPlano(b,superior){
+  const dy=b.b.y-b.a.y;
+  if(Math.abs(dy)>detComp(b)*0.02)return dy>0?'b':'a';
+  const esq=b.a.x<=b.b.x?'a':'b';
+  return superior?esq:(esq==='a'?'b':'a');
+}
+/* Cada linha de banzo com o seu plano de emenda, numa conta só para o
+   relatório, os pedidos, a prancha e o DXF. Os de cima primeiro: o de baixo
+   foge das emendas deles. */
+function detPlanosBanzos(banzos,internos){
+  const bs=(banzos||[]).filter(b=>detComp(b)>0.5);
+  if(!bs.length)return [];
+  const barra=detBarraAtual();
+  const ys=[];bs.forEach(b=>ys.push(b.a.y,b.b.y));
+  const yCentro=(Math.min(...ys)+Math.max(...ys))/2;
+  /* CADA LINHA, individualmente: no ponto médio dela, quem é o mais alto
+     entre os banzos que cruzam o mesmo X é o superior */
+  const ls=bs.map(b=>{
+    const x=(b.a.x+b.b.x)/2,y=(b.a.y+b.b.y)/2;
+    const noX=bs.map(o=>detYna(o,x)).filter(v=>v!=null);
+    let superior=y>=yCentro;
+    if(noX.length>=2){
+      const ymin=Math.min(...noX),ymax=Math.max(...noX);
+      superior=Math.abs(y-ymax)<=Math.abs(y-ymin);
+    }
+    return {b,L:detComp(b),superior};
+  });
+  const plano=(l,desviosX)=>{
+    const b=l.b,L=l.L,ini=detInicioPlano(b,l.superior);
+    const u={x:(b.b.x-b.a.x)/L,y:(b.b.y-b.a.y)/L};
+    const daIni=t=>ini==='a'?t:L-t;   // posição contada da ponta onde o plano começa
+    const nos=detNosNoBanzo(b,internos).map(daIni).sort((p,q)=>p-q);
+    const desv=Math.abs(u.x)>1e-6?(desviosX||[]).map(x=>daIni((x-b.a.x)/u.x)).filter(t=>t>0&&t<L):[];
+    const pl=detPlanoEmenda(L,barra,nos,desv);
+    const pIni=ini==='a'?b.a:b.b,pFim=ini==='a'?b.b:b.a;
+    const deitado=Math.abs(b.b.y-b.a.y)<=L*0.02;
+    Object.assign(l,{ini,segs:pl.segs,sobreNo:pl.sobreNo,
+      refNo:deitado?(pIni.x<=pFim.x?'da ponta esquerda':'da ponta direita'):'da ponta alta',
+      cortes:pl.cortes.map(c=>{const t=daIni(c.pos);return {x:b.a.x+u.x*t,y:b.a.y+u.y*t,sobreNo:c.sobreNo};})});
+  };
+  ls.filter(l=>l.superior).forEach(l=>plano(l));
+  const xsCima=ls.filter(l=>l.superior).flatMap(l=>l.cortes.map(c=>c.x));
+  ls.filter(l=>!l.superior).forEach(l=>plano(l,xsCima));
+  return ls;
 }
 /* Posicoes dos nos ao longo de uma linha de banzo: onde as internas pousam. */
 function detNosNoBanzo(b,internos){
@@ -8370,34 +8455,25 @@ function detNosNoBanzo(b,internos){
    superior e o mais baixo é inferior. O centro global é apenas o desempate
    para pontas ou desenhos com uma pequena descontinuidade. */
 function detResumoBanzos(banzos,qtdEstrut,internos){
-  const bs=(banzos||[]).filter(b=>detComp(b)>0.5);
-  if(!bs.length)return null;
+  const ls=detPlanosBanzos(banzos,internos);
+  if(!ls.length)return null;
   const barra=detBarraAtual();
-  const ys=[];bs.forEach(b=>ys.push(b.a.y,b.b.y));
-  const yCentro=(Math.min(...ys)+Math.max(...ys))/2;
   let sup=0,inf=0;
   /* CADA LINHA, individualmente. Uma agua tem uma linha, duas aguas tem
-     duas, e quem tem medidas e plano de emenda iguais se agrupa. */
+     duas, e quem tem medidas e plano de emenda iguais se agrupa -- as duas
+     águas agora cortam igual (o plano começa na ponta alta), então se
+     agrupam. */
   const linhas=[];
-  bs.forEach(b=>{
-    const x=(b.a.x+b.b.x)/2,y=(b.a.y+b.b.y)/2;
-    const noX=bs.map(o=>detYna(o,x)).filter(v=>v!=null);
-    let superior=y>=yCentro;
-    if(noX.length>=2){
-      const ymin=Math.min(...noX),ymax=Math.max(...noX);
-      superior=Math.abs(y-ymax)<=Math.abs(y-ymin);
-    }
-    const L=detComp(b);
-    if(superior)sup+=L;else inf+=L;
-    const pl=detPlanoEmenda(L,barra,detNosNoBanzo(b,internos));
-    linhas.push({comp:L,pos:superior?'Superior':'Inferior',segmentos:pl.segs,sobreNo:pl.sobreNo});
+  ls.forEach(l=>{
+    if(l.superior)sup+=l.L;else inf+=l.L;
+    linhas.push({comp:l.L,pos:l.superior?'Superior':'Inferior',segmentos:l.segs,sobreNo:l.sobreNo,refNo:l.refNo});
   });
   linhas.sort((a,b)=>(a.pos===b.pos?b.comp-a.comp:(a.pos<b.pos?-1:1)));
   const grupos=[];
   linhas.forEach(l=>{
     const u=grupos[grupos.length-1];
     if(u&&u.pos===l.pos&&Math.abs(u.comp-l.comp)<=1&&u.segmentos.join('+')===l.segmentos.join('+'))u.qtd++;
-    else grupos.push({comp:l.comp,pos:l.pos,qtd:1,segmentos:l.segmentos,sobreNo:l.sobreNo});
+    else grupos.push({comp:l.comp,pos:l.pos,qtd:1,segmentos:l.segmentos,sobreNo:l.sobreNo,refNo:l.refNo});
   });
   grupos.forEach(g=>{g.qtdTotal=g.qtd*qtdEstrut;g.totalMM=g.comp*g.qtdTotal;g.barras=g.segmentos.length;});
   const fecha=umaLateral=>({umaLateral,porEstrutura:umaLateral,total:umaLateral*qtdEstrut});
@@ -9033,11 +9109,23 @@ function detYBanzos(lista,x,f){
   const ys=lista.map(b=>{const r=detYnaProl(b,x,30);return r?r.y:null;}).filter(v=>v!=null);
   return ys.length?f(...ys):null;
 }
+/* O ponto mais alto do banzo de cima. Na treliça de banzos paralelos não
+   há ponto mais alto -- qualquer décimo de milímetro decidia, e a corrente
+   saía "P21 a 49.985 mm da P121 (ponta alta)". Banzo de cima deitado
+   (`plano`) começa na ponta ESQUERDA. Teste leitor-trelica-corrente-p1. */
+function detTopoBanzo(s,sup){
+  const ys=sup.flatMap(b=>[b.a.y,b.b.y]),xs=s.banzos.flatMap(b=>[b.a.x,b.b.x]);
+  const plano=Math.max(...ys)-Math.min(...ys)<Math.max(20,(Math.max(...xs)-Math.min(...xs))*.005);
+  let topo=null;
+  sup.forEach(b=>[b.a,b.b].forEach(q=>{
+    if(!topo||(plano?q.x<topo.x-1e-6:q.y>topo.y+1e-6))topo=q;}));
+  return {topo,plano};
+}
 function detMarcasVerticais(s){
   const sup=detBanzosSup(s);if(!sup.length)return null;
-  let topo=null;sup.forEach(b=>[b.a,b.b].forEach(q=>{if(!topo||q.y>topo.y+1e-6)topo=q;}));
+  const {topo,plano}=detTopoBanzo(s,sup);
   const bx0=Math.min(...s.banzos.flatMap(b=>[b.a.x,b.b.x])),bx1=Math.max(...s.banzos.flatMap(b=>[b.a.x,b.b.x]));
-  const xA=topo.x,ponta=Math.min(xA-bx0,bx1-xA)<(bx1-bx0)*.03;
+  const xA=plano?bx0:topo.x,ponta=plano||Math.min(xA-bx0,bx1-xA)<(bx1-bx0)*.03;
   const vs=[];
   s.pecas.filter(p=>p.poly&&p.poly.length&&dtLocTipo(p).sigla==='V').forEach(p=>{
     const xs=p.poly.map(v=>v.x),mn=Math.min(...xs),mx=Math.max(...xs);
@@ -9045,7 +9133,7 @@ function detMarcasVerticais(s){
     vs.push({p,mn,mx,eixo:(mn+mx)/2,yb:Math.min(...p.poly.map(v=>v.y))});
   });
   const naCumeeira=vs.find(v=>xA>=v.mn-2&&xA<=v.mx+2);
-  const inicioNome=naCumeeira?String(naCumeeira.p.pos||naCumeeira.p.cod||''):(ponta?'ponta alta':'cumeeira');
+  const inicioNome=naCumeeira?String(naCumeeira.p.pos||naCumeeira.p.cod||''):(plano?'ponta esquerda':ponta?'ponta alta':'cumeeira');
   const lados=[];
   [-1,1].forEach(lado=>{
     const marcas=[];
@@ -9057,7 +9145,7 @@ function detMarcasVerticais(s){
     let acc=0;marcas.forEach((m,k)=>{if(k)acc+=Math.abs(m.x-marcas[k-1].x);m.acc=acc;});
     if(marcas.length>1)lados.push({lado,marcas});
   });
-  return lados.length?{xA,inicioNome,ponta,lados}:null;
+  return lados.length?{xA,inicioNome,ponta,plano,lados}:null;
 }
 function detCotaTerca(s){
   if(!COTAS.length||s.emPe)return null;
@@ -9081,9 +9169,10 @@ function detCotaTerca(s){
   });
   /* o número é o do DWG: guarda o ponto dela antes de mexer no ▲ */
   pts.forEach(q=>{q.x0=q.x;q.y0=q.y;});
-  /* só o da cumeeira vai para o eixo da vertical */
-  let topo=null;sup.forEach(b=>[b.a,b.b].forEach(q=>{if(!topo||q.y>topo.y+1e-6)topo=q;}));
-  const vc=s.pecas.filter(p=>p.poly&&p.poly.length&&dtLocTipo(p).sigla==='V').map(p=>{
+  /* só o da cumeeira vai para o eixo da vertical (banzo deitado não tem
+     cumeeira: nenhum ▲ sai do lugar do DWG) */
+  const {topo,plano}=detTopoBanzo(s,sup);
+  const vc=plano?null:s.pecas.filter(p=>p.poly&&p.poly.length&&dtLocTipo(p).sigla==='V').map(p=>{
     const xs=p.poly.map(v=>v.x);return {mn:Math.min(...xs),mx:Math.max(...xs)};})
     .find(v=>topo.x>=v.mn-2&&topo.x<=v.mx+2);
   if(vc)pts.forEach(q=>{
@@ -9099,19 +9188,219 @@ function detCotaTerca(s){
    de emenda (barra cheia + resto). O montador precisa ver a MESMA divisão na
    prancha: cada emenda marcada no banzo e cada pedaço com o seu número
    (BS 1/2 · 6.000). Calculado no banzo inteiro, antes de fatiar. */
+/* O plano é o mesmo do pedido (detPlanosBanzos). Na prancha os pedaços são
+   contados da ESQUERDA para a DIREITA em todas as linhas -- cada água
+   contava a partir de uma ponta, e a direita saía "4/4 2.866 | 3/4 5.811".
+   Cada emenda ganha um número (E1, E2...): banzo de cima primeiro, depois o
+   de baixo, sempre da esquerda para a direita. Teste leitor-emenda-ponta-baixa. */
 function detEmendasBanzo(s){
-  const barra=detBarraAtual();
-  return (s.banzos||[]).map(b=>{
-    const L=detComp(b);if(!(L>barra+0.5))return null;
-    const pl=detPlanoEmenda(L,barra,detNosNoBanzo(b,s.internos));
-    return pl.segs.length>1?{b,segs:pl.segs,sup:detLadoDentro(b,s.internos).y<-0.1}:null;
-  }).filter(Boolean);
+  const chave=p=>p.x+p.y*1e-4;          // esquerda para a direita (de pé: de baixo para cima)
+  const out=detPlanosBanzos(s.banzos,s.internos).filter(l=>l.segs.length>1).map(l=>{
+    const pIni=l.ini==='a'?l.b.a:l.b.b,pFim=l.ini==='a'?l.b.b:l.b.a;
+    const segsLR=chave(pIni)<=chave(pFim)?l.segs.slice():l.segs.slice().reverse();
+    return {b:l.b,sup:l.superior,segs:l.segs,segsLR,x0:Math.min(l.b.a.x,l.b.b.x),
+      cortes:l.cortes.slice().sort((p,q)=>chave(p)-chave(q)).map((c,k)=>({...c,k}))};
+  });
+  let n=0;
+  [true,false].forEach(sp=>out.filter(e=>e.sup===sp).sort((p,q)=>p.x0-q.x0).forEach(e=>{
+    const N=e.segsLR.length,tag=e.sup?'BS':'BI';
+    e.cortes.forEach(c=>{
+      c.n=++n;
+      c.txt='EMENDA '+tag+' · '+(c.k+1)+'/'+N+' '+detFmtCota(e.segsLR[c.k])+'  |  '+(c.k+2)+'/'+N+' '+detFmtCota(e.segsLR[c.k+1]);
+    });
+  }));
+  return out;
 }
 function detFmtCota(v){
   const mm=detArredMM(v);
   return DET_UNID==='cm'?(mm/10).toLocaleString('pt-BR',{minimumFractionDigits:1,maximumFractionDigits:1})
                         :mm.toLocaleString('pt-BR');
 }
+/* ---- as cotas da montagem: uma conta para o PDF e para o DXF ----
+   A prancha e o DXF desenham as MESMAS cotas: azul (verticais, total, pontas,
+   banzo de cima), laranja (suportes de terça) e roxo (emendas). A conta sai
+   daqui em coordenadas do desenho e cada um só traduz para o seu formato --
+   o DXF não levava nenhuma delas e o arquivo do AutoCAD discordava do PDF.
+   Teste leitor-dxf-montagem-cotas. */
+const DET_AZ='#1d4f91',DET_LJ='#e0601a',DET_RX='#7b3fb5',DET_VM='#c0262d';
+function detCotasLayout(s,h,bb,inteira,piso0){
+  const MV=s._marcas!==undefined?s._marcas:detMarcasVerticais(s);
+  const CT=s._terca!==undefined?s._terca:detCotaTerca(s);
+  const ctAqui=CT?CT.filter(q=>q.x>=bb.x0-1&&q.x<=bb.x1+1):[];
+  const sup=detBanzosSup(s),inf=detBanzosInf(s);
+  const bxs=s.banzos.flatMap(b=>[b.a.x,b.b.x]),bx0=Math.min(...bxs),bx1=Math.max(...bxs);
+  const cosMin=Math.max(.3,Math.min(1,...sup.map(b=>Math.abs(b.b.x-b.a.x)/(Math.hypot(b.b.x-b.a.x,b.b.y-b.a.y)||1))));
+  const offT=h*1.8, offL=offT+(ctAqui.length>1?h*2.6:0);
+  const naFolha=new Set(s.pecas);
+  const cadeias=MV?MV.lados.map(l=>({lado:l.lado,ms:l.marcas.map((m,k)=>({...m,k}))
+      .filter(m=>m.v?naFolha.has(m.v.p):(MV.xA>=bb.x0-1&&MV.xA<=bb.x1+1))})).filter(c=>c.ms.length>1):[];
+  const temRef=cadeias.some(c=>c.ms[0].k>0);
+  /* Números e nomes da corrente azul. Onde as verticais ficam juntas (as
+     pontas da tesoura longa) o número não cabe no vão e encavalava no
+     vizinho ("5 2 2 5 0 5 0 7..."): o que não cabe sobe um andar, alternando.
+     Teste leitor-prancha-completa-legivel. */
+  const larg=(t,f)=>String(t).length*h*(f||.9)*.6;
+  const nomeDe=m=>m.v?String(m.v.p.pos||m.v.p.cod||''):MV.inicioNome.toUpperCase();
+  const numeros=[],nomes=[],vistos=new Set();
+  cadeias.forEach(c=>c.ms.forEach((m,i)=>{
+    const chave=m.v?m.v.p:'topo';
+    if(!vistos.has(chave)){vistos.add(chave);nomes.push({x:m.v?m.v.eixo:m.x,t:nomeDe(m)});}
+    const a=c.ms[i-1];
+    if(a&&m.k===a.k+1)numeros.push({x:(a.x+m.x)/2,t:detFmtCota(Math.abs(m.x-a.x))});
+  }));
+  const andares=lista=>{
+    const fim=[-1e18,-1e18];
+    lista.slice().sort((p,q)=>p.x-q.x).forEach(it=>{
+      const w=larg(it.t),ini=it.x-w/2;
+      const f=fim[0]<=ini?0:fim[1]<=ini?1:(fim[0]<=fim[1]?0:1);
+      it.fila=f;fim[f]=it.x+w/2+h*.35;
+    });
+    return lista.some(it=>it.fila===1);
+  };
+  const num2=andares(numeros),nom2=andares(nomes);
+  const yAzul=bb.y0-h*(num2?3.5:2.4),desce=nom2?h*1.1:0;
+  /* Emendas do banzo que caem nesta folha. Cada uma tem um número (E1,
+     E2...). Quando as etiquetas inteiras não cabem lado a lado -- a folha da
+     tesoura longa, onde elas se atropelavam -- o desenho leva só o número e
+     um quadro no pé da folha diz o que é cada uma. Emenda que caiu em cima do
+     nó sai em vermelho. Teste leitor-prancha-completa-legivel. */
+  const EM=s._emendas!==undefined?s._emendas:detEmendasBanzo(s);
+  const emendas=[];
+  EM.forEach(e=>e.cortes.forEach(c=>{
+    if(c.x<bb.x0-1||c.x>bb.x1+1)return;
+    emendas.push({q:{x:c.x,y:c.y},b:e.b,sup:e.sup,n:c.n,noNo:!!c.sobreNo,
+      inteiro:'E'+c.n+' · '+c.txt+(c.sobreNo?' · SOBRE NÓ':'')});
+  }));
+  const cabe=sp=>{
+    const ls=emendas.filter(m=>m.sup===sp).sort((p,q)=>p.q.x-q.q.x);
+    for(let i=1;i<ls.length;i++)
+      if(ls[i].q.x-ls[i-1].q.x<(larg(ls[i].inteiro,.85)+larg(ls[i-1].inteiro,.85))/2+h)return false;
+    return true;
+  };
+  const compacto=emendas.length>0&&!(cabe(true)&&cabe(false));
+  emendas.forEach(m=>{m.rot=compacto?'E'+m.n:m.inteiro;});
+  const quadro=compacto?emendas.slice().sort((p,q)=>p.n-q.n).map(m=>({t:m.inteiro,vm:m.noNo})):[];
+  const emSup=emendas.some(m=>m.sup),emInf=emendas.some(m=>!m.sup);
+  let piso=piso0!=null?piso0:bb.y0;
+  if(cadeias.length)piso=Math.min(piso,yAzul-desce-h*(temRef?3.6:2.4));
+  /* com a corrente na mesma folha, o comprimento total desce uma faixa */
+  const yTotal=cadeias.length?yAzul-desce-h*(temRef?4.2:3.2):yAzul;
+  if(inteira)piso=Math.min(piso,yTotal-h*1.6);
+  const yEmInf=piso-h*1.2;
+  if(emInf)piso=yEmInf-h*1.4;
+  /* as chamadas de cima e de baixo começam depois das faixas das cotas */
+  const bandaTopo=((inteira&&sup.length)?offL+h*2.4:(ctAqui.length>1?offT+h*1.6:0))/cosMin;
+  const yEmSup=bb.y1+bandaTopo+h*1.4;
+  const bbCh=(bandaTopo||emSup)?{...bb,y1:emSup?yEmSup+h*1.2:bb.y1+bandaTopo}:bb;
+  return {MV,ctAqui,sup,inf,bx0,bx1,offT,offL,cadeias,temRef,numeros,nomes,nomeDe,yAzul,desce,
+          emendas,compacto,quadro,piso,yTotal,yEmInf,yEmSup,bandaTopo,bbCh,inteira};
+}
+/* O desenho das cotas em coordenadas do desenho: linhas, formas e textos.
+   `peso` multiplica o traço fino; `tam` é a altura do texto em letras. */
+function detCotasDesenho(s,h,L,bb){
+  const linhas=[],formas=[],textos=[];
+  const linha=(a,b,cor,peso)=>linhas.push({a,b,cor,peso:peso||1});
+  const txt=(x,y,t,cor,anc,negrito,rot,tam)=>textos.push({x,y,t,cor,anc,negrito:!!negrito,rot:rot||0,tam:tam||.9});
+  const barra=(q,cor)=>linha({x:q.x-h*.3,y:q.y-h*.3},{x:q.x+h*.3,y:q.y+h*.3},cor,2.5);
+  const prumo=(q,cor)=>linha({x:q.x,y:q.y-h*.45},{x:q.x,y:q.y+h*.45},cor,2.5);
+  /* número ao longo de uma linha inclinada, sempre de pé para quem lê */
+  const angPapel=(a,b)=>{let g=-Math.atan2(b.y-a.y,b.x-a.x)*180/Math.PI;if(g>90)g-=180;if(g<-90)g+=180;return g;};
+  const normalCima=bz=>{const d=detLadoDentro(bz,s.internos);return {x:-d.x,y:-d.y};};
+  const AZ=DET_AZ,LJ=DET_LJ,RX=DET_RX,VM=DET_VM;
+  const {ctAqui,sup,inf,bx0,bx1,offT,offL,cadeias,MV,yAzul,desce,yTotal,yEmSup,yEmInf}=L;
+  /* LARANJA: suportes de terça (da cota do DWG) */
+  if(ctAqui.length>1){
+    /* no ponto da cumeeira a linha de cota de cada água chega numa altura:
+       a vertical de chamada sobe até a mais alta */
+    const yDe=(q,bz)=>{const n=normalCima(bz);return q.y+offT/Math.max(.3,n.y);};
+    const ptsL=ctAqui.map(q=>({...q,n:normalCima(q.bz),yd:Math.max(...q.bzs.map(z=>yDe(q,z)))}));
+    ptsL.forEach((q,i)=>{
+      formas.push({tri:[{x:q.x-h*.35,y:q.y+h*.1},{x:q.x+h*.35,y:q.y+h*.1},{x:q.x,y:q.y+h*.75}],cor:LJ});
+      linha({x:q.x,y:q.y+h*.9},{x:q.x,y:q.yd+h*.45},LJ);
+      prumo({x:q.x,y:q.yd},LJ);
+      const a=ptsL[i-1],bz=a&&a.bzs.find(z=>q.bzs.includes(z));
+      if(bz){
+        const n=normalCima(bz),ya=yDe(a,bz),yq=yDe(q,bz);
+        linha({x:a.x,y:ya},{x:q.x,y:yq},LJ);
+        txt((a.x+q.x)/2+n.x*h*.75,(ya+yq)/2+n.y*h*.75,detFmtCota(Math.hypot(q.x0-a.x0,q.y0-a.y0)),LJ,'middle',true,angPapel(a,q));
+      }
+    });
+  }
+  /* ROXO: emendas do banzo, como o pedido manda cortar. A marca atravessa o
+     banzo no ponto da emenda; a etiqueta fica na fileira alinhada, com seta.
+     Em cima do nó: vermelho. */
+  L.emendas.forEach(m=>{
+    const cor=m.noNo?VM:RX,d=detLadoDentro(m.b,s.internos),q=m.q;
+    linha({x:q.x-d.x*h*.4,y:q.y-d.y*h*.4},{x:q.x+d.x*(s.aba+h*.4),y:q.y+d.y*(s.aba+h*.4)},cor,3);
+    const yR=m.sup?yEmSup:yEmInf,yP=m.sup?q.y+h*.5:q.y-h*.5;   // ponta da seta, fora do banzo
+    const yT=m.sup?yR-h*.7:yR+h*.7;
+    linha({x:q.x,y:yT},{x:q.x,y:yP},cor);
+    const s1=m.sup?1:-1;   // a base da seta fica do lado da etiqueta
+    formas.push({tri:[{x:q.x,y:yP},{x:q.x-h*.28,y:yP+s1*h*.6},{x:q.x+h*.28,y:yP+s1*h*.6}],cor});
+    txt(q.x,yR,m.rot,cor,'middle',true,0,.85);
+  });
+  /* AZUL, trecho: da cumeeira para os dois lados, aba interna a aba interna */
+  if(cadeias.length){
+    cadeias.forEach(c=>{
+      c.ms.forEach((m,i)=>{
+        const yb=m.v?m.v.yb:(m.yb!=null?m.yb:bb.y0);
+        linha({x:m.x,y:yb-h*.3},{x:m.x,y:yAzul-h*.5},AZ);
+        if(m.k===0)formas.push({circ:{x:m.x,y:yAzul},r:h*.32,cor:AZ});
+        else barra({x:m.x,y:yAzul},AZ);
+        const a=c.ms[i-1];
+        if(a&&m.k===a.k+1)linha({x:a.x,y:yAzul},{x:m.x,y:yAzul},AZ);
+      });
+      const m=c.ms[0];
+      if(m.k>0){
+        const ref='da '+MV.inicioNome+(/^P\d/.test(MV.inicioNome)?
+          (MV.plano?' (ponta esquerda)':MV.ponta?' (ponta alta)':' (cumeeira)'):'');
+        txt(m.x,yAzul-desce-h*2.6,L.nomeDe(m)+' a '+detFmtCota(m.acc)+' '+DET_UNID+' '+ref,AZ,c.lado<0?'end':'start');
+      }
+    });
+    L.numeros.forEach(it=>txt(it.x,yAzul+h*(it.fila?1.85:.75),it.t,AZ,'middle'));
+    L.nomes.forEach(it=>txt(it.x,yAzul-h*(it.fila?2.35:1.25),it.t,AZ,'middle',true));
+  }
+  /* AZUL, folha inteira: comprimento total, alturas das pontas, banzo de cima */
+  if(L.inteira&&s.banzos.length){
+    const yInf=x=>detYBanzos(inf.length?inf:s.banzos,x,Math.min),ySup=x=>detYBanzos(sup.length?sup:s.banzos,x,Math.max);
+    const yi0=yInf(bx0+.5),yi1=yInf(bx1-.5);
+    linha({x:bx0,y:(yi0!=null?yi0:bb.y0)-h*.3},{x:bx0,y:yTotal-h*.5},AZ);
+    linha({x:bx1,y:(yi1!=null?yi1:bb.y0)-h*.3},{x:bx1,y:yTotal-h*.5},AZ);
+    linha({x:bx0,y:yTotal},{x:bx1,y:yTotal},AZ);barra({x:bx0,y:yTotal},AZ);barra({x:bx1,y:yTotal},AZ);
+    txt((bx0+bx1)/2,yTotal+h*.75,detFmtCota(bx1-bx0)+' comprimento total',AZ,'middle',true);
+    /* altura nas pontas do banzo de cima -- o de baixo pode passar dele */
+    const sxs=(sup.length?sup:s.banzos).flatMap(b=>[b.a.x,b.b.x]);
+    [[Math.min(...sxs),-1],[Math.max(...sxs),1]].forEach(([x,lado])=>{
+      const yi=yInf(x-lado*.5),ys=ySup(x-lado*.5);
+      if(yi==null||ys==null||ys-yi<1)return;
+      const xd=(lado<0?Math.min(x,bx0):Math.max(x,bx1))+lado*h*2.4;
+      linha({x:x+lado*h*.3,y:yi},{x:xd+lado*h*.5,y:yi},AZ);linha({x:x+lado*h*.3,y:ys},{x:xd+lado*h*.5,y:ys},AZ);
+      linha({x:xd,y:yi},{x:xd,y:ys},AZ);barra({x:xd,y:yi},AZ);barra({x:xd,y:ys},AZ);
+      txt(xd+lado*h*.8,(yi+ys)/2,detFmtCota(ys-yi),AZ,'middle',true,-90);
+    });
+    /* banzo de cima: os pedaços em linha viram um comprimento só por água */
+    const grupos=[];
+    sup.forEach(b=>{
+      const ang=Math.atan2(b.b.y-b.a.y,b.b.x-b.a.x),u={x:Math.cos(ang),y:Math.sin(ang)};
+      const g=grupos.find(g=>Math.abs(g.u.x*u.y-g.u.y*u.x)<.009&&Math.abs((b.a.x-g.p.x)*g.u.y-(b.a.y-g.p.y)*g.u.x)<5);
+      if(g)g.bs.push(b);else grupos.push({u,p:b.a,bs:[b]});
+    });
+    grupos.forEach(g=>{
+      const ps=g.bs.flatMap(b=>[b.a,b.b]).sort((p,q)=>p.x-q.x),a=ps[0],b=ps[ps.length-1],n=normalCima(g.bs[0]);
+      const da=a.y+offL/Math.max(.3,n.y),db=b.y+offL/Math.max(.3,n.y);
+      linha({x:a.x,y:a.y+h*.3},{x:a.x,y:da+h*.45},AZ);linha({x:b.x,y:b.y+h*.3},{x:b.x,y:db+h*.45},AZ);
+      linha({x:a.x,y:da},{x:b.x,y:db},AZ);prumo({x:a.x,y:da},AZ);prumo({x:b.x,y:db},AZ);
+      /* pilar (desenhado em pé e detalhado deitado) não tem banzo "de cima" */
+      txt((a.x+b.x)/2+n.x*h*.75,(da+db)/2+n.y*h*.75,detFmtCota(Math.hypot(b.x-a.x,b.y-a.y))+(s.emPe?' banzo':' banzo superior'),AZ,'middle',true,angPapel(a,b));
+    });
+  }
+  return {linhas,formas,textos};
+}
+/* Tesoura longa numa A4: a folha inteira saía com letra de 1,7 mm, que
+   ninguém lê na obra. Abaixo disto a folha da tesoura completa passa sozinha
+   para A3 (só ela: os trechos continuam na folha escolhida). Teste
+   leitor-prancha-completa-legivel. */
+const DET_LETRA_MIN_COMPLETA=2.2;
 function detPranchaSVG(s,folha,obra,parte){
   const [W,H]=DXF_FOLHAS[folha]||DXF_FOLHAS.A4;
   const cabecalho=18;                                  // mm de papel para titulo, leitura e regra de montagem
@@ -9128,58 +9417,26 @@ function detPranchaSVG(s,folha,obra,parte){
   let h=DXF_LETRA_MM/esc;
   let LP=detLayoutPaineis(s,h,bb);
   /* cotas da montagem: a folha inteira leva as medidas gerais; o trecho, a
-     corrente das verticais. A dos suportes de terça vai nas duas. */
+     corrente das verticais. A dos suportes de terça vai nas duas. A corrente
+     azul vai em todas as folhas. */
   const inteira=!parte||parte.completa;
-  /* a corrente azul vai em todas as folhas: trechos, folha única e a folha
-     da tesoura completa que antecede os trechos */
-  const MV=s._marcas!==undefined?s._marcas:detMarcasVerticais(s);
-  const CT=s._terca!==undefined?s._terca:detCotaTerca(s);
-  const ctAqui=CT?CT.filter(q=>q.x>=bb.x0-1&&q.x<=bb.x1+1):[];
-  const sup=detBanzosSup(s),inf=detBanzosInf(s);
-  const bxs=s.banzos.flatMap(b=>[b.a.x,b.b.x]),bx0=Math.min(...bxs),bx1=Math.max(...bxs);
-  const cosMin=Math.max(.3,Math.min(1,...sup.map(b=>Math.abs(b.b.x-b.a.x)/(Math.hypot(b.b.x-b.a.x,b.b.y-b.a.y)||1))));
-  const offT=h*1.8, offL=offT+(ctAqui.length>1?h*2.6:0), yAzul=bb.y0-h*2.4;
-  const naFolha=new Set(s.pecas);
-  const cadeias=MV?MV.lados.map(l=>({lado:l.lado,ms:l.marcas.map((m,k)=>({...m,k}))
-      .filter(m=>m.v?naFolha.has(m.v.p):(MV.xA>=bb.x0-1&&MV.xA<=bb.x1+1))})).filter(c=>c.ms.length>1):[];
-  const temRef=cadeias.some(c=>c.ms[0].k>0);
-  /* emendas do banzo que caem nesta folha: uma etiqueta por emenda, numa
-     fileira alinhada fora do desenho, com seta até o ponto */
-  const EM=s._emendas!==undefined?s._emendas:detEmendasBanzo(s);
-  const emendas=[];
-  EM.forEach(e=>{
-    const b=e.b,L=detComp(b),u={x:(b.b.x-b.a.x)/L,y:(b.b.y-b.a.y)/L};
-    let pos=0;
-    e.segs.forEach((seg,k)=>{
-      pos+=seg;if(k>=e.segs.length-1)return;
-      const q={x:b.a.x+u.x*pos,y:b.a.y+u.y*pos};
-      if(q.x<bb.x0-1||q.x>bb.x1+1)return;
-      /* os dois pedaços na ordem do desenho (esquerda | direita) */
-      const n=e.segs.length,ida=u.x>=0,esq=ida?k:k+1,dir=ida?k+1:k;
-      const tag=e.sup?'BS':'BI';
-      emendas.push({q,b,sup:e.sup,txt:'EMENDA '+tag+' · '+(esq+1)+'/'+n+' '+detFmtCota(e.segs[esq])+'  |  '+(dir+1)+'/'+n+' '+detFmtCota(e.segs[dir])});
-    });
-  });
-  const emSup=emendas.some(m=>m.sup),emInf=emendas.some(m=>!m.sup);
-  let piso=LP.piso;
-  if(cadeias.length)piso=Math.min(piso,yAzul-h*(temRef?3.6:2.4));
-  /* com a corrente na mesma folha, o comprimento total desce uma faixa */
-  const yTotal=cadeias.length?yAzul-h*(temRef?4.2:3.2):yAzul;
-  if(inteira)piso=Math.min(piso,yTotal-h*1.6);
-  const yEmInf=piso-h*1.2;
-  if(emInf)piso=yEmInf-h*1.4;
-  /* as chamadas de cima e de baixo começam depois das faixas das cotas */
-  const bandaTopo=((inteira&&sup.length)?offL+h*2.4:(ctAqui.length>1?offT+h*1.6:0))/cosMin;
-  const yEmSup=bb.y1+bandaTopo+h*1.4;
-  const bbCh=(bandaTopo||emSup)?{...bb,y1:emSup?yEmSup+h*1.2:bb.y1+bandaTopo}:bb;
-  let LC=detLayoutChamadas(s,h,bbCh,piso);
+  const CL=detCotasLayout(s,h,bb,inteira,LP.piso);
+  const {bx0,bx1,bbCh}=CL;
+  let LC=detLayoutChamadas(s,h,bbCh,CL.piso);
+  /* quadro das emendas no pé da folha: quantas linhas ele toma */
+  const QF=2.4,QL=3.3;   // letra e passo do quadro, em mm de papel
+  const qColL=CL.quadro.length?Math.max(...CL.quadro.map(q=>q.t.length))*QF*.56+6:0;
+  const qCols=qColL?Math.max(1,Math.floor(W/qColL)):1;
+  const qLin=CL.quadro.length?Math.ceil(CL.quadro.length/qCols):0;
+  const rodape=qLin?QL*(qLin+1)+2:0;
+  const Hd=H-rodape;
   /* tudo que vai no papel, para centralizar e conferir se coube */
   let x0=bb.x0,x1=bb.x1,y0=1e18,y1=-1e18;
   const cx=v=>{if(v<x0)x0=v;if(v>x1)x1=v;};
   const cy=v=>{if(v<y0)y0=v;if(v>y1)y1=v;};
-  cy(bb.y0);cy(bbCh.y1);cy(piso);
+  cy(bb.y0);cy(bbCh.y1);cy(CL.piso);
   if(inteira){cx(bx0-h*4);cx(bx1+h*4);}
-  emendas.forEach(m=>{cx(m.q.x-m.txt.length*h*.33);cx(m.q.x+m.txt.length*h*.33);});
+  CL.emendas.forEach(m=>{cx(m.q.x-m.rot.length*h*.33);cx(m.q.x+m.rot.length*h*.33);});
   LP.divisas.forEach(cx);
   LP.itens.forEach(i=>{cx(i.x-String(i.n).length*h*.36);cx(i.x+String(i.n).length*h*.36);cy(i.y-h*0.7);cy(i.y+h*0.7);});
   LC.itens.forEach(i=>{cx(i.texto.x-i.meia);cx(i.texto.x+i.meia);
@@ -9189,11 +9446,12 @@ function detPranchaSVG(s,folha,obra,parte){
      letra sai abaixo dos 3 mm e o carimbo declara quanto ficou -- melhor uma
      letra menor e declarada do que uma prancha com a ponta faltando. */
   const cabeX=(x1-x0)*esc, cabeY=(y1-y0)*esc;
-  const aperto=Math.min(1,(W-1)/Math.max(cabeX,1e-6),(H-cabecalho-1)/Math.max(cabeY,1e-6));
+  const aperto=Math.min(1,(W-1)/Math.max(cabeX,1e-6),(Hd-cabecalho-1)/Math.max(cabeY,1e-6));
   if(aperto<1)esc*=aperto;
   const X=v=>((v-x0)*esc+(W-(x1-x0)*esc)/2).toFixed(2);
-  const Y=v=>((y1-v)*esc+cabecalho+(H-cabecalho-(y1-y0)*esc)/2).toFixed(2);
+  const Y=v=>((y1-v)*esc+cabecalho+(Hd-cabecalho-(y1-y0)*esc)/2).toFixed(2);
   const hp=(h*esc).toFixed(2);                          // altura da letra no papel
+  if(parte&&parte.medida)parte.medida.letra=+hp;
   const fino=Math.max(0.13,0.35*esc*40).toFixed(2);
   const o=[];
   const linha=(a,b,cor,w)=>o.push('<line x1="'+X(a.x)+'" y1="'+Y(a.y)+'" x2="'+X(b.x)+'" y2="'+Y(b.y)+
@@ -9216,110 +9474,19 @@ function detPranchaSVG(s,folha,obra,parte){
       '" y2="'+Y(g.b.y)+'" stroke="#8a929a" stroke-width="'+w+
       '" stroke-dasharray="'+(+fino*4).toFixed(1)+' '+(+fino*3).toFixed(1)+'"/>'));
   });
-  /* cotas da montagem (ver detMarcasVerticais / detCotaTerca) */
-  const textosCota=[];   // entram depois das chamadas, por cima das linhas
-  const AZ='#1d4f91',LJ='#e0601a',tam=(h*esc*.9).toFixed(2);
-  const txt=(x,y,t,cor,anc,peso,rot)=>textosCota.push('<text x="'+X(x)+'" y="'+Y(y)+'" font-size="'+tam+
-    '"'+(peso?' font-weight="700"':'')+' fill="'+cor+'" text-anchor="'+anc+'" dominant-baseline="central"'+
-    (rot?' transform="rotate('+rot.toFixed(2)+' '+X(x)+' '+Y(y)+')"':'')+
-    /* contorno branco: as chamadas cruzam a faixa e o número continua legível */
-    ' stroke="#fff" stroke-width="'+(h*esc*.35).toFixed(2)+'" paint-order="stroke" stroke-linejoin="round">'+svgEsc(t)+'</text>');
-  const barra=(q,cor)=>linha({x:q.x-h*.3,y:q.y-h*.3},{x:q.x+h*.3,y:q.y+h*.3},cor,(+fino*2.5).toFixed(2));
-  const prumo=(q,cor)=>linha({x:q.x,y:q.y-h*.45},{x:q.x,y:q.y+h*.45},cor,(+fino*2.5).toFixed(2));
-  /* número ao longo de uma linha inclinada, sempre de pé para quem lê */
-  const angPapel=(a,b)=>{let g=-Math.atan2(b.y-a.y,b.x-a.x)*180/Math.PI;if(g>90)g-=180;if(g<-90)g+=180;return g;};
-  const normalCima=bz=>{const d=detLadoDentro(bz,s.internos);return {x:-d.x,y:-d.y};};
-  /* LARANJA: suportes de terça (da cota do DWG) */
-  if(ctAqui.length>1){
-    /* no ponto da cumeeira a linha de cota de cada água chega numa altura:
-       a vertical de chamada sobe até a mais alta */
-    const yDe=(q,bz)=>{const n=normalCima(bz);return q.y+offT/Math.max(.3,n.y);};
-    const ptsL=ctAqui.map(q=>({...q,n:normalCima(q.bz),yd:Math.max(...q.bzs.map(z=>yDe(q,z)))}));
-    ptsL.forEach((q,i)=>{
-      o.push('<path d="M'+X(q.x-h*.35)+' '+Y(q.y+h*.1)+' L'+X(q.x+h*.35)+' '+Y(q.y+h*.1)+' L'+X(q.x)+' '+Y(q.y+h*.75)+' Z" fill="'+LJ+'"/>');
-      linha({x:q.x,y:q.y+h*.9},{x:q.x,y:q.yd+h*.45},LJ,fino);
-      prumo({x:q.x,y:q.yd},LJ);
-      const a=ptsL[i-1],bz=a&&a.bzs.find(z=>q.bzs.includes(z));
-      if(bz){
-        const n=normalCima(bz),ya=yDe(a,bz),yq=yDe(q,bz);
-        linha({x:a.x,y:ya},{x:q.x,y:yq},LJ,fino);
-        txt((a.x+q.x)/2+n.x*h*.75,(ya+yq)/2+n.y*h*.75,detFmtCota(Math.hypot(q.x0-a.x0,q.y0-a.y0)),LJ,'middle',true,angPapel(a,q));
-      }
-    });
-  }
-  /* ROXO: emendas do banzo, como o pedido manda cortar. A marca atravessa o
-     banzo no ponto da emenda; a etiqueta fica na fileira alinhada, com seta. */
-  const RX='#7b3fb5';
-  emendas.forEach(m=>{
-    const d=detLadoDentro(m.b,s.internos),q=m.q;
-    linha({x:q.x-d.x*h*.4,y:q.y-d.y*h*.4},{x:q.x+d.x*(s.aba+h*.4),y:q.y+d.y*(s.aba+h*.4)},RX,(+fino*3).toFixed(2));
-    const yR=m.sup?yEmSup:yEmInf,yP=m.sup?q.y+h*.5:q.y-h*.5;   // ponta da seta, fora do banzo
-    const yT=m.sup?yR-h*.7:yR+h*.7;
-    linha({x:q.x,y:yT},{x:q.x,y:yP},RX,fino);
-    const s1=m.sup?1:-1;   // a base da seta fica do lado da etiqueta
-    o.push('<path d="M'+X(q.x)+' '+Y(yP)+' L'+X(q.x-h*.28)+' '+Y(yP+s1*h*.6)+' L'+X(q.x+h*.28)+' '+Y(yP+s1*h*.6)+' Z" fill="'+RX+'"/>');
-    textosCota.push('<text x="'+X(q.x)+'" y="'+Y(yR)+'" font-size="'+(h*esc*.85).toFixed(2)+'" font-weight="700" fill="'+RX+
-      '" text-anchor="middle" dominant-baseline="central" stroke="#fff" stroke-width="'+(h*esc*.35).toFixed(2)+
-      '" paint-order="stroke" stroke-linejoin="round">'+svgEsc(m.txt)+'</text>');
+  /* cotas da montagem (ver detCotasLayout / detCotasDesenho): traços antes
+     das chamadas, textos depois, por cima das linhas */
+  const CD=detCotasDesenho(s,h,CL,bb);
+  CD.linhas.forEach(l=>linha(l.a,l.b,l.cor,(+fino*l.peso).toFixed(2)));
+  CD.formas.forEach(f=>{
+    if(f.tri)o.push('<path d="M'+f.tri.map(p=>X(p.x)+' '+Y(p.y)).join(' L')+' Z" fill="'+f.cor+'"/>');
+    else o.push('<circle cx="'+X(f.circ.x)+'" cy="'+Y(f.circ.y)+'" r="'+(f.r*esc).toFixed(2)+'" fill="'+f.cor+'"/>');
   });
-  /* AZUL, trecho: da cumeeira para os dois lados, aba interna a aba interna */
-  if(cadeias.length){
-    const comNome=new Set();
-    const nomeDe=m=>m.v?String(m.v.p.pos||m.v.p.cod||''):MV.inicioNome.toUpperCase();
-    cadeias.forEach(c=>{
-      c.ms.forEach((m,i)=>{
-        const yb=m.v?m.v.yb:(m.yb!=null?m.yb:bb.y0);
-        linha({x:m.x,y:yb-h*.3},{x:m.x,y:yAzul-h*.5},AZ,fino);
-        if(m.k===0)o.push('<circle cx="'+X(m.x)+'" cy="'+Y(yAzul)+'" r="'+(h*esc*.32).toFixed(2)+'" fill="'+AZ+'"/>');
-        else barra({x:m.x,y:yAzul},AZ);
-        const chave=m.v?m.v.p:'topo';
-        if(!comNome.has(chave)){comNome.add(chave);txt(m.v?m.v.eixo:m.x,yAzul-h*1.25,nomeDe(m),AZ,'middle',true);}
-        const a=c.ms[i-1];
-        if(a&&m.k===a.k+1){
-          linha({x:a.x,y:yAzul},{x:m.x,y:yAzul},AZ,fino);
-          txt((a.x+m.x)/2,yAzul+h*.75,detFmtCota(Math.abs(m.x-a.x)),AZ,'middle');
-        }
-      });
-      const m=c.ms[0];
-      if(m.k>0){
-        const ref='da '+MV.inicioNome+(/^P\d/.test(MV.inicioNome)?(MV.ponta?' (ponta alta)':' (cumeeira)'):'');
-        txt(m.x,yAzul-h*2.6,nomeDe(m)+' a '+detFmtCota(m.acc)+' '+DET_UNID+' '+ref,AZ,c.lado<0?'end':'start');
-      }
-    });
-  }
-  /* AZUL, folha inteira: comprimento total, alturas das pontas, banzo de cima */
-  if(inteira&&s.banzos.length){
-    const yInf=x=>detYBanzos(inf.length?inf:s.banzos,x,Math.min),ySup=x=>detYBanzos(sup.length?sup:s.banzos,x,Math.max);
-    const yi0=yInf(bx0+.5),yi1=yInf(bx1-.5);
-    linha({x:bx0,y:(yi0!=null?yi0:bb.y0)-h*.3},{x:bx0,y:yTotal-h*.5},AZ,fino);
-    linha({x:bx1,y:(yi1!=null?yi1:bb.y0)-h*.3},{x:bx1,y:yTotal-h*.5},AZ,fino);
-    linha({x:bx0,y:yTotal},{x:bx1,y:yTotal},AZ,fino);barra({x:bx0,y:yTotal},AZ);barra({x:bx1,y:yTotal},AZ);
-    txt((bx0+bx1)/2,yTotal+h*.75,detFmtCota(bx1-bx0)+' comprimento total',AZ,'middle',true);
-    /* altura nas pontas do banzo de cima -- o de baixo pode passar dele */
-    const sxs=(sup.length?sup:s.banzos).flatMap(b=>[b.a.x,b.b.x]);
-    [[Math.min(...sxs),-1],[Math.max(...sxs),1]].forEach(([x,lado])=>{
-      const yi=yInf(x-lado*.5),ys=ySup(x-lado*.5);
-      if(yi==null||ys==null||ys-yi<1)return;
-      const xd=(lado<0?Math.min(x,bx0):Math.max(x,bx1))+lado*h*2.4;
-      linha({x:x+lado*h*.3,y:yi},{x:xd+lado*h*.5,y:yi},AZ,fino);linha({x:x+lado*h*.3,y:ys},{x:xd+lado*h*.5,y:ys},AZ,fino);
-      linha({x:xd,y:yi},{x:xd,y:ys},AZ,fino);barra({x:xd,y:yi},AZ);barra({x:xd,y:ys},AZ);
-      txt(xd+lado*h*.8,(yi+ys)/2,detFmtCota(ys-yi),AZ,'middle',true,-90);
-    });
-    /* banzo de cima: os pedaços em linha viram um comprimento só por água */
-    const grupos=[];
-    sup.forEach(b=>{
-      const ang=Math.atan2(b.b.y-b.a.y,b.b.x-b.a.x),u={x:Math.cos(ang),y:Math.sin(ang)};
-      const g=grupos.find(g=>Math.abs(g.u.x*u.y-g.u.y*u.x)<.009&&Math.abs((b.a.x-g.p.x)*g.u.y-(b.a.y-g.p.y)*g.u.x)<5);
-      if(g)g.bs.push(b);else grupos.push({u,p:b.a,bs:[b]});
-    });
-    grupos.forEach(g=>{
-      const ps=g.bs.flatMap(b=>[b.a,b.b]).sort((p,q)=>p.x-q.x),a=ps[0],b=ps[ps.length-1],n=normalCima(g.bs[0]);
-      const da=a.y+offL/Math.max(.3,n.y),db=b.y+offL/Math.max(.3,n.y);
-      linha({x:a.x,y:a.y+h*.3},{x:a.x,y:da+h*.45},AZ,fino);linha({x:b.x,y:b.y+h*.3},{x:b.x,y:db+h*.45},AZ,fino);
-      linha({x:a.x,y:da},{x:b.x,y:db},AZ,fino);prumo({x:a.x,y:da},AZ);prumo({x:b.x,y:db},AZ);
-      txt((a.x+b.x)/2+n.x*h*.75,(da+db)/2+n.y*h*.75,detFmtCota(Math.hypot(b.x-a.x,b.y-a.y))+' banzo superior',AZ,'middle',true,angPapel(a,b));
-    });
-  }
+  const textosCota=CD.textos.map(t=>'<text x="'+X(t.x)+'" y="'+Y(t.y)+'" font-size="'+(h*esc*t.tam).toFixed(2)+
+    '"'+(t.negrito?' font-weight="700"':'')+' fill="'+t.cor+'" text-anchor="'+t.anc+'" dominant-baseline="central"'+
+    (t.rot?' transform="rotate('+t.rot.toFixed(2)+' '+X(t.x)+' '+Y(t.y)+')"':'')+
+    /* contorno branco: as chamadas cruzam a faixa e o número continua legível */
+    ' stroke="#fff" stroke-width="'+(h*esc*.35).toFixed(2)+'" paint-order="stroke" stroke-linejoin="round">'+svgEsc(t.t)+'</text>');
   /* chamadas */
   LC.itens.forEach(i=>{
     for(let k=1;k<i.caminho.length;k++)linha(i.caminho[k-1],i.caminho[k],'#78838e',fino);
@@ -9332,6 +9499,17 @@ function detPranchaSVG(s,folha,obra,parte){
       '" fill="#D53309" text-anchor="'+(i.lado>0?'start':'end')+'" dominant-baseline="central">'+svgEsc(t)+'</text>'));
   });
   o.push(...textosCota);
+  /* o quadro das emendas, no pé da folha, em colunas */
+  if(qLin){
+    const y0q=H-rodape+QL;
+    o.push('<text x="0" y="'+y0q.toFixed(2)+'" font-size="'+QF+'" font-weight="700" fill="'+DET_RX+'">'+
+      'EMENDAS DO BANZO · E1, E2... marcadas no desenho · pedaços contados da esquerda para a direita</text>');
+    CL.quadro.forEach((q,k)=>{
+      const c=Math.floor(k/qLin),l=k%qLin;
+      o.push('<text x="'+(c*qColL).toFixed(2)+'" y="'+(y0q+QL*(l+1)).toFixed(2)+'" font-size="'+QF+'"'+
+        (q.vm?' font-weight="700"':'')+' fill="'+(q.vm?DET_VM:'#16171a')+'">'+svgEsc(q.t)+'</text>');
+    });
+  }
   const planificada=DT_IDENT_MODO==='dividido';
   const tit=(planificada?'MONTAGEM — PEÇAS PLANIFICADAS':'MONTAGEM — PEÇA INTEIRA')+' · Estrutura '+detLetraIdent(s)+(parte?(parte.completa?' · TESOURA COMPLETA ('+parte.n+' trechos a seguir)':' · TRECHO '+parte.k+'/'+parte.n):'')+
             ' · '+(s.nomeFicha||'')+' · vão '+(s.vao/1000).toFixed(2).replace('.',',')+' m · '+
@@ -9339,16 +9517,17 @@ function detPranchaSVG(s,folha,obra,parte){
   const sub=(DET_UNID==='cm'?'Código da '+(planificada?'chapa':'gravação')+' com o corte em cm (a peça gravada traz o mesmo em mm)':
               (planificada?'Código igual ao DXF das chapas':'Código igual à gravação'))+': ESTRUTURA–P–TIPO–CORTE · '+DET_UNID+' · escala 1:'+Math.round(1/esc)+' · '+folha+' · letra '+
             (+hp).toFixed(1).replace('.',',')+' mm · '+s.pecas.length+' posições P';
-  const regra=(planificada?'1/2 E 2/2 FORMAM A MESMA POSIÇÃO P · ':'')+
+  /* a regra do 1/2 e 2/2 só aparece quando há peça dividida nesta folha */
+  const regra=(planificada&&s.pecas.some(detPecaDividida)?'1/2 E 2/2 FORMAM A MESMA POSIÇÃO P · ':'')+
     'SEGUIR A SETA DA IDENTIFICAÇÃO COMPLETA · U ABERTO PARA BAIXO · DS SOBRE A ALMA DA PRINCIPAL · DI DENTRO DO U ATÉ A ALMA';
-  return '<div class="prancha"><svg viewBox="0 0 '+W+' '+H+'" width="100%" '+
+  return '<div class="prancha" data-folha="'+folha+'"><svg viewBox="0 0 '+W+' '+H+'" width="100%" '+
     'preserveAspectRatio="xMidYMid meet" font-family="Archivo, system-ui, sans-serif">'+
     '<rect x="0" y="0" width="'+W+'" height="'+H+'" fill="#fff"/>'+
     '<text x="0" y="4.6" font-size="4.2" font-weight="700" fill="#16171a">'+svgEsc(tit)+'</text>'+
     '<text x="0" y="9.2" font-size="2.7" fill="#6e7178">'+svgEsc(sub)+
-      (obra?' · '+svgEsc(obra):'')+'</text>'+ 
-    '<text x="0" y="13.7" font-size="2.55" font-weight="700" fill="#D53309">'+svgEsc(regra)+'</text>'+ 
-    '<line x1="0" y1="15.6" x2="'+W+'" y2="15.6" stroke="#d8dade" stroke-width="0.25"/>'+ 
+      (obra?' · '+svgEsc(obra):'')+'</text>'+
+    '<text x="0" y="13.7" font-size="2.55" font-weight="700" fill="#D53309">'+svgEsc(regra)+'</text>'+
+    '<line x1="0" y1="15.6" x2="'+W+'" y2="15.6" stroke="#d8dade" stroke-width="0.25"/>'+
     o.join('')+'</svg></div>';
 }
 /* ---------- fatiar a tesoura ----------
@@ -9409,7 +9588,10 @@ function detPranchas(secoes,folha,partes){
        mostrava o conjunto. A primeira folha é ela toda, com todos os códigos
        (a letra pode ficar menor -- o carimbo diz quanto); os trechos vêm
        depois, para ler de perto. */
-    const bb=detCaixa(s), L=bb.x1-bb.x0, saida=[detPranchaSVG(s,folha,obra,{completa:true,n})];
+    const comp={completa:true,n,medida:{}};
+    let inteiraSVG=detPranchaSVG(s,folha,obra,comp);
+    if(folha==='A4'&&comp.medida.letra<DET_LETRA_MIN_COMPLETA)inteiraSVG=detPranchaSVG(s,'A3',obra,{completa:true,n});
+    const bb=detCaixa(s), L=bb.x1-bb.x0, saida=[inteiraSVG];
     for(let k=0;k<n;k++){
       const f=detFatia(s,bb.x0+k*L/n-0.01,bb.x0+(k+1)*L/n+(k===n-1?1:0));
       if(f)saida.push(detPranchaSVG(f,folha,obra,{k:k+1,n}));
@@ -9646,7 +9828,7 @@ function detEstiloDoDesenho(){
           origem:'estilo "'+(e.nome||'?')+'" do desenho de origem'};
 }
 /* Repassa para o escritor comum, levando o estilo do desenho de origem. */
-function detDxfArialNativo(ent,bb,layers){return rmDxf2000(ent,bb,layers,detEstiloDoDesenho());}
+function detDxfArialNativo(ent,bb,layers){return rmDxf2000(ent,bb,layers,detEstiloDoDesenho(),4);}
 
 function detMontarDXF(secoes,obra){
   detIdentPreparar(secoes);
@@ -9691,8 +9873,25 @@ function detMontarDXF(secoes,obra){
     s.plano=dxfPlanoTexto(bb.x1-bb.x0, bb.y1-bb.y0, folha, s.pecas.length, tamCod);
     const fx=detFaixaPaineis(s,s.plano.h,bb);
     ent+=fx.ent; marca({x:bb.x0,y:fx.y});
-    const ch=detChamadas(s,s.plano.h,bb,marca,fx.y);
+    /* As mesmas cotas da prancha em PDF (azul, laranja, emendas), cada cor
+       na sua camada. As chamadas começam depois das faixas delas, como no
+       papel. Teste leitor-dxf-montagem-cotas. */
+    let fundoS=1e18;
+    const marcaS=p=>{marca(p);if(p.y<fundoS)fundoS=p.y;};
+    const CL=detCotasLayout(s,s.plano.h,bb,true,fx.y);
+    const ch=detChamadas(s,s.plano.h,CL.bbCh,marcaS,CL.piso);
     ent+=ch.ent;
+    ent+=detCotasDXF(s,s.plano.h,CL,bb,marcaS);
+    if(CL.quadro.length){
+      const hq=s.plano.h*.8;let yq=Math.min(fundoS,CL.piso)-s.plano.h*2;
+      ['EMENDAS DO BANZO - E1, E2... marcadas no desenho - pedacos contados da esquerda para a direita']
+        .concat(CL.quadro.map(q=>q.t)).forEach((t,k)=>{
+          const lay=k&&CL.quadro[k-1].vm?'RM-EMENDA-NO':'RM-EMENDA';
+          ent+=dxfTexto(lay,{x:bb.x0,y:yq},hq,t,0,'RM-TEXTO').replace(dxfN(72,'1'),dxfN(72,'0'));
+          marca({x:bb.x0,y:yq-hq});marca({x:bb.x0+t.length*hq*.7,y:yq+hq});
+          yq-=hq*1.7;
+        });
+    }
     /* Apenas texto em camada separada: nenhum perfil ou contorno novo. */
     const titulo=(DT_IDENT_MODO==='dividido'?'FABRICACAO - PECAS PLANIFICADAS':'MONTAGEM - PECA INTEIRA')+
       ' / Estrutura '+detLetraIdent(s)+' / '+(s.nomeFicha||'');
@@ -9745,8 +9944,31 @@ function detMontarDXF(secoes,obra){
      coberto pela que cruza. Camada propria para poder tracejar, congelar ou
      apagar no CAD sem mexer no resto. */
   const layers=[['0','7'],['RM-BANZO','2'],['RM-PECAS','7'],['RM-PECAS-OCULTO','8'],['RM-CODIGO','1'],['RM-CODIGO-DIVIDIDO','4'],['RM-CHAMADA','9'],
-                ['RM-ENCONTRO','1'],['RM-ENCONTRO-SOLTO','2'],['RM-ESTRUTURA','7']];
+                ['RM-ENCONTRO','1'],['RM-ENCONTRO-SOLTO','2'],['RM-ESTRUTURA','7'],
+                ['RM-COTA-VAO','5'],['RM-COTA-TERCA','30'],['RM-EMENDA','6'],['RM-EMENDA-NO','1']];
   return detDxfArialNativo(ent,{minx:minx.toFixed(3),miny:miny.toFixed(3),maxx:maxx.toFixed(3),maxy:maxy.toFixed(3)},layers);
+}
+/* As cotas de detCotasDesenho em entidades DXF. A cor vira camada:
+   RM-COTA-VAO (azul), RM-COTA-TERCA (laranja), RM-EMENDA (roxo) e
+   RM-EMENDA-NO (vermelho, emenda em cima do nó) -- no AutoCAD dá para
+   congelar cada uma sem mexer no resto. */
+function detCotasDXF(s,h,CL,bb,marca){
+  const cam={[DET_AZ]:'RM-COTA-VAO',[DET_LJ]:'RM-COTA-TERCA',[DET_RX]:'RM-EMENDA',[DET_VM]:'RM-EMENDA-NO'};
+  const CD=detCotasDesenho(s,h,CL,bb);
+  let ent='';
+  CD.linhas.forEach(l=>{ent+=dxfLinha(cam[l.cor]||'RM-COTA-VAO',l.a,l.b);marca(l.a);marca(l.b);});
+  CD.formas.forEach(f=>{
+    const lay=cam[f.cor]||'RM-COTA-VAO';
+    if(f.tri)f.tri.forEach((p,k)=>{ent+=dxfLinha(lay,p,f.tri[(k+1)%f.tri.length]);});
+    else ent+=dxfCirculo(lay,f.circ,f.r);
+  });
+  CD.textos.forEach(t=>{
+    const alin=t.anc==='start'?'0':t.anc==='end'?'2':'1',ht=h*t.tam;
+    ent+=dxfTexto(cam[t.cor]||'RM-COTA-VAO',{x:t.x,y:t.y},ht,t.t,-t.rot,'RM-TEXTO').replace(dxfN(72,'1'),dxfN(72,alin));
+    const w=t.t.length*ht*.6;
+    marca({x:t.x-w,y:t.y-ht});marca({x:t.x+w,y:t.y+ht});
+  });
+  return ent;
 }
 function detBaixarDXF(secoes,modo){
   /* Um so montador para os dois arquivos: e o MESMO desenho, muda a leitura
@@ -9809,7 +10031,8 @@ const D3={sec:0,sel:null,yaw:0,pitch:0,zoom:1,px:0,py:0,so:false,abre:false,
           /* desligado por padrao: aparar limpa a leitura mas esconde a
              sobreposicao do apoio, que e a junta. Ver det3dApara. */
           aparar:(function(){try{return localStorage.getItem('rm_det3d_aparar')==='1';}catch(e){return false;}})(),
-          vista:'frente',ss:[],dados:null};
+          /* abre em 3D (perspectiva): de frente ela parecia a prancha 2D */
+          vista:'iso',marcas:true,ss:[],dados:null};
 /* As cores do 3D nao sao a marca -- sao codigo de peca, e tem de se
    distinguir umas das outras E da laranja. Duas encostavam nela: a
    superior interna (era #c32e27, delta-E 24) e o ponto de encontro
@@ -9833,8 +10056,13 @@ function det3dMonta(s){
   const L=[];
   const mid=(a,b)=>({x:(a.x+b.x)/2,y:(a.y+b.y)/2});
   const dist=(a,b)=>Math.hypot(b.x-a.x,b.y-a.y);
-  (s.banzos||[]).forEach(b=>L.push({tipo:'banzo',interna:'',parte:'',cod:'',
-    a:{x:b.a.x,y:b.a.y},b:{x:b.b.x,y:b.b.y},comp:Math.round(dist(b.a,b.b)),sec:E}));
+  /* "Banzo" três vezes na lista não dizia qual: agora superior/inferior
+     (pilar: só banzo), comprimento com a unidade e o código da peça como na
+     prancha. Teste leitor-3d-marcas-e-nomes. */
+  (s.banzos||[]).forEach(b=>{const yd=detLadoDentro(b,s.internos).y;
+    L.push({tipo:'banzo',interna:'',parte:'',cod:'',ident:'',
+      nomeBz:s.emPe?'Banzo':yd<-0.1?'Banzo superior':yd>0.1?'Banzo inferior':'Banzo',
+      a:{x:b.a.x,y:b.a.y},b:{x:b.b.x,y:b.b.y},comp:Math.round(dist(b.a,b.b)),sec:E});});
   (s.pecas||[]).forEach(p=>{
     const q=p.poly; if(!q||q.length!==4)return;
     /* o lado maior e o comprimento; as verticais chegam com a ordem dos
@@ -9843,7 +10071,7 @@ function det3dMonta(s){
     const a = l01>=l12 ? mid(q[0],q[3]) : mid(q[0],q[1]);
     const b = l01>=l12 ? mid(q[1],q[2]) : mid(q[3],q[2]);
     L.push({tipo:p.tipo,interna:p.interna||'',parte:p.parte||'',cod:p.pos||p.cod||'',
-      a,b,comp:Math.round(p.corte||dist(a,b)),sec:I});
+      ident:detLinhasIdent(p).join(' / '),a,b,comp:Math.round(p.corte||dist(a,b)),sec:I});
   });
   /* limites e centro, para as regras e para a camera */
   let x0=1e9,x1=-1e9,y0=1e9,y1=-1e9;
@@ -9867,14 +10095,19 @@ function det3dMonta(s){
     const meia = detPassaAtras(p) ? -1 : (/de cima/i.test(p.parte||'') ? 1 : 0);
     const camada = p.interna==='sup' ? 1 : p.interna==='inf' ? -1 : meia;
     p.z = camada*dz;
-    p.rot = p.tipo==='banzo'?'Banzo':p.interna==='sup'?'Superior interna':p.interna==='inf'?'Inferior interna':
+    p.compTxt=detFmt(p.comp);
+    p.rot = p.tipo==='banzo'?p.nomeBz:p.interna==='sup'?'Superior interna':p.interna==='inf'?'Inferior interna':
             p.tipo==='vertical'?'Vertical':'Diagonal principal';
     p.cor = p.tipo==='banzo'?D3COR.banzo:p.interna==='sup'?D3COR.sup:p.interna==='inf'?D3COR.inf:
             p.tipo==='vertical'?D3COR.vertical:D3COR.principal;
   });
   det3dApara(L);
   const nos=detEncontros(s);
-  return {pecas:L,cx,cy,larg:Math.max(1,x1-x0),alt:Math.max(1,y1-y0),ehTesoura,I,E,nos,
+  /* as mesmas emendas (E1, E2...) e os mesmos suportes de terça da prancha */
+  const emendas=(s._emendas!==undefined?s._emendas:detEmendasBanzo(s))
+    .flatMap(e=>e.cortes.map(c=>({x:c.x,y:c.y,n:c.n,no:c.sobreNo?1:0})));
+  const terca=((s._terca!==undefined?s._terca:detCotaTerca(s))||[]).map(q=>({x:q.x,y:q.y}));
+  return {pecas:L,cx,cy,larg:Math.max(1,x1-x0),alt:Math.max(1,y1-y0),ehTesoura,I,E,nos,emendas,terca,
     nosSoltos:nos.filter(q=>!q.apoio).length,
     nome:(s.nomeFicha||('Estrutura '+s.letra)),letra:s.letra};
 }
@@ -10347,6 +10580,33 @@ function det3dDesenha(){
       ctx.lineWidth=devicePixelRatio*.9; ctx.strokeStyle='rgba(0,0,0,.55)'; ctx.stroke();
     });
   }
+  /* Emendas do banzo (roxo; vermelho em cima do nó) e suportes de terça
+     (laranja), como na prancha, e o código da peça selecionada junto dela.
+     Tamanho de TELA, como os pontos de encontro. */
+  if(D3.marcas!==false){
+    const r=devicePixelRatio*5,alma=d.E.alma||100;
+    ctx.font='700 '+Math.round(devicePixelRatio*11)+'px system-ui,sans-serif';ctx.textAlign='center';ctx.textBaseline='bottom';
+    (d.emendas||[]).forEach(q=>{
+      const v0=det3dGira([q.x,q.y,-alma*.15],d),v1=det3dGira([q.x,q.y,alma*1.15],d),cor=q.no?'#e5484d':'#b07cf0';
+      ctx.beginPath();ctx.moveTo(X(v0),Y(v0));ctx.lineTo(X(v1),Y(v1));
+      ctx.strokeStyle=cor;ctx.lineWidth=devicePixelRatio*3;ctx.stroke();
+      ctx.lineWidth=devicePixelRatio*3;ctx.strokeStyle='rgba(0,0,0,.6)';ctx.strokeText('E'+q.n,X(v1),Y(v1)-r*.4);
+      ctx.fillStyle=cor;ctx.fillText('E'+q.n,X(v1),Y(v1)-r*.4);
+    });
+    (d.terca||[]).forEach(q=>{
+      const v=det3dGira([q.x,q.y,alma*.5],d),x=X(v),y=Y(v)-r*1.2;
+      ctx.beginPath();ctx.moveTo(x-r,y-r*1.4);ctx.lineTo(x+r,y-r*1.4);ctx.lineTo(x,y);ctx.closePath();
+      ctx.fillStyle='#f0883e';ctx.fill();ctx.lineWidth=devicePixelRatio*.9;ctx.strokeStyle='rgba(0,0,0,.55)';ctx.stroke();
+    });
+    const p=D3.sel;
+    if(p&&(p.ident||p.cod)){
+      const v=det3dGira([(p.a.x+p.b.x)/2,(p.a.y+p.b.y)/2,p.z+(p.sec?p.sec.alma:0)],d),t=p.ident||p.cod;
+      ctx.font='700 '+Math.round(devicePixelRatio*12)+'px system-ui,sans-serif';
+      const tw=ctx.measureText(t).width+devicePixelRatio*10,th=devicePixelRatio*18,x=X(v),y=Y(v)-devicePixelRatio*8;
+      ctx.fillStyle='rgba(22,23,26,.86)';ctx.fillRect(x-tw/2,y-th,tw,th);
+      ctx.fillStyle='#fff';ctx.textBaseline='middle';ctx.fillText(t,x,y-th/2);
+    }
+  }
   if(D3.abre) d.pecas.forEach(p=>{
     if(D3.so&&D3.sel&&p!==D3.sel)return;
     const dx=p.b.x-p.a.x,dy=p.b.y-p.a.y,L=Math.hypot(dx,dy)||1;
@@ -10365,7 +10625,7 @@ function det3dLista(){
   el.innerHTML=D3.dados.pecas.map((p,i)=>
     '<div data-i="'+i+'"'+(p===D3.sel?' class="on"':'')+'><i style="background:'+p.cor+'"></i>'+
     '<span>'+escapeHtml(p.rot)+(p.cod?(' · '+escapeHtml(p.cod)):'')+'</span>'+
-    '<b>'+p.comp+'</b></div>').join('');
+    '<b>'+(p.compTxt||p.comp+' mm')+'</b></div>').join('');
   el.querySelectorAll('div[data-i]').forEach(x=>x.onclick=()=>{
     D3.sel=D3.dados.pecas[+x.dataset.i];
     if(D3.so)det3dReenquadra();   /* com "so' a selecionada", trocar de peca reenquadra */
@@ -10375,7 +10635,8 @@ function det3dSel(){
   const el=document.getElementById('d3sel'); if(!el)return;
   const p=D3.sel;
   if(!p){el.innerHTML='<span class="muted">Clique num perfil do desenho ou da lista.</span>';return;}
-  el.innerHTML='<b>'+escapeHtml(p.rot)+'</b>'+(p.cod?(' · <b>'+escapeHtml(p.cod)+'</b>'):'')+' · '+p.comp+' mm'+
+  el.innerHTML='<b>'+escapeHtml(p.rot)+'</b>'+(p.cod?(' · <b>'+escapeHtml(p.cod)+'</b>'):'')+' · '+(p.compTxt||p.comp+' mm')+
+    (p.ident?'<div style="margin-top:4px;font-family:monospace;font-weight:700">'+escapeHtml(p.ident)+'</div>':'')+
     '<div class="muted" style="margin-top:4px">'+(p.parte?escapeHtml(p.parte)+' · ':'')+
     'U '+p.sec.aba+'x'+p.sec.alma+'x'+p.sec.aba+' #'+p.sec.esp+
     ' · profundidade '+(p.z>0?'+':'')+Math.round(p.z)+' mm</div>'+
@@ -10405,7 +10666,7 @@ function det3dCarrega(i){
       ? '<b>'+n+' pontos de encontro</b> · <b style="color:#8a6d00">'+sol+' sem apoio</b>, em amarelo — confira esses antes de mandar o desenho.'
       : '<b>'+n+' pontos de encontro</b>, todos apoiados no banzo ou noutra interna.';
   }
-  det3dSel(); det3dLista(); det3dVista(D3.vista||'frente');
+  det3dSel(); det3dLista(); det3dVista(D3.vista||'iso');
 }
 function det3dAbrir(secoes){
   const ss=(secoes||[]).filter(s=>s&&(s.pecas||[]).length);
@@ -10431,14 +10692,17 @@ function det3dAbrir(secoes){
           '<button id="d3apr" title="Recua a ponta até a face da peça encontrada. '+
             'Limpa a leitura, mas esconde a sobreposição do apoio — o comprimento de corte não muda.">'+
             'Aparar as pontas</button>'+
-          '<button id="d3ab">Mostrar abertura do U</button><button id="d3so">Só a selecionada</button>'+RM3D.botao()+'</div>'+
+          '<button id="d3ab">Mostrar abertura do U</button><button id="d3so">Só a selecionada</button>'+
+          '<button id="d3em" class="on">Emendas e suportes</button>'+RM3D.botao()+'</div>'+
         '<div class="d3aju">arrastar gira · Shift+arrastar desloca · a roda amplia onde o cursor está<br>dois cliques voltam ao encaixe da tela</div>'+
         '<div class="d3leg"><div><i style="background:'+D3COR.banzo+'"></i>banzo</div>'+
           '<div><i style="background:'+D3COR.principal+'"></i>diagonal principal</div>'+
           '<div><i style="background:'+D3COR.sup+'"></i>superior interna</div>'+
           '<div><i style="background:'+D3COR.inf+'"></i>inferior interna</div>'+
           '<div><i style="background:'+D3COR.vertical+'"></i>vertical</div>'+
-          '<div><i style="background:'+D3COR.no+';border-radius:50%"></i>ponto de encontro</div></div></div>'+
+          '<div><i style="background:'+D3COR.no+';border-radius:50%"></i>ponto de encontro</div>'+
+          '<div><i style="background:#b07cf0"></i>emenda do banzo (E1, E2...)</div>'+
+          '<div><i style="background:#f0883e"></i>suporte de terça</div></div></div>'+
         '<aside class="d3lado">'+
           '<div class="d3cx d3trava"><h4>Regra bloqueada</h4><div class="d3b">'+
             'Os pontos inicial e final vêm do detalhamento e <b>não são recalculados aqui</b>. '+
@@ -10473,6 +10737,7 @@ function det3dAbrir(secoes){
       try{localStorage.setItem('rm_det3d_aparar',D3.aparar?'1':'0');}catch(_){}
       det3dAviso(); det3dDesenha();};
     document.getElementById('d3ab').onclick=e=>{D3.abre=!D3.abre;e.target.classList.toggle('on',D3.abre);det3dDesenha();};
+    document.getElementById('d3em').onclick=e=>{D3.marcas=!D3.marcas;e.target.classList.toggle('on',D3.marcas);det3dDesenha();};
     document.getElementById('d3so').onclick=e=>{D3.so=!D3.so;e.target.classList.toggle('on',D3.so);det3dReenquadra();det3dDesenha();};
     ov.querySelectorAll('#d3bar [data-v]').forEach(b=>b.onclick=()=>det3dVista(b.dataset.v));
     det3dInterage();
@@ -10581,9 +10846,11 @@ function det3dDados(s,d){
          desenha, entao elas precisam viajar junto */
       ca:{x:+(p.ca||p.a).x.toFixed(1),y:+(p.ca||p.a).y.toFixed(1)},
       cb:{x:+(p.cb||p.b).x.toFixed(1),y:+(p.cb||p.b).y.toFixed(1)},
-      z:p.z,abre:p.abre,cor:p.cor,rot:p.rot,comp:p.comp,cod:p.cod,
+      z:p.z,abre:p.abre,cor:p.cor,rot:p.rot,comp:p.comp,compTxt:p.compTxt,cod:p.cod,ident:p.ident,
       tipo:p.tipo,parte:p.parte,si:eI(p.sec)})),
     nos:(d.nos||[]).map(q=>({x:+q.x.toFixed(1),y:+q.y.toFixed(1),apoio:q.apoio?1:0})),
+    emendas:(d.emendas||[]).map(q=>({x:+q.x.toFixed(1),y:+q.y.toFixed(1),n:q.n,no:q.no})),
+    terca:(d.terca||[]).map(q=>({x:+q.x.toFixed(1),y:+q.y.toFixed(1)})),
     nosSoltos:d.nosSoltos||0};
 }
 function det3dExportarHTML(){
@@ -10665,7 +10932,7 @@ RM3D.fonte()+
 'addEventListener("rm-3d-fundo",()=>det3dDesenha());\n'+
 'const D3COR='+JSON.stringify(D3COR)+';\n'+
 'const D3FACES='+JSON.stringify(D3FACES)+';\n'+
-'const D3={sec:0,sel:null,yaw:0,pitch:0,zoom:1,px:0,py:0,so:false,abre:false,arrastando:false,enq:null,vidro:false,nos:true,aparar:false,vista:"frente",dados:null};\n'+
+'const D3={sec:0,sel:null,yaw:0,pitch:0,zoom:1,px:0,py:0,so:false,abre:false,arrastando:false,enq:null,vidro:false,nos:true,aparar:false,marcas:true,vista:"iso",dados:null};\n'+
 'let D3_QUADRO=false;\n'+
 fns+'\n'+
 'function carrega(i){const e=EST[i];D3.sec=i;\n'+
@@ -10677,7 +10944,7 @@ fns+'\n'+
 '  document.getElementById("d3nos").innerHTML=d.nosSoltos\n'+
 '    ?"<b>"+d.nos.length+" pontos de encontro</b> · <b style=\\"color:#8a6d00\\">"+d.nosSoltos+" sem apoio</b>, em amarelo."\n'+
 '    :"<b>"+d.nos.length+" pontos de encontro</b>, todos apoiados no banzo ou noutra interna.";\n'+
-'  det3dSel();det3dLista();det3dVista(D3.vista||"frente");}\n'+
+'  det3dSel();det3dLista();det3dVista(D3.vista||"iso");}\n'+
 'document.getElementById("d3leg").innerHTML=\n'+
 '  [["banzo",D3COR.banzo],["diagonal principal",D3COR.principal],["superior interna",D3COR.sup],\n'+
 '   ["inferior interna",D3COR.inf],["vertical",D3COR.vertical]]\n'+
@@ -14062,8 +14329,14 @@ function dtLocPecas(s){
   const porPos=new Map((s.pecas||[]).filter(p=>p.pos).map(p=>[p.pos,p]));
   return (s.posLista||[]).map(r=>{
     const p=porPos.get(r.pos),t=dtLocTipo(p||r),id=p?detIdentPeca(p):null;
+    /* O localizador e o relatório mostravam a etiqueta do LASER (1/2 e 2/2)
+       e a prancha da peça inteira o código inteiro: a mesma peça com dois
+       nomes. Agora vale o código da prancha (detLinhasIdent, que segue o
+       modo e o mm/cm); as partes do laser aparecem à parte, só quando a peça
+       foi dividida. Teste leitor-codigo-unico-e-unidade. */
+    const labels=p?detLinhasIdent(p):[],laser=id&&p&&detPecaDividida(p)?(id.labels||[]):[];
     return {pos:r.pos,cod:id?.cod||r.cod,sourceCod:r.cod,painel:r.painel,corte:id?.len??r.corte,
-      sigla:t.sigla,tipo:t.nome,peca:p||null,labels:id?.labels||[],parts:id?.parts||[]};
+      sigla:t.sigla,tipo:t.nome,peca:p||null,labels,laser,parts:id?.parts||[]};
   });
 }
 function dtLocNormaliza(v){
@@ -14102,7 +14375,6 @@ function dtLocMontar(pa,secoes){
   const modelos=secoes.map(s=>({s,rows:dtLocPecas(s),panels:(s.paineis||[]).slice().sort((a,b)=>a.n-b.n),
     bb:detCaixa(s),arestas:new Map()}));
   let idx=0,inicio=0,inteira=false,ativos=[],mensagem='',lastWidth=-1,disposed=false;
-  const mm=n=>Number.isFinite(n)?n.toLocaleString('pt-BR',{maximumFractionDigits:3}):'—';
   const validPoly=p=>p&&p.poly&&p.poly.length>=3&&p.poly.every(v=>Number.isFinite(v.x)&&Number.isFinite(v.y));
   function contexto(){
     const m=modelos[idx],ps=m.panels.slice(inicio,inicio+2);
@@ -14209,19 +14481,21 @@ function dtLocMontar(pa,secoes){
       const r=encontrados[0];
       detalhe.innerHTML='<b>'+escapeHtml(detLetraIdent(s)+' · '+r.pos+' · '+r.sigla)+'</b><br>'+
         r.labels.map(t=>'<b>'+escapeHtml(t)+'</b>').join('<br>')+'<br>'+
-        escapeHtml(r.tipo+' · comprimento total de corte '+mm(r.corte)+' mm')+
+        (r.laser.length?'<span style="color:#6c7480;font-size:11px">no laser: '+escapeHtml(r.laser.join(' + '))+'</span><br>':'')+
+        escapeHtml(r.tipo+' · comprimento total de corte '+detFmt(r.corte))+
         ' <span style="color:#6c7480;font-size:11px">(desconto do relatório já aplicado)</span>';
     }else if(encontrados.length){
       detalhe.innerHTML='<b>'+escapeHtml(encontrados.length+' posições nesta estrutura')+'</b><br>'+
-        escapeHtml(encontrados.map(r=>r.pos+' · '+r.sigla+' · '+mm(r.corte)+' mm').join(' · '));
+        escapeHtml(encontrados.map(r=>r.pos+' · '+r.sigla+' · '+detFmt(r.corte)).join(' · '));
     }else detalhe.textContent=mensagem||'Selecione uma posição na lista ou busque pelo P. A busca considera somente a estrutura escolhida.';
     const vis=inteira?encontrados:m.rows.filter(r=>ps.some(p=>p.n===r.painel)||ativos.includes(r.pos));
     lista.innerHTML=vis.length?'<table class="rc-t" aria-label="Posições do mapa de localização"><thead><tr>'+
-      '<th>Pos.</th><th>Tipo</th><th class="n" style="width:28%">Comp. (mm)</th><th>Identificação</th></tr></thead><tbody>'+
+      '<th>Pos.</th><th>Tipo</th><th class="n" style="width:28%">Comp. ('+DET_UNID+')</th><th>Identificação</th></tr></thead><tbody>'+
       vis.map(r=>'<tr'+(ativos.includes(r.pos)?' class="dt-loc-active"':'')+'><td><button type="button" class="dt-loc-pos" data-loc-pos="'+escapeAttr(r.pos)+
         '" aria-pressed="'+ativos.includes(r.pos)+'" aria-label="'+escapeAttr('Localizar '+r.pos+', '+r.tipo)+
         '">'+escapeHtml(r.pos)+'</button></td><td title="'+escapeAttr(r.tipo)+'">'+
-        escapeHtml(r.sigla)+'</td><td class="n">'+mm(r.corte)+'</td><td>'+r.labels.map(escapeHtml).join('<br>')+'</td></tr>').join('')+
+        escapeHtml(r.sigla)+'</td><td class="n">'+detFmtCota(r.corte)+'</td><td>'+r.labels.map(escapeHtml).join('<br>')+
+        (r.laser.length?'<div class="rc-sub">laser: '+r.laser.map(escapeHtml).join(' + ')+'</div>':'')+'</td></tr>').join('')+
       '</tbody></table>':'<div class="dt-loc-note">'+(inteira?'Visão geral. Use a busca por posição P para localizar as peças.':'Não há posições atribuídas a este trecho.')+'</div>';
     desenhar();
   }
@@ -14373,7 +14647,6 @@ function detRender(secoes,totGeral,pecasGeral){
         '<td class="n rc-qtd">'+g.qtdTotal+'</td>'+
         '<td class="n">'+detFmt(g.corte)+'</td>'+
         '<td class="rc-sub">'+((g.posicoes&&g.posicoes.length)?g.posicoes.join(' '):'—')+'</td>'+
-        '<td>'+escapeHtml(s.nomeInt)+'</td>'+
         '<td>'+g.tipo+(g.interna==='sup'?' <span class="rc-sub">· superior interna</span>':(g.interna==='inf'?' <span class="rc-sub">· inferior interna</span>':''))+
           (g.parte?' <span class="rc-sub">· '+g.parte+'</span>':'')+
         (g.junto>0?' <span class="rc-sub">· '+(g.junto<g.qtd?g.junto+' de '+g.qtd+' ':'')+'junto à linha</span>':'')+
@@ -14386,7 +14659,7 @@ function detRender(secoes,totGeral,pecasGeral){
       const cel=dtLocPecas(s).map(x=>
         '<tr><td class="rc-cod"><button type="button" class="dt-loc-report-pos" data-dt-loc-index="'+si+'" data-dt-loc-pos="'+escapeAttr(x.pos)+'">'+escapeHtml(x.pos)+'</button></td>'+
         '<td class="rc-sub">'+escapeHtml(x.sigla+' · '+x.tipo)+'</td><td class="n">'+detFmt(x.corte)+'</td>'+
-        '<td>'+x.labels.map(escapeHtml).join('<br>')+'</td></tr>').join('');
+        '<td>'+x.labels.map(escapeHtml).join('<br>')+(x.laser.length?'<div class="rc-sub">laser: '+x.laser.map(escapeHtml).join(' + ')+'</div>':'')+'</td></tr>').join('');
       listaPos='<div class="rc-ct">Mapa de montagem · posições na ordem da tesoura, da esquerda para a direita · manter os kits separados por estrutura</div>'+ 
         '<table class="rc-t rc-pos"><thead><tr><th>Pos.</th><th>Tipo</th>'+
         '<th class="n">Comprimento</th><th>Identificação gravada</th></tr></thead><tbody>'+cel+'</tbody></table>';
@@ -14395,12 +14668,12 @@ function detRender(secoes,totGeral,pecasGeral){
     if(s.banzosResumo){
       const br=s.banzosResumo;
       const linhaBanzo=g=>
-        '<tr><td><b>'+g.pos+'</b></td><td>'+escapeHtml(s.nomeExt)+'</td>'+
+        '<tr><td><b>'+(s.emPe?'Lateral ('+(g.pos==='Superior'?'cima':'baixo')+' na prancha)':g.pos)+'</b></td><td>'+escapeHtml(s.nomeExt)+'</td>'+
         '<td class="n">'+detFmt(g.comp)+'</td>'+
         '<td class="n rc-qtd">'+g.qtdTotal+'</td>'+
         '<td class="n">'+(g.totalMM/1000).toFixed(2).replace('.',',')+' m</td>'+
         '<td class="n">'+(g.segmentos.length>1?g.segmentos.map(v=>detFmt(v)).join(' + '):'inteiro')+
-          (g.sobreNo&&g.sobreNo.length?'<div class="rc-sub" style="color:var(--warn)">emenda sobre nó a '+g.sobreNo.map(v=>detFmt(v)).join(', ')+'</div>':'')+'</td></tr>';
+          (g.sobreNo&&g.sobreNo.length?'<div class="rc-sub" style="color:var(--warn)">emenda sobre nó a '+g.sobreNo.map(v=>detFmt(v)).join(', ')+(g.refNo?' '+g.refNo:'')+'</div>':'')+'</td></tr>';
       const bm=(br.barra/1000).toLocaleString('pt-BR');
       quadroBanzos='<div class="rc-ct">Banzos · cada linha é um perfil · linhas de mesma medida e mesmo plano agrupadas</div>'+
         '<table class="rc-t"><thead><tr><th>Posição</th><th>Perfil</th><th class="n">Comprimento</th>'+
@@ -14408,7 +14681,8 @@ function detRender(secoes,totGeral,pecasGeral){
         (br.linhas||[]).map(linhaBanzo).join('')+'</tbody></table>'+
         '<div class="rc-gf"><span>Compra do banzo por encaixe: <b>'+br.compra.barras+' barras de '+bm+' m</b>'+
         (br.compra.seguranca?' + '+br.compra.seguranca+' de segurança':'')+
-        ' · sobra '+(br.compra.sobra/1000).toFixed(2).replace('.',',')+' m · nenhum pedaço menor que '+detFmt(DET_EMENDA_MIN)+'</span></div>';
+        ' · sobra '+(br.compra.sobra/1000).toFixed(2).replace('.',',')+' m · nenhum pedaço menor que '+detFmt(DET_EMENDA_MIN)+
+        ' · só esta estrutura (no topo, a obra toda encaixa junto os pedaços do mesmo perfil)</span></div>';
     }
     /* Mesma ideia do relatorio de corte: a estrutura abre recolhida, porque num
        galpao com varias tesouras a lista peca a peca empurra tudo para baixo.
@@ -14428,18 +14702,21 @@ function detRender(secoes,totGeral,pecasGeral){
         '<button class="btn ghost" id="dtRecalc'+s.letra+'">recalcular</button></div>'+
       '<div class="rc-corpo">'+
       quadroBanzos+
-      '<div class="rc-ct">Peças a cortar · total para '+s.qtdEstrut+' tesoura(s) · um perfil por peça</div>'+
+      /* O perfil é um só por estrutura: ia numa coluna repetida em toda linha,
+         que quebrava em duas e dobrava o número de páginas. Agora vai no
+         título da tabela. Teste leitor-relatorio-enxuto. */
+      '<div class="rc-ct">Peças a cortar · perfil <b>'+escapeHtml(s.nomeInt)+'</b> · total para '+s.qtdEstrut+' tesoura(s) · um perfil por peça</div>'+
       '<table class="rc-t"><thead><tr><th class="n" style="width:76px">Por tesoura</th>'+
       '<th class="n" style="width:68px">Qtd. total</th>'+
       '<th class="n" style="width:110px">Comprimento</th>'+
-      '<th style="width:150px">Posições</th><th>Perfil</th><th>Tipo</th></tr></thead>'+
+      '<th style="width:150px">Posições</th><th>Tipo</th></tr></thead>'+
       '<tbody>'+linhas+'</tbody></table>'+
       '<div class="rc-gf"><span>Total linear: <b>'+(s.tot/1000).toFixed(2).replace('.',',')+' m</b></span></div>'+
       listaPos+'</div></div>';
   });
   pa.classList.remove('hide');
   pa.innerHTML='<div class="rm-sheet rc-sheet">'+'<div class=\"rm-dagua\" aria-hidden=\"true\"><img src=\"'+LOGO_MARCA_DAGUA+'\" alt=\"\"></div>'+
-    '<div class="rm-head"><div class="rm-logo">'+logo+'</div><div class="rm-co">'+rmTimbre2()+'</div></div>'+'<div class="doc-tag tb2-tipo">Detalhamento · Mapa de montagem e lista de corte</div>'+ 
+    '<div class="rm-head"><div class="rm-logo">'+logo+'</div><div class="rm-co">'+rmTimbre2()+'</div></div>'+'<div class="doc-tag tb2-tipo">Detalhamento · Mapa de montagem e lista de corte · medidas em '+(DET_UNID==='cm'?'cm':'mm')+'</div>'+ 
     '<div class="rm-body">'+
       '<div class="rm-obra"><span>Obra / Cliente</span><b>'+escapeHtml(obra||'(sem obra)')+'</b>'+
         '<span class="rm-date">'+dataBr+'</span></div>'+
@@ -14447,9 +14724,8 @@ function detRender(secoes,totGeral,pecasGeral){
         '<div><span>Peças totais</span><b>'+pecasGeral+'</b></div>'+
         '<div><span>Tesouras / estruturas</span><b>'+estruturasGeral+'</b></div>'+
         '<div><span>Tipos</span><b>'+secoes.length+'</b></div>'+
-        '<div><span>Barras de banzo ('+barraM+' m)</span><b>'+barrasBanzoGeral+'</b></div>'+
+        '<div><span>Barras de banzo ('+barraM+' m) · obra toda</span><b>'+barrasBanzoGeral+'</b></div>'+
         '<div><span>Internos (linear)</span><b>'+(totGeral/1000).toFixed(2).replace('.',',')+' m</b></div>'+
-        '<div><span>Medidas em</span><b>'+(DET_UNID==='cm'?'cm':'mm')+'</b></div>'+
       '</div>'+
       alertaEscala+
       (avisos?'<div class="rc-avisos"><b>Conferência antes de cortar</b><ul>'+avisos+'</ul></div>':'')+
@@ -14516,8 +14792,9 @@ function detRender(secoes,totGeral,pecasGeral){
     const folha=dxfFolhaEscolhida();
     const el=document.getElementById('dxfAviso'); if(!el)return;
     el.innerHTML='<b>Duas pranchas de montagem</b> — <b>peça inteira</b> mostra a medida original; <b>planificada</b> usa exatamente as divisões e identificações 1/2 e 2/2 do DXF das chapas. '+
-      'As duas mantêm estrutura, posição P, tipo e comprimento de corte em mm. '+
+      'As duas mantêm estrutura, posição P, tipo e comprimento de corte em '+(DET_UNID==='cm'?'cm (a peça gravada traz o mesmo em mm)':'mm')+'. '+
       'Letra alvo de '+DXF_LETRA_MM+' mm impressos.'+
+      (folha==='A4'?' Tesoura longa: a folha da tesoura inteira sai em A3 e o PDF da prancha vai junto para A3 — numa impressora A4, “ajustar à página” reduz tudo igual.':'')+
       (DT_IDENT_AVISO?'<div style="color:#a52c18">'+escapeHtml(DT_IDENT_AVISO)+'</div>':'')+
       '<ul style="margin:6px 0 0 16px">'+secoes.map(s=>{
         const n=(DXF_PARTES>0)?DXF_PARTES:detPartesIdeais(s,folha,3);
@@ -14565,7 +14842,14 @@ function detRender(secoes,totGeral,pecasGeral){
        aceita seletor, então a regra entra e sai junto com a impressão. */
     const est=document.createElement('style');
     est.id='pgPrancha';
-    est.textContent=pranchaPaginaCSS(dxfFolhaEscolhida(),6);
+    /* A folha da tesoura completa longa sai em A3 (DET_LETRA_MIN_COMPLETA).
+       O PDF inteiro vai junto para A3: folhas de tamanhos diferentes no
+       mesmo PDF desencontravam o pé e a marca d'água da papelaria, que o
+       navegador posiciona pela primeira folha. Os trechos só crescem na
+       folha maior; numa impressora A4 o "ajustar à página" reduz tudo
+       igual. Teste leitor-prancha-completa-legivel. */
+    const folhaPg=dxfFolhaEscolhida()==='A4'&&alvo.querySelector('.prancha[data-folha="A3"]')?'A3':dxfFolhaEscolhida();
+    est.textContent=pranchaPaginaCSS(folhaPg,6);
     document.head.appendChild(est);
     sairEmPDF(((planificada?'Prancha montagem planificada ':'Prancha montagem peca inteira ')+(obraAtual()||'obra')).replace(/[\\/:*?"<>|]+/g,'-').trim().slice(0,90));
     setTimeout(()=>{document.body.classList.remove('so-prancha');
@@ -14843,7 +15127,7 @@ function cuTempoTexto(){
   const ps=(c.tempos||[]).map(x=>({A:cuAreaCorte(x.perfil),s:+x.seg}))
     .filter(x=>x.A>0&&x.s>0);
   const dif=ps.map(x=>Math.abs(k*x.A/x.s-1));
-  e.innerHTML='<b>'+ps.length+' perfil(is) cronometrado(s).</b> Dá '+(k*1000).toFixed(1).replace('.',',')+
+  e.innerHTML='<b>'+ps.length+(ps.length===1?' perfil cronometrado.':' perfis cronometrados.')+'</b> Dá '+(k*1000).toFixed(1).replace('.',',')+
     ' s por 1.000 mm² de seção'+(dif.length>1?', com até '+(100*Math.max.apply(null,dif)).toFixed(0)+
     '% de diferença entre eles':'')+'. Onde há cronometragem vale ela; nos outros perfis o sistema usa a área.';
 }
@@ -15150,13 +15434,20 @@ function cuCompraBasePorFuncao(barra,det){
   const fator=1+quebra, ret={banzos:{linhas:[]},internos:{linhas:[]}};
   const acum={banzos:{},internos:{}};
   const add=(tipo,perfil,mat,mm,fora,origem)=>{
-    perfil=cleanProfile(perfil);if(!perfil||!(mm>0))return;
+    perfil=cleanProfile(perfil);if(!perfil||!(mm>0))return null;
     const fk=fora?('##FC:'+fora.slitter+'x'+fora.esp+'x'+fora.rkg+(fora.ipi?'i':'')):'';
     const chave=perfil+'##'+(mat||'')+fk;
     const x=acum[tipo][chave]||(acum[tipo][chave]={perfil,mat:mat||'',fora:fora||null,mm:0,origem});
     x.mm+=mm;
     if(origem==='detalhamento')x.origem='detalhamento';
+    return chave;
   };
+  /* Com detalhamento o banzo não leva quebra: o plano de emenda já diz os
+     pedaços, e a compra é o encaixe deles nas barras mais a segurança -- o
+     mesmo número da lista de compra. Os 10% ficam só no cenário sem
+     detalhamento. Banzo com comprimento digitado na ficha (ou sem desenho)
+     continua pela quebra. Teste leitor-banzo-exato-no-detalhado. */
+  const pecasBz={},semPlano={};
   /* O DESENHO manda. O detalhamento le o esqueleto colorido e mede estrutura
      por estrutura, peca a peca, entre faces -- e foi ele que revelou que tres
      fichas estavam vinculadas ao mesmo cluster e recebiam 174,5 m de interno
@@ -15173,14 +15464,20 @@ function cuCompraBasePorFuncao(barra,det){
     const origem=mm?'detalhamento':'ficha';
     const banzo=(cm[0]!=null&&cm[0]!=='')?num(cm[0])*10:((mm&&mm.banzo)||f.banzoMM);
     const interno=(cm[1]!=null&&cm[1]!=='')?num(cm[1])*10:((mm&&mm.int)||f.intMM);
-    if(f.profiles.length>=1&&banzo)add('banzos',f.profiles[0],mat[0],banzo*f.qty*mult(0),fora[0],origem);
+    if(f.profiles.length>=1&&banzo){
+      const k=add('banzos',f.profiles[0],mat[0],banzo*f.qty*mult(0),fora[0],origem);
+      if(k&&mm&&mm.banzoPecas&&mm.banzoPecas.length&&!(cm[0]!=null&&cm[0]!==''))
+        (pecasBz[k]=pecasBz[k]||[]).push(...mm.banzoPecas.map(q=>({len:q.len,qty:q.qty*f.qty*mult(0)})));
+      else if(k)semPlano[k]=true;
+    }
     if(f.profiles.length>=2&&interno)add('internos',f.profiles[1],mat[1],interno*f.qty*mult(1),fora[1],origem);
     else if(f.profiles.length===1&&interno)add('internos',f.profiles[0],mat[0],interno*f.qty*mult(0),fora[0],origem);
   }
   for(const tipo of ['banzos','internos']){
-    ret[tipo].linhas=Object.values(acum[tipo]).map(x=>{
+    ret[tipo].linhas=Object.entries(acum[tipo]).map(([k,x])=>{
       const metros=x.mm*fator/1000;
-      return {...x,metros,barras:Math.ceil(metros*1000/barra)};
+      const exatas=tipo==='banzos'&&pecasBz[k]&&!semPlano[k]?ffdCutBars(pecasBz[k],barra)+segurancaBarras():null;
+      return {...x,metros,barras:Math.ceil(metros*1000/barra),barrasExatas:exatas};
     });
     ret[tipo].barras=ret[tipo].linhas.reduce((s,x)=>s+x.barras,0);
     ret[tipo].metros=ret[tipo].linhas.reduce((s,x)=>s+x.metros,0);
@@ -15209,7 +15506,13 @@ function cuCalcular(d){
   const chave=g=>g.perfil+'##'+(g.fora?g.fora.slitter+'x'+g.fora.esp+'x'+g.fora.rkg+(g.fora.ipi?'i':''):'');
   todosPerfis.forEach(g=>{base[chave(g)]=cuPrecoBarraBase(g.perfil,g.mat,d.barra,g.fora);
                           baseDet[chave(g)]=cuPrecoBarraDet(g.perfil,d.barra,c,g.fora);});
-  const preco=g=>(c.perfis[g.perfil]>0?c.perfis[g.perfil]
+  /* Preço por kg digitado na OBRA (Comparativo): vale aqui, na fonte, para
+     o relatório de corte, a tela de chapas e o comparativo darem o mesmo
+     número. Barra inteira: kg da barra x R$/kg. Teste
+     leitor-preco-obra-em-todas-as-telas. */
+  const po=cmpPrecoObraLer(),p6=num(po.barra)>0?num(po.barra):0,pDet=num(po.det)>0?num(po.det):0;
+  const kgBarra=g=>cmpPesoBarras([{...g,barras:1}],d.barra);
+  const preco=g=>(p6&&kgBarra(g)>0)?kgBarra(g)*p6:(c.perfis[g.perfil]>0?c.perfis[g.perfil]
                  :(base[chave(g)]?base[chave(g)].valor:0))||c.barra||0;
   const temPreco=todosPerfis.some(g=>preco(g)>0);
   if(!temPreco)return null;
@@ -15233,6 +15536,9 @@ function cuCalcular(d){
   const precoDet=g=>baseDet[chave(g)]?baseDet[chave(g)].valor:preco(g);
   const custoLinhas=linhas=>linhas.reduce((s,g)=>s+g.barras*preco(g),0);
   const acoBanzo=custoLinhas(compra.banzos.linhas);
+  /* com detalhamento: as barras do plano de emenda, sem a quebra */
+  const barrasBanzoCom=compra.banzos.linhas.reduce((s,g)=>s+(g.barrasExatas!=null?g.barrasExatas:g.barras),0);
+  const acoBanzoCom=compra.banzos.linhas.reduce((s,g)=>s+(g.barrasExatas!=null?g.barrasExatas:g.barras)*preco(g),0);
   const acoInternoSem=custoLinhas(compra.internos.linhas);
   const acoSem=acoBanzo+acoInternoSem;
   const detPorPerfil=d.grupos.map(g=>{
@@ -15271,7 +15577,7 @@ function cuCalcular(d){
     const usaFaixa=naPerfiladeira&&lim>0&&rkgBase>0&&rkgDet>0&&kgm>0;
     const pesoCurtas=usaFaixa?(mmCurtas/1000)*kgm:0;
     const pesoLongas=usaFaixa?(mmLongas/1000)*kgm:0;
-    const custo=usaFaixa
+    const custo=(pDet&&peso>0)?peso*pDet:usaFaixa
       ? pesoLongas*rkgBase+pesoCurtas*rkgDet
       : ((peso>0&&rkgDet>0)?peso*rkgDet:(g.utilMM/d.barra)*preco(g));
     const rkg=peso>0?custo/peso:rkgDet;   // médio, para exibição
@@ -15281,7 +15587,7 @@ function cuCalcular(d){
   });
   const acoInternoCom=detPorPerfil.reduce((s,x)=>s+x.custo,0);
   const pesoCurtasTot=detPorPerfil.reduce((s,x)=>s+(x.pesoCurtas||0),0);
-  const acoCom=acoBanzo+acoInternoCom;
+  const acoCom=acoBanzoCom+acoInternoCom;
   const metrosCom=detPorPerfil.reduce((s,x)=>s+x.metros,0);
   const pesoCom=detPorPerfil.reduce((s,x)=>s+x.peso,0);
   const metrosBaseInterno=compra.internos.metros||0;
@@ -15345,7 +15651,7 @@ function cuCalcular(d){
   const adicR=pecas*c.adicPeca+c.adicFixo;
 
   const evitado=discoR+maoR+retrabR+energiaR;   // o que a RM gasta cortando aqui
-  const aco=acoInternoSem-acoInternoCom;      // banzos se cancelam: economia so nas internas
+  const aco=acoBanzo-acoBanzoCom+acoInternoSem-acoInternoCom;   // banzo: quebra x plano de emenda
   const totalSem=acoSem+evitado;
   const totalCom=acoCom+adicR;
   const real=totalSem-totalCom;
@@ -15354,7 +15660,7 @@ function cuCalcular(d){
           aj,nMedicoes,semDisco,foraDoAlcance,porPerfil,detPorPerfil,metrosCom,pesoCom,
           segTotal,segMedio,fixoSeg,kwhTot,energiaR,
           compra,barrasBanzo,barrasInterno,barrasSem,barrasPlanoFornecedor,
-          acoBanzo,acoInternoSem,acoInternoCom,acoSem,acoCom,
+          acoBanzo,acoBanzoCom,barrasBanzoCom,acoInternoSem,acoInternoCom,acoSem,acoCom,p6,pDet,
           metrosBaseInterno,qtdIncompativel,perfilErros,poupadas:d.economia.poupadas,semTempo,pesoCurtasTot};
 }
 
@@ -15810,7 +16116,9 @@ function htmlRelatorioCorte(d){
           linha('<b>Custo: tudo em barras de 6 m</b>',''+rs(cu.totalSem),'tot')+
         '</tbody></table>'+
         '<table><thead><tr><th>Internas detalhadas + banzos em 6 m</th><th class="n">Valor</th></tr></thead><tbody>'+
-          linha('Banzos superior e inferior <i>'+nb(cu.barrasBanzo)+' barras de 6 m · mesmo valor do outro cenário'+selQbr+'</i>',rs(cu.acoBanzo))+
+          /* detalhado: o banzo sai do plano de emenda, sem a quebra (leitor-banzo-exato-no-detalhado) */
+          linha('Banzos superior e inferior <i>'+nb(cu.barrasBanzoCom)+' barras de 6 m · plano de emenda, sem quebra'+
+            (cu.barrasBanzoCom<cu.barrasBanzo?' · '+nb(cu.barrasBanzo-cu.barrasBanzoCom)+' a menos que em barras':'')+'</i>',rs(cu.acoBanzoCom))+
           linha('Perfis internos detalhados <i>'+nb(cu.pesoCom)+' kg líquidos · '+nb(cu.metrosCom)+
             ' m de peças · '+cu.detPorPerfil.map(x=>escapeHtml(x.perfil)+' '+
               (x.slitter>0?(x.fonte==='manual'?'slitter manual ':'aproveitamento ')+
@@ -15907,7 +16215,7 @@ function htmlRelatorioCorte(d){
         '<div><span>Fonte das medidas</span><b style="font-size:13px">'+(fonteDetalhe?'Detalhamento entre faces':'Eixo RMEXPORTA')+'</b></div>'+
         '<div><span>Barras de '+(barra/1000).toFixed(2).replace('.',',')+' m</span><b>'+totBarras+'</b></div>'+
         '<div><span>Peças a cortar</span><b>'+totPecas+'</b></div>'+
-        '<div><span>Aproveitamento</span><b>'+aprov.toFixed(1)+'%</b></div>'+
+        '<div><span>Aproveitamento</span><b>'+aprov.toLocaleString('pt-BR',{minimumFractionDigits:1,maximumFractionDigits:1})+'%</b></div>'+
         '<div><span>Sobra total</span><b>'+(totSobra/1000).toFixed(2).replace('.',',')+' m</b></div>'+
         '<div><span>Sobra equivale a</span><b>'+(totSobra/barra).toFixed(1).replace('.',',')+' barras</b></div>'+
       '</div>'+
@@ -15920,7 +16228,7 @@ function htmlRelatorioCorte(d){
         '<div class="rc-grupos">'+
           '<div class="rc-abrir"><button type="button" id="rcAbrirTudo">Expandir tudo</button>'+
           '<button type="button" id="rcFecharTudo">Recolher tudo</button>'+
-          '<span>'+grupos.length+' perfil(is) · clique no perfil para ver as peças e o plano de corte</span></div>'+
+          '<span>'+grupos.length+(grupos.length===1?' perfil':' perfis')+' · clique no perfil para ver as peças e o plano de corte</span></div>'+
           secoes+
         '</div>'+
         '<div class="rc-fecho">'+bloco_economia+bloco_custos+cpResumoRelatorio(d,cu)+'</div>'+
@@ -17532,12 +17840,25 @@ function cpFonte(d){
   });
   return rows;
 }
+/* O parceiro cobra o serviço pelo peso da PEÇA PRONTA -- a largura aberta
+   da tira do laser (a mesma do plano de chapas) x espessura x comprimento.
+   Perfitec e fornecedor de barra cobram o aproveitamento da bobina (188,8 mm
+   de peça viram 200 ou 214,3 mm cobrados), e era esse kg/m que entrava aqui:
+   o serviço saía uns 12% mais caro. Perfil que o laser não abre fica com o
+   kg/m do cadastro. Teste leitor-parceiro-peso-peca-pronta. */
+function cpKgmPecaPronta(g){
+  const dens=PRECOS.densidade||8000,canonical=cleanProfile(g.perfil);
+  const esp=num(g.fora?.esp)||detDims(canonical).esp;
+  const sh=esp>0?cpPerfilChapa(canonical,esp,g.mat||'carbono'):null;
+  if(sh&&!sh.error&&sh.flat>0)return sh.flat*esp*dens/1e6;
+  return g.fora&&num(g.fora.slitter)>0&&num(g.fora.esp)>0
+    ?num(g.fora.slitter)*num(g.fora.esp)*dens/1e6
+    :(kgmLookup(g.perfil)?.kgm||0);
+}
 function cpPesoRelatorio(d){
   let sum=0;
   for(const g of d.grupos){
-    const kg=g.fora&&num(g.fora.slitter)>0&&num(g.fora.esp)>0
-      ?num(g.fora.slitter)*num(g.fora.esp)*(PRECOS.densidade||8000)/1e6
-      :(kgmLookup(g.perfil)?.kgm||0);
+    const kg=cpKgmPecaPronta(g);
     if(!(kg>0))return null;
     sum+=(g.utilMM/1000)*kg;
   }
@@ -17567,11 +17888,28 @@ function cpBaseline(d,cu){
   const all=[...(cu.compra?.banzos?.linhas||[]),...(cu.compra?.internos?.linhas||[])];
   const missing=all.some(g=>!(cu.precoDe(g)>0))||cu.detPorPerfil.some(g=>!(g.kgm>0)||!(g.custo>0));
   const valid=!missing&&!cu.qtdIncompativel&&!cu.perfilErros?.length&&!d.vinculoErros?.length;
-  return {valid,reason:valid?'':'Revise os preços e avisos do comparativo existente.',banzos:cu.acoBanzo,rm:cu.totalSem,supplier:cu.totalCom};
+  /* chapas e fornecedor detalhado compram o banzo pelo plano de emenda */
+  const b={valid,reason:valid?'':'Revise os preços e avisos do comparativo existente.',banzos:cu.acoBanzoCom,rm:cu.totalSem,supplier:cu.totalCom};
+  /* "Tirar os banzos da soma": a comparação passa a ser só das internas nos
+     TRÊS caminhos -- tirar só do caminho das chapas dava "mais barato" a ele
+     por comparar internas contra internas + banzos. Teste
+     leitor-comparativo-chapas-sem-banzos. */
+  if(cmpPrecoObraLer().semBanzoChapa)Object.assign(b,{banzos:0,rm:cu.totalSem-cu.acoBanzo,supplier:cu.totalCom-cu.acoBanzoCom,semBanzo:true});
+  return b;
 }
 function cpDados(d,cu){
   const plan=cpPlano(d),cfg=cpConfig(d),base=cpBaseline(d,cu),reportKg=cpPesoRelatorio(d);
-  const fin=RMChapas.finance(plan,cfg,reportKg,base);
+  let fin=RMChapas.finance(plan,cfg,reportKg,base);
+  /* Preço da obra para chapas + parceiro (R$/kg das peças prontas, chapa e
+     serviço juntos): substitui a compra das chapas e o serviço também nesta
+     tela, não só no comparativo. Teste leitor-preco-obra-em-todas-as-telas. */
+  const pCh=num(cmpPrecoObraLer().chapa)>0?num(cmpPrecoObraLer().chapa):0;
+  if(pCh&&fin.peso>0&&plan.complete){
+    const extras=Number.isFinite(cfg.extras)&&cfg.extras>=0?cfg.extras:0,subtotal=fin.peso*pCh+extras,ok=!!base.valid;
+    const total=ok?subtotal+base.banzos:null;
+    fin={...fin,precoObra:pCh,missing:fin.missing.filter(m=>!/^Preço d/.test(m)),ready:true,subtotal,comparisonReady:ok,total,
+      savingsSupplier:ok?base.supplier-total:null,savingsRM:ok?base.rm-total:null};
+  }
   return {d,plan,cfg,fin,base,reportKg,ret:plan.sheets.map(s=>RMChapas.retalhos(s,cfg)),engraving:RMChapas.engravingStats(plan,cfg.markFormat,cfg.textHeight),
     engravingReference:RMChapas.engravingStats(plan,'full',6),stamp:JSON.stringify([cpAssinatura(d),cfg,reportKg,plan.errors,plan.markErrors,plan.scan?.signature||''])};
 }
@@ -17585,20 +17923,22 @@ function cpResumoHTML(state,compact=false){
   return '<section class="cp-fin"><div class="cp-fin-title">Chapas próprias + serviço do parceiro</div>'+
     '<div class="cp-scroll"><table><thead><tr><th>Material / espessura</th><th>1.200 × 3.000</th><th>1.500 × 3.000</th><th class="n">Kg comprados</th><th class="n">Chapa R$/kg</th><th class="n">Material</th></tr></thead><tbody>'+rows+'</tbody></table></div>'+
     '<div class="cp-cost-lines"><div><span>Compra das chapas inteiras <small>Sobras incluídas; sem somar a quebra das barras novamente</small></span><b>'+cpR(fin.material)+'</b></div>'+
-    '<div><span>Serviço do parceiro <small>'+(fin.manual?'Peso editado: ':'Peso do relatório: ')+(fin.peso==null?'não disponível':cpN(fin.peso)+' kg')+' × '+cpR(cfg.serviceRkg)+'/kg'+(fin.manual?' · relatório original: '+cpN(reportKg)+' kg':'')+'</small></span><b>'+cpR(fin.service)+'</b></div>'+
+    '<div><span>Serviço do parceiro <small>'+(fin.manual?'Peso editado: ':'Peso das peças prontas: ')+(fin.peso==null?'não disponível':cpN(fin.peso)+' kg')+' × '+cpR(cfg.serviceRkg)+'/kg'+(fin.manual?' · peças prontas: '+cpN(reportKg)+' kg':'')+'</small></span><b>'+cpR(fin.service)+'</b></div>'+
+    (fin.precoObra?'<div class="cp-total-line"><span>Preço desta obra: chapas + parceiro <small>'+cpR(fin.precoObra)+'/kg × '+cpN(fin.peso)+' kg das peças prontas (+ despesas) — vale no lugar da compra das chapas e do serviço; muda no Comparativo</small></span><b>'+cpR(fin.subtotal)+'</b></div>':'')+
     '<div><span>Despesas adicionais <small>Inclua frete, corte, gravação e execução de emendas se estiverem fora do preço/kg contratado</small></span><b>'+cpR(fin.extras)+'</b></div>'+
     '<div class="cp-total-line"><span>Total das internas: material + serviço</span><b>'+cpR(fin.subtotal)+'</b></div>'+
-    '<div><span>Banzos <small>Mesmo valor do comparativo atual; não entram no plano de chapas</small></span><b>'+(!base.valid?'Revisar cadastro':cpR(base.banzos))+'</b></div></div>'+
-    '<div class="cp-compare"><div><span>Produção na RM</span><strong>'+(!base.valid?'Revisar cadastro':cpR(base.rm))+'</strong></div><div><span>Internas prontas do fornecedor</span><strong>'+(!base.valid?'Revisar cadastro':cpR(base.supplier))+'</strong></div><div class="cp-third"><span>Chapas + parceiro + banzos</span><strong>'+cpR(fin.total)+'</strong></div></div>'+
+    (base.semBanzo?'<div><span>Banzos <small>Fora da soma nos três caminhos (opção do Comparativo): a comparação é só das internas</small></span><b>—</b></div></div>':
+    '<div><span>Banzos <small>Barras do plano de emenda, como no comparativo; não entram no plano de chapas</small></span><b>'+(!base.valid?'Revisar cadastro':cpR(base.banzos))+'</b></div></div>')+
+    '<div class="cp-compare"><div><span>Produção na RM</span><strong>'+(!base.valid?'Revisar cadastro':cpR(base.rm))+'</strong></div><div><span>Internas prontas do fornecedor</span><strong>'+(!base.valid?'Revisar cadastro':cpR(base.supplier))+'</strong></div><div class="cp-third"><span>'+(base.semBanzo?'Chapas + parceiro (sem banzos)':'Chapas + parceiro + banzos')+'</span><strong>'+cpR(fin.total)+'</strong></div></div>'+
     '<div class="cp-saving '+(fin.savingsSupplier<0?'cp-negative':'')+'"><span>Comparado às internas prontas</span><b>'+cpDiferenca(fin.savingsSupplier)+'</b></div>'+
     '<div class="cp-saving"><span>Comparado à produção na RM</span><b>'+cpDiferenca(fin.savingsRM)+'</b></div>'+
     (fin.missing.length?'<p class="cp-notice">Pendente: '+fin.missing.map(cpE).join(' · ')+'. Os campos vazios não são tratados como custo zero.</p>':'')+
     (fin.manual&&reportKg>0&&(fin.peso<reportKg*.2||fin.peso>reportKg*5)?'<p class="cp-notice cp-weight-alert"><b>Confira o peso editado.</b> Foram informados '+cpN(fin.peso)+' kg, enquanto o relatório calcula '+cpN(reportKg)+' kg. Se '+cpN(fin.peso)+' era o preço por kg, apague o peso manual e informe esse valor em “Serviço do parceiro (R$/kg)”.</p>':'')+
     (!base.valid?'<p class="cp-notice">'+cpE(base.reason)+' O custo das internas terceirizadas pode ser calculado separadamente.</p>':'')+
     (plan.splitRows.length?'<p class="cp-notice">Cenário com '+plan.splitRows.reduce((s,r)=>s+r.qty,0)+' peças divididas. '+plan.originalExpected+' peças originais → '+plan.expected+' partes para corte. A soma das partes preserva o comprimento do relatório, sem acréscimo de sobreposição ou desconto de junta. Projeto e custo das emendas não são calculados pelo sistema.</p>':'')+
-    '<p class="hint">Regra RM: soma das faces − espessura × número de dobras. Comprimentos finais do relatório, com a folga já aplicada uma vez. Densidade das chapas: '+cpN(cfg.density,0)+' kg/m³. Margem: '+cpN(cfg.margin)+' mm; distância entre peças: '+cpN(cfg.gap)+' mm; giro de 90°: '+(cfg.rotate?'permitido':'desativado')+'. '+
-    'O peso do serviço mantém a base do relatório existente; não é substituído pelo peso geométrico das tiras. '+
-    (compact?'Abra “Chapas + parceiro / DXF laser” para editar os valores e conferir as chapas.':'Melhor plano encontrado entre várias tentativas de encaixe; não representa garantia de ótimo absoluto.')+'</p></section>';
+    '<details class="cp-mais"><summary>Regras do cálculo</summary><p class="hint">Regra RM: soma das faces − espessura × número de dobras. Comprimentos finais do relatório, com a folga já aplicada uma vez. Densidade das chapas: '+cpN(cfg.density,0)+' kg/m³. Margem: '+cpN(cfg.margin)+' mm; distância entre peças: '+cpN(cfg.gap)+' mm; giro de 90°: '+(cfg.rotate?'permitido':'desativado')+'. '+
+    'O serviço do parceiro é cobrado pelo peso das peças prontas (largura aberta × espessura × comprimento), não pelo aproveitamento da bobina. '+
+    (compact?'Abra “Chapas + parceiro / DXF laser” para editar os valores e conferir as chapas.':'Melhor plano encontrado entre várias tentativas de encaixe; não representa garantia de ótimo absoluto.')+'</p></details></section>';
 }
 function cpResumoRelatorio(d,cu){
   const state=cpDados(d,cu);return cpResumoHTML(state,true)+cpSplitTable(state);
@@ -17608,9 +17948,9 @@ function cpSettings(){
   return '<div class="cp-heading"><div><div class="cp-eyebrow">Produção terceirizada</div><h2>Chapas + parceiro</h2><p>Da lista de internas ao plano de corte a laser.</p></div><button type="button" class="btn ghost" data-cp-action="close">Fechar</button></div>'+
     '<div class="cp-settings"><div class="cp-settings-title">Valores do pedido</div><div class="settings">'+
     field('sheetRkg','Chapa (R$/kg)','Informar preço')+field('serviceRkg','Serviço do parceiro (R$/kg)','Informar preço')+
-    field('partnerKg','Peso do parceiro (kg)','Automático pelo relatório','0.001','Opcional. Deixe em branco para acompanhar o relatório; qualquer alteração ficará identificada.')+
+    field('partnerKg','Peso do parceiro (kg)','Automático: peças prontas','0.001','Opcional. Deixe em branco para usar o peso das peças prontas; qualquer alteração ficará identificada.')+
     field('extras','Despesas adicionais (R$)','0','0.01','Corte/gravação, frete, emendas e outros custos não incluídos no kg.')+'</div>'+
-    '<button type="button" class="btn ghost cp-reset-weight" data-cp-action="reset-partner-weight">Usar peso automático do relatório</button>'+
+    '<button type="button" class="btn ghost cp-reset-weight" data-cp-action="reset-partner-weight">Usar peso das peças prontas</button>'+
     '<details><summary>Parâmetros de corte e formatos de chapa</summary><div class="settings" style="margin-top:12px">'+
     '<div class="fld"><label for="cp-mode">Formatos disponíveis</label><select id="cp-mode" data-cp="mode"><option value="auto">Combinar 1.200 e 1.500 × 3.000</option><option value="1200">Somente 1.200 × 3.000</option><option value="1500">Somente 1.500 × 3.000</option><option value="regra">Regra de largura por espessura da RM</option></select></div>'+
     field('margin','Margem da chapa (mm)','5','0.1')+field('gap','Distância nominal entre peças (mm)','0','0.1')+
@@ -17701,13 +18041,16 @@ function cpProfileTable(state){
 function cpNestingControls(state){
   const {cfg,plan}=state;
   return '<section class="cp-nesting"><div class="cp-split-title"><h3>Encaixe otimizado por lote</h3><b>'+cpMM(cfg.gap)+' mm entre peças</b></div>'+
-    '<p>Compara fileiras, colunas e orientações permitidas; reencaixa chapas pouco ocupadas do mesmo material e espessura. Prioriza menor área comprada e menos chapas; no empate, preenche melhor as primeiras e concentra as sobras no final, antes de comparar a compactação.</p>'+
+    /* as explicações longas ficam atrás de um "Como funciona": a tela
+       mostrava parágrafos inteiros antes dos números. Teste
+       leitor-chapas-tela-enxuta. */
+    '<details class="cp-mais"><summary>Como o encaixe funciona</summary><p>Compara fileiras, colunas e orientações permitidas; reencaixa chapas pouco ocupadas do mesmo material e espessura. Prioriza menor área comprada e menos chapas; no empate, preenche melhor as primeiras e concentra as sobras no final, antes de comparar a compactação.</p></details>'+
     '<div class="cp-scan-controls"><div class="cp-actions"><label for="cp-scanThreshold">Comparar chapas abaixo de <input id="cp-scanThreshold" data-cp="scanThreshold" type="number" min="1" max="100" step="1" value="'+cpE(cfg.scanThreshold)+'"> %</label><button type="button" class="btn" data-cp-action="scan">Varredura completa</button><button type="button" class="btn ghost" data-cp-action="scan-cancel" hidden>Cancelar varredura</button></div>'+
     '<progress id="cpScanProgress" max="1" value="0" aria-label="Pares percorridos na rodada do lote" hidden></progress><p id="cpScanStatus" class="hint" role="status" aria-live="polite"></p>'+
-    '<p class="hint">Cada chapa abaixo do limite é comparada com TODAS as outras do mesmo material e espessura, inclusive as mais ocupadas. Sem limite de seis chapas ou 24 tentativas nesta etapa. A busca repete os pares afetados até uma rodada sem melhoria, usando somente os formatos e giros permitidos. Testa a redistribuição das peças existentes; não encurta peças nem muda emendas. Pode levar segundos ou minutos. Limite 100% inclui todas as chapas com sobra; não é garantia de ótimo absoluto.</p></div>'+
+    '<details class="cp-mais"><summary>Como a varredura funciona</summary><p class="hint">Cada chapa abaixo do limite é comparada com TODAS as outras do mesmo material e espessura, inclusive as mais ocupadas. Sem limite de seis chapas ou 24 tentativas nesta etapa. A busca repete os pares afetados até uma rodada sem melhoria, usando somente os formatos e giros permitidos. Testa a redistribuição das peças existentes; não encurta peças nem muda emendas. Pode levar segundos ou minutos. Limite 100% inclui todas as chapas com sobra; não é garantia de ótimo absoluto.</p></details></div>'+
     '<button type="button" class="btn ghost" data-cp-action="no-gap"'+(cfg.gap===0?' disabled':'')+'>Encaixar sem folga (0 mm)</button>'+
     '<label class="cp-check cp-rotation-control"><input id="cp-rotate-fill" data-cp="rotate" type="checkbox"'+(cfg.rotate?' checked':'')+'> Permitir giro de 90° para aproveitar pontas e sobras</label>'+
-    '<p class="hint">Autorize o giro somente se o fornecedor permitir mudar o sentido da laminação em relação à dobra. Girar no mapa não muda V/D/DI/DS, posição P ou comprimento da peça.</p>'+
+    '<details class="cp-mais"><summary>Quando autorizar o giro</summary><p class="hint">Autorize o giro somente se o fornecedor permitir mudar o sentido da laminação em relação à dobra. Girar no mapa não muda V/D/DI/DS, posição P ou comprimento da peça.</p></details>'+
     '<p class="hint">Margem da chapa: '+cpMM(cfg.margin)+' mm · Giro de 90°: '+(cfg.rotate?'permitido':'desativado — habilite nos parâmetros somente se o fornecedor autorizar')+'. Melhor solução encontrada, sem garantia de ótimo absoluto. A sobra não autoriza produzir peças extras: '+plan.placed+' / '+plan.expected+' partes previstas.</p>'+
     (cfg.gap===0?'<p class="cp-notice"><b>Sem folga nominal / corte comum.</b> O DXF exporta cada trecho de borda compartilhada uma única vez, como LINE na camada CORTE; não são contornos fechados individuais. GRAVACAO continua separada. O fornecedor deve validar a importação desse traçado, a sequência de corte e a compensação do kerf no CAM. Zero nominal não significa laser sem espessura: sem essa validação, não liberar o corte. Se o processo exigir separação, informe a distância recomendada pelo fornecedor.</p>':'')+'</section>';
 }
@@ -17979,27 +18322,24 @@ function cmpDados(){
     {v:pendCu?null:cu.totalSem,pend:pendCu},
     {v:pendCu?null:cu.totalCom,pend:pendCu},
     {v:fin.total,pend:fin.total!=null?'':fin.missing.some(m=>m!=='Plano de chapas incompleto')?'Falta informar':'Revisar plano de chapas'}];
-  /* preço digitado da obra por cima do banco */
+  /* O preço digitado da obra já entra na conta de origem (cuCalcular e
+     cpDados): o relatório de corte e a tela de chapas mostram o mesmo número
+     destes cartões. Aqui fica só o que os cartões explicam. */
   const po=cmpPrecoObraLer(),p6=num(po.barra)>0?num(po.barra):0,pDet=num(po.det)>0?num(po.det):0,pCh=num(po.chapa)>0?num(po.chapa):0;
-  const ov={p6,pDet,pCh};
-  if(cu&&!bloqueado&&(p6||pDet||pCh)){
+  const ov={p6,pDet,pCh,semBanzoChapa:!!po.semBanzoChapa};
+  if(cu){
     const compra=d.compraBase||cuCompraBasePorFuncao(d.barra);
     ov.kgBanzo=cmpPesoBarras(compra.banzos.linhas,d.barra);
+    ov.kgBanzoCom=cmpPesoBarras(compra.banzos.linhas.map(g=>({...g,barras:g.barrasExatas!=null?g.barrasExatas:g.barras})),d.barra);
     ov.kgInterno=cmpPesoBarras(compra.internos.linhas,d.barra);
-    ov.banzo=p6?ov.kgBanzo*p6:cu.acoBanzo;
-    ov.internoSem=p6?ov.kgInterno*p6:cu.acoInternoSem;
-    ov.internoCom=pDet?cu.pesoCom*pDet:cu.acoInternoCom;
-    itens[0].v=cu.totalSem-cu.acoBanzo-cu.acoInternoSem+ov.banzo+ov.internoSem;
-    itens[1].v=cu.totalCom-cu.acoBanzo-cu.acoInternoCom+ov.banzo+ov.internoCom;
-    if(pCh&&fin.peso>0){ov.chapa=fin.peso*pCh;itens[2].v=ov.banzo+ov.chapa;}
-    else if(fin.total!=null)itens[2].v=fin.total-cu.acoBanzo+ov.banzo;
   }
-  /* "crie uma opção de tirar da soma os banzos da chapa+serviço": o
-     caminho das chapas pode ser comparado só pelas internas */
-  ov.semBanzoChapa=!!po.semBanzoChapa;
-  if(ov.semBanzoChapa&&itens[2].v!=null){
-    const bz=ov.banzo!=null?ov.banzo:(st.base&&st.base.valid?st.base.banzos:0);
-    itens[2].v-=bz||0;
+  if(fin.precoObra)ov.chapa=fin.peso*pCh;
+  if(cu)Object.assign(ov,{banzo:cu.acoBanzo,banzoCom:cu.acoBanzoCom,internoSem:cu.acoInternoSem,internoCom:cu.acoInternoCom});
+  /* "Tirar os banzos da soma": só as internas nos TRÊS caminhos (o das
+     chapas já vem assim de cpDados). Teste leitor-comparativo-chapas-sem-banzos. */
+  if(ov.semBanzoChapa&&cu){
+    if(itens[0].v!=null)itens[0].v-=cu.acoBanzo;
+    if(itens[1].v!=null)itens[1].v-=cu.acoBanzoCom;
   }
   itens.forEach(i=>{i.txt=i.v==null?i.pend:cpR(i.v);});
   return {d,cu,st,fin,bloqueado,itens,ov};
@@ -18016,27 +18356,30 @@ function cmpRender(){
   const iMelhor=ok.length>=2?itens.findIndex(i=>i.v===min):-1;
   const segundo=ok.length>=2?Math.min(...ok.filter((i,k)=>itens.indexOf(i)!==iMelhor).map(i=>i.v)):null;
   const lin=(rot,val,sub)=>'<li><span>'+rot+(sub?'<i>'+sub+'</i>':'')+'</span><b>'+val+'</b></li>';
-  const vB=ov&&ov.banzo!=null?ov.banzo:cu&&cu.acoBanzo,subB=cu?nb(cu.barrasBanzo)+' barras de 6 m'+(ov&&ov.p6?' · '+kgx(ov.kgBanzo,ov.p6):''):'';
+  /* banzo: sem detalhamento leva a quebra; detalhado, o plano de emenda */
+  const sb=ov.semBanzoChapa,linB=k=>!cu?'':sb?lin('Banzos','—','fora da soma nos três caminhos'):k===0
+    ?lin('Banzos',cpR(cu.acoBanzo),nb(cu.barrasBanzo)+' barras de 6 m · com quebra'+(ov.p6?' · '+kgx(ov.kgBanzo,ov.p6):''))
+    :lin('Banzos',cpR(cu.acoBanzoCom),nb(cu.barrasBanzoCom)+' barras de 6 m · plano de emenda'+(ov.p6?' · '+kgx(ov.kgBanzoCom,ov.p6):''));
   const linhasCu=k=>!cu?[]:k===0?[
-      lin('Banzos',cpR(vB),subB),
-      lin('Internas em barra',cpR(ov&&ov.internoSem!=null?ov.internoSem:cu.acoInternoSem),nb(cu.barrasInterno)+' barras de 6 m'+(ov&&ov.p6?' · '+kgx(ov.kgInterno,ov.p6):'')),
+      linB(0),
+      lin('Internas em barra',cpR(cu.acoInternoSem),nb(cu.barrasInterno)+' barras de 6 m'+(ov.p6?' · '+kgx(ov.kgInterno,ov.p6):'')),
       lin('Discos de corte',cpR(cu.discoR),nb(cu.cortes)+' cortes'),
       lin('Mão de obra',cpR(cu.maoR),cu.semTempo?'tempo por corte não informado':cpN(cu.horasPessoa,1)+' h-pessoa'),
       cu.energiaR>0?lin('Energia',cpR(cu.energiaR)):'',
       cu.retrabR>0?lin('Peças refeitas',cpR(cu.retrabR),cpN(cu.c.retrab,1)+'%'):'']
-    :[lin('Banzos',cpR(vB),subB),
-      lin('Internas detalhadas',cpR(ov&&ov.internoCom!=null?ov.internoCom:cu.acoInternoCom),nb(cu.pesoCom)+' kg'+(ov&&ov.pDet?' × '+cpR(ov.pDet)+'/kg':'')+' · o fornecedor corta'),
+    :[linB(1),
+      lin('Internas detalhadas',cpR(cu.acoInternoCom),nb(cu.pesoCom)+' kg'+(ov.pDet?' × '+cpR(ov.pDet)+'/kg':'')+' · o fornecedor corta'),
       cu.adicR?lin('Adicional do fornecedor',cpR(cu.adicR)):'',
       lin('Corte na RM',cpR(0),'chega pronto')];
   const nCh=plan.sheets.length;
-  const linhasCp=ov&&ov.chapa!=null?[
-    lin('Chapas + parceiro',cpR(ov.chapa),kgx(fin.peso,ov.pCh)+' · preço fixo desta obra'),
-    lin('Banzos',ov.semBanzoChapa?'—':cpR(vB),ov.semBanzoChapa?'fora da soma deste caminho':'em barras de 6 m, igual aos outros')]:[
-    lin('Chapas',fin.material==null?'—':cpR(fin.material),nCh+(nCh===1?' chapa · ':' chapas · ')+cpN(plan.grossKg,0)+' kg'),
-    lin('Serviço do parceiro',fin.service==null?'—':cpR(fin.service),fin.peso>0?cpN(fin.peso,0)+' kg'+(cfg.serviceRkg!=null?' × '+cpR(cfg.serviceRkg)+'/kg':''):''),
+  const linhasCp=ov.chapa!=null?[
+    lin('Chapas + parceiro',cpR(ov.chapa),kgx(fin.peso,ov.pCh)+' das peças prontas · preço fixo desta obra'),
     fin.extras>0?lin('Despesas adicionais',cpR(fin.extras)):'',
-    ov&&ov.semBanzoChapa?lin('Banzos','—','fora da soma deste caminho'):
-    lin('Banzos',base.valid?cpR(ov&&ov.p6?vB:base.banzos):'—','em barras de 6 m, igual aos outros')];
+    linB(2)]:[
+    lin('Chapas',fin.material==null?'—':cpR(fin.material),nCh+(nCh===1?' chapa · ':' chapas · ')+cpN(plan.grossKg,0)+' kg'),
+    lin('Serviço do parceiro',fin.service==null?'—':cpR(fin.service),fin.peso>0?cpN(fin.peso,0)+' kg das peças prontas'+(cfg.serviceRkg!=null?' × '+cpR(cfg.serviceRkg)+'/kg':''):''),
+    fin.extras>0?lin('Despesas adicionais',cpR(fin.extras)):'',
+    base.valid||sb?linB(2):lin('Banzos','—','revisar cadastro')];
   const def=[
     {tit:'Tudo em barras de 6 m',sub:'Banzos e internas compradas em barra; a RM corta.',linhas:linhasCu(0)},
     {tit:'Internas detalhadas',sub:'Banzos em barra; internas chegam cortadas do fornecedor.',linhas:linhasCu(1)},
@@ -18062,7 +18405,7 @@ function cmpRender(){
        dif!=null?'<div class="cmp-dif">'+cpR(dif)+' a mais · +'+cpN(min>0?dif/min*100:0,1)+'%</div>':'')+
       acao(k,i)+
       '<ul class="cmp-lin">'+def[k].linhas.join('')+'</ul>'+
-      (k===2?'<label class="cmp-semb"><input type="checkbox" data-cmp-semb'+(ov&&ov.semBanzoChapa?' checked':'')+'> Tirar os banzos da soma deste caminho</label>':'')+
+      (k===2?'<label class="cmp-semb"><input type="checkbox" data-cmp-semb'+(ov.semBanzoChapa?' checked':'')+'> Tirar os banzos da soma (compara só as internas nos três caminhos)</label>':'')+
       '</article>';
   }).join('');
   const barras=!e.baseCompra?'':
@@ -18073,7 +18416,7 @@ function cmpRender(){
       '<div class="destaque"><span>Economia do encaixe</span><b>'+nb(e.poupadas)+' barras</b><i>'+cpN(e.pct,1)+'% · '+nb(e.metros)+' m de perfil</i></div>'+
     '</div></div>';
   box.innerHTML='<div class="cmp-head"><div><h2>Quanto custa esta obra em cada caminho</h2>'+
-      '<p>'+cpE(obraAtual())+' · mesmos banzos nos três; muda só como chegam as peças internas.</p></div>'+
+      '<p>'+(obraAtual()?cpE(obraAtual())+' · ':'')+(ov.semBanzoChapa?'só as peças internas: banzos fora da soma nos três caminhos.':'banzos em barra de 6 m nos três; muda como chegam as peças internas.')+'</p></div>'+
       '<div class="cmp-acoes"><button type="button" class="btn ghost" data-cmp="custos">Ajustar custos</button>'+
       '<button type="button" class="btn ghost" data-cmp="chapas">Painel de chapas</button>'+
       '<button type="button" class="btn" data-cmp="relatorio">Relatório completo</button></div></div>'+
@@ -28601,7 +28944,7 @@ if('serviceWorker' in navigator && location.protocol.startsWith('http')){
 }
 </script>
 <script>/* versão publicada (PADRAO_RM.md §3): sobe a cada publicação, junto com o CACHE do sw.js */
-const APP_VER='v231';
+const APP_VER='v232';
 </script>
 <script id="rmVersaoBloco">
 /* ===== SELO DE VERSÃO — igual em todos os sistemas (PADRAO_RM.md §3) =====
