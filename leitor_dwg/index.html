@@ -8999,6 +8999,29 @@ function pranchaPaginaCSS(folha,margem){
     'body.so-prancha #printArea{padding:0!important}}';
 }
 function svgEsc(t){return String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+/* ---- cota entre as verticais, só nos trechos ----
+   Partida em trechos, a folha mostra um pedaço da tesoura e o montador não
+   sabe onde está. A corrente de cotas embaixo do banzo dá a distância de
+   eixo a eixo entre as verticais, com o P de cada uma, e a primeira vem
+   amarrada ao início da tesoura. Na folha da tesoura completa não entra:
+   lá o que importa é o conjunto. */
+function detCotasVerticais(s,h,bb,x0Tesoura){
+  const vs=[];
+  s.pecas.filter(p=>p.poly&&p.poly.length&&dtLocTipo(p).sigla==='V').forEach(p=>{
+    const xs=p.poly.map(v=>v.x),ys=p.poly.map(v=>v.y);
+    vs.push({p,x:(Math.min(...xs)+Math.max(...xs))/2,yb:Math.min(...ys)});
+  });
+  vs.sort((a,b)=>a.x-b.x);
+  const unicas=vs.filter((v,k)=>!k||v.x-vs[k-1].x>1);   // vertical dupla no mesmo eixo: uma cota só
+  if(!unicas.length)return null;
+  const y=bb.y0-h*2.4, inicio=unicas[0].x-(x0Tesoura==null?unicas[0].x:x0Tesoura);
+  return {vs:unicas,y,inicio,piso:y-h*(inicio>1?3.6:2.4)};
+}
+function detFmtCota(v){
+  const mm=detArredMM(v);
+  return DET_UNID==='cm'?(mm/10).toLocaleString('pt-BR',{minimumFractionDigits:1,maximumFractionDigits:1})
+                        :mm.toLocaleString('pt-BR');
+}
 function detPranchaSVG(s,folha,obra,parte){
   const [W,H]=DXF_FOLHAS[folha]||DXF_FOLHAS.A4;
   const cabecalho=18;                                  // mm de papel para titulo, leitura e regra de montagem
@@ -9013,12 +9036,16 @@ function detPranchaSVG(s,folha,obra,parte){
   let esc=Math.min((W-1)/Math.max(bb.x1-bb.x0+2*sobra,1),
                    (H-cabecalho-1)/Math.max(bb.y1-bb.y0,1));
   let h=DXF_LETRA_MM/esc;
-  let LP=detLayoutPaineis(s,h,bb), LC=detLayoutChamadas(s,h,bb,LP.piso);
+  let LP=detLayoutPaineis(s,h,bb);
+  const CV=parte&&!parte.completa?detCotasVerticais(s,h,bb,parte.x0):null;
+  /* as chamadas de baixo começam abaixo da faixa da cota */
+  const piso=CV?Math.min(LP.piso,CV.piso):LP.piso;
+  let LC=detLayoutChamadas(s,h,bb,piso);
   /* tudo que vai no papel, para centralizar e conferir se coube */
   let x0=bb.x0,x1=bb.x1,y0=1e18,y1=-1e18;
   const cx=v=>{if(v<x0)x0=v;if(v>x1)x1=v;};
   const cy=v=>{if(v<y0)y0=v;if(v>y1)y1=v;};
-  cy(bb.y0);cy(bb.y1);cy(LP.piso);
+  cy(bb.y0);cy(bb.y1);cy(piso);
   LP.divisas.forEach(cx);
   LP.itens.forEach(i=>{cx(i.x-String(i.n).length*h*.36);cx(i.x+String(i.n).length*h*.36);cy(i.y-h*0.7);cy(i.y+h*0.7);});
   LC.itens.forEach(i=>{cx(i.texto.x-i.meia);cx(i.texto.x+i.meia);
@@ -9055,6 +9082,24 @@ function detPranchaSVG(s,folha,obra,parte){
       '" y2="'+Y(g.b.y)+'" stroke="#8a929a" stroke-width="'+w+
       '" stroke-dasharray="'+(+fino*4).toFixed(1)+' '+(+fino*3).toFixed(1)+'"/>'));
   });
+  /* cota entre as verticais (só nos trechos) */
+  const textosCota=[];   // entram depois das chamadas, por cima das linhas
+  if(CV){
+    const cor='#1d4f91',txt=(x,y,t,tam,anc,peso)=>textosCota.push('<text x="'+X(x)+'" y="'+Y(y)+'" font-size="'+tam+
+      '"'+(peso?' font-weight="700"':'')+' fill="'+cor+'" text-anchor="'+anc+'" dominant-baseline="central"'+
+      /* contorno branco: as chamadas cruzam a faixa e o número continua legível */
+      ' stroke="#fff" stroke-width="'+(h*esc*.35).toFixed(2)+'" paint-order="stroke" stroke-linejoin="round">'+svgEsc(t)+'</text>');
+    const tam=(h*esc*.9).toFixed(2);
+    if(CV.vs.length>1)linha({x:CV.vs[0].x,y:CV.y},{x:CV.vs[CV.vs.length-1].x,y:CV.y},cor,fino);
+    CV.vs.forEach((v,k)=>{
+      linha({x:v.x,y:v.yb-h*.3},{x:v.x,y:CV.y-h*.5},cor,fino);                       // linha de chamada
+      linha({x:v.x-h*.3,y:CV.y-h*.3},{x:v.x+h*.3,y:CV.y+h*.3},cor,(+fino*2.5).toFixed(2)); // traço da cota
+      txt(v.x,CV.y-h*1.25,String(v.p.pos||v.p.cod||''),tam,'middle',true);
+      if(k)txt((v.x+CV.vs[k-1].x)/2,CV.y+h*.75,detFmtCota(v.x-CV.vs[k-1].x),tam,'middle');
+    });
+    if(CV.inicio>1)txt(CV.vs[0].x,CV.y-h*2.6,(CV.vs[0].p.pos||'1ª vertical')+' a '+detFmtCota(CV.inicio)+' '+DET_UNID+
+      ' do início da tesoura',tam,'start');
+  }
   /* chamadas */
   LC.itens.forEach(i=>{
     for(let k=1;k<i.caminho.length;k++)linha(i.caminho[k-1],i.caminho[k],'#78838e',fino);
@@ -9066,6 +9111,7 @@ function detPranchaSVG(s,folha,obra,parte){
       Y(i.texto.y+((i.linhas.length-1)/2-k)*h*DXF_CHAM_ENTRELINHA)+'" font-size="'+hp+
       '" fill="#D53309" text-anchor="'+(i.lado>0?'start':'end')+'" dominant-baseline="central">'+svgEsc(t)+'</text>'));
   });
+  o.push(...textosCota);
   const planificada=DT_IDENT_MODO==='dividido';
   const tit=(planificada?'MONTAGEM — PEÇAS PLANIFICADAS':'MONTAGEM — PEÇA INTEIRA')+' · Estrutura '+detLetraIdent(s)+(parte?(parte.completa?' · TESOURA COMPLETA ('+parte.n+' trechos a seguir)':' · TRECHO '+parte.k+'/'+parte.n):'')+
             ' · '+(s.nomeFicha||'')+' · vão '+(s.vao/1000).toFixed(2).replace('.',',')+' m · '+
@@ -9145,7 +9191,7 @@ function detPranchas(secoes,folha,partes){
     const bb=detCaixa(s), L=bb.x1-bb.x0, saida=[detPranchaSVG(s,folha,obra,{completa:true,n})];
     for(let k=0;k<n;k++){
       const f=detFatia(s,bb.x0+k*L/n-0.01,bb.x0+(k+1)*L/n+(k===n-1?1:0));
-      if(f)saida.push(detPranchaSVG(f,folha,obra,{k:k+1,n}));
+      if(f)saida.push(detPranchaSVG(f,folha,obra,{k:k+1,n,x0:bb.x0}));
     }
     return saida.join('');
   }).join('');
@@ -28194,7 +28240,7 @@ if('serviceWorker' in navigator && location.protocol.startsWith('http')){
 }
 </script>
 <script>/* versão publicada (PADRAO_RM.md §3): sobe a cada publicação, junto com o CACHE do sw.js */
-const APP_VER='v219';
+const APP_VER='v220';
 </script>
 <script id="rmVersaoBloco">
 /* ===== SELO DE VERSÃO — igual em todos os sistemas (PADRAO_RM.md §3) =====
