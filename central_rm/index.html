@@ -4515,6 +4515,53 @@ try { var _e = localStorage.getItem('rm_estilo_ultimo'); if (_e === 'viva' || _e
      d'agua atras do painel. -->
 
 <!-- Firebase (mesmo projeto/login usado em todos os outros sistemas da RM) -->
+<script id="rmPerguntaTela">
+/* ---- perguntas e avisos na própria tela ----
+   No programa instalado (Electron) o confirm() e o alert() nativos devolvem a
+   tela SEM o foco do teclado: depois deles o campo recebe o clique mas não a
+   digitação ("ao usar a opção limpar lista ela bloqueia e não consigo mais
+   escrever"). Toda pergunta da Central passa por rmPergunta, e o aviso
+   simples por rmAvisoTela -- que também assume o lugar do alert(). */
+(function () {
+  var nativo = window.alert;
+  function esc(t) { return String(t == null ? '' : t).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+  function caixa(titulo, texto, botoes, padrao) {
+    var volta = document.activeElement;
+    var fundo = document.createElement('div');
+    fundo.className = 'dlg-fundo';
+    fundo.innerHTML = '<div class="dlg" role="dialog" aria-modal="true">'
+      + (titulo ? '<div class="dlg-cab">' + esc(titulo) + '</div>' : '')
+      + (texto ? '<div class="dlg-sub" style="white-space:pre-line">' + esc(texto) + '</div>' : '')
+      + '<div class="dlg-pe">' + botoes.map(function (b, i) {
+        return '<button class="docs-bt' + (b.pri ? ' pri' : '') + '" data-i="' + i + '">' + esc(b.rot) + '</button>'; }).join('') + '</div></div>';
+    function fecha(i) {
+      document.removeEventListener('keydown', tecla, true); fundo.remove();
+      try { if (volta && volta.focus && document.contains(volta)) volta.focus(); } catch (e) {}
+      var b = botoes[i]; if (b && b.fn) b.fn();
+    }
+    function tecla(e) {
+      if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); fecha(-1); }
+      else if (e.key === 'Enter' && document.activeElement && document.activeElement.closest('.dlg-fundo') === fundo) {
+        e.preventDefault(); fecha(+document.activeElement.dataset.i); }
+    }
+    fundo.addEventListener('click', function (e) {
+      var b = e.target.closest('[data-i]'); if (b) fecha(+b.dataset.i); else if (e.target === fundo) fecha(-1); });
+    document.addEventListener('keydown', tecla, true);
+    document.body.appendChild(fundo);
+    var f = fundo.querySelector('[data-i="' + padrao + '"]'); if (f) f.focus();
+  }
+  /* o: {titulo, texto, ok: 'Excluir', aoOk: fn, aoCancelar: fn} */
+  window.rmPergunta = function (o) {
+    caixa(o.titulo, o.texto, [{ rot: o.cancelar || 'Cancelar', fn: o.aoCancelar }, { rot: o.ok || 'OK', pri: true, fn: o.aoOk }], 1);
+  };
+  window.rmAvisoTela = function (m) {
+    if (!document.body) { try { return nativo.call(window, m); } catch (e) { return; } }
+    var t = String(m == null ? '' : m), i = t.indexOf('\n\n');
+    caixa(i > 0 && i < 90 ? t.slice(0, i) : '', i > 0 && i < 90 ? t.slice(i + 2) : t, [{ rot: 'OK', pri: true }], 0);
+  };
+  window.alert = window.rmAvisoTela;
+})();
+</script>
 <script src="sync-info.js"></script>
 <script src="systems-manifest.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js" crossorigin="anonymous"></script>
@@ -4522,7 +4569,7 @@ try { var _e = localStorage.getItem('rm_estilo_ultimo'); if (_e === 'viva' || _e
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js" crossorigin="anonymous"></script>
 
 <script>/* versão publicada (PADRAO_RM.md §3): sobe a cada publicação, junto com o CACHE do sw.js */
-const APP_VER='v139';
+const APP_VER='v140';
 </script>
 <script>
   /* ===== LOGIN (Firebase Authentication) =====
@@ -5131,9 +5178,10 @@ const APP_VER='v139';
   }
   function excluirContato(id){
     const c = _contatos[id]; if (!c) return;
-    if (!confirm('Excluir ' + (c.nome || 'este contato') + '?\n\nCompromissos que apontavam para ele ficam sem aviso.')) return;
-    db.ref(contatosPath() + '/' + id).remove();
-    delete _contatos[id]; renderContatos();
+    rmPergunta({ titulo: 'Excluir ' + (c.nome || 'este contato') + '?', texto: 'Compromissos que apontavam para ele ficam sem aviso.', ok: 'Excluir', aoOk: function () {
+      db.ref(contatosPath() + '/' + id).remove();
+      delete _contatos[id]; renderContatos();
+    } });
   }
   function startAgendaWatch(user){
     stopAgendaWatch();
@@ -5605,9 +5653,10 @@ const APP_VER='v139';
     closeAddLembrete();
   }
   function delLembrete(id){
-    if (!confirm('Excluir este lembrete?')) return;
-    if (!auth.currentUser) return;
-    db.ref(agendaPath(auth.currentUser.uid) + '/' + id).remove();
+    rmPergunta({ titulo: 'Excluir este lembrete?', ok: 'Excluir', aoOk: function () {
+      if (!auth.currentUser) return;
+      db.ref(agendaPath(auth.currentUser.uid) + '/' + id).remove();
+    } });
   }
 
   /* ===== ACOMPANHAMENTO =====
@@ -6010,9 +6059,10 @@ const APP_VER='v139';
     w.document.write(html); w.document.close();
   }
   function limparErros() {
-    if (!confirm('Apagar o histórico de erros desta máquina?')) return;
-    _erros = {}; RM_PERSIST.gravar('erros', _erros);
-    atualizarAssistBadge(); renderAssistAba();
+    rmPergunta({ titulo: 'Apagar o histórico de erros desta máquina?', ok: 'Apagar', aoOk: function () {
+      _erros = {}; RM_PERSIST.gravar('erros', _erros);
+      atualizarAssistBadge(); renderAssistAba();
+    } });
   }
 
   /* ---------------- painel ---------------- */
@@ -7445,8 +7495,10 @@ const APP_VER='v139';
     else {
       const f = fichaDe(sis);
       if (!f || !f.urlAnterior) { alert('Não há versão anterior guardada deste sistema ainda.'); return; }
-      if (!confirm('Voltar o ' + sis.name + ' para a versão anterior' + (f.anteriorEm ? ' (' + fmtQuando(f.anteriorEm) + ')' : '') + '?\n\nEle deixa de receber atualizações até você voltar para a versão atual.')) return;
-      FIXADOS[pasta] = true; salvarFixados();
+      rmPergunta({ titulo: 'Voltar o ' + sis.name + ' para a versão anterior' + (f.anteriorEm ? ' (' + fmtQuando(f.anteriorEm) + ')' : '') + '?',
+        texto: 'Ele deixa de receber atualizações até você voltar para a versão atual.', ok: 'Voltar',
+        aoOk: () => { FIXADOS[pasta] = true; salvarFixados(); render(); if (openTabs.some((t) => t.id === id)) recarregarSistema(id); } });
+      return;
     }
     render();
     if (openTabs.some((t) => t.id === id)) recarregarSistema(id);
@@ -8493,16 +8545,18 @@ const APP_VER='v139';
   }
 
   function resetSystem(id){
-    if (!confirm('Restaurar este sistema para o padrão?')) return;
-    clearOverride(id);
-    refreshAll();
+    rmPergunta({ titulo: 'Restaurar este sistema para o padrão?', ok: 'Restaurar', aoOk: function () {
+      clearOverride(id);
+      refreshAll();
+    } });
   }
 
   function removeSystemById(id){
-    if (!confirm('Remover este sistema?')) return;
-    saveCustom(getCustom().filter(s => (s.id||makeId(s.url)) !== id));
-    clearOverride(id);
-    refreshAll();
+    rmPergunta({ titulo: 'Remover este sistema?', ok: 'Remover', aoOk: function () {
+      saveCustom(getCustom().filter(s => (s.id||makeId(s.url)) !== id));
+      clearOverride(id);
+      refreshAll();
+    } });
   }
 
   /* ===== CORES POR CATEGORIA ===== */
@@ -9289,14 +9343,14 @@ const APP_VER='v139';
         sp.textContent = '· atualização do programa disponível';
         sp.title = 'Há uma versão nova do programa instalado. Clique para baixar o instalador.';
         sp.onclick = () => {
-          if (confirm('Há uma versão nova do programa instalado.\n\n'
-            + 'Esta é a última vez que ela precisa ser instalada à mão: a partir dela o programa '
+          rmPergunta({ titulo: 'Há uma versão nova do programa instalado.', ok: 'Abrir o instalador',
+            texto: 'Esta é a última vez que ela precisa ser instalada à mão: a partir dela o programa '
             + 'se atualiza sozinho (aparece "Reiniciar e atualizar").\n\n'
-            + '1. Clique em OK para abrir a página do instalador.\n'
+            + '1. Clique em "Abrir o instalador".\n'
             + '2. Baixe o arquivo RM-Central-Setup-….exe (em "Assets").\n'
             + '3. Feche o programa e rode o instalador por cima. Seus dados ficam como estão.\n'
-            + '4. Se o Windows mostrar o aviso azul: "Mais informações" → "Executar assim mesmo".'))
-            window.open(PAGINA, '_blank');
+            + '4. Se o Windows mostrar o aviso azul: "Mais informações" → "Executar assim mesmo".',
+            aoOk: function () { window.open(PAGINA, '_blank'); } });
         };
       }
       fi.appendChild(sp);
@@ -11823,7 +11877,10 @@ const APP_VER='v139';
 
   window.docsExcluir = function (id) {
     var f = _docs[id]; if (!f) return;
-    if (!confirm('Excluir "' + (f.nome || 'documento') + '"?\n\nO arquivo é apagado do servidor e não há como desfazer.')) return;
+    rmPergunta({ titulo: 'Excluir "' + (f.nome || 'documento') + '"?', texto: 'O arquivo é apagado do servidor e não há como desfazer.', ok: 'Excluir',
+      aoOk: function () { docsExcluirJa(id, f); } });
+  };
+  function docsExcluirJa(id, f) {
     var d = db(); if (!d) return;
     /* a ficha primeiro: some da tela na hora, e um arquivo orfao no outro
        no nao atrapalha ninguem se a segunda gravacao falhar */
@@ -11831,7 +11888,7 @@ const APP_VER='v139';
       .then(function () { return d.ref(NO_ARQ + '/' + id).remove(); })
       .then(function () { avisar('Documento excluído'); })
       .catch(function (e) { avisar('Não foi possível excluir: ' + ((e && e.message) || e), 'err'); });
-  };
+  }
 
   /* Os campos do veiculo, usados pelo cadastro e pela edicao -- um lugar so,
      pra os dois nao sairem do passo. */
@@ -11885,9 +11942,11 @@ const APP_VER='v139';
   window.docsExcluirVeiculo = function (vid) {
     var v = _veiculos[vid]; if (!v) return;
     var meus = docsDo(vid);
-    if (!confirm('Excluir o veículo ' + v.placa + '?'
-      + (meus.length ? '\n\nOs ' + meus.length + ' documento(s) dele são apagados junto.' : '')
-      + '\n\nNão há como desfazer.')) return;
+    rmPergunta({ titulo: 'Excluir o veículo ' + v.placa + '?', ok: 'Excluir',
+      texto: (meus.length ? 'Os ' + meus.length + ' documento(s) dele são apagados junto.\n\n' : '') + 'Não há como desfazer.',
+      aoOk: function () { docsExcluirVeiculoJa(vid, meus); } });
+  };
+  function docsExcluirVeiculoJa(vid, meus) {
     var d = db(); if (!d) return;
     var upd = {};
     upd[NO_FICHA + '/veiculos/' + vid] = null;
@@ -11898,7 +11957,7 @@ const APP_VER='v139';
       })
       .then(function () { avisar('Veículo excluído'); })
       .catch(function (e) { avisar('Não foi possível excluir: ' + ((e && e.message) || e), 'err'); });
-  };
+  }
 
   /* -------------------------------- consulta ------------------------------ */
   function listaDocs() {
@@ -12770,25 +12829,10 @@ const APP_VER='v139';
     q('#etq-limpar').onclick = function () {
       var limpa = function () { var l = nova(st.linhas[st.linhas.length - 1]); st.linhas = [l]; FOCO = l.id; gravar(); render(); focar(l.id, true); };
       if (!st.linhas.some(function (l) { return String(l.nome || '').trim(); })) { limpa(); return; }
-      perguntaNaTela('Limpar a lista?', 'Todas as linhas saem da lista. As etiquetas já impressas não mudam.', 'Limpar', limpa);
+      rmPergunta({ titulo: 'Limpar a lista?', texto: 'Todas as linhas saem da lista. As etiquetas já impressas não mudam.', ok: 'Limpar', aoOk: limpa });
     };
     q('#etq-todas').onclick = function () { imprimir(st.linhas); };
     qa('#etiq-body [data-modo]').forEach(function (bt) { bt.onclick = function () { st.modo = bt.dataset.modo; gravar(); render(); }; });
-  }
-  function perguntaNaTela(titulo, sub, rotOk, aoOk) {
-    var fundo = document.createElement('div');
-    fundo.className = 'dlg-fundo';
-    fundo.innerHTML = '<div class="dlg" role="dialog" aria-modal="true"><div class="dlg-cab">' + titulo + '</div>'
-      + '<div class="dlg-sub">' + sub + '</div>'
-      + '<div class="dlg-pe"><button class="docs-bt" data-x>Cancelar</button><button class="docs-bt pri" data-ok>' + rotOk + '</button></div></div>';
-    function fecha() { document.removeEventListener('keydown', tecla, true); fundo.remove(); }
-    function tecla(e) { if (e.key === 'Escape') { e.preventDefault(); fecha(); } }
-    fundo.querySelector('[data-x]').onclick = fecha;
-    fundo.querySelector('[data-ok]').onclick = function () { fecha(); aoOk(); };
-    fundo.onclick = function (e) { if (e.target === fundo) fecha(); };
-    document.addEventListener('keydown', tecla, true);
-    document.body.appendChild(fundo);
-    fundo.querySelector('[data-ok]').focus();
   }
   function adicionar(depoisDe) {
     var base = st.linhas[depoisDe] || st.linhas[st.linhas.length - 1];
