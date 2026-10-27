@@ -1823,6 +1823,7 @@ else poe();
   .cmp-preco>span{font-size:12px;color:var(--muted);width:100%}
   .cmp-preco .fld{display:flex;flex-direction:column;gap:3px;font-size:12px;color:var(--muted);flex:1 1 180px}
   .cmp-preco input{max-width:140px}
+  .cmp-semb{display:flex;align-items:center;gap:6px;margin-top:10px;font-size:12.5px;color:var(--muted);cursor:pointer}
   .cmp-nota{margin-top:12px}
   /* janela do catálogo Brastelha */
   .bras-ov{position:fixed;inset:0;z-index:200;background:rgba(15,16,18,.55);display:none;align-items:center;justify-content:center;padding:16px}
@@ -17993,6 +17994,13 @@ function cmpDados(){
     if(pCh&&fin.peso>0){ov.chapa=fin.peso*pCh;itens[2].v=ov.banzo+ov.chapa;}
     else if(fin.total!=null)itens[2].v=fin.total-cu.acoBanzo+ov.banzo;
   }
+  /* "crie uma opção de tirar da soma os banzos da chapa+serviço": o
+     caminho das chapas pode ser comparado só pelas internas */
+  ov.semBanzoChapa=!!po.semBanzoChapa;
+  if(ov.semBanzoChapa&&itens[2].v!=null){
+    const bz=ov.banzo!=null?ov.banzo:(st.base&&st.base.valid?st.base.banzos:0);
+    itens[2].v-=bz||0;
+  }
   itens.forEach(i=>{i.txt=i.v==null?i.pend:cpR(i.v);});
   return {d,cu,st,fin,bloqueado,itens,ov};
 }
@@ -18023,10 +18031,11 @@ function cmpRender(){
   const nCh=plan.sheets.length;
   const linhasCp=ov&&ov.chapa!=null?[
     lin('Chapas + parceiro',cpR(ov.chapa),kgx(fin.peso,ov.pCh)+' · preço fixo desta obra'),
-    lin('Banzos',cpR(vB),'em barras de 6 m, igual aos outros')]:[
+    lin('Banzos',ov.semBanzoChapa?'—':cpR(vB),ov.semBanzoChapa?'fora da soma deste caminho':'em barras de 6 m, igual aos outros')]:[
     lin('Chapas',fin.material==null?'—':cpR(fin.material),nCh+(nCh===1?' chapa · ':' chapas · ')+cpN(plan.grossKg,0)+' kg'),
     lin('Serviço do parceiro',fin.service==null?'—':cpR(fin.service),fin.peso>0?cpN(fin.peso,0)+' kg'+(cfg.serviceRkg!=null?' × '+cpR(cfg.serviceRkg)+'/kg':''):''),
     fin.extras>0?lin('Despesas adicionais',cpR(fin.extras)):'',
+    ov&&ov.semBanzoChapa?lin('Banzos','—','fora da soma deste caminho'):
     lin('Banzos',base.valid?cpR(ov&&ov.p6?vB:base.banzos):'—','em barras de 6 m, igual aos outros')];
   const def=[
     {tit:'Tudo em barras de 6 m',sub:'Banzos e internas compradas em barra; a RM corta.',linhas:linhasCu(0)},
@@ -18052,7 +18061,9 @@ function cmpRender(){
       (melhor&&segundo!=null?'<div class="cmp-dif ok">'+cpR(segundo-i.v)+' a menos que o segundo</div>':
        dif!=null?'<div class="cmp-dif">'+cpR(dif)+' a mais · +'+cpN(min>0?dif/min*100:0,1)+'%</div>':'')+
       acao(k,i)+
-      '<ul class="cmp-lin">'+def[k].linhas.join('')+'</ul></article>';
+      '<ul class="cmp-lin">'+def[k].linhas.join('')+'</ul>'+
+      (k===2?'<label class="cmp-semb"><input type="checkbox" data-cmp-semb'+(ov&&ov.semBanzoChapa?' checked':'')+'> Tirar os banzos da soma deste caminho</label>':'')+
+      '</article>';
   }).join('');
   const barras=!e.baseCompra?'':
     '<div class="cmp-barras"><div class="cmp-barras-t">Barras de 6 m das internas</div><div class="cmp-barras-g">'+
@@ -18084,6 +18095,7 @@ function detSub(nome){
 document.getElementById('detSub').addEventListener('click',e=>{const b=e.target.closest('[data-dsub]');if(b)detSub(b.dataset.dsub);});
 document.getElementById('trocarArq').addEventListener('click',()=>detSub('lista'));
 document.getElementById('detComp').addEventListener('change',e=>{
+  if(e.target.matches('[data-cmp-semb]')){const o=cmpPrecoObraLer();o.semBanzoChapa=e.target.checked;cmpPrecoObraGravar(o);cmpRender();return;}
   const i=e.target.closest('[data-cmp-preco]');if(!i)return;
   const o=cmpPrecoObraLer();o[i.dataset.cmpPreco]=String(i.value||'').trim();cmpPrecoObraGravar(o);cmpRender();
 });
@@ -28589,7 +28601,7 @@ if('serviceWorker' in navigator && location.protocol.startsWith('http')){
 }
 </script>
 <script>/* versão publicada (PADRAO_RM.md §3): sobe a cada publicação, junto com o CACHE do sw.js */
-const APP_VER='v230';
+const APP_VER='v231';
 </script>
 <script id="rmVersaoBloco">
 /* ===== SELO DE VERSÃO — igual em todos os sistemas (PADRAO_RM.md §3) =====
