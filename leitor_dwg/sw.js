@@ -12,7 +12,7 @@
      ASSETS (ex.: o jsPDF da Telha, guardado para funcionar sem internet).
    Medido: com este arquivo a versão publicada aparece na próxima abertura;
    com o anterior, e sem service worker nenhum, voltava a versão velha. */
-const CACHE = 'rm-leitor-v224';
+const CACHE = 'rm-leitor-v225';
 const ASSETS = ['./', './index.html', 'https://cdn.jsdelivr.net/npm/@mlightcad/libredwg-web@0.7.14/+esm', 'https://cdn.jsdelivr.net/npm/@mlightcad/libredwg-web@0.7.14/wasm/libredwg-web.js', 'https://cdn.jsdelivr.net/npm/@mlightcad/libredwg-web@0.7.14/wasm/libredwg-web.wasm'];
 const PAGINA = './index.html';
 
