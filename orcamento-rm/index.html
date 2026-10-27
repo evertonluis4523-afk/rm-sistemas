@@ -3944,7 +3944,7 @@ body:not([data-theme="escuro"]){
 .cob{display:flex;flex-direction:column;gap:14px}
 /* as obras numa faixa no alto: a tabela fica com a largura inteira */
 .cob-lista{display:flex;gap:10px;overflow-x:auto;padding-bottom:2px;align-items:stretch}
-.cob-ob{flex:0 0 230px;display:block;text-align:left;border:1px solid var(--line);border-radius:12px;background:var(--surface);padding:11px 14px;cursor:pointer;font:inherit;color:var(--ink)}
+.cob-ob{flex:0 0 230px;display:block;align-self:flex-start;text-align:left;border:1px solid var(--line);border-radius:12px;background:var(--surface);padding:11px 14px;cursor:pointer;font:inherit;color:var(--ink)}
 .cob-ob:hover{border-color:var(--muted)}
 .cob-ob.on{background:var(--red-soft);border-color:var(--rm-laranja)}
 .cob-ob b{display:block;font-size:14px;font-weight:700}
@@ -4020,9 +4020,20 @@ body[data-theme="escuro"] .cob-t input[type=date]{color-scheme:dark}
 .cob-vazio b{color:var(--ink)}
 .cob-vazio .cob-lanca{margin-top:10px;max-width:640px}
 .cob-lanca{display:flex;gap:8px;flex-wrap:wrap;align-items:center;flex:0 0 auto;padding:4px 2px}
-.cob-lista .cob-lanca{flex-direction:column;align-items:stretch;justify-content:center;min-width:230px}
+.cob-lista .cob-lanca{flex:0 0 300px;flex-direction:column;align-items:stretch;justify-content:flex-start;gap:6px}
+.cob-lanca select.din{height:34px}
 .cob-lanca .din{flex:1;min-width:0;height:34px}
 .cob-n:empty{display:none}
+.cob-man{display:flex;flex-direction:column;gap:6px}
+.cob-vazio .cob-man{flex-basis:100%}
+.cob-man .btn-sm{align-self:flex-start}
+.cob-man summary{cursor:pointer;font-size:13px;font-weight:600;color:var(--muted);padding:2px 0}
+.cob-man summary:hover{color:var(--ink)}
+.cob-man[open]{padding-top:2px}
+.cob-man .din{height:34px}
+.cob-man-cab{display:flex;gap:8px;flex-wrap:wrap}
+.cob-man-cab .din{height:36px;font-size:14px}
+.cob-man-cab .cob-man-ob{font-size:17px;font-weight:800;min-width:260px}
 @media (max-width:900px){
   .cob-kpis{grid-template-columns:1fr 1fr}
   .cob-kpis>div:nth-child(2){border-right:0}
@@ -9053,7 +9064,8 @@ function cobLancar(id){
 }
 function cobTirar(){
   const o=cobAtual(); if(!o) return;
-  if(!confirm('Tirar "'+cobNomeObra(o)+'" do Compras da obra? O orçamento continua salvo; lançando de novo, a lista volta como estava.')) return;
+  if(!confirm(o.manual?'Tirar "'+cobNomeObra(o)+'" do Compras da obra? A obra e a lista de compras dela saem desta aba.'
+    :'Tirar "'+cobNomeObra(o)+'" do Compras da obra? O orçamento continua salvo; lançando de novo, a lista volta como estava.')) return;
   o.removida=true; o.editadoEm=Date.now(); COB_SEL=null; save(); cobRender(); toast('Obra tirada do controle');
 }
 function cobLancaEscolhida(){ const s=document.getElementById('cobEscolheOrc'); if(s&&s.value) cobLancar(s.value); }
@@ -9064,11 +9076,30 @@ function cobLancaveis(){
     .sort((a,b)=>((b.status==='aprovado')-(a.status==='aprovado'))||((Number(b.editadoEm||b.ts)||0)-(Number(a.editadoEm||a.ts)||0)));
 }
 function cobLancaHTML(){
-  const L=cobLancaveis(); if(!L.length) return '';
-  return '<div class="cob-lanca"><select class="din" id="cobEscolheOrc" aria-label="Orçamento para lançar">'
+  const L=cobLancaveis();
+  return '<div class="cob-lanca">'+(L.length?'<select class="din" id="cobEscolheOrc" aria-label="Orçamento para lançar">'
     +L.map(e=>'<option value="'+escapeAttr(e.id)+'">'+escapeAttr([e.numero?'Nº '+e.numero:'',cobNomeObra(e),e.cliente&&e.cliente!==cobNomeObra(e)?e.cliente:'',STATUS_ORC[e.status||'aberto']||''].filter(Boolean).join(' · '))+'</option>').join('')
-    +'</select><button type="button" class="btn-sm red" onclick="cobLancaEscolhida()">+ Lançar obra</button></div>';
+    +'</select><button type="button" class="btn-sm red" onclick="cobLancaEscolhida()">+ Lançar obra</button>':'')
+    +'<details class="cob-man"'+(L.length?'':' open')+'><summary>Obra sem orçamento no sistema</summary>'
+    +'<input class="din" id="cobManObra" placeholder="Obra (ex.: Galpão do cliente)" aria-label="Nome da obra">'
+    +'<input class="din" id="cobManCli" placeholder="Cliente" aria-label="Cliente">'
+    +'<button type="button" class="btn-sm" onclick="cobNovaManual()">+ Obra sem orçamento</button></details></div>';
 }
+/* OBRA SEM ORÇAMENTO: obra antiga, em andamento, que nunca passou pelo
+   sistema ("a forma que construiu me limita a usar apenas as feitas no
+   sistema"). Entra com nome e cliente digitados e as linhas de sempre,
+   todas editáveis e excluíveis; o orçado se digita na linha. */
+const COB_BASE_MANUAL=[['met','Estrutura metálica'],['tel','Telha de cobertura'],['tel','Telha de fechamento'],['srv','Frete'],['srv','Montagem']];
+function cobNovaManual(){
+  const ob=document.getElementById('cobManObra'), cl=document.getElementById('cobManCli');
+  const obra=String(ob&&ob.value||'').trim(), cliente=String(cl&&cl.value||'').trim();
+  if(!obra){ alert('Digite o nome da obra.'); if(ob) ob.focus(); return; }
+  const id=cobNovoId('ob');
+  cobLista().unshift({id:id,manual:true,obra:obra,cliente:cliente,numero:'',lancadaEm:rmDiaISO(),editadoEm:Date.now(),
+    linhas:COB_BASE_MANUAL.map(x=>({lid:cobNovoId(),chave:'',grupo:x[0],nome:x[1],det:'',orcado:0,faz:true,comprado:0,forn:'',dataCompra:'',entregas:[]}))});
+  COB_SEL=id; COB_ABERTA={}; save(); cobRender(); toast('Obra '+obra+' adicionada');
+}
+function cobSetObra(campo,val){ const o=cobAtual(); if(!o||!o.manual) return; o[campo]=String(val||'').trim(); cobMudou(); }
 function cobComprou(l){ return (Number(l.comprado)>0)||!!String(l.forn||'').trim()||!!l.dataCompra; }
 function cobSit(l){
   if(l.faz===false) return 'fora';
@@ -9119,7 +9150,7 @@ function cobRender(){
   const host=document.getElementById('cobBody'); if(!host) return;
   const obras=cobObras().slice().sort((a,b)=>String(b.lancadaEm||'').localeCompare(String(a.lancadaEm||''))||cobQuando(b)-cobQuando(a));
   if(!obras.length){
-    host.innerHTML='<div class="cob-vazio"><b>Nenhuma obra lançada ainda.</b><span>Escolha o orçamento da obra fechada e clique em <b>+ Lançar obra</b> (ou use "Lançar no Compras da obra" no orçamento, na aba Salvos). As linhas do orçamento entram prontas para controlar as compras.</span>'+(cobLancaHTML()||'<span>Ainda não há orçamento salvo para lançar.</span>')+'</div>';
+    host.innerHTML='<div class="cob-vazio"><b>Nenhuma obra lançada ainda.</b><span>Escolha o orçamento da obra fechada e clique em <b>+ Lançar obra</b> (ou use "Lançar no Compras da obra" no orçamento, na aba Salvos): as linhas do orçamento entram prontas. Obra antiga, que não tem orçamento aqui, entra em <b>Obra sem orçamento no sistema</b>.</span>'+cobLancaHTML()+'</div>';
     cobBadge(); return;
   }
   if(!COB_SEL||!obras.some(o=>o.id===COB_SEL)) COB_SEL=obras[0].id;
@@ -9136,9 +9167,11 @@ function cobRender(){
   });
   lista+=cobLancaHTML();
   const c=cobContas(o), av=cobAvisos(o), dif=round2c(c.difComp-c.difBase);
-  let h='<div class="cob-top"><div><h3>'+escapeAttr(cobNomeObra(o))+'</h3><p>'
-    +escapeAttr([o.cliente,o.numero?'Orçamento Nº '+o.numero:'',o.lancadaEm?'lançada em '+cobData(o.lancadaEm)+'/'+String(o.lancadaEm).slice(0,4):'',cobOrc(o.id)?'':'o orçamento não está mais nos Salvos'].filter(Boolean).join(' · '))+'</p></div>'
-    +'<span style="flex:1"></span><button type="button" class="btn-sm" onclick="cobImprimir()">Imprimir lista</button><button type="button" class="btn-sm" onclick="cobTirar()" title="Tira a obra desta aba; o orçamento continua salvo">Tirar do controle</button></div>';
+  const quando=o.lancadaEm?'lançada em '+cobData(o.lancadaEm)+'/'+String(o.lancadaEm).slice(0,4):'';
+  let h='<div class="cob-top"><div>'+(o.manual
+      ?'<div class="cob-man-cab"><input class="din cob-man-ob" value="'+escapeAttr(o.obra||'')+'" aria-label="Nome da obra" onchange="cobSetObra(\'obra\',this.value)"><input class="din" value="'+escapeAttr(o.cliente||'')+'" placeholder="Cliente" aria-label="Cliente" onchange="cobSetObra(\'cliente\',this.value)"></div><p>obra sem orçamento no sistema'+(quando?' · '+quando:'')+'</p>'
+      :'<h3>'+escapeAttr(cobNomeObra(o))+'</h3><p>'+escapeAttr([o.cliente,o.numero?'Orçamento Nº '+o.numero:'',quando,cobOrc(o.id)?'':'o orçamento não está mais nos Salvos'].filter(Boolean).join(' · '))+'</p>')+'</div>'
+    +'<span style="flex:1"></span><button type="button" class="btn-sm" onclick="cobImprimir()">Imprimir lista</button><button type="button" class="btn-sm" onclick="cobTirar()" title="'+(o.manual?'Tira a obra desta aba':'Tira a obra desta aba; o orçamento continua salvo')+'">Tirar do controle</button></div>';
   h+='<div class="cob-kpis"><div><span>Orçado</span><b>'+brl(c.orcado)+'</b><small>'+c.n+' linha(s) na obra</small></div>'
     +'<div><span>Comprado</span><b>'+brl(c.comprado)+'</b><small>'+c.nComprados+' de '+c.n+' itens</small></div>'
     +'<div><span>Falta comprar</span><b class="'+(c.nFalta?'v':'')+'">'+brl(c.falta)+'</b><small>'+c.nFalta+' item(ns)</small></div>'
@@ -9886,7 +9919,7 @@ function applyImport(){
    publicacao, e ha uma prova automatica que falha se um subir sem o outro.
    Assim o numero na tela e' o mesmo do arquivo que o aparelho guardou, e
    dizer "estou na v15" passa a significar alguma coisa. */
-const APP_VER='v130';
+const APP_VER='v131';
 (function(){ try{ const p=document.getElementById('verPill'); if(p)p.textContent=APP_VER; }catch(e){} })();
 /* Versao nova assumiu com a pagina aberta: avisa, em vez de recarregar por
    conta propria e jogar fora um orcamento pela metade. */
