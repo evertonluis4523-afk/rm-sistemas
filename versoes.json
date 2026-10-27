@@ -1,58 +1,58 @@
 {
  "Controle-estoque-maquinas": {
-  "commit": "150fc92",
+  "commit": "d01bd1e",
   "versao": "v34"
  },
  "Pedidos_perfitec": {
-  "commit": "c96029d",
+  "commit": "e1f0a4d",
   "versao": "v74"
  },
  "almo-os": {
-  "commit": "a743353",
+  "commit": "8380103",
   "versao": "v97"
  },
  "calculadora-pu": {
-  "commit": "42acdb5",
+  "commit": "24b0186",
   "versao": "v101"
  },
  "calculo_pre_moldados": {
-  "commit": "daf3b75",
+  "commit": "a75879f",
   "versao": "v42"
  },
  "central_rm": {
-  "commit": "2e969e3",
+  "commit": "b5ea9fa",
   "versao": "v140"
  },
  "controle_cheques": {
-  "commit": "4cc6211",
+  "commit": "fe28867",
   "versao": "v73"
  },
  "controle_compras": {
-  "commit": "9a5fc8e",
+  "commit": "ad7e23f",
   "versao": "v74"
  },
  "controle_obras": {
-  "commit": "df00716",
+  "commit": "f1399d9",
   "versao": "v102"
  },
  "leitor_dwg": {
-  "commit": "10d9a94",
-  "versao": "v227"
+  "commit": "a57dec9",
+  "versao": "v228"
  },
  "orcamento-rm": {
-  "commit": "c527a23",
+  "commit": "f489c41",
   "versao": "v132"
  },
  "propostas_rm": {
-  "commit": "a3401a4",
+  "commit": "e362e07",
   "versao": "v34"
  },
  "recibos_rm": {
-  "commit": "641b642",
+  "commit": "1d9428c",
   "versao": "v271"
  },
  "rm_contas": {
-  "commit": "fee75d2",
+  "commit": "611eac3",
   "versao": "v67"
  }
 }
