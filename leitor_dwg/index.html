@@ -3425,15 +3425,17 @@ body:not([data-theme="escuro"]){
       <div class="saidas">
         <div class="saida"><div class="saida-t">Compra</div><div class="btnrow">
           <button class="btn primary" id="exportOrc">Importar p/ Orçamento RM</button>
-          <button class="btn ghost" id="listaForn">Pedido ao fabricante ✉</button>
+          <button class="btn ghost" id="lfBarras">Pedido de barras 6 m ✉</button>
           <button class="btn ghost" id="copy">Copiar lista</button>
           <button class="btn ghost" id="print">Imprimir / PDF</button>
           <button class="btn ghost" id="saveObra">Salvar obra</button></div></div>
         <div class="saida"><div class="saida-t">Fábrica</div><div class="btnrow">
           <button class="btn" id="detalhar">Detalhamento ✂</button>
-          <button class="btn ghost" id="cutReport">Aproveitamento em barra 6 m</button></div></div>
+          <button class="btn ghost" id="cutReport">Aproveitamento em barra 6 m</button>
+          <button class="btn ghost" id="listaForn">Pedido detalhado ✉</button></div></div>
         <div class="saida"><div class="saida-t">Laser</div><div class="btnrow">
-          <button class="btn ghost" id="chapasParceiro">Chapas + parceiro / DXF laser</button></div></div>
+          <button class="btn ghost" id="chapasParceiro">Chapas + parceiro / DXF laser</button>
+          <button class="btn ghost" id="lfChapas">Pedido chapas + parceiro ✉</button></div></div>
       </div>
 
       <section id="cpPanel" class="hide" aria-label="Chapas e produção terceirizada"></section>
@@ -15363,7 +15365,8 @@ function cuCalcular(d){
    código, comprimento e quantidade.
    ========================================================================= */
 
-function htmlListaFornecedor(d){
+function htmlListaFornecedor(d,opt){
+  opt=opt||{};
   const obra=obraAtual(),dataBr=new Date().toLocaleDateString('pt-BR');
   const logo=(typeof LOGO_RM!=='undefined'&&LOGO_RM)
     ?'<img src="'+LOGO_RM+'" style="height:50px;display:block">'
@@ -15487,7 +15490,7 @@ function htmlListaFornecedor(d){
 
   return '<div class="rm-sheet lf-sheet">'+'<div class=\"rm-dagua\" aria-hidden=\"true\"><img src=\"'+LOGO_MARCA_DAGUA+'\" alt=\"\"></div>'+
     '<div class="rm-head"><div class="rm-logo">'+logo+'</div>'+
-      '<div class="rm-co">'+rmTimbre2()+'</div></div>'+'<div class="doc-tag tb2-tipo">Pedido de Detalhamento · Peças cortadas</div>'+
+      '<div class="rm-co">'+rmTimbre2()+'</div></div>'+'<div class="doc-tag tb2-tipo">'+(opt.chapas?'Pedido de Detalhamento · Chapas + parceiro':'Pedido de Detalhamento · Peças cortadas')+'</div>'+
     '<div class="rm-body">'+
       '<div class="rm-obra"><span>Obra / Cliente</span><b>'+escapeHtml(obra||'(sem obra)')+'</b>'+
         '<span class="rm-date">'+dataBr+'</span></div>'+
@@ -15499,6 +15502,7 @@ function htmlListaFornecedor(d){
       '</div>'+
       /* sem o quadro de notas de oficina: "Essa informação não precisa sair
          no pedido para o fornecedor" -- o pedido é só a lista */
+      (opt.chapas||'')+
       corpo+
     '</div></div>';
 }
@@ -16212,7 +16216,54 @@ function lfComBanzos(d,secoes){
   });
   return {...d,grupos};
 }
-document.getElementById('listaForn').addEventListener('click',()=>{
+/* ---- os três pedidos, um em cada grupo de botões ----
+   Compra: barras de 6 m por perfil (banzos e internas, como a lista de compra).
+   Fábrica: tudo detalhado, peça a peça com o código.
+   Laser: o mesmo detalhado, mais quantas chapas de cada largura o parceiro
+   precisa (do plano de chapas). */
+function lfResumoChapas(d){
+  let st;try{st=cpDados(d,cuCalcular(d));}catch(_){return '';}
+  const sh=(st&&st.plan&&st.plan.sheets)||[];if(!sh.length)return '';
+  const por={};
+  sh.forEach(x=>{const k=(x.mat||'carbono')+'|'+x.esp+'|'+x.width+'|'+(x.length||3000);
+    (por[k]=por[k]||{mat:x.mat||'carbono',esp:x.esp,w:x.width,l:x.length||3000,n:0}).n++;});
+  const nb=v=>Math.round(v).toLocaleString('pt-BR');
+  const linhas=Object.values(por).sort((a,b)=>a.esp-b.esp||a.w-b.w);
+  return '<div class="lf-g lf-chapas"><div class="lf-gh"><b>Chapas para o parceiro</b><span class="lf-res">'+nb(sh.length)+
+    (sh.length===1?' chapa':' chapas')+'</span></div><div class="lf-cols"><table class="lf-t"><thead><tr>'+
+    '<th>Material</th><th class="n">Espessura</th><th class="n">Largura × comprimento</th><th class="n">Chapas</th></tr></thead><tbody>'+
+    linhas.map(x=>'<tr><td>'+escapeHtml(x.mat)+'</td><td class="n">'+String(x.esp).replace('.',',')+' mm</td><td class="n lf-len">'+
+      nb(x.w)+' × '+nb(x.l)+'</td><td class="n lf-qtd">'+nb(x.n)+'</td></tr>').join('')+'</tbody></table></div></div>';
+}
+function htmlPedidoBarras(d){
+  const compra=d.compraBase||cuCompraBasePorFuncao(d.barra),nb=v=>Math.round(v).toLocaleString('pt-BR');
+  const por={};
+  [['Banzo',compra.banzos.linhas],['Interno',compra.internos.linhas]].forEach(([uso,ls])=>(ls||[]).forEach(g=>{
+    const k=cleanProfile(g.perfil)+'|'+(g.mat||'');
+    const x=por[k]||(por[k]={perfil:cleanProfile(g.perfil),mat:g.mat||'',usos:[],barras:0,metros:0,kg:0});
+    if(x.usos.indexOf(uso)<0)x.usos.push(uso);
+    x.barras+=g.barras||0;x.metros+=(g.barras||0)*d.barra/1000;
+    x.kg+=cmpPesoBarras([g],d.barra);
+  }));
+  const ls=Object.values(por).sort((a,b)=>a.perfil.localeCompare(b.perfil,undefined,{numeric:true}));
+  const tb=ls.reduce((s,x)=>s+x.barras,0),tk=ls.reduce((s,x)=>s+x.kg,0);
+  const logo=(typeof LOGO_RM!=='undefined'&&LOGO_RM)?'<img src="'+LOGO_RM+'" style="height:50px;display:block">':'<div style="font-weight:800;font-size:20px;color:#D53309">RM</div>';
+  return '<div class="rm-sheet lf-sheet">'+'<div class="rm-dagua" aria-hidden="true"><img src="'+LOGO_MARCA_DAGUA+'" alt=""></div>'+
+    '<div class="rm-head"><div class="rm-logo">'+logo+'</div><div class="rm-co">'+rmTimbre2()+'</div></div>'+
+    '<div class="doc-tag tb2-tipo">Pedido de compra · Barras de '+nb(d.barra)+' mm</div>'+
+    '<div class="rm-body"><div class="rm-obra"><span>Obra / Cliente</span><b>'+escapeHtml(obraAtual()||'(sem obra)')+'</b>'+
+      '<span class="rm-date">'+new Date().toLocaleDateString('pt-BR')+'</span></div>'+
+    '<div class="rc-res"><div><span>Perfis</span><b>'+ls.length+'</b></div><div><span>Barras</span><b>'+nb(tb)+'</b></div>'+
+      (tk?'<div><span>Peso estimado</span><b>'+nb(tk)+' kg</b></div>':'')+'</div>'+
+    '<div class="lf-g"><div class="lf-cols"><table class="lf-t lf-barras"><thead><tr><th>Perfil</th><th>Uso</th><th class="n">Barras</th><th class="n">Metros</th><th class="n">Peso est.</th></tr></thead><tbody>'+
+      ls.map(x=>'<tr><td class="lf-cod">'+escapeHtml(x.perfil)+(x.mat?' <span class="lf-mat">'+escapeHtml(x.mat)+'</span>':'')+'</td><td>'+x.usos.join(' + ')+
+        '</td><td class="n lf-qtd">'+nb(x.barras)+'</td><td class="n">'+nb(x.metros)+'</td><td class="n">'+(x.kg?nb(x.kg)+' kg':'—')+'</td></tr>').join('')+
+    '</tbody></table></div></div></div></div>';
+}
+document.getElementById('listaForn').addEventListener('click',()=>lfPedido('det'));
+document.getElementById('lfChapas').addEventListener('click',()=>lfPedido('chapas'));
+document.getElementById('lfBarras').addEventListener('click',()=>lfPedido('barras'));
+function lfPedido(modo){
   const d0=dadosRelatorioCorte();
   if(!d0.grupos.length){alert('Nenhuma peça interna disponível para o pedido.');return;}
   if((d0.vinculoErros||[]).length){alert('Pedido bloqueado — o fornecedor receberia uma lista menor que a obra:\n\n'+d0.vinculoErros.join('\n'));return;}
@@ -16223,17 +16274,19 @@ document.getElementById('listaForn').addEventListener('click',()=>{
      botões delas no detalhamento. */
   const detS=detSecoesCache(), secoes=(detS&&detS.secoes)||[];
   let comBanzos=false;try{comBanzos=localStorage.getItem(LF_BANZOS_KEY)==='1';}catch(_){}
+  const chapas=modo==='chapas'?lfResumoChapas(d0):'';
   const monta=()=>{
     const d=comBanzos?lfComBanzos(d0,secoes):d0;
-    pa.innerHTML=htmlListaFornecedor(d)+
-      '<div class="lf-botoes" style="margin-top:12px"><label class="lf-opc" style="display:inline-flex;align-items:center;gap:6px;margin-right:12px">'+
-      '<input type="checkbox" id="lfBanzos"'+(comBanzos?' checked':'')+'> Incluir banzos (superior e inferior)</label>'+
+    pa.innerHTML=(modo==='barras'?htmlPedidoBarras(d0):htmlListaFornecedor(d,{chapas}))+
+      '<div class="lf-botoes" style="margin-top:12px">'+(modo==='barras'?'':'<label class="lf-opc" style="display:inline-flex;align-items:center;gap:6px;margin-right:12px">'+
+      '<input type="checkbox" id="lfBanzos"'+(comBanzos?' checked':'')+'> Incluir banzos (superior e inferior)</label>')+
       '<button class="btn" id="lfPrint">Imprimir / PDF</button> '+
       '<button class="btn ghost" id="lfClose">Fechar</button></div>';
     liga();
   };
   const liga=()=>{
-  document.getElementById('lfBanzos').addEventListener('change',e=>{
+  const cb=document.getElementById('lfBanzos');
+  if(cb)cb.addEventListener('change',e=>{
     comBanzos=e.target.checked;try{localStorage.setItem(LF_BANZOS_KEY,comBanzos?'1':'0');}catch(_){}
     monta();});
   /* Paisagem, pelo mesmo caminho da prancha: @page nao aceita seletor, entao
@@ -16244,14 +16297,14 @@ document.getElementById('listaForn').addEventListener('click',()=>{
     est.id='pgPedido';
     est.textContent=pranchaPaginaCSS('A4',8);
     document.head.appendChild(est);
-    sairEmPDF(('Pedido Detalhamento '+(obraAtual()||'obra')).replace(/[\\/:*?"<>|]+/g,'-').trim().slice(0,90));
+    sairEmPDF(((modo==='barras'?'Pedido Barras 6m ':modo==='chapas'?'Pedido Chapas parceiro ':'Pedido Detalhamento ')+(obraAtual()||'obra')).replace(/[\\/:*?"<>|]+/g,'-').trim().slice(0,90));
     setTimeout(()=>{const e=document.getElementById('pgPedido');if(e)e.remove();},3000);
   });
   document.getElementById('lfClose').addEventListener('click',()=>{pa.classList.add('hide');pa.innerHTML='';});
   };
   monta();
   pa.scrollIntoView({behavior:'smooth',block:'start'});
-});
+}
 CU_CAMPOS.forEach(([id])=>{const e=document.getElementById(id);
   if(e)e.addEventListener('change',cuColher);});
 document.getElementById('cuAddCalib').addEventListener('click',()=>{
@@ -28536,7 +28589,7 @@ if('serviceWorker' in navigator && location.protocol.startsWith('http')){
 }
 </script>
 <script>/* versão publicada (PADRAO_RM.md §3): sobe a cada publicação, junto com o CACHE do sw.js */
-const APP_VER='v229';
+const APP_VER='v230';
 </script>
 <script id="rmVersaoBloco">
 /* ===== SELO DE VERSÃO — igual em todos os sistemas (PADRAO_RM.md §3) =====
