@@ -3957,6 +3957,7 @@ body:not([data-theme="escuro"]){
 .cob-top{display:flex;gap:12px;align-items:flex-start;padding:16px 18px 12px}
 .cob-top h3{margin:0;font-size:19px;font-weight:800;letter-spacing:-.01em}
 .cob-top p{margin:3px 0 0;font-size:13px;color:var(--muted)}
+.cob-top p.cob-fonte{font-size:12.5px}
 .cob-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
 .cob-kpis>div{padding:11px 18px;border-right:1px solid var(--line)}
 .cob-kpis>div:last-child{border-right:0}
@@ -3994,6 +3995,7 @@ body[data-theme="escuro"] .cob-t input[type=date]{color-scheme:dark}
 .cob-l.cob-fora input.din{opacity:.55}
 .cob-mais-c{color:var(--rm-erro)!important;font-weight:700} .cob-menos-c{color:var(--ok)!important;font-weight:700}
 .cob-sem{color:var(--muted)}
+.cob-it small.cob-saiu{color:var(--warn);font-weight:700}
 .cob-st{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;font-weight:700;padding:3px 9px;border-radius:999px;white-space:nowrap}
 .cob-st::before{content:'';width:7px;height:7px;border-radius:50%;background:currentColor}
 .cob-st-comprar{color:var(--rm-erro);background:color-mix(in srgb,var(--rm-erro) 10%,transparent)}
@@ -9022,7 +9024,11 @@ function cobLinhasDoOrcamento(e){
     if(ja){ ja.orcado=round2c(ja.orcado+(Number(orcado)||0)); ja.area=round2c((ja.area||0)+(area||0)); return; }
     out.push({chave:k,grupo:grupo,nome:nome,det:det||'',orcado:round2c(Number(orcado)||0),area:area||0});
   };
-  if(r.perf.length) poe('met','perfis','Estrutura metálica (perfis)',num(r.peso,0)+' kg orçados',r.perf.reduce((s,x)=>s+(Number(x.tot)||0),0));
+  /* metálica perfil por perfil: parte se compra num fornecedor, parte noutro
+     ("vai ter casos que vou comprar parte da metálica em um fornecedor e
+     outra parte em outro") */
+  r.perf.forEach(x=>{ if(x.falta) return;
+    poe('met','perfil|'+x.d+'|'+x.x,x.d+(x.x?' · '+x.x:''),[x.q!=null?String(x.q).replace('.',',')+' pç':'',x.peso?num(x.peso,0)+' kg':''].filter(Boolean).join(' · ')+' orçados',x.tot); });
   r.telha.forEach(x=>{
     const t=cobNorm(x.x), m=/([\d.]+,\d+|\d+) m²/.exec(String(x.x||'')), a=m?parseNumLoose(m[1]):0;
     const tipo=/cobert/.test(t)?'cobertura':/fecham|frente|fundo|lateral|parede|oitao/.test(t)?'fechamento':'';
@@ -9048,8 +9054,19 @@ function cobRegistro(o){
   base.forEach(b=>{
     const l=o.linhas.find(x=>x.chave===b.chave);
     if(!l){ o.linhas.push({lid:cobNovoId(),chave:b.chave,grupo:b.grupo,nome:b.nome,det:b.det,orcado:b.orcado,faz:true,comprado:0,forn:'',dataCompra:'',entregas:[]}); mudou=true; }
-    else if(l.orcado!==b.orcado||l.det!==b.det){ l.orcado=b.orcado; l.det=b.det; mudou=true; }
+    else { if(l.orcado!==b.orcado||l.det!==b.det){ l.orcado=b.orcado; l.det=b.det; mudou=true; } if(l.saiu){ delete l.saiu; mudou=true; } }
   });
+  /* O QUE SAIU DO ORÇAMENTO SAI DAQUI. Antes a lista só crescia: telha
+     excluída do orçamento depois do lançamento continuava como "a comprar".
+     Linha sem nada lançado (compra, entrega, anexo) sai; com algo lançado
+     fica, marcada, para não perder o que já foi registrado. Só vale com o
+     orçamento salvo à mão -- sem ele (apagado dos Salvos) nada se mexe. */
+  if(e){ const ks={}; base.forEach(b=>{ ks[b.chave]=1; });
+    o.linhas=o.linhas.filter(l=>{
+      if(!l.chave||ks[l.chave]) return true;
+      if(!cobComprou(l)&&!(l.entregas||[]).length&&!l.anexo){ mudou=true; return false; }
+      if(!l.saiu){ l.saiu=true; mudou=true; } return true;
+    }); }
   if(mudou){ o.editadoEm=Date.now(); save(); }
   return o;
 }
@@ -9170,7 +9187,8 @@ function cobRender(){
   const quando=o.lancadaEm?'lançada em '+cobData(o.lancadaEm)+'/'+String(o.lancadaEm).slice(0,4):'';
   let h='<div class="cob-top"><div>'+(o.manual
       ?'<div class="cob-man-cab"><input class="din cob-man-ob" value="'+escapeAttr(o.obra||'')+'" aria-label="Nome da obra" onchange="cobSetObra(\'obra\',this.value)"><input class="din" value="'+escapeAttr(o.cliente||'')+'" placeholder="Cliente" aria-label="Cliente" onchange="cobSetObra(\'cliente\',this.value)"></div><p>obra sem orçamento no sistema'+(quando?' · '+quando:'')+'</p>'
-      :'<h3>'+escapeAttr(cobNomeObra(o))+'</h3><p>'+escapeAttr([o.cliente,o.numero?'Orçamento Nº '+o.numero:'',quando,cobOrc(o.id)?'':'o orçamento não está mais nos Salvos'].filter(Boolean).join(' · '))+'</p>')+'</div>'
+      :'<h3>'+escapeAttr(cobNomeObra(o))+'</h3><p>'+escapeAttr([o.cliente,o.numero?'Orçamento Nº '+o.numero:'',quando,cobOrc(o.id)?'':'o orçamento não está mais nos Salvos'].filter(Boolean).join(' · '))+'</p>'
+        +(cobOrc(o.id)?'<p class="cob-fonte">Linhas do orçamento salvo'+(cobOrc(o.id).salvoEm?' em '+escapeAttr(String(cobOrc(o.id).salvoEm).replace(/:\d{2}$/,'')):'')+'. Mudou o orçamento? Salve (Atualizar este) e a lista acompanha.</p>':''))+'</div>'
     +'<span style="flex:1"></span><button type="button" class="btn-sm" onclick="cobImprimir()">Imprimir lista</button><button type="button" class="btn-sm" onclick="cobTirar()" title="'+(o.manual?'Tira a obra desta aba':'Tira a obra desta aba; o orçamento continua salvo')+'">Tirar do controle</button></div>';
   h+='<div class="cob-kpis"><div><span>Orçado</span><b>'+brl(c.orcado)+'</b><small>'+c.n+' linha(s) na obra</small></div>'
     +'<div><span>Comprado</span><b>'+brl(c.comprado)+'</b><small>'+c.nComprados+' de '+c.n+' itens</small></div>'
@@ -9205,7 +9223,7 @@ function cobLinhaHTML(l){
   }
   const dif=v>0&&p>0?(p/v-1)*100:null;
   let h='<tr class="cob-l cob-'+s+'"><td><input type="checkbox" class="cob-faz"'+(l.faz!==false?' checked':'')+' title="Faz parte da obra fechada" onchange="cobSet(\''+lid+'\',\'faz\',this.checked)"></td>'
-    +'<td class="cob-it">'+(manual?'<input class="din cob-nome"'+q('nome',l.nome,' placeholder="Nome do item ou serviço"')+'>':'<b>'+escapeAttr(l.nome)+'</b>')+(l.det?'<small>'+escapeAttr(l.det)+'</small>':'')+'</td>'
+    +'<td class="cob-it">'+(manual?'<input class="din cob-nome"'+q('nome',l.nome,' placeholder="Nome do item ou serviço"')+'>':'<b>'+escapeAttr(l.nome)+'</b>')+(l.det?'<small>'+escapeAttr(l.det)+'</small>':'')+(l.saiu?'<small class="cob-saiu">não está mais no orçamento salvo</small>':'')+'</td>'
     +'<td class="r" data-l="Orçado">'+(manual?'<input class="din r cob-v"'+q('orcado',v?num(v,2):'',' placeholder="0,00"')+'>':(v?brl(v):'<span class="cob-sem">—</span>'))+'</td>'
     +'<td class="r" data-l="Comprado"><input class="din r cob-v"'+q('comprado',p?num(p,2):'',' placeholder="0,00" aria-label="Valor comprado"')+'>'+(dif!=null&&Math.abs(dif)>=0.05?'<small class="'+(dif>0?'cob-mais-c':'cob-menos-c')+'">'+(dif>0?'+ ':'− ')+num(Math.abs(dif),1)+'%</small>':'')+'</td>'
     +'<td data-l="Fornecedor"><input class="din" list="cobForns"'+q('forn',l.forn||'',' placeholder="Fornecedor"')+'></td>'
@@ -9919,7 +9937,7 @@ function applyImport(){
    publicacao, e ha uma prova automatica que falha se um subir sem o outro.
    Assim o numero na tela e' o mesmo do arquivo que o aparelho guardou, e
    dizer "estou na v15" passa a significar alguma coisa. */
-const APP_VER='v131';
+const APP_VER='v132';
 (function(){ try{ const p=document.getElementById('verPill'); if(p)p.textContent=APP_VER; }catch(e){} })();
 /* Versao nova assumiu com a pagina aberta: avisa, em vez de recarregar por
    conta propria e jogar fora um orcamento pela metade. */
