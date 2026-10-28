@@ -3837,7 +3837,13 @@ function rmDxf2000(ent,bb,layers,estilo,unid){
        o que se corta do que se vinca. O 73 conta os elementos e o 40 é o
        comprimento do ciclo; sem o 74 depois de cada 49 o R2000 recusa. */
     {tags:[[2,'DASHED'],[70,0],[3,'Tracejado __ __ __ __ __ __ __ __'],[72,65],[73,2],[40,12.7],
-           [49,6.35],[74,0],[49,-6.35],[74,0]]}
+           [49,6.35],[74,0],[49,-6.35],[74,0]]},
+    /* pontilhado e traço-ponto: as chamadas do detalhamento distinguem o
+       tipo da peça pela linha (teste leitor-chamada-pelo-tipo) */
+    {tags:[[2,'DOT'],[70,0],[3,'Pontilhado . . . . . . . . . . .'],[72,65],[73,2],[40,6.35],
+           [49,0],[74,0],[49,-6.35],[74,0]]},
+    {tags:[[2,'DASHDOT'],[70,0],[3,'Traco-ponto __ . __ . __ . __ .'],[72,65],[73,4],[40,25.4],
+           [49,12.7],[74,0],[49,-6.35],[74,0],[49,0],[74,0],[49,-6.35],[74,0]]}
   ]));
   /* Terceiro item opcional: o tipo de linha da camada. Quem já chamava passa
      só [nome, cor] e continua CONTINUOUS. */
@@ -3890,8 +3896,10 @@ function rmDxf2000(ent,bb,layers,estilo,unid){
                LWPOLYLINE:'AcDbPolyline'}[e.type];
     if(!sub)throw new Error('Entidade não suportada no DXF de detalhamento: '+e.type);
     let out=N(0,e.type)+N(5,id())+N(330,H.model)+N(100,'AcDbEntity');
-    out+=tags(e.tags.filter(p=>p[0]===8))+N(100,sub);
-    out+=tags(e.tags.filter(p=>p[0]!==8&&!(e.type==='TEXT'&&p[0]===73))
+    /* camada, tipo de linha e escala do tipo são da entidade (AcDbEntity) */
+    const daEnt=c=>c===8||c===6||c===48||c===62;
+    out+=tags(e.tags.filter(p=>daEnt(p[0])))+N(100,sub);
+    out+=tags(e.tags.filter(p=>!daEnt(p[0])&&!(e.type==='TEXT'&&p[0]===73))
       .map(p=>e.type==='TEXT'&&p[0]===7?[7,est.nome]:p));
     if(e.type==='TEXT')out+=N(100,'AcDbText')+tags(e.tags.filter(p=>p[0]===73));
     return out;
@@ -9083,6 +9091,22 @@ function detBaloes(itens,h){
   });
   return {baloes,fora};
 }
+/* ---- a linha da chamada diz o tipo da peça ----
+   Cheia na vertical, pontilhada na diagonal, tracejada na diagonal superior
+   interna e traço-ponto na inferior: seguindo a linha o montador já sabe que
+   peça procura, e uma linha que chega numa peça de outro tipo denuncia o
+   salto para a vizinha. A mesma regra no PDF (com legenda) e no DXF (tipo de
+   linha da entidade). Teste leitor-chamada-pelo-tipo. */
+const DET_TRACOS={V:null,D:'ponto',DS:'traco',DI:'tracoponto'};
+const DET_TRACO_NOME={V:'vertical',D:'diagonal',DS:'diagonal superior',DI:'diagonal inferior'};
+const DET_TRACO_DXF={ponto:'DOT',traco:'DASHED',tracoponto:'DASHDOT'};
+/* e a COR: a linha, a etiqueta e o número da peça saem na cor do tipo --
+   fora das cores que a folha já usa (azul das cotas, roxo das emendas,
+   laranja da terça). No DXF, a cor do AutoCAD mais próxima (ACI). */
+const DET_COR_TIPO={V:'#D53309',D:'#1e7b45',DS:'#0b7285',DI:'#b0246e'};
+const DET_ACI_TIPO={V:1,D:3,DS:4,DI:6};
+function detCorTipo(p){return DET_COR_TIPO[detTipoChamada(p)]||'#D53309';}
+function detTipoChamada(p){const f=(detIdentPeca(p)||{}).family;return DET_TRACOS[f]!==undefined?f:dtLocTipo(p).sigla;}
 function detNumPos(p){return +String(p&&p.pos||'').replace(/^P/,'')||0;}
 /* envelope da estrutura, sem as chamadas */
 function detCaixa(secao){
@@ -9109,8 +9133,10 @@ function detChamadas(secao,h,bb,marca,pisoBaixo){
   marca=marca||function(){};
   let ent='';
   L.itens.forEach(i=>{
-    ent+=dxfSeta('RM-CHAMADA',i.caminho[0],i.caminho[1],h);
-    for(let k=2;k<i.caminho.length;k++)ent+=dxfLinha('RM-CHAMADA',i.caminho[k-1],i.caminho[k]);
+    ent+=dxfSeta('RM-CHAMADA',i.caminho[0],i.caminho[1],h).split(dxfN(0,'LINE')).filter(Boolean).map(x=>dxfN(0,'LINE')+x+(DET_ACI_TIPO[detTipoChamada(i.p)]?dxfN(62,DET_ACI_TIPO[detTipoChamada(i.p)]):'')).join('');
+    const tp=detTipoChamada(i.p),tr=DET_TRACOS[tp],aci=DET_ACI_TIPO[tp]?dxfN(62,DET_ACI_TIPO[tp]):'';
+    const lt=(tr?dxfN(6,DET_TRACO_DXF[tr])+dxfN(48,(h*.08).toFixed(3)):'')+aci;
+    for(let k=2;k<i.caminho.length;k++)ent+=dxfLinha('RM-CHAMADA',i.caminho[k-1],i.caminho[k])+lt;
     i.caminho.forEach(marca);
     /* No modo dividido a etiqueta de quem foi emendado vai para uma camada
        propria: no AutoCAD ele isola essa camada e ve, de uma vez, quais
@@ -9118,13 +9144,14 @@ function detChamadas(secao,h,bb,marca,pisoBaixo){
     const camTxt=(DT_IDENT_MODO==='dividido'&&detPecaDividida(i.p))?'RM-CODIGO-DIVIDIDO':'RM-CODIGO';
     i.linhas.forEach((t,k)=>ent+=dxfTexto(camTxt,
       {x:i.texto.x+(i.lado>0?-i.meia:i.meia),y:i.texto.y+((i.linhas.length-1)/2-k)*h*DXF_CHAM_ENTRELINHA},h,t,0,'RM-TEXTO')
-      .replace(dxfN(72,'1'),dxfN(72,i.lado>0?'0':'2'))); // texto encostado ao seu apontamento
+      .replace(dxfN(72,'1'),dxfN(72,i.lado>0?'0':'2'))+aci); // texto encostado ao seu apontamento
     marca({x:i.texto.x-i.meia, y:i.texto.y-i.alturaTexto/2-h*.5});
     marca({x:i.texto.x+i.meia, y:i.texto.y+i.alturaTexto/2+h*.5});
   });
   /* o número na peça, na camada RM-POSICAO (desligável no CAD) */
   detBaloes(L.itens,h).baloes.forEach(b=>{
-    ent+=dxfCirculo('RM-POSICAO',b.c,b.r)+dxfTexto('RM-POSICAO',b.c,h*.64,b.num,0,'RM-TEXTO');
+    const aci=DET_ACI_TIPO[detTipoChamada(b.p)]?dxfN(62,DET_ACI_TIPO[detTipoChamada(b.p)]):'';
+    ent+=dxfCirculo('RM-POSICAO',b.c,b.r)+aci+dxfTexto('RM-POSICAO',b.c,h*.64,b.num,0,'RM-TEXTO')+aci;
   });
   return {ent, fileiras:L.fileiras, alturaTotal:L.alturaTotal,
     topo:Math.max(bb.y1,...L.itens.map(i=>i.texto.y+i.alturaTexto/2))};
@@ -9501,7 +9528,8 @@ function detPranchaSVG(s,folha,obra,parte){
   const qColL=CL.quadro.length?Math.max(...CL.quadro.map(q=>q.t.length))*QF*.56+6:0;
   const qCols=qColL?Math.max(1,Math.floor(W/qColL)):1;
   const qLin=CL.quadro.length?Math.ceil(CL.quadro.length/qCols):0;
-  const rodape=qLin?QL*(qLin+1)+2:0;
+  const legTipos=['V','D','DS','DI'].filter(f=>LC.itens.some(i=>detTipoChamada(i.p)===f));
+  const rodape=(qLin?QL*(qLin+1)+2:0)+(legTipos.length?QL+1:0);
   const Hd=H-rodape;
   /* tudo que vai no papel, para centralizar e conferir se coube */
   let x0=bb.x0,x1=bb.x1,y0=1e18,y1=-1e18;
@@ -9562,26 +9590,47 @@ function detPranchaSVG(s,folha,obra,parte){
     /* contorno branco: as chamadas cruzam a faixa e o número continua legível */
     ' stroke="#fff" stroke-width="'+(h*esc*.35).toFixed(2)+'" paint-order="stroke" stroke-linejoin="round">'+svgEsc(t.t)+'</text>');
   /* chamadas */
+  const tracoSVG=tr=>tr==='ponto'?' stroke-dasharray="0 '+(+fino*4.5).toFixed(2)+'" stroke-linecap="round"':
+    tr==='traco'?' stroke-dasharray="'+(+fino*10).toFixed(2)+' '+(+fino*5).toFixed(2)+'"':
+    tr==='tracoponto'?' stroke-dasharray="'+(+fino*12).toFixed(2)+' '+(+fino*4).toFixed(2)+' 0 '+(+fino*4).toFixed(2)+'" stroke-linecap="round"':'';
   LC.itens.forEach(i=>{
-    for(let k=1;k<i.caminho.length;k++)linha(i.caminho[k-1],i.caminho[k],'#78838e',fino);
+    const tp=detTipoChamada(i.p),tr=DET_TRACOS[tp],cor=detCorTipo(i.p);
+    /* o pontilhado precisa de um traço mais grosso para o ponto aparecer */
+    const wc=(+fino*(tr==='ponto'?1.9:tr?1.3:1)).toFixed(2);
+    for(let k=1;k<i.caminho.length;k++){const a=i.caminho[k-1],c=i.caminho[k];
+      o.push('<line class="cham" data-tipo="'+svgEsc(tp)+'" x1="'+X(a.x)+'" y1="'+Y(a.y)+'" x2="'+X(c.x)+'" y2="'+Y(c.y)+
+        '" stroke="'+cor+'" stroke-width="'+wc+'"'+tracoSVG(tr)+'/>');}
     const proximo=i.caminho[1];
     const ang=Math.atan2(proximo.y-i.ancora.y,proximo.x-i.ancora.x),L=h*0.55,ab=17*Math.PI/180;
     [ang-ab,ang+ab].forEach(a=>linha(i.ancora,
-      {x:i.ancora.x+Math.cos(a)*L,y:i.ancora.y+Math.sin(a)*L},'#78838e',fino));
-    i.linhas.forEach((t,k)=>o.push('<text x="'+X(i.texto.x+(i.lado>0?-i.meia:i.meia))+'" y="'+
+      {x:i.ancora.x+Math.cos(a)*L,y:i.ancora.y+Math.sin(a)*L},cor,fino));
+    i.linhas.forEach((t,k)=>o.push('<text class="etq" data-tipo="'+svgEsc(tp)+'" x="'+X(i.texto.x+(i.lado>0?-i.meia:i.meia))+'" y="'+
       Y(i.texto.y+((i.linhas.length-1)/2-k)*h*DXF_CHAM_ENTRELINHA)+'" font-size="'+hp+
-      '" fill="#D53309" text-anchor="'+(i.lado>0?'start':'end')+'" dominant-baseline="central">'+
+      '" fill="'+cor+'" text-anchor="'+(i.lado>0?'start':'end')+'" dominant-baseline="central">'+
       /* o P em negrito: é ele que bate com o número na peça */
       svgEsc(t).replace(/(^|-)(P\d+)(?=-)/,'$1<tspan font-weight="800">$2</tspan>')+'</text>'));
   });
-  BAL.baloes.forEach(b=>o.push('<g class="pos-peca"><circle cx="'+X(b.c.x)+'" cy="'+Y(b.c.y)+'" r="'+(b.r*esc).toFixed(2)+
-    '" fill="#fff" stroke="#D53309" stroke-width="'+(+fino*1.8).toFixed(2)+'"/><text x="'+X(b.c.x)+'" y="'+Y(b.c.y)+
-    '" font-size="'+(h*esc*.64).toFixed(2)+'" font-weight="700" fill="#D53309" text-anchor="middle" dominant-baseline="central">'+
-    svgEsc(b.num)+'</text></g>'));
+  BAL.baloes.forEach(b=>{const cor=detCorTipo(b.p);o.push('<g class="pos-peca"><circle cx="'+X(b.c.x)+'" cy="'+Y(b.c.y)+'" r="'+(b.r*esc).toFixed(2)+
+    '" fill="#fff" stroke="'+cor+'" stroke-width="'+(+fino*1.8).toFixed(2)+'"/><text x="'+X(b.c.x)+'" y="'+Y(b.c.y)+
+    '" font-size="'+(h*esc*.64).toFixed(2)+'" font-weight="700" fill="'+cor+'" text-anchor="middle" dominant-baseline="central">'+
+    svgEsc(b.num)+'</text></g>');});
   o.push(...textosCota);
   /* o quadro das emendas, no pé da folha, em colunas */
+  if(legTipos.length){
+    const yl=H-rodape+QL;let xl=0;
+    o.push('<text x="0" y="'+yl.toFixed(2)+'" font-size="'+QF+'" font-weight="700" fill="#16171a">LINHA DA CHAMADA:</text>');
+    xl=QF*11;
+    legTipos.forEach(f=>{
+      const tr=DET_TRACOS[f],w=(+fino*(tr==='ponto'?1.9:tr?1.3:1)).toFixed(2);
+      o.push('<line class="leg-cham" data-tipo="'+f+'" x1="'+xl.toFixed(2)+'" y1="'+(yl-QF*.35).toFixed(2)+'" x2="'+(xl+12).toFixed(2)+'" y2="'+(yl-QF*.35).toFixed(2)+
+        '" stroke="'+DET_COR_TIPO[f]+'" stroke-width="'+(+w*1.3).toFixed(2)+'"'+tracoSVG(tr)+'/>');
+      const t=f+' '+DET_TRACO_NOME[f];
+      o.push('<text x="'+(xl+14).toFixed(2)+'" y="'+yl.toFixed(2)+'" font-size="'+QF+'" font-weight="700" fill="'+DET_COR_TIPO[f]+'">'+svgEsc(t)+'</text>');
+      xl+=14+t.length*QF*.56+6;
+    });
+  }
   if(qLin){
-    const y0q=H-rodape+QL;
+    const y0q=H-rodape+QL+(legTipos.length?QL+1:0);
     o.push('<text x="0" y="'+y0q.toFixed(2)+'" font-size="'+QF+'" font-weight="700" fill="'+DET_RX+'">'+
       'EMENDAS DO BANZO · E1, E2... marcadas no desenho · pedaços contados da esquerda para a direita</text>');
     CL.quadro.forEach((q,k)=>{
@@ -9991,6 +10040,7 @@ function detMontarDXF(secoes,obra){
       'EXEMPLO: A-P35-V-2078MM = estrutura A, posicao P35, vertical, corte 2078 mm',
       'POSICAO P1, P2, P3...  contagem desta estrutura, da esquerda para a direita -- nunca usar o comprimento sozinho',
       'TIPO  V=vertical   D=diagonal   DI=inferior interna   DS=superior interna',
+      'LINHA DA CHAMADA  cheia vermelha=V   pontilhada verde=D   tracejada azul=DS   traco-ponto magenta=DI',
       'COMPRIMENTO  medida de corte em milimetros, com a folga de fabricacao ja descontada',
       'MONTAGEM  todos os perfis internos com U aberto para baixo; DS sobre a alma da principal; DI dentro do U ate a alma',
       DT_IDENT_MODO==='dividido'
@@ -18439,7 +18489,12 @@ function cmpRender(){
   /* banzo: sem detalhamento leva a quebra; detalhado, o plano de emenda */
   const sb=ov.semBanzoChapa,linB=k=>!cu?'':sb?lin('Banzos','—','fora da soma nos três caminhos'):k===0
     ?lin('Banzos',cpR(cu.acoBanzo),nb(cu.barrasBanzo)+' barras de 6 m · com quebra'+(ov.p6?' · '+kgx(ov.kgBanzo,ov.p6):''))
-    :lin('Banzos',cpR(cu.acoBanzoCom),nb(cu.barrasBanzoCom)+' barras de 6 m · plano de emenda'+(ov.p6?' · '+kgx(ov.kgBanzoCom,ov.p6):''));
+    /* no caminho das chapas o parceiro faz só as internas: o banzo continua
+       barra comprada, e o R$/kg dele é o da barra, não o do parceiro --
+       a linha diz isso, senão parece que o preço da chapa não pegou.
+       Teste leitor-chapas-banzo-explicado. */
+    :lin(k===2?'Banzos em barra comprada':'Banzos',cpR(cu.acoBanzoCom),nb(cu.barrasBanzoCom)+' barras de 6 m · plano de emenda'+
+      (ov.p6?' · '+kgx(ov.kgBanzoCom,ov.p6)+(k===2?' (preço da barra desta obra; o parceiro faz só as internas)':''):(k===2?' · preço da barra (o parceiro faz só as internas)':'')));
   const linhasCu=k=>!cu?[]:k===0?[
       linB(0),
       lin('Internas em barra',cpR(cu.acoInternoSem),nb(cu.barrasInterno)+' barras de 6 m'+(ov.p6?' · '+kgx(ov.kgInterno,ov.p6):'')),
@@ -29024,7 +29079,7 @@ if('serviceWorker' in navigator && location.protocol.startsWith('http')){
 }
 </script>
 <script>/* versão publicada (PADRAO_RM.md §3): sobe a cada publicação, junto com o CACHE do sw.js */
-const APP_VER='v234';
+const APP_VER='v235';
 </script>
 <script id="rmVersaoBloco">
 /* ===== SELO DE VERSÃO — igual em todos os sistemas (PADRAO_RM.md §3) =====
