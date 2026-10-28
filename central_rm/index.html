@@ -870,6 +870,9 @@ var RM_FONTE="@font-face{font-family:'Satoshi';src:url(data:font/woff2;base64,d0
     color: var(--rm-marca-txt);
     background: rgba(242,70,25,.14);
   }
+  /* no escuro (forte e suave) a laranja de ler ficava em 4,3:1 sobre o fundo do selo */
+  body[data-theme="escuro"][data-tom="forte"] .topbar-tag,
+  body[data-theme="escuro"][data-tom="suave"] .topbar-tag { color: #FF9473; }
 
   /* Versao da Central, como o selo dos sistemas: da' para ver na hora se a
      publicacao nova ja chegou. O numero mora em CENTRAL_VER (ver INIT). */
@@ -2096,7 +2099,8 @@ var RM_FONTE="@font-face{font-family:'Satoshi';src:url(data:font/woff2;base64,d0
   .day-row:hover .lembrete-del { opacity:1; }
   .lembrete-del:hover { color: var(--accent); background: var(--active-bg); }
 
-  .lembrete-panel { width:420px; max-width:92vw; background: var(--sidebar); border:1px solid var(--divider); border-radius:16px; padding:22px; }
+  .lembrete-panel { width:420px; max-width:92vw; background: var(--sidebar); border:1px solid var(--divider); border-radius:16px; padding:22px;
+    max-height: calc(100vh - 24px); max-height: calc(100dvh - 24px); overflow-y: auto; }   /* tela baixa: rola até o título e o Salvar */
   .lembrete-panel h3 { margin:0 0 16px; font-size:15px; font-weight:800; }
   .lembrete-row2 { display:flex; gap:10px; }
   .lembrete-row2 .form-row { flex:1; }
@@ -4407,6 +4411,10 @@ try { var _e = localStorage.getItem('rm_estilo_ultimo'); if (_e === 'viva' || _e
           </div>
           <div id="protetor-nota" style="font-size:12px;color:var(--text-muted);margin-top:6px;line-height:1.45">O papel de parede da RM com a obra se montando. "Usar no Windows" abre a janela de Proteção de Tela já com a RM escolhida: ajuste o tempo e clique em OK.</div>
         </div>
+        <div class="settings-section" id="sec-programa" hidden>
+          <div class="settings-label">Programa do computador</div>
+          <div id="programa-nota" style="font-size:12px;color:var(--text-muted);line-height:1.45"></div>
+        </div>
         <div class="settings-section">
           <div class="settings-label">Nome na saudação</div>
           <div class="form-row"><input class="form-input" id="set-username" placeholder="Seu nome" oninput="setUsername(this.value)"></div>
@@ -4528,6 +4536,49 @@ try { var _e = localStorage.getItem('rm_estilo_ultimo'); if (_e === 'viva' || _e
 
 <!-- Firebase (mesmo projeto/login usado em todos os outros sistemas da RM) -->
 <script id="rmPerguntaTela">
+/* ---- JANELAS DA CENTRAL PELO TECLADO ----
+   Configurações, Novo compromisso, Links úteis, Contatos e Acompanhamento
+   (.overlay) só fechavam clicando: Esc não fazia nada, o Tab fugia para a
+   página de trás e, ao fechar, o foco não voltava ao botão que abriu. Igual
+   às caixas de pergunta (rmPergunta): ao abrir o foco entra na janela, o Tab
+   gira dentro dela, Esc fecha (pelo mesmo caminho do clique fora) e o foco
+   volta. Teste central-janelas-teclado. */
+(function () {
+  var FOCAVEL = 'button:not([disabled]),[href],input:not([disabled]):not([type=hidden]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])';
+  function visiveis(p) { return [].filter.call(p.querySelectorAll(FOCAVEL), function (el) { return el.offsetParent !== null || el.getClientRects().length; }); }
+  function aberta() { var l = document.querySelectorAll('.overlay.open'); return l.length ? l[l.length - 1] : null; }
+  function prepara() {
+    [].forEach.call(document.querySelectorAll('.overlay'), function (ov) {
+      var painel = ov.firstElementChild; if (!painel) return;
+      painel.setAttribute('role', 'dialog'); painel.setAttribute('aria-modal', 'true');
+      var tit = painel.querySelector('h3,.settings-title'); if (tit && !painel.getAttribute('aria-label')) painel.setAttribute('aria-label', tit.textContent.trim());
+      var volta = null, estava = ov.classList.contains('open');
+      new MutationObserver(function () {
+        var agora = ov.classList.contains('open'); if (agora === estava) return; estava = agora;
+        if (agora) {
+          volta = document.activeElement;
+          setTimeout(function () { if (!ov.classList.contains('open') || painel.contains(document.activeElement)) return;
+            var f = visiveis(painel); (f.find(function (el) { return /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName); }) || f[0] || painel).focus(); }, 30);
+        } else if (volta) {
+          try { if (document.contains(volta) && volta.focus && (!document.activeElement || document.activeElement === document.body || painel.contains(document.activeElement))) volta.focus(); } catch (e) {}
+          volta = null;
+        }
+      }).observe(ov, { attributes: true, attributeFilter: ['class'] });
+    });
+  }
+  document.addEventListener('keydown', function (e) {
+    var ov = aberta(); if (!ov || document.querySelector('.dlg-fundo')) return;
+    var painel = ov.firstElementChild;
+    if (e.key === 'Escape') { e.preventDefault(); ov.click(); return; }   /* o onclick do fundo fecha quando o alvo é ele */
+    if (e.key !== 'Tab') return;
+    var f = visiveis(painel); if (!f.length) { e.preventDefault(); return; }
+    var i = f.indexOf(document.activeElement);
+    if (e.shiftKey && (i <= 0)) { e.preventDefault(); f[f.length - 1].focus(); }
+    else if (!e.shiftKey && (i === -1 || i === f.length - 1)) { e.preventDefault(); f[0].focus(); }
+  });
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', prepara); else prepara();
+})();
+
 /* ---- perguntas e avisos na própria tela ----
    No programa instalado (Electron) o confirm() e o alert() nativos devolvem a
    tela SEM o foco do teclado: depois deles o campo recebe o clique mas não a
@@ -4575,13 +4626,15 @@ try { var _e = localStorage.getItem('rm_estilo_ultimo'); if (_e === 'viva' || _e
 })();
 </script>
 <script src="sync-info.js"></script>
-<script src="systems-manifest.js"></script>
+<!-- systems-manifest.js só existe no programa do computador (gerado pelo sync):
+     no site dava um 404 a cada abertura -->
+<script>if (location.protocol === 'file:') document.write('<script src="systems-manifest.js"><\/script>');</script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js" crossorigin="anonymous"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js" crossorigin="anonymous"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js" crossorigin="anonymous"></script>
 
 <script>/* versão publicada (PADRAO_RM.md §3): sobe a cada publicação, junto com o CACHE do sw.js */
-const APP_VER='v143';
+const APP_VER='v145';
 </script>
 <script>
   /* ===== LOGIN (Firebase Authentication) =====
@@ -8235,6 +8288,13 @@ const APP_VER='v143';
         <span class="tab-close" onclick="closeTab('${t.id}', event)">✕</span>
       </div>`;
     }).join('');
+    /* no celular a faixa rola de lado: a aba recém-aberta ficava pela metade */
+    const at = bar.querySelector('.tab-item.active');
+    if (at && bar.scrollWidth > bar.clientWidth) {
+      const fb = bar.getBoundingClientRect(), ra = at.getBoundingClientRect();
+      if (ra.left < fb.left) bar.scrollLeft -= fb.left - ra.left + 8;
+      else if (ra.right > fb.right) bar.scrollLeft += ra.right - fb.right + 8;
+    }
   }
 
   /* ===== ARRASTAR AS ABAS =====
@@ -8378,7 +8438,7 @@ const APP_VER='v143';
   }
 
   /* ===== SETTINGS ===== */
-  function openSettings() { document.getElementById('settings-overlay').classList.add('open'); renderSettings(); }
+  function openSettings() { document.getElementById('settings-overlay').classList.add('open'); renderSettings(); if (typeof programaPrepara === 'function') programaPrepara(); }
   function closeSettings() { document.getElementById('settings-overlay').classList.remove('open'); }
 
   /* Sobraram dois temas, claro e escuro, os dois na laranja da marca. Quem ja
@@ -8731,6 +8791,29 @@ const APP_VER='v143';
   }
   function protetorVer(){ const d = window.rmDesktop; if (d && typeof d.protetorVer === 'function') d.protetorVer(); }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', protetorPrepara); else protetorPrepara();
+  /* PROGRAMA DO COMPUTADOR: versão e a última vez que conferiu atualização.
+     Um PC que não consegue se atualizar mostra o erro aqui, em vez de ficar
+     meses na versão velha sem ninguém ver. Relido a cada abertura. */
+  function programaPrepara(){
+    const d = window.rmDesktop, sec = document.getElementById('sec-programa');
+    if (!sec || !d || typeof d.programaEstado !== 'function') return;
+    d.programaEstado().then(e => {
+      if (!e || !e.versao) return;
+      sec.hidden = false;
+      const hora = ms => { const x = new Date(ms), h = x.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+        return x.toDateString() === new Date().toDateString() ? 'hoje ' + h : x.toLocaleDateString('pt-BR') + ' ' + h; };
+      let t = 'Versão ' + e.versao + '. ';
+      if (!e.automatico) t += 'Este programa não se atualiza sozinho.';
+      else if (e.nova) t += 'Versão ' + e.nova + ' já baixada: use "Reiniciar e atualizar".';
+      else if (e.erro && e.baixando) t += 'O download da versão ' + e.baixando + ' falhou (' + hora(e.conferido) + '): ' + e.erro + '. Tenta de novo sozinho a cada 4 horas.';
+      else if (e.erro) t += 'Não conseguiu conferir atualização (' + hora(e.conferido) + '): ' + e.erro + '. Tenta de novo sozinho a cada 4 horas.';
+      else if (e.baixando) t += 'Baixando a versão ' + e.baixando + ' (conferido ' + hora(e.conferido) + ').';
+      else if (e.conferido) t += 'Atualizado. Conferido ' + hora(e.conferido) + '.';
+      else t += 'Confere atualização logo depois de abrir e a cada 4 horas.';
+      const n = document.getElementById('programa-nota'); n.textContent = t;
+      n.style.color = e.erro && !e.nova ? 'var(--rm-laranja)' : '';
+    }).catch(() => {});
+  }
   window.addEventListener('message', function(ev){
     const m = ev.data; if (!m || m.rm !== 'movimento?' || !ev.source) return;
     try{ ev.source.postMessage(movAtual(), '*'); }catch(e){}
@@ -13508,7 +13591,9 @@ html{ touch-action:manipulation; -webkit-text-size-adjust:100%; }
 body{ height:100vh; height:100dvh; overscroll-behavior:none; }
 .sidebar{ height:100vh; height:100dvh; }
 @media (pointer:coarse){
-  input,select,textarea{ font-size:16px; }
+  /* .form-input/.form-select (13px) ganhavam do input: o iPhone dava zoom
+     ao tocar no Novo compromisso, nos Contatos e nas Configurações */
+  input,select,textarea,.form-input,.form-select{ font-size:16px; }
 }
 /* area do relogio e da camera (app na tela de inicio / Safari de ponta a
    ponta): a barra desce o que precisar, e o miolo dela continua com 52px */
@@ -13587,12 +13672,14 @@ body{ height:100vh; height:100dvh; overscroll-behavior:none; }
 (function () {
   if (window.rmNuvem) return;
 
+  /* letra de 11px no tema claro: 4,5:1 no mínimo sobre o fundo do selo
+     (Nuvem estava em 3,7:1, Só neste aparelho 4,2, Conectando 4,4) */
   var ESTADOS = {
-    ligada:   { txt: 'Nuvem',             cor: '#1E8E4F', ponto: '#2CA05A',
+    ligada:   { txt: 'Nuvem',             cor: '#187A43', ponto: '#2CA05A',
                 dica: 'Conectado ao Firebase — o que você grava aqui aparece nos outros aparelhos' },
-    ligando:  { txt: 'Conectando',        cor: '#8A6D1F', ponto: '#D9A520',
+    ligando:  { txt: 'Conectando',        cor: '#7A6019', ponto: '#D9A520',
                 dica: 'Procurando o Firebase' },
-    local:    { txt: 'Só neste aparelho', cor: '#6E747C', ponto: '#A8AEB6',
+    local:    { txt: 'Só neste aparelho', cor: '#646A71', ponto: '#A8AEB6',
                 dica: 'Sem nuvem: o que você grava fica só neste aparelho' },
     erro:     { txt: 'Sem conexão',       cor: '#B3123C', ponto: '#D93B5C',
                 dica: 'A conexão com o Firebase caiu — os dados continuam salvos neste aparelho' }

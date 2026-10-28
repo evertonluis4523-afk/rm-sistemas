@@ -5750,7 +5750,7 @@ fbInit();
 /* Sobe junto com o nome do cache do sw.js, sempre: se um subir sem o outro,
    o numero na tela deixa de significar alguma coisa. Ha uma prova automatica
    que falha quando os dois discordam. */
-const APP_VER='v98';
+const APP_VER='v99';
 (function(){var p=document.getElementById('verPill'); if(p)p.textContent=APP_VER;})();
 if('serviceWorker' in navigator){
   if(location.protocol.startsWith('http')){ navigator.serviceWorker.register('./sw.js').catch(()=>{}); }
@@ -6255,12 +6255,14 @@ setTimeout(fitGrid, 300);
 (function () {
   if (window.rmNuvem) return;
 
+  /* letra de 11px no tema claro: 4,5:1 no mínimo sobre o fundo do selo
+     (Nuvem estava em 3,7:1, Só neste aparelho 4,2, Conectando 4,4) */
   var ESTADOS = {
-    ligada:   { txt: 'Nuvem',             cor: '#1E8E4F', ponto: '#2CA05A',
+    ligada:   { txt: 'Nuvem',             cor: '#187A43', ponto: '#2CA05A',
                 dica: 'Conectado ao Firebase — o que você grava aqui aparece nos outros aparelhos' },
-    ligando:  { txt: 'Conectando',        cor: '#8A6D1F', ponto: '#D9A520',
+    ligando:  { txt: 'Conectando',        cor: '#7A6019', ponto: '#D9A520',
                 dica: 'Procurando o Firebase' },
-    local:    { txt: 'Só neste aparelho', cor: '#6E747C', ponto: '#A8AEB6',
+    local:    { txt: 'Só neste aparelho', cor: '#646A71', ponto: '#A8AEB6',
                 dica: 'Sem nuvem: o que você grava fica só neste aparelho' },
     erro:     { txt: 'Sem conexão',       cor: '#B3123C', ponto: '#D93B5C',
                 dica: 'A conexão com o Firebase caiu — os dados continuam salvos neste aparelho' }
