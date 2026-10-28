@@ -12,7 +12,7 @@
      ASSETS (ex.: o jsPDF da Telha, guardado para funcionar sem internet).
    Medido: com este arquivo a versão publicada aparece na próxima abertura;
    com o anterior, e sem service worker nenhum, voltava a versão velha. */
-const CACHE = 'rm-compras-v74';
+const CACHE = 'rm-compras-v75';
 const ASSETS = ['./', './index.html'];
 const PAGINA = './index.html';
 

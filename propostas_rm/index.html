@@ -428,7 +428,14 @@ var TONS={
      segue uma reta (0,98 - 0,36 L): principal quase branco (0,91), apoio um
      degrau abaixo (0,78), e o fundo sai do preto (chão 0,215). Todo texto
      segue acima de 4,5:1 (medido: o pior, fora os botões cheios, 7,2:1). */
-  nitido:{chao:0.215, tinta:0.29, piso:0.72, cor:0.78, reta:true}
+  nitido:{chao:0.215, tinta:0.29, piso:0.72, cor:0.78, reta:true},
+  /* JARVIS: o HUD holográfico escolhido na Central. O mesmo derivador do
+     nítido, mas o neutro não vira cinza: ganha o azul-marinho do painel
+     (matiz em OKLab, a,b), o fundo forte e o texto com um toque de ciano.
+     A claridade é a de um grafite, então o contraste medido nos outros
+     escuros continua valendo. Junto vão as cantoneiras dos cartões (folha
+     rm-tema-jarvis). Teste tema-jarvis-sistemas. */
+  jarvis:{chao:0.19, tinta:0.27, piso:0.77, cor:0.80, reta:true, matiz:[-0.026,-0.044]}
 };
 var TOM=TONS.forte;
 
@@ -451,6 +458,16 @@ function rgbDe(L,a,b){var l=Math.pow(L+0.3963377774*a+0.2158037573*b,3),
           _g(-0.0041960863*l-0.7034186147*m+1.7076147010*s)];}
 
 var NEUTRO=0.035;
+/* O matiz do Jarvis num fundo escuro que FICA: o azul nao pode deixa-lo
+   mais claro que o original, ou a letra clara em cima perde contraste (o
+   cartao cinza do Pre-moldados caia para 4,49:1). Desce a claridade ate a
+   luminancia nao passar a de antes. */
+function _Y(c){ return 0.2126*_f(c[0])+0.7152*_f(c[1])+0.0722*_f(c[2]); }
+function tingeEscuro(r,g,b,L,A,B){
+  var y0=_Y([r,g,b]), c=rgbDe(L,A,B), i;
+  for(i=0;i<20&&_Y(c)>y0&&L>0;i++){ L-=0.004; c=rgbDe(L,A,B); }
+  return c;
+}
 /* papel: 'FUNDO' | 'TEXTO' | 'LINHA' | 'VAR' */
 function corDoEscuro(r,g,b,papel){
   var o=oklab(r,g,b), L=o[0], A=o[1], B=o[2], C=Math.hypot(A,B), k;
@@ -458,6 +475,8 @@ function corDoEscuro(r,g,b,papel){
   if(C<NEUTRO){
     /* branco sobre botao colorido FICA: vira-lo apagaria a letra */
     if(texto && L>=0.60) return [r,g,b];
+    /* no Jarvis o neutro leva o matiz do painel (o texto, um quarto dele) */
+    if(TOM.matiz){ A=TOM.matiz[0]*(texto?0.25:1); B=TOM.matiz[1]*(texto?0.25:1); }
     /* neutro JA escuro como fundo FICA: e o botao escuro, a barra de
        impressao, o bloco do total. Clarea-lo deixaria fundo claro com a
        letra branca que a linha acima preserva. */
@@ -465,7 +484,7 @@ function corDoEscuro(r,g,b,papel){
        0,423: ele clareava para #585E6D enquanto a letra clara em cima dele
        era preservada, e o par caia de 4,55:1 para 3,53:1. Fundo neutro mais
        escuro que o meio FICA -- a letra dele ja e clara por desenho. */
-    if(!texto && papel!=='VAR' && L<0.50) return [r,g,b];
+    if(!texto && papel!=='VAR' && L<0.50) return TOM.matiz?tingeEscuro(r,g,b,L,A,B):[r,g,b];
     var Ln=TOM.chao+(0.965-TOM.chao)*Math.pow(1-L,0.85);
     /* PISO DO TEXTO. Contra o fundo derivado do branco (#101010, luminancia
        0,0035) a razao de 5:1 pede luminancia 0,218, o que em OKLab da L 0,78.
@@ -852,7 +871,7 @@ function monta(){
   var saida=[], folhas=document.styleSheets;
   for(var i=0;i<folhas.length;i++){
     var f=folhas[i], regras=null;
-    if(f.ownerNode&&(f.ownerNode.id==='rm-tema-escuro'||f.ownerNode.id==='rm-tema-veu')) continue;
+    if(f.ownerNode&&(f.ownerNode.id==='rm-tema-escuro'||f.ownerNode.id==='rm-tema-veu'||f.ownerNode.id==='rm-tema-jarvis')) continue;
     try{ regras=f.cssRules; }catch(e){ continue; }   /* folha de outro dominio */
     if(regras) varreRegras(regras,saida);
   }
@@ -904,7 +923,7 @@ try{
       for(var k=0;k<a.length;k++){
         var n=a[k];
         if(!n||n.nodeType!==1) continue;
-        if(n.id==='rm-tema-escuro'||n.id==='rm-tema-veu') continue;   /* a nossa propria */
+        if(n.id==='rm-tema-escuro'||n.id==='rm-tema-veu'||n.id==='rm-tema-jarvis') continue;   /* a nossa propria */
         if(n.tagName==='STYLE'||n.tagName==='LINK'){ refazDepois(); return; }
       }
     }
@@ -930,7 +949,31 @@ function vigiaCorpo(){
   }catch(e){}
 }
 
-function tomOk(t){ return t==='suave'||t==='nitido'?t:'forte'; }
+function tomOk(t){ return t==='suave'||t==='nitido'||t==='jarvis'?t:'forte'; }
+/* AS CANTONEIRAS DO JARVIS. O derivador acerta as cores; o que faz o HUD é
+   o desenho: cantoneira ciano nos cartões, o fio da barra do alto, a grade
+   fina no fundo. Sem abertura e sem reator -- isso é da Central --, para
+   não pesar em quem está trabalhando. Folha à parte, fora da derivação. */
+function camadaJarvis(on){
+  var e=document.getElementById('rm-tema-jarvis');
+  if(!on){ if(e&&e.parentNode) e.parentNode.removeChild(e); return; }
+  if(e) return;
+  var C='#22e3ff', k='linear-gradient('+C+','+C+')';
+  e=document.createElement('style'); e.id='rm-tema-jarvis';
+  e.textContent='@media screen{'
+    +'html[data-tom="jarvis"] body{background-image:radial-gradient(1100px 700px at 65% 30%,rgba(34,227,255,.07),transparent 70%),'
+    +'linear-gradient(rgba(34,227,255,.035) 1px,transparent 1px),linear-gradient(90deg,rgba(34,227,255,.035) 1px,transparent 1px)!important;'
+    +'background-size:auto,44px 44px,44px 44px!important;background-attachment:fixed!important}'
+    +'html[data-tom="jarvis"] :is(.card,.kpi,.panel){background-image:'+k+','+k+','+k+','+k+'!important;'
+    +'background-size:14px 2px,2px 14px,14px 2px,2px 14px!important;background-position:0 0,0 0,100% 100%,100% 100%!important;'
+    +'background-repeat:no-repeat!important;border-color:rgba(34,227,255,.2)!important;box-shadow:inset 0 0 22px rgba(34,227,255,.05)!important}'
+    +'html[data-tom="jarvis"] :is(.appbar,.topbar){border-bottom-color:rgba(34,227,255,.32)!important}'
+    +'html[data-tom="jarvis"] :where(input,select,textarea):focus{border-color:'+C+'!important;box-shadow:0 0 0 3px rgba(34,227,255,.18)!important}'
+    +'html[data-tom="jarvis"] ::selection{background:rgba(34,227,255,.35)}'
+    +'html[data-tom="jarvis"]{scrollbar-color:rgba(34,227,255,.35) transparent}'
+    +'}';
+  (document.head||document.documentElement).appendChild(e);
+}
 function tomLido(){ try{ return tomOk(localStorage.getItem(CHAVE_TOM)); }catch(e){ return 'forte'; } }
 var TOM_MONTADO=null;
 function pinta(t,tom){
@@ -945,18 +988,20 @@ function pinta(t,tom){
   if(t==='escuro' && TOM_MONTADO && TOM_MONTADO!==tom){ desmonta(); inlineDesliga(); }
   if(t==='escuro'){ monta(); inlineLiga(); TOM_MONTADO=tom; }
   else { desmonta(); inlineDesliga(); TOM_MONTADO=null; }
+  camadaJarvis(t==='escuro'&&tom==='jarvis');
   trocaMarca(t);
   var bt=document.getElementById('rm-bt-tema');
   var m=modo(t,tom);
-  if(bt){ bt.textContent = m==='escuro' ? '●' : m==='suave' ? '◐' : m==='nitido' ? '◒' : '◑';
-          bt.title = m==='escuro' ? 'Tema escuro — clique para o claro'
+  if(bt){ bt.textContent = m==='escuro' ? '●' : m==='suave' ? '◐' : m==='nitido' ? '◒' : m==='jarvis' ? '◎' : '◑';
+          bt.title = m==='jarvis' ? 'Tema Jarvis — clique para o claro'
+                   : m==='escuro' ? 'Tema escuro — clique para o Jarvis'
                    : m==='suave'  ? 'Tema escuro suave — clique para o escuro nítido'
                    : m==='nitido' ? 'Tema escuro nítido — clique para o escuro'
                                   : 'Tema claro — clique para o escuro suave'; }
   try{ window.dispatchEvent(new CustomEvent('rm:tema',{detail:{tema:t,tom:tom}})); }catch(e){}
 }
 /* os estados que a pessoa enxerga: claro, suave, nítido e escuro */
-function modo(t,tom){ return t!=='escuro' ? 'claro' : (tom==='suave'||tom==='nitido' ? tom : 'escuro'); }
+function modo(t,tom){ return t!=='escuro' ? 'claro' : (tom==='suave'||tom==='nitido'||tom==='jarvis' ? tom : 'escuro'); }
 function lido(){ try{ return localStorage.getItem(CHAVE)==='escuro'?'escuro':'claro'; }catch(e){ return 'claro'; } }
 function grava(t,tom){
   try{ localStorage.setItem(CHAVE,t); localStorage.setItem(CHAVE_TOM,tom); }catch(e){}
@@ -973,20 +1018,21 @@ function grava(t,tom){
    o escuro suave, rmTema('escuro') o escuro de sempre. */
 window.rmTema=function(t){ if(t===undefined) return lido();
   var tom=tomOk(t);
-  t=(t==='escuro'||t==='suave'||t==='nitido')?'escuro':'claro';
+  t=(t==='escuro'||t==='suave'||t==='nitido'||t==='jarvis')?'escuro':'claro';
   grava(t,tom); pinta(t,tom); return t; };
 window.rmTemaModo=function(){ return modo(lido(),tomLido()); };
-/* o botao anda do mais claro para o mais escuro: claro, suave, nítido, escuro */
+/* o botao anda do mais claro para o mais escuro: claro, suave, nítido,
+   escuro -- e o Jarvis por último, antes de voltar ao claro */
 window.rmTemaAlterna=function(){
   var m=window.rmTemaModo();
-  return window.rmTema(m==='claro' ? 'suave' : m==='suave' ? 'nitido' : m==='nitido' ? 'escuro' : 'claro');
+  return window.rmTema(m==='claro' ? 'suave' : m==='suave' ? 'nitido' : m==='nitido' ? 'escuro' : m==='escuro' ? 'jarvis' : 'claro');
 };
 
 window.addEventListener('storage',function(e){ if(e.key===CHAVE||e.key===CHAVE_TOM) pinta(lido(),tomLido()); });
 window.addEventListener('message',function(e){
   var m=e.data; if(!m||m.rm!=='tema') return;
   /* quem nao manda o tom (versao velha) nao mexe nele */
-  var tom=(m.tom==='suave'||m.tom==='forte'||m.tom==='nitido')?m.tom:tomLido();
+  var tom=(m.tom==='suave'||m.tom==='forte'||m.tom==='nitido'||m.tom==='jarvis')?m.tom:tomLido();
   try{ localStorage.setItem(CHAVE,m.tema==='escuro'?'escuro':'claro'); localStorage.setItem(CHAVE_TOM,tom); }catch(x){}
   pinta(m.tema,tom);
 });
@@ -999,7 +1045,8 @@ function porta(){
   if(document.getElementById('rm-tema-porta')) return;
   var e=document.createElement('style'); e.id='rm-tema-porta';
   e.textContent='html[data-theme="escuro"][data-tom="nitido"] #loginScreen{background-color:#222224!important}'
-    +'html[data-theme="escuro"][data-tom="suave"] #loginScreen{background-color:#333435!important}';
+    +'html[data-theme="escuro"][data-tom="suave"] #loginScreen{background-color:#333435!important}'
+    +'html[data-theme="escuro"][data-tom="jarvis"] #loginScreen{background-color:#04121c!important}';
   (document.head||document.documentElement).appendChild(e);
 }
 /* SEM CLARAO AO ABRIR NO ESCURO. A traducao so roda com a pagina inteira
@@ -1016,7 +1063,7 @@ function porta(){
 var VEU=null;
 function poeVeu(){
   if(lido()!=='escuro'||document.readyState!=='loading') return;
-  var c=rgbDe(TONS[tomLido()].chao,0,0);
+  var T=TONS[tomLido()], c=rgbDe(T.chao,T.matiz?T.matiz[0]:0,T.matiz?T.matiz[1]:0);
   VEU=document.createElement('style'); VEU.id='rm-tema-veu';
   VEU.textContent='html{background:rgb('+c.join(',')+')!important}body{opacity:0!important}'
     +'*,*::before,*::after{transition:none!important}';
@@ -6650,7 +6697,7 @@ if ('serviceWorker' in navigator) {
 })();
 </script>
 <script>/* versão publicada (PADRAO_RM.md §3): sobe a cada publicação, junto com o CACHE do sw.js */
-const APP_VER='v34';
+const APP_VER='v35';
 </script>
 <script id="rmVersaoBloco">
 /* ===== SELO DE VERSÃO — igual em todos os sistemas (PADRAO_RM.md §3) =====
