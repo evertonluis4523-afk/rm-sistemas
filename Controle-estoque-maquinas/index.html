@@ -3152,7 +3152,7 @@ const DB_NODE = "maquinas_rm";
    visivel, nenhum de nos dois tinha como saber se o aparelho estava rodando o
    que foi publicado ou uma copia velha do cache do app instalado. Diagnostico
    por adivinhacao custa mais caro que um rodape. */
-const APP_VER='v35';
+const APP_VER='v36';
 const STORE_KEY = "rm_maquinas_v1";
 
 const CORES = [
@@ -6597,7 +6597,9 @@ if ('serviceWorker' in navigator) {
            multitarefa: fica no documento que ja estava aberto, que pode ser de
            semanas atras. Entao procura versao nova ao abrir E toda vez que a
            tela volta a aparecer. */
-        const procurar = () => { try { reg.update(); } catch(e){} };
+        /* sem rede a procura falha (e virava "sw.js load failed" no relatorio
+           de melhorias): fica quieta e tenta de novo na proxima vez */
+        const procurar = () => { try { reg.update().catch(()=>{}); } catch(e){} };
         procurar();
         document.addEventListener('visibilitychange', () => { if (!document.hidden) procurar(); });
         /* Assumindo o controle uma versao nova, recarrega uma unica vez para o
