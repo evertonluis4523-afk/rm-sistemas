@@ -4022,6 +4022,21 @@ const IDBI = {
 };
 function carregaImg(src) { return new Promise((ok, erro) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => erro(new Error('imagem que o navegador não abre')); i.src = src; }); }
 function lerArquivo(f) { return new Promise((ok, erro) => { const r = new FileReader(); r.onload = () => ok(r.result); r.onerror = () => erro(r.error); r.readAsDataURL(f); }); }
+/* FUNDO TRANSPARENTE: o render sem fundo era achatado em JPG sobre branco e,
+   no tema escuro, aparecia um retângulo branco na folha. A imagem que tem
+   transparência sai em PNG (e assim passa por recorte, realce, setas e
+   marca d'água); foto comum continua JPG, mais leve. Teste
+   propostas-imagem-transparente. */
+function temTransparencia(g, w, h) {
+  const a = g.getImageData(0, 0, w, h).data;
+  for (let i = 3; i < a.length; i += 4) if (a[i] < 250) return true;
+  return false;
+}
+/* extensão do arquivo no Word: png ou jpeg, conforme a imagem */
+function extImg(d) { return /^data:image\/png/i.test(String(d || '')) ? 'png' : 'jpeg'; }
+function paraDados(cv) {
+  return temTransparencia(cv.getContext('2d'), cv.width, cv.height) ? cv.toDataURL('image/png') : cv.toDataURL('image/jpeg', IMG_QUAL);
+}
 /* o símbolo escuro da marca d'água do papel impresso (bloco comum) */
 function simboloMarca() { const i = document.querySelector('#rm-dagua-imp img'); return i && i.src ? i.src : ''; }
 /* aplica a marca d'água (o símbolo no centro) com a intensidade pct (%) */
@@ -4034,7 +4049,7 @@ async function comMarca(src, pct) {
   const m = await carregaImg(sm), mw = w * MARCA_LARG, mh = mw * m.naturalHeight / m.naturalWidth;
   g.globalAlpha = pct / 100; g.globalCompositeOperation = 'multiply';
   g.drawImage(m, (w - mw) / 2, (h - mh) / 2, mw, mh);
-  return cv.toDataURL('image/jpeg', IMG_QUAL);
+  return paraDados(cv);
 }
 /* reduz para o A4 (sem a marca: ela entra na saída); devolve { dados, w, h } */
 async function prepararImagem(src) {
@@ -4042,9 +4057,8 @@ async function prepararImagem(src) {
   const k = Math.min(1, IMG_LARG / im.naturalWidth), w = Math.round(im.naturalWidth * k), h = Math.round(im.naturalHeight * k);
   const cv = document.createElement('canvas'); cv.width = w; cv.height = h;
   const g = cv.getContext('2d');
-  g.fillStyle = '#fff'; g.fillRect(0, 0, w, h);   /* PNG com fundo transparente: branco, como no papel */
-  g.drawImage(im, 0, 0, w, h);
-  return { dados: cv.toDataURL('image/jpeg', IMG_QUAL), w, h };
+  g.drawImage(im, 0, 0, w, h);   /* sem pintar o fundo: o transparente continua transparente */
+  return { dados: paraDados(cv), w, h };
 }
 async function imgDados(id) {
   if (BRUTO[id]) return BRUTO[id];
@@ -4101,7 +4115,7 @@ async function comCotas(src, cs) {
   const im = await carregaImg(src), w = im.naturalWidth, h = im.naturalHeight;
   const cv = document.createElement('canvas'); cv.width = w; cv.height = h;
   const g = cv.getContext('2d'); g.drawImage(im, 0, 0); desenhaCotas(g, w, h, cs);
-  return cv.toDataURL('image/jpeg', IMG_QUAL);
+  return paraDados(cv);
 }
 /* RECORTE: como a arquiteta fazia no Word, tirar as bordas para a imagem
    sair maior. Fica na lista da imagem (recorte: x,y,w,h de 0 a 1 sobre a
@@ -4119,7 +4133,7 @@ async function comRecorte(src, r) {
   const sx = Math.round(r.x * W), sy = Math.round(r.y * H), sw = Math.max(1, Math.min(W - sx, Math.round(r.w * W))), sh = Math.max(1, Math.min(H - sy, Math.round(r.h * H)));
   const cv = document.createElement('canvas'); cv.width = sw; cv.height = sh;
   cv.getContext('2d').drawImage(im, sx, sy, sw, sh, 0, 0, sw, sh);
-  return cv.toDataURL('image/jpeg', IMG_QUAL);
+  return paraDados(cv);
 }
 /* a imagem guardada já com o recorte (é sobre ela que se desenham as setas) */
 async function imgRecortada(x) { const b = await imgDados(x.id); if (!b) return null; const r = recorteDe(x); return r ? comRecorte(b, r) : b; }
@@ -4159,7 +4173,9 @@ async function comRealce(src, re) {
   const g = cv.getContext('2d'); g.imageSmoothingEnabled = true; g.imageSmoothingQuality = 'high'; g.drawImage(im, 0, 0, w, h);
   const id = g.getImageData(0, 0, w, h), a = id.data, n = w * h;
   const L = new Float32Array(n), hist = new Uint32Array(256);
-  for (let i = 0, p = 0; i < n; i++, p += 4) { const l = 0.299 * a[p] + 0.587 * a[p + 1] + 0.114 * a[p + 2]; L[i] = l; hist[l | 0]++; }
+  /* o transparente conta como o branco do papel (era assim quando a imagem
+     chegava achatada): senão vira preto nas contas e clareia o desenho */
+  for (let i = 0, p = 0; i < n; i++, p += 4) { const l = a[p + 3] === 0 ? 255 : 0.299 * a[p] + 0.587 * a[p + 1] + 0.114 * a[p + 2]; L[i] = l; hist[l | 0]++; }
   /* tons: estica entre o mais escuro e o mais claro (sem forçar imagem que já é contrastada) e curva suave */
   let lo = 0, hi = 255, c = 0; const corte = n * 0.003;
   while (lo < 254 && (c += hist[lo]) < corte) lo++;
@@ -4171,7 +4187,7 @@ async function comRealce(src, re) {
   let sem = 20261022; const rnd = () => { sem = (sem * 1664525 + 1013904223) >>> 0; return sem / 4294967296; };
   for (let i = 0, p = 0; i < n; i++, p += 4) {
     const R = a[p], G = a[p + 1], B = a[p + 2], mn = Math.min(R, G, B), mx = Math.max(R, G, B);
-    if (mn >= 248) continue;   /* o fundo branco fica como está */
+    if (mn >= 248 || a[p + 3] === 0) continue;   /* o fundo branco (ou transparente) fica como está */
     const l = L[i], t = l / 255, meio = 1 - (2 * t - 1) * (2 * t - 1);
     let d = l - b1[i]; if (Math.abs(d) < 1.5) d = 0;
     let dl = P.nit * d + P.cla * meio * (l - b2[i]);
@@ -4180,7 +4196,7 @@ async function comRealce(src, re) {
     for (let q = 0; q < 3; q++) { const v = lt + (tab[a[p + q]] - lt) * f + dl; a[p + q] = v < 0 ? 0 : v > 255 ? 255 : v; }
   }
   g.putImageData(id, 0, 0);
-  return cv.toDataURL('image/jpeg', IMG_QUAL);
+  return paraDados(cv);
 }
 function imgChave(x) { return (x.orig ? marcaPct() : 0) + '|' + JSON.stringify(cotasDe(x)) + '|' + JSON.stringify(recorteDe(x)) + '|' + JSON.stringify(realceDe(x)); }
 /* a imagem como sai: recortada, com as setas e a marca na intensidade de agora */
@@ -4520,7 +4536,7 @@ function wCorpo(bl) {
           + '<w:tblGrid><w:gridCol w:w="' + W_LARG + '"/></w:tblGrid><w:tr><w:trPr><w:cantSplit/><w:trHeight w:val="' + Math.round(caixaMm * 56.7) + '" w:hRule="exact"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="' + W_LARG + '" w:type="dxa"/><w:vAlign w:val="center"/></w:tcPr>'
           + (b.tit ? wPar(wRun(b.tit, { b: true, caps: true, sz: 18, esp: 20, cor: '141414' }), { bordaEsq: true, antes: 0, depois: 60, keep: true, jc: 'left' }) : '')
           + (b.desc ? wPar(wRun(b.desc, { sz: 17, cor: '4A515B' }), { depois: 80, keep: true, jc: 'left' }) : '')
-          + wPar('<w:r><w:drawing><wp:inline distT="0" distB="0" distL="0" distR="0"><wp:extent cx="' + cx + '" cy="' + cy + '"/><wp:docPr id="' + n + '" name="Imagem ' + n + '"/><a:graphic><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:pic><pic:nvPicPr><pic:cNvPr id="' + n + '" name="imagem' + n + '.jpeg"/><pic:cNvPicPr/></pic:nvPicPr><pic:blipFill><a:blip r:embed="' + rid + '"/><a:stretch><a:fillRect/></a:stretch></pic:blipFill><pic:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="' + cx + '" cy="' + cy + '"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></pic:spPr></pic:pic></a:graphicData></a:graphic></wp:inline></w:drawing></w:r>', { jc: 'center', depois: 0 })
+          + wPar('<w:r><w:drawing><wp:inline distT="0" distB="0" distL="0" distR="0"><wp:extent cx="' + cx + '" cy="' + cy + '"/><wp:docPr id="' + n + '" name="Imagem ' + n + '"/><a:graphic><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:pic><pic:nvPicPr><pic:cNvPr id="' + n + '" name="imagem' + n + '.' + extImg(IMG[b.id]) + '"/><pic:cNvPicPr/></pic:nvPicPr><pic:blipFill><a:blip r:embed="' + rid + '"/><a:stretch><a:fillRect/></a:stretch></pic:blipFill><pic:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="' + cx + '" cy="' + cy + '"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></pic:spPr></pic:pic></a:graphicData></a:graphic></wp:inline></w:drawing></w:r>', { jc: 'center', depois: 0 })
           + '</w:tc></w:tr></w:tbl><w:p><w:pPr><w:spacing w:before="0" w:after="0" w:line="20" w:lineRule="exact"/></w:pPr></w:p>';
       }
       case 'quebra': return '<w:p><w:r><w:br w:type="page"/></w:r></w:p>';
@@ -4573,7 +4589,7 @@ async function docxBytes(bl) {
   const arqs = [
     { nome: '[Content_Types].xml', dados: XML + '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Default Extension="png" ContentType="image/png"/><Default Extension="jpeg" ContentType="image/jpeg"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/><Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/><Override PartName="/word/header1.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.header+xml"/><Override PartName="/word/footer1.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.footer+xml"/></Types>' },
     { nome: '_rels/.rels', dados: XML + '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/></Relationships>' },
-    { nome: 'word/_rels/document.xml.rels', dados: XML + '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rIdS" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/><Relationship Id="rIdH" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/header" Target="header1.xml"/><Relationship Id="rIdF" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/footer" Target="footer1.xml"/>' + W_IMGS.map((x, i) => '<Relationship Id="' + x.rid + '" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="media/imagem' + i + '.jpeg"/>').join('') + '</Relationships>' },
+    { nome: 'word/_rels/document.xml.rels', dados: XML + '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rIdS" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/><Relationship Id="rIdH" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/header" Target="header1.xml"/><Relationship Id="rIdF" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/footer" Target="footer1.xml"/>' + W_IMGS.map((x, i) => '<Relationship Id="' + x.rid + '" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="media/imagem' + i + '.' + extImg(IMG[x.id]) + '"/>').join('') + '</Relationships>' },
     { nome: 'word/_rels/header1.xml.rels', dados: XML + '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' + (png ? '<Relationship Id="rIdLogo" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="media/logo.png"/>' : '') + '</Relationships>' },
     { nome: 'word/document.xml', dados: doc },
     { nome: 'word/styles.xml', dados: styles },
@@ -4581,7 +4597,7 @@ async function docxBytes(bl) {
     { nome: 'word/footer1.xml', dados: footer }
   ];
   if (png) arqs.push({ nome: 'word/media/logo.png', dados: png });
-  W_IMGS.forEach((x, i) => { const bin = atob(IMG[x.id].split(',')[1]), u = new Uint8Array(bin.length); for (let k = 0; k < bin.length; k++) u[k] = bin.charCodeAt(k); arqs.push({ nome: 'word/media/imagem' + i + '.jpeg', dados: u }); });
+  W_IMGS.forEach((x, i) => { const bin = atob(IMG[x.id].split(',')[1]), u = new Uint8Array(bin.length); for (let k = 0; k < bin.length; k++) u[k] = bin.charCodeAt(k); arqs.push({ nome: 'word/media/imagem' + i + '.' + extImg(IMG[x.id]), dados: u }); });
   return zipar(arqs);
 }
 
@@ -6699,7 +6715,7 @@ if ('serviceWorker' in navigator) {
 })();
 </script>
 <script>/* versão publicada (PADRAO_RM.md §3): sobe a cada publicação, junto com o CACHE do sw.js */
-const APP_VER='v36';
+const APP_VER='v37';
 </script>
 <script id="rmVersaoBloco">
 /* ===== SELO DE VERSÃO — igual em todos os sistemas (PADRAO_RM.md §3) =====
