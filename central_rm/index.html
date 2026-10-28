@@ -4324,6 +4324,14 @@ try { var _e = localStorage.getItem('rm_estilo_ultimo'); if (_e === 'viva' || _e
             </div>
           </div>
         </div>
+        <!-- só aparece com o tema Jarvis ligado (regra no bloco de estilo do Jarvis) -->
+        <div class="settings-section" id="jv-luz-sec">
+          <div class="settings-label">Tema Jarvis · faixa de luz passando</div>
+          <div class="seg" id="seg-jvluz">
+            <button class="seg-btn" data-jvluz="off" onclick="rmJarvisLuz(false)">Desligada</button>
+            <button class="seg-btn" data-jvluz="on" onclick="rmJarvisLuz(true)">Ligada</button>
+          </div>
+        </div>
         <div class="settings-section">
           <div class="settings-label">Fundo da Central</div>
           <div class="wallpaper-grid" id="wallpaper-grid">
@@ -4573,7 +4581,7 @@ try { var _e = localStorage.getItem('rm_estilo_ultimo'); if (_e === 'viva' || _e
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js" crossorigin="anonymous"></script>
 
 <script>/* versão publicada (PADRAO_RM.md §3): sobe a cada publicação, junto com o CACHE do sw.js */
-const APP_VER='v141';
+const APP_VER='v142';
 </script>
 <script>
   /* ===== LOGIN (Firebase Authentication) =====
@@ -14093,6 +14101,11 @@ body[data-tom="jarvis"] .topbar{background:rgba(2,14,23,.74);border-bottom:1px s
 body[data-tom="jarvis"] .topbar::after{content:"";position:absolute;left:0;bottom:-1px;height:1px;width:220px;pointer-events:none;
   background:linear-gradient(90deg,transparent,var(--jv-c2),transparent);animation:jv-corre 6s ease-in-out infinite}
 @keyframes jv-corre{from{transform:translateX(-240px)}to{transform:translateX(100vw)}}
+/* "A faixa de luz sempre passando: deixar como opção e não o tempo todo":
+   a faixa que desce a tela e o fio que corre na barra só com a opção ligada
+   (Aparência; desligada de início). Teste central-jarvis-faixa-opcional. */
+body:not([data-jv-luz="on"]) .jv-scan::after,body:not([data-jv-luz="on"])[data-tom="jarvis"] .topbar::after{display:none}
+body:not([data-tom="jarvis"]) #jv-luz-sec{display:none}
 body[data-tom="jarvis"] .topbar-title{letter-spacing:.08em;text-transform:uppercase;font-size:13px}
 body[data-tom="jarvis"] .topbar-tag{box-shadow:0 0 10px rgba(255,106,43,.35)}
 body[data-tom="jarvis"] :is(.topbar-search,.topbar-atualizar,.topbar-btn){background:rgba(34,227,255,.05);border-color:var(--jv-linha2)}
@@ -14249,6 +14262,16 @@ body:has(.iframe-layer.active) :is(.jv-scan,.jv-scan::after,.jv-reator *,.topbar
     document.body.appendChild(b);
   }
   window.rmJarvisAbertura=abertura;
+  /* a faixa de luz passando é opção (desligada de início), guardada no aparelho */
+  function luz(on){
+    if(on!==undefined){ try{ localStorage.setItem('rm_jv_luz',on?'1':'0'); }catch(e){} }
+    var l=false; try{ l=localStorage.getItem('rm_jv_luz')==='1'; }catch(e){}
+    document.body.setAttribute('data-jv-luz',l?'on':'off');
+    document.querySelectorAll('#seg-jvluz .seg-btn').forEach(function(bt){ bt.classList.toggle('active',bt.getAttribute('data-jvluz')===(l?'on':'off')); });
+  }
+  window.rmJarvisLuz=luz;
+  luz();
+  addEventListener('storage',function(e){ if(e.key==='rm_jv_luz') luz(); });
   /* o tema troca pelos atributos do <body> (setTheme, mensagem de um
      sistema, outra aba): as camadas acompanham */
   try{ new MutationObserver(camadas).observe(document.body,{attributes:true,attributeFilter:['data-theme','data-tom']}); }catch(e){}
