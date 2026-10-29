@@ -1436,6 +1436,14 @@ input,textarea,select{font-family:inherit;color:inherit}
 
 /* Dashboard cards */
 .cards{display:grid;grid-template-columns:repeat(4,1fr);gap:0;border-bottom:1px solid var(--line)}
+/* quantas colunas, por classe e não no style do HTML: escrito no HTML,
+   passava por cima da regra do celular e os números saíam cortados
+   ("SAL… PEN…") no Banco de Horas, no PF e no Relatório. Teste
+   recibos-revisao-ux. */
+.cards.c3{grid-template-columns:repeat(3,minmax(0,1fr))}
+.cards.c4{grid-template-columns:repeat(4,minmax(0,1fr))}
+.cards.c5{grid-template-columns:repeat(5,minmax(0,1fr))}
+@media (max-width:640px){.cards.c3,.cards.c4,.cards.c5{grid-template-columns:repeat(2,minmax(0,1fr))}}
 .card{padding:16px 20px;border-right:1px solid var(--line-2)}
 .card:last-child{border-right:0}
 .card .k{font-size:11px;letter-spacing:.13em;text-transform:uppercase;color:var(--muted);font-weight:700;margin-bottom:7px;display:flex;align-items:center;gap:6px}
@@ -1456,7 +1464,6 @@ input,textarea,select{font-family:inherit;color:inherit}
    do relatorio descem de linha em vez de passar da largura da tela */
 @media (max-width:640px){
   #v-func .card .k{white-space:normal;overflow:visible;text-overflow:clip}
-  #v-rel .cards{grid-template-columns:repeat(2,minmax(0,1fr))!important}   /* vence o style do HTML */
 }
 #v-func .card .v{font-size:18px;line-height:1;margin-left:auto}
 #v-func .card .s{display:none}
@@ -2610,6 +2617,12 @@ body:not(.rm-campo) .rm-campo-selo{display:none}
 @media(max-width:620px){
   body.rm-campo .appbar .brand b+*,body.rm-campo .appbar .brand{font-size:13px;font-weight:530}
 }
+.fh-nota{display:block;font-size:11px;color:var(--muted);margin-top:2px}
+.resc-prox{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:12px;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--rm-fundo,transparent)}
+.resc-prox[hidden]{display:none}
+.resc-prox .rp-tit{font-weight:600;font-size:13px;margin-right:4px}
+.resc-prox .rp-ok{font-size:12.5px;color:var(--ok)}
+.resc-prox .x{margin-left:auto;background:none;border:0;color:var(--muted);cursor:pointer;font-size:14px}
 </style>
 
 
@@ -3856,9 +3869,12 @@ if(window.RM_CELULAR) document.body.classList.add('rm-campo');
       <button class="vtab" data-v="bh">Banco de Horas</button>
       <button class="vtab" data-v="entrev">Entrevista</button>
       <button class="vtab" data-v="adm">Ficha de admissão</button>
-      <button class="vtab" data-v="carta">Carta de emprego</button>
       <button class="vtab" data-v="adv">Advertência</button>
+      <!-- a tela é a "Solicitação de dispensa do aviso prévio": com o nome de
+           "Carta de emprego" ninguém a achava. Fica ao lado do Pedido de
+           demissão, as duas da saída do funcionário. Teste recibos-revisao-ux. -->
       <button class="vtab" data-v="demis">Pedido de demissão</button>
+      <button class="vtab" data-v="carta">Dispensa do aviso</button>
       <button class="vtab" data-v="emp">Empresa</button>
     </div>
 
@@ -4000,17 +4016,6 @@ if(window.RM_CELULAR) document.body.classList.add('rm-campo');
              nenhum: a unica forma de saber se ja tinha ido era procurar no
              e-mail. Aqui a competencia mostra o que falta e guarda a data do
              envio -- e e essa marca que a Central le para lembrar. -->
-        <div class="pf-fecha" id="pfFechaBox">
-          <div class="pf-fecha-cab">
-            <b>Fechamento da contabilidade</b>
-            <span class="pf-fecha-selo" id="pfFechaSelo">—</span>
-          </div>
-          <ol class="pf-fecha-passos" id="pfFechaPassos"></ol>
-          <div class="pf-fecha-acoes">
-            <button class="btn-act save" id="pfMarcarEnviado">Marcar como enviado</button>
-            <button class="btn-act dim" id="pfDesmarcarEnviado">Desfazer envio</button>
-          </div>
-        </div>
         <details class="pf-config">
           <summary>Configurar jornada usada nos cálculos e no preenchimento rápido</summary>
           <div class="form-grid">
@@ -4032,7 +4037,7 @@ if(window.RM_CELULAR) document.body.classList.add('rm-campo');
         </details>
       </div>
 
-      <div class="cards" style="grid-template-columns:repeat(5,minmax(0,1fr))">
+      <div class="cards c5">
         <div class="card"><div class="k"><span class="dotk b"></span>PF na competência</div><div class="v" id="pfQtd">0</div><div class="s" id="pfPeriodo">—</div></div>
         <div class="card atv"><div class="k"><span class="dotk g"></span>Horas trabalhadas</div><div class="v" id="pfTrab">00:00</div><div class="s">funcionário selecionado</div></div>
         <div class="card afa"><div class="k"><span class="dotk w"></span>Horas extras</div><div class="v" id="pfExtra">00:00</div><div class="s">inclui trabalho no fim de semana</div></div>
@@ -4056,6 +4061,20 @@ if(window.RM_CELULAR) document.body.classList.add('rm-campo');
           <div class="sub" style="margin-top:6px">Atalho: digite 700, 07:00 ou 7 e pressione Enter para avançar. Horários vazios permanecem pendentes até o fechamento.</div>
         </div>
         <span class="tot">Alterações salvas automaticamente</span>
+      </div>
+      <!-- R13: o fechamento vem depois da tabela (primeiro lança o ponto, depois fecha). -->
+      <div class="addzone pf-fecha-zona">
+        <div class="pf-fecha" id="pfFechaBox">
+          <div class="pf-fecha-cab">
+            <b>Fechamento da contabilidade</b>
+            <span class="pf-fecha-selo" id="pfFechaSelo">—</span>
+          </div>
+          <ol class="pf-fecha-passos" id="pfFechaPassos"></ol>
+          <div class="pf-fecha-acoes">
+            <button class="btn-act save" id="pfMarcarEnviado">Marcar como enviado</button>
+            <button class="btn-act dim" id="pfDesmarcarEnviado">Desfazer envio</button>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -4109,13 +4128,12 @@ if(window.RM_CELULAR) document.body.classList.add('rm-campo');
         <div class="fi grow"><span class="lab">Buscar</span><input id="salSearch" placeholder="nome"></div>
         <span id="salSelInfo" style="align-self:flex-end;font-size:12px;color:var(--muted);padding-bottom:9px" title="A caixa da primeira coluna decide quem entra nos recibos e no relatório de conferência"></span>
         <label class="fi" id="salIncPagosBox" style="flex-direction:row;align-items:center;gap:6px;align-self:flex-end;font-size:12.5px;font-weight:700;cursor:pointer" title="Por padrão, quem já está confirmado como PAGO nesta competência fica de fora dos recibos e do relatório — o recibo dele já foi assinado no dia. Marque aqui só para tirar uma segunda via."><input type="checkbox" id="salIncPagos"> Incluir já pagos</label>
-        <label class="fi" data-so="pagamento" style="flex-direction:row;align-items:center;gap:6px;align-self:flex-end;font-size:12.5px;font-weight:700;cursor:pointer"><input type="checkbox" id="salDetalhado"> Cálculo detalhado</label>
         <div class="fi" data-so="adiantamento"><span class="lab">Adiant. %</span><input id="salPct" class="mono" value="50" style="width:62px"></div>
         <button class="btn-act dim" id="btnSalAuto" data-so="adiantamento" style="align-self:flex-end" title="Usa a % para todos; para quem foi admitido no mês, calcula salário/30 × dias até o dia 15">Adiant. = % do salário</button>
         <button class="btn-act dim" id="btnSalResto" data-so="pagamento" style="align-self:flex-end">Pagto = salário − adiant.</button>
-        <button class="btn-act dim save" id="btnSalDet" data-so="pagamento" style="align-self:flex-end" title="Mostra na tabela a base líquida e os almoços; os dois continuam na ficha de qualquer jeito">Ocultar base e almoços</button>
+        <button class="btn-act dim" id="btnSalDet" data-so="pagamento" style="align-self:flex-end" title="Mostra na tabela a base líquida e os almoços; os dois continuam na ficha de qualquer jeito">Ocultar base e almoços</button>
         <button class="btn-act dim" id="btnImportAlmocos" data-so="pagamento" style="align-self:flex-end" title="Puxa o valor 'A pagar' do mês (competência) direto do sistema de Almoços">🍽️ Importar Almoços</button>
-        <button class="btn-act save" id="btnImportXlsx" style="align-self:flex-end">⭳ Importar Excel</button>
+        <button class="btn-act dim" id="btnImportXlsx" style="align-self:flex-end">⭳ Importar Excel</button>
         <input type="file" id="xlsxFile" accept=".xlsx,.xls" style="display:none">
       </div>
       <div class="sal-palco">
@@ -4350,7 +4368,7 @@ if(window.RM_CELULAR) document.body.classList.add('rm-campo');
           </div>
         </div>
         <div class="addbtns">
-          <button class="btn-act save" id="btnCliGerar">Gerar / Imprimir recibo →</button>
+          <button class="btn-act save" id="btnCliGerar">Emitir e imprimir →</button>
           <button class="btn-act dim" id="btnCliLimpar">Limpar campos</button>
         </div>
       </div>
@@ -4384,9 +4402,10 @@ if(window.RM_CELULAR) document.body.classList.add('rm-campo');
           <div class="f span6"><span class="lab">Observação (sai no recibo)</span><input id="rescObs" placeholder="opcional"></div>
         </div>
         <div class="addbtns">
-          <button class="btn-act save" id="btnRescGerar">Gerar / Imprimir recibo →</button>
+          <button class="btn-act save" id="btnRescGerar">Emitir e imprimir →</button>
           <button class="btn-act dim" id="btnRescLimpar">Limpar campos</button>
         </div>
+        <div class="resc-prox" id="rescProximo" hidden></div>
       </div>
       <div class="filters"><div class="section-lab" style="margin:0;flex:1">Rescisões pagas <span class="ln"></span></div><div class="fi grow"><span class="lab">Buscar</span><input id="rescSearch" placeholder="funcionário, documento ou motivo"></div></div>
       <div class="tbl-wrap">
@@ -4566,7 +4585,7 @@ if(window.RM_CELULAR) document.body.classList.add('rm-campo');
 
       <!-- VISÃO GERAL -->
       <div class="relpane" id="relp-geral">
-        <div class="cards" style="grid-template-columns:repeat(4,1fr)">
+        <div class="cards c4">
           <!-- O aviso de pendente fica DENTRO do card do total, e nao numa
                linha solta: quem estranhar o numero olha logo abaixo dele e
                acha a explicacao, sem procurar. -->
@@ -4617,7 +4636,7 @@ if(window.RM_CELULAR) document.body.classList.add('rm-campo');
       <!-- CUSTOS & ENCARGOS -->
       <div class="relpane" id="relp-custos">
         <div class="rel-note">Estes valores vêm dos campos detalhados preenchidos na aba Salários (base, horas extras, benefícios, descontos) no momento em que os pagamentos foram gerados. Alguns campos (horas extras, faltas, plano, INSS, e-consignado) são informativos e nem sempre entram na conta do valor pago — use como referência de composição, não como conferência exata do líquido.</div>
-        <div class="cards" style="grid-template-columns:repeat(4,1fr)">
+        <div class="cards c4">
           <div class="card"><div class="k"><span class="dotk b"></span>Salário base</div><div class="v" id="relCBase">R$ 0,00</div></div>
           <div class="card atv"><div class="k"><span class="dotk g"></span>Benefícios</div><div class="v" id="relCBenef">R$ 0,00</div><div class="s">banheiro + almoço + acréscimos</div></div>
           <div class="card afa"><div class="k"><span class="dotk w"></span>Horas extras (inf.)</div><div class="v" id="relCHe">R$ 0,00</div></div>
@@ -4677,12 +4696,12 @@ if(window.RM_CELULAR) document.body.classList.add('rm-campo');
           <div class="f span3"><span class="lab">Situação</span><select id="bhFiltro"><option value="todos">Todas</option><option value="pendente">Pendente</option><option value="recuperando">Recuperando</option><option value="quitado">Quitado</option><option value="emdia">Em dia</option></select></div>
         </div>
       </div>
-      <div class="cards" style="grid-template-columns:repeat(3,1fr)">
+      <div class="cards c3">
         <div class="card sem"><div class="k"><span class="dotk r"></span>Horas faltadas</div><div class="v" id="bhTotFaltas">0h</div></div>
         <div class="card atv"><div class="k"><span class="dotk g"></span>Horas recuperadas</div><div class="v" id="bhTotRecup">0h</div></div>
         <div class="card"><div class="k"><span class="dotk b"></span>Saldo pendente</div><div class="v" id="bhTotSaldo">0h</div></div>
       </div>
-      <div class="cards" style="grid-template-columns:repeat(4,1fr)">
+      <div class="cards c4">
         <div class="card"><div class="k"><span class="dotk b"></span>Em dia</div><div class="v" id="bhQtdDia">0</div><div class="s">sem faltas</div></div>
         <div class="card atv"><div class="k"><span class="dotk g"></span>Quitados</div><div class="v" id="bhQtdQuit">0</div><div class="s">recuperaram tudo</div></div>
         <div class="card afa"><div class="k"><span class="dotk w"></span>Recuperando</div><div class="v" id="bhQtdRecup">0</div><div class="s">em andamento</div></div>
@@ -4782,7 +4801,7 @@ if(window.RM_CELULAR) document.body.classList.add('rm-campo');
           <div class="f span3"><span class="lab">Data</span><input id="ceData" type="date"></div>
         </div>
         <div class="row" style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap;align-items:center">
-          <button class="btn primary" id="ceGerar">Gerar carta</button>
+          <button class="btn primary" id="ceGerar">Imprimir / PDF</button>
           <button class="btn ghost" id="ceLimpar">Limpar</button>
           <span id="ceDica" style="font-size:11.5px;color:var(--muted)">Escolha um funcionário já cadastrado e o CPF vem junto.</span>
         </div>
@@ -4810,7 +4829,7 @@ if(window.RM_CELULAR) document.body.classList.add('rm-campo');
             <span id="adPrev" style="font-size:11.5px;color:var(--muted);line-height:1.5;margin-top:5px;display:block"></span></div>
         </div>
         <div class="row" style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap;align-items:center">
-          <button class="btn primary" id="adGerar">Gerar advertência</button>
+          <button class="btn primary" id="adGerar">Imprimir / PDF</button>
           <button class="btn ghost" id="adLimpar">Limpar</button>
           <span id="adDica" style="font-size:11.5px;color:var(--muted)">Escolha um funcionário já cadastrado e o CPF vem junto.</span>
         </div>
@@ -4823,6 +4842,10 @@ if(window.RM_CELULAR) document.body.classList.add('rm-campo');
         <div class="section-lab">Pedido de demissão <span class="ln"></span></div>
         <p class="pd-expl">O texto sai impresso. Data, nome, CPF e data de admissão ficam em branco para o funcionário escrever de próprio punho, e ele assina. A situação segue os modelos da contabilidade.</p>
         <div class="form-grid">
+          <div class="f span6 pd-dados" style="position:relative"><span class="lab">Nome do funcionário</span>
+            <input id="pdNome" placeholder="nome do funcionário" autocomplete="off"><div class="sugg" id="pdSugg"></div></div>
+          <div class="f span3 pd-dados"><span class="lab">CPF</span><input id="pdCpf" class="mono" placeholder="000.000.000-00" inputmode="numeric" autocomplete="off"></div>
+          <div class="f span3 pd-dados"><span class="lab">Admissão</span><input id="pdAdm" type="date"></div>
           <div class="f span6"><span class="lab">Situação do aviso prévio</span>
             <select id="pdSit">
               <option value="desconto">Não cumpre o aviso — desconta os 30 dias</option>
@@ -4833,10 +4856,6 @@ if(window.RM_CELULAR) document.body.classList.add('rm-campo');
           <div class="f span6"><span class="lab">&nbsp;</span>
             <label class="pd-chk"><input type="checkbox" id="pdPreenche"> Já imprimir nome, CPF e admissão do cadastro</label>
             <label class="pd-chk"><input type="checkbox" id="pdMenor"> Menor de idade (assina também o responsável legal)</label></div>
-          <div class="f span6 pd-dados" style="position:relative"><span class="lab">Funcionário</span>
-            <input id="pdNome" placeholder="nome do funcionário" autocomplete="off"><div class="sugg" id="pdSugg"></div></div>
-          <div class="f span3 pd-dados"><span class="lab">CPF</span><input id="pdCpf" class="mono" placeholder="000.000.000-00" inputmode="numeric" autocomplete="off"></div>
-          <div class="f span3 pd-dados"><span class="lab">Admissão</span><input id="pdAdm" type="date"></div>
         </div>
         <div class="row" style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap;align-items:center">
           <button class="btn primary" id="pdGerarBt">Gerar pedido de demissão</button>
@@ -5244,7 +5263,7 @@ if(window.RM_CELULAR) document.body.classList.add('rm-campo');
 
 <!-- MODAL LANÇAMENTOS DA FOLHA -->
 <div class="overlay" id="folhaModal"><div class="modal" style="max-width:620px">
-  <div class="mhead"><h2 id="folhaTitulo">Lançamentos da folha</h2><button class="x" data-close>✕</button></div>
+  <div class="mhead"><h2 id="folhaTitulo">Vales, extras e descontos</h2><button class="x" data-close>✕</button></div>
   <div class="mbody">
     <p style="color:var(--muted);font-size:12.5px;margin:0 0 14px">Tudo que não vem da planilha da contabilidade entra aqui: acréscimo de banheiro, desconto RM, uma montagem, um acerto. Cada linha sai no demonstrativo do recibo com a descrição que você escrever e <b>entra na conta do pagamento</b>: provento soma, desconto subtrai.</p>
     <div id="folhaLinhas"></div>
@@ -5523,7 +5542,7 @@ function loadSalGen(){try{const r=localStorage.getItem(SALGEN_KEY);if(r){const g
 function saveSalGen(){try{localStorage.setItem(SALGEN_KEY,JSON.stringify(salGen))}catch(e){}}
 function incSal(e){return salGen.excluded[e.id]!==true;}
 /* ===== QUEM JA RECEBEU NAO ENTRA NO LOTE =====
-   Adiantamento pago adiantado -- o Mauro recebeu no dia 11, antes dos outros
+   Adiantamento pago adiantado -- um funcionário recebeu no dia 11, antes dos outros
    -- ja teve o recibo dele assinado naquele dia. Ao gerar o lote do mes ele
    saia de novo: um segundo recibo do mesmo dinheiro, para a mesma competencia,
    circulando junto dos verdadeiros. Isso nao e' papel a mais, e' risco de
@@ -6411,9 +6430,12 @@ function toast(m,k){const t=$('#toast');t.textContent=m;t.className='on'+(k?' '+
 $('#logoImg').src=LOGO; $('#loginLogo').src=LOGO; $('#appbarLogo').src=LOGO_SIMBOLO;
 
 const modoCampo=()=>document.body.classList.contains('rm-campo');
-document.querySelectorAll('.vtab').forEach(t=>t.onclick=()=>{
+/* só as abas principais: as de dentro do Relatório (data-rv) também são
+   .vtab, e o clique numa aba principal tirava o destaque delas -- entrando
+   no Relatório, nenhuma ficava marcada. Teste recibos-revisao-ux. */
+document.querySelectorAll('#abasMain .vtab').forEach(t=>t.onclick=()=>{
   if(modoCampo()&&t.dataset.v!=='epi')return;
-  document.querySelectorAll('.vtab').forEach(x=>x.classList.remove('on'));
+  document.querySelectorAll('#abasMain .vtab').forEach(x=>x.classList.remove('on'));
   document.querySelectorAll('.view').forEach(x=>x.classList.remove('on'));
   t.classList.add('on'); $('#v-'+t.dataset.v).classList.add('on');
   if(t.dataset.v==='carta')renderCarta();
@@ -6480,6 +6502,13 @@ document.querySelectorAll('.vtab').forEach(t=>t.onclick=()=>{
       const g=grupoDa(sel.closest('.vtab'));
       soma[g]=(soma[g]||0)+(parseInt(sel.textContent,10)||0);
     });
+    /* os avisos da Ficha de EPI ("A entregar 5", "Vínculos 1") moram nas
+       sub-abas dela e não subiam para o grupo Documentos: a pendência só
+       aparecia para quem entrava lá. Teste recibos-revisao-ux. */
+    document.querySelectorAll('#v-epi .epi-stab .selo').forEach(sel=>{
+      if(sel.style.display==='none'||!sel.textContent)return;
+      soma.doc=(soma.doc||0)+(parseInt(sel.textContent,10)||0);
+    });
     Object.keys(soma).forEach(g=>{
       const bt=barra.querySelector('.gtab[data-g="'+g+'"]');
       if(!bt||bt.classList.contains('on'))return;
@@ -6492,6 +6521,7 @@ document.querySelectorAll('.vtab').forEach(t=>t.onclick=()=>{
   function sincroniza(){
     if(ocupado)return; ocupado=true;
     const on=tira.querySelector('.vtab.on');
+    if(on){try{localStorage.setItem('rec_aba_'+grupoDa(on),on.dataset.v);}catch(e){}}
     mostra(on?grupoDa(on):'func'); selos();
     ocupado=false;
   }
@@ -6501,7 +6531,11 @@ document.querySelectorAll('.vtab').forEach(t=>t.onclick=()=>{
     bt.onclick=()=>{
       const atual=tira.querySelector('.vtab.on');
       if(atual&&grupoDa(atual)===g){mostra(g);return;}
-      const primeira=[...tira.querySelectorAll('.vtab')].find(b=>grupoDa(b)===g);
+      /* o grupo volta à última aba usada nele (neste aparelho): o grupo
+         Recibos abria sempre em Rescisão, a mais rara. Teste recibos-revisao-ux. */
+      let ult=null; try{ult=localStorage.getItem('rec_aba_'+g);}catch(e){}
+      const lembrada=ult&&tira.querySelector('.vtab[data-v="'+ult+'"]');
+      const primeira=(lembrada&&grupoDa(lembrada)===g&&lembrada.offsetParent!==undefined)?lembrada:[...tira.querySelectorAll('.vtab')].find(b=>grupoDa(b)===g);
       if(primeira)primeira.click();
     };
     barra.appendChild(bt);
@@ -6510,6 +6544,11 @@ document.querySelectorAll('.vtab').forEach(t=>t.onclick=()=>{
      classes na mao em vez de clicar. O observador cobre os dois casos. */
   new MutationObserver(sincroniza).observe(tira,
     {childList:true,subtree:true,attributes:true,attributeFilter:['class','style']});
+  /* a Ficha de EPI nasce depois, por script próprio: liga o observador
+     quando ela aparecer */
+  (function ligaEpi(n){const ve=document.getElementById('v-epi');
+    if(ve){new MutationObserver(()=>{if(!ocupado){ocupado=true;selos();ocupado=false;}}).observe(ve,{childList:true,subtree:true,characterData:true,attributes:true,attributeFilter:['style']});selos();}
+    else if(n<40)setTimeout(()=>ligaEpi(n+1),1500);})(0);
   sincroniza();
 })();
 
@@ -10058,7 +10097,12 @@ function linhaSalHTML(e){
   /* Na tabela o CPF deu lugar à função: ninguém confere documento varrendo a
      folha, mas todo mundo procura "o soldador". O CPF continua na ficha. */
   const funcao=(e.funcao||'').trim();
-  return '<td class="c chk" data-label="Entra no recibo"><input type="checkbox" class="salchk" data-ssel="'+e.id+'"'+(incSal(e)?' checked':'')+'></td>'+
+  /* afastado não entra no lote (o título já não o contava): a caixa aparecia
+     marcada mesmo assim. Agora sai desmarcada e travada, com a dica. Teste
+     recibos-revisao-ux. */
+  return '<td class="c chk" data-label="Entra no recibo">'+(e.status==='afast'
+      ?'<input type="checkbox" class="salchk" disabled title="Afastado não entra no recibo do mês" aria-label="Afastado não entra no recibo do mês">'
+      :'<input type="checkbox" class="salchk" data-ssel="'+e.id+'"'+(incSal(e)?' checked':'')+'>')+'</td>'+
     '<td class="forn"><div class="forn">'+esc(titlePt(e.nome))+' <span class="badge '+(af?'afa':(e.status==='teste'?'des':'atv'))+'" data-sst="'+e.id+'" style="cursor:pointer" title="'
       +(e.status==='teste'?'Em teste: para efetivar, use o botão Efetivar na aba Funcionários'
         :'Alterna entre ativo e afastado (pede confirmação)'+(af&&e.afastMotivo?' — voltando a ativo, o motivo (' +afastMotivoRot(e.afastMotivo)+ ') é apagado; ele se declara no cadastro':''))+'">'+
@@ -10204,7 +10248,9 @@ function renderFicha(rolar){
   if(ad){
     h+=linha('Base do adiantamento',campo('sad',Number(p.adiantBase)||0,'adiant.'));
   }else{
-    h+=linha('Adiantamento pago',valor(adiantPagoDoMes(p.id,comp),'−'));
+    /* soma o que foi lançado no mês, não o que foi confirmado -- "pago"
+       aparecia ao lado de "Adiantamento: Pendente". Teste recibos-revisao-ux. */
+    h+=linha('Adiantamento descontado',valor(adiantPagoDoMes(p.id,comp),'−'));
     h+=linha('Base líquida',campo('sbase',Number(p.base)||0,'base'));
   }
   h+='</div><div class="fh-grupo"><div class="fh-grupo-t">Ajustes da RM</div>';
@@ -10222,11 +10268,18 @@ function renderFicha(rolar){
   h+=linha('Desconto',campo('sdesc',Number(p.desconto)||0,'0,00'));
   obterDescontosEmpr(p.id,ad?'adiantamento':'pagamento').forEach(x=>{
     h+=linha('Parcela '+x.numero+'/'+x.total+' · '+esc(x.desc||'empréstimo'),valor(Number(x.valor)||0,'−'));});
-  if(!ad){
-    const fe=(p.folhaExtra||[]).length,soma=somaFolhaExtra(p);
-    h+=linha('Lançamentos da folha','<button class="btn-mini" data-sfolha="'+p.id+'">'
-      +(fe?fe+' item'+(fe>1?'s':''):'+ lançar')+'</button>');
-    if(soma)h+=linha('Soma dos lançamentos',assinado(soma));
+  /* VALES, EXTRAS E DESCONTOS. A palavra "vale" não aparecia em lugar
+     nenhum, e no ciclo de adiantamento (dias 1 a 15) não havia onde lançar:
+     era preciso avançar até o pagamento. Agora lança nos dois; no
+     adiantamento, avisa que entra no pagamento do mês. Teste recibos-revisao-ux. */
+  {
+    const alvo=folhaAlvoAd();
+    if(alvo!==false){
+      const fe=(alvo?folhaDoPag(alvo,p.id):(p.folhaExtra||[])).length,soma=somaFolhaExtra(p);
+      h+=linha('Vales, extras e descontos','<button class="btn-mini" data-sfolha="'+p.id+'">'
+        +(fe?fe+' item'+(fe>1?'s':''):'+ lançar')+'</button>'+(alvo?'<span class="fh-nota">descontam no '+esc(cicloRotulo(alvo).toLowerCase())+'</span>':''));
+      if(soma&&!ad)h+=linha('Soma dos lançamentos',assinado(soma));
+    }
   }
   h+=linha(ad?'Adiantamento':'Pagamento','<span class="vl" id="fichaTotal">R$ '
     +fmtBRL((ad?p.valAdiantamento:p.valPagamento)||0)+'</span>','total');
@@ -11022,7 +11075,7 @@ function relatorioCompleto(tipo){
   // detalhe dos lançamentos nomeados da folha
   const comExtra=itens.filter(it=>(it.folhaExtra||[]).length);
   if(comExtra.length){
-    html+='<div class="sec">Lançamentos da folha</div>'
+    html+='<div class="sec">Vales, extras e descontos</div>'
       +'<table class="det"><thead><tr><th>Funcionário</th><th>Descrição</th>'
       +'<th class="r">Valor</th></tr></thead><tbody>'
       +comExtra.map(it=>(it.folhaExtra||[]).map(x=>'<tr><td>'+esc(titlePt(it.nome))+'</td>'
@@ -11247,7 +11300,7 @@ $('#almImportApply').onclick=()=>{
   renderSal();
   toast(n?n+' funcionário(s) — R$ '+fmtBRL(soma)+' em almoços':'Nenhum funcionário selecionado',n?'ok':'err');
 };
-/* --- Lançamentos da folha, com descrição --- */
+/* --- Vales, extras e descontos, com descrição --- */
 // A folha da contabilidade traz coisas que não têm coluna aqui (hora extra,
 // um desconto específico). Antes tudo isso virava uma linha genérica de
 // "outros" no recibo -- ou, pior, sumia dentro do salário. Aqui a pessoa dá
@@ -11267,12 +11320,24 @@ const CAMPOS_ABSORVIDOS=[
 ];
 const FOLHA_SUGESTOES=['Acréscimo banheiro','Desconto RM','Acréscimos','Montagem','Hora extra','Vale','Acerto'];
 const semAcento=t=>String(t||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
+/* No ciclo de adiantamento a tela zera o lado do pagamento (é outro ciclo),
+   então o lançamento vai direto para o registro do pagamento do mesmo mês --
+   como já faz a indicação. Devolve o ciclo alvo, null fora do adiantamento,
+   false se aquele pagamento já foi fechado. */
+let folhaAlvo=null;
+function folhaAlvoAd(){
+  if(typeof salCiclo==='undefined'||!salCiclo||salCiclo.tipo!=='adiantamento')return null;
+  const c={tipo:'pagamento',ano:salCiclo.ano,mesIdx:salCiclo.mesIdx};
+  return cicloFechado(c)?false:c;
+}
+function folhaDoPag(c,id){const r=cicloReg(c);return (r&&r.itens&&r.itens[id]&&r.itens[id].folhaExtra)||[];}
 function abrirFolhaExtra(id){
   const e=state.employees.find(x=>x.id===id); if(!e) return;
   folhaEmpId=id;
-  folhaTmp=(e.folhaExtra||[]).map(x=>({desc:String(x.desc||''),valor:Number(x.valor)||0}));
-  CAMPOS_ABSORVIDOS.forEach(c=>{const v=Number(e[c.campo])||0;if(v>0)folhaTmp.push({desc:c.desc,valor:v*c.sinal});});
-  $('#folhaTitulo').textContent='Lançamentos da folha — '+titlePt(e.nome);
+  folhaAlvo=folhaAlvoAd(); if(folhaAlvo===false){folhaAlvo=null;return;}
+  folhaTmp=(folhaAlvo?folhaDoPag(folhaAlvo,id):(e.folhaExtra||[])).map(x=>({desc:String(x.desc||''),valor:Number(x.valor)||0}));
+  if(!folhaAlvo)CAMPOS_ABSORVIDOS.forEach(c=>{const v=Number(e[c.campo])||0;if(v>0)folhaTmp.push({desc:c.desc,valor:v*c.sinal});});
+  $('#folhaTitulo').textContent='Vales, extras e descontos — '+titlePt(e.nome);
   renderFolhaLinhas();
   $('#folhaModal').classList.add('open');
 }
@@ -11315,6 +11380,12 @@ function renderFolhaLinhas(){
 function atualizarFolhaResto(){
   const e=state.employees.find(x=>x.id===folhaEmpId); if(!e) return;
   const p=$('#folhaResto');
+  if(folhaAlvo){
+    const t=somaFolhaExtra(null,folhaTmp);
+    p.style.color=t<0?'var(--red)':(t?'var(--ok)':'var(--muted)');
+    p.textContent='Não mexe neste adiantamento: entra no '+cicloRotulo(folhaAlvo).toLowerCase()+(t?' ('+(t<0?'desconto':'acréscimo')+' de R$ '+fmtBRL(Math.abs(t))+').':'.');
+    return;
+  }
   const antes=Number(e.valPagamento)||0;
   // Simula exatamente o que o Salvar faz: lista nova valendo e campos
   // antigos zerados. Sem zerar, os valores que acabaram de ser trazidos das
@@ -11332,6 +11403,18 @@ $('#folhaAdd').onclick=()=>{folhaTmp.push({desc:'',valor:0});renderFolhaLinhas()
 $('#folhaSalvar').onclick=()=>{
   const e=state.employees.find(x=>x.id===folhaEmpId);
   if(!e){closeAll();return;}
+  if(folhaAlvo){
+    const lista=folhaTmp.filter(x=>String(x.desc||'').trim() && Number(x.valor));
+    const k=cicloKey(folhaAlvo),r=state.ciclos[k]||(state.ciclos[k]={tipo:'pagamento',ano:folhaAlvo.ano,mesIdx:folhaAlvo.mesIdx,itens:{}});
+    if(!r.itens)r.itens={};
+    const it=r.itens[e.id]||(r.itens[e.id]={});
+    if(lista.length)it.folhaExtra=lista; else delete it.folhaExtra;
+    const rot=cicloRotulo(folhaAlvo).toLowerCase();
+    folhaAlvo=null;
+    persist(); closeAll(); renderSal();
+    toast('Lançamentos salvos · entram no '+rot,'ok');
+    return;
+  }
   e.folhaExtra=folhaTmp.filter(x=>String(x.desc||'').trim() && Number(x.valor));
   CAMPOS_ABSORVIDOS.forEach(c=>{e[c.campo]=0;}); // o valor migrou para a lista
   aplicarDescontoEmprestimo(e); // recalcula o pagamento antes de gravar
@@ -11346,7 +11429,10 @@ $('#folhaSalvar').onclick=()=>{
 // estao sempre na ficha, esteja a coluna a mostra ou nao.
 function setSalDetail(v){
   salDetail=!!v;
-  $('#btnSalDet').classList.toggle('save',salDetail);
+  /* liga/desliga não é a ação que conclui: fica sem laranja, com o estado
+     no aria-pressed (o laranja da tela é só o "Recibos … →"). Teste
+     recibos-revisao-ux. */
+  $('#btnSalDet').setAttribute('aria-pressed',salDetail?'true':'false');
   $('#btnSalDet').textContent=salDetail?'Ocultar base e almoços':'Base e almoços na tabela';
 }
 $('#btnSalDet').onclick=()=>{setSalDetail(!salDetail);renderSal();};
@@ -11980,7 +12066,7 @@ function envTextosTela(){[['asEnvMsg','msg'],['asEnvAss','ass']].forEach(([id,k]
 
 /* ===================== RELATÓRIO ===================== */
 /* Uma pessoa por chave dentro da competencia. Sem isto, gerar um segundo lote
-   no mesmo mes SUBSTITUIA o primeiro inteiro: o adiantamento que o Mauro
+   no mesmo mes SUBSTITUIA o primeiro inteiro: o adiantamento que um funcionário
    recebeu e assinou no dia 11 desaparecia do historico quando o lote dos
    outros saiu no dia 15 -- R$ 1.500 fora da historia de setembro, calados.
    Antes isso ficava escondido porque ele saia nos dois lotes e voltava com o
@@ -13577,7 +13663,7 @@ function exportFuncionariosSalariosPDF(){
      que a pessoa recebeu de verdade e o recibo nao esta neste historico: o
      pagamento confirmado sem gerar lote (o "Confirmar lote" nao escreve
      historico), e o recibo antigo perdido por causa do bug de substituicao que
-     existia aqui -- o do Mauro do dia 11. Em qualquer dos dois, a coluna dizia
+     existia aqui -- o de um funcionário do dia 11. Em qualquer dos dois, a coluna dizia
      que a pessoa nao recebeu nada, o que e' uma afirmacao falsa sobre dinheiro
      que saiu do caixa. Agora, na falta do recibo, vale o pagamento confirmado,
      e o relatorio DECLARA quais linhas vieram dai. */
@@ -14292,10 +14378,10 @@ function fillCliForm(c){$('#cliNome').value=c?c.nome:'';$('#cliDocTipo').value=c
   $('#cliNomeDica').textContent='';}
 function editCli(id){editCliId=id;const c=state.clientes.find(x=>x.id===id);fillCliForm(c);$('#btnCliGerar').textContent='Salvar e reimprimir →';window.scrollTo({top:0,behavior:'smooth'});}
 $('#btnCliGerar').onclick=()=>{const d=readCliForm();if(!d.nome){toast('Informe o cliente','err');return;}if(!d.pagamentos.length){toast('Informe ao menos um pagamento com valor','err');return;}
-  if(editCliId){const c=state.clientes.find(x=>x.id===editCliId);Object.assign(c,d);persist();printCliente(c);editCliId=null;$('#btnCliGerar').textContent='Gerar / Imprimir recibo →';}
+  if(editCliId){const c=state.clientes.find(x=>x.id===editCliId);Object.assign(c,d);persist();printCliente(c);editCliId=null;$('#btnCliGerar').textContent='Emitir e imprimir →';}
   else{const num=(state.clientes.reduce((m,c)=>Math.max(m,c.numero||0),0))+1;const c={id:'c'+Date.now(),...d,numero:num,ts:Date.now()};state.clientes.unshift(c);persist();printCliente(c);}
   fillCliForm(null);renderCli();toast('Recibo gerado','ok');};
-$('#btnCliLimpar').onclick=()=>{editCliId=null;$('#btnCliGerar').textContent='Gerar / Imprimir recibo →';fillCliForm(null);};
+$('#btnCliLimpar').onclick=()=>{editCliId=null;$('#btnCliGerar').textContent='Emitir e imprimir →';fillCliForm(null);};
 $('#cliSearch').oninput=renderCli;
 $('#cliTextoOn').onchange=()=>{$('#cliTexto').style.display=$('#cliTextoOn').checked?'':'none';};
 /* Preenche o cadastro (nome/documento/cidade) a partir do ultimo recibo
@@ -14466,7 +14552,7 @@ function renderResc(){
     const r=state.rescisoes.find(y=>y.id===x.dataset.rsde);
     if(!confirm('Excluir o recibo de rescisão de '+titlePt(r.nome||'')+' (R$ '+fmtBRL(r.valor)+')?\n\nEle sai também do relatório e do controle de pagamentos.'))return;
     state.rescisoes=state.rescisoes.filter(y=>y.id!==x.dataset.rsde);
-    if(editRescId===x.dataset.rsde){editRescId=null;$('#btnRescGerar').textContent='Gerar / Imprimir recibo →';fillRescForm(null);}
+    if(editRescId===x.dataset.rsde){editRescId=null;$('#btnRescGerar').textContent='Emitir e imprimir →';fillRescForm(null);}
     rescSync();persist();renderResc();toast('Excluído');});
 }
 function readRescForm(){
@@ -14506,13 +14592,41 @@ $('#btnRescGerar') && ($('#btnRescGerar').onclick=()=>{
   if(!d.data){toast('Informe a data do recibo','err');return;}
   if(!Array.isArray(state.rescisoes))state.rescisoes=[];
   let r;
-  if(editRescId){r=state.rescisoes.find(x=>x.id===editRescId);Object.assign(r,d);editRescId=null;$('#btnRescGerar').textContent='Gerar / Imprimir recibo →';}
+  if(editRescId){r=state.rescisoes.find(x=>x.id===editRescId);Object.assign(r,d);editRescId=null;$('#btnRescGerar').textContent='Emitir e imprimir →';}
   else{const num=(state.rescisoes.reduce((m,x)=>Math.max(m,x.numero||0),0))+1;
     r={id:'r'+Date.now(),...d,numero:num,ts:Date.now()};state.rescisoes.unshift(r);}
   rescSync();persist();printRescisao(r);
   fillRescForm(null);renderResc();toast('Recibo de rescisão gerado','ok');
+  rescProximos(r);
 });
-$('#btnRescLimpar') && ($('#btnRescLimpar').onclick=()=>{editRescId=null;$('#btnRescGerar').textContent='Gerar / Imprimir recibo →';fillRescForm(null);});
+/* PRÓXIMOS PASSOS. Emitido o recibo, o resto da saída (documentos para
+   assinar e a situação no cadastro) ficava em outra aba e outra janela, sem
+   nada lembrando. Teste recibos-revisao-ux. */
+function rescProximos(r){
+  const box=$('#rescProximo'); if(!box)return;
+  const e=r&&state.employees.find(x=>x.id===r.empId);
+  if(!e){box.hidden=true;box.innerHTML='';return;}
+  const saiu=e.status==='desligado'||e.status==='demissao';
+  box.innerHTML='<span class="rp-tit">Próximos passos de '+esc(titlePt(e.nome))+':</span>'
+    +'<button class="btn-act dim" id="rescIrDocs">Documentos da rescisão →</button>'
+    +(saiu?'<span class="rp-ok">✓ já está como desligado</span>':'<button class="btn-act dim" id="rescMarcaDeslig">Marcar como desligado</button>')
+    +'<button class="x" id="rescProxFecha" title="fechar" aria-label="fechar">✕</button>';
+  box.hidden=false;
+  $('#rescIrDocs').onclick=()=>{
+    const t=document.querySelector('#abasMain .vtab[data-v="rescdoc"]'); if(t)t.click();
+    if($('#kitEmp')){$('#kitEmp').value=e.id;kitEscolhe(e.id);}
+    box.hidden=true;
+  };
+  if($('#rescMarcaDeslig'))$('#rescMarcaDeslig').onclick=()=>{
+    openEmp(e.id);
+    $('#mStatus').value='desligado'; $('#mStatus').dispatchEvent(new Event('change'));
+    if(!$('#mDtDeslig').value)$('#mDtDeslig').value=r.data||rmDiaISO();
+    $('#mDtDeslig').dispatchEvent(new Event('change'));
+    box.hidden=true;
+  };
+  $('#rescProxFecha').onclick=()=>{box.hidden=true;};
+}
+$('#btnRescLimpar') && ($('#btnRescLimpar').onclick=()=>{editRescId=null;$('#btnRescGerar').textContent='Emitir e imprimir →';fillRescForm(null);});
 $('#rescSearch') && ($('#rescSearch').oninput=renderResc);
 
 /* ===================== SIMULADOR DE RESCISÃO =====================
@@ -17553,17 +17667,31 @@ function pfRelSelecionados(){return pfRelListaBase().filter(e=>PF_REL_SEL[e.id])
   $('#pfFerAdd').onclick=pfAddFeriado;
 })();
 
-function closeAll(){document.querySelectorAll('.overlay.open').forEach(o=>o.classList.remove('open'));}
+function closeAll(){document.querySelectorAll('.overlay.open').forEach(o=>{o.classList.remove('open');delete o.dataset.sujo;});}
+/* ESC E CLIQUE FORA NÃO APAGAM O QUE FOI DIGITADO. Preencher o "Novo
+   funcionário" e apertar Esc fechava a janela sem perguntar -- um cadastro
+   inteiro perdido. Com algum campo mexido desde que a janela abriu, pergunta
+   antes; o ✕ e o Cancelar continuam fechando direto (são de propósito).
+   Teste recibos-revisao-ux. */
+function fecharSemPerder(){
+  const abertas=[...document.querySelectorAll('.overlay.open')];
+  if(abertas.some(o=>o.dataset.sujo==='1')&&!confirm('Descartar o que foi digitado nesta janela?'))return false;
+  closeAll();return true;
+}
+document.querySelectorAll('.overlay').forEach(o=>{
+  ['input','change'].forEach(t=>o.addEventListener(t,e=>{if(o.classList.contains('open')&&e.isTrusted!==false&&e.target.matches&&e.target.matches('input,select,textarea'))o.dataset.sujo='1';}));
+  new MutationObserver(()=>{if(!o.classList.contains('open'))delete o.dataset.sujo;}).observe(o,{attributes:true,attributeFilter:['class']});
+});
 document.querySelectorAll('[data-close]').forEach(x=>x.onclick=closeAll);
-document.querySelectorAll('.overlay').forEach(o=>o.addEventListener('click',e=>{if(e.target===o)closeAll();}));
-document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeAll();$('#printOv').classList.remove('open');}});
+document.querySelectorAll('.overlay').forEach(o=>o.addEventListener('click',e=>{if(e.target===o)fecharSemPerder();}));
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){if(fecharSemPerder())$('#printOv').classList.remove('open');}});
 
 /* ===================== QUE VERSAO E ESTA =====================
    APP_VER tem de bater com o CACHE do service-worker.js -- os dois sobem
    juntos a cada publicacao, e ha uma prova automatica que falha se um subir
    sem o outro. Assim o numero na tela e o mesmo do arquivo que o aparelho
    guardou, e dizer "estou na v81" passa a significar alguma coisa. */
-const APP_VER='v273';
+const APP_VER='v274';
 (function(){var p=document.getElementById('verPill'); if(p)p.textContent=APP_VER;})();
 
 if('serviceWorker' in navigator){
@@ -17765,7 +17893,7 @@ function confirmarLoteFolha(tipo){
   const key=salMesKey();if(!key){toast('Escolha a competência','err');return;}const comp={ano:Number(key.slice(0,4)),mesIdx:Number(key.slice(5,7))-1},campo=tipo==='adiantamento'?'valAdiantamento':'valPagamento';
   const sel=empAtivos().filter(e=>e.status!=='afast'&&incSal(e)&&(Number(e[campo])||0)>0);
   /* QUEM JA ESTA PAGO NAO SE RECONFIRMA EM LOTE. O lote grava a data do topo
-     da aba em todo mundo: o adiantamento que o Mauro recebeu no dia 11 viraria
+     da aba em todo mundo: o adiantamento que um funcionário recebeu no dia 11 viraria
      dia 15, calado, e a data real do pagamento dele estaria perdida. Reabrir
      um pagamento ja confirmado e' decisao de um caso so', e se faz na linha
      dele -- nunca de raspao, junto com os outros.
@@ -18473,6 +18601,9 @@ initAuth();
 .epi-f{display:flex;flex-direction:column;gap:5px;min-width:0;grid-column:span 4}
 .epi-f.w2{grid-column:span 2}.epi-f.w3{grid-column:span 3}
 .epi-f.w4{grid-column:span 4}.epi-f.w6{grid-column:span 6}
+/* celular: cada campo na linha inteira -- na Troca rápida o Funcionário
+   ficava com meia largura ("— escolha o funci…"). Teste recibos-revisao-ux. */
+@media (max-width:560px){.epi-form .epi-f,.epi-form .epi-f.w2,.epi-form .epi-f.w3,.epi-form .epi-f.w4,.epi-form .epi-f.w6{grid-column:1 / -1}}
 .epi-lab{font-size:12px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--muted)}
 .epi-f input,.epi-f select{width:100%;font:inherit;font-size:14px;padding:9px 10px;
   border:1px solid var(--line);border-radius:8px;background:#fff;color:var(--ink);font-weight:505}

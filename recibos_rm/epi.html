@@ -56,6 +56,8 @@
   .passos b{color:var(--ink);display:block;margin-bottom:5px;font-size:12px}
   .passos ol{margin:0;padding-left:18px}
   .nota{margin:16px 0 0;font-size:11.5px;color:var(--muted);line-height:1.55}
+/* no celular o balcão só entrega EPI: o sistema completo (folha, salários) não é para lá */
+@media (pointer:coarse) and (max-width:700px){#btCompleto{display:none}}
 </style>
 </head>
 <body>
@@ -67,7 +69,7 @@
 
   <button class="btn" id="btInstalar" hidden>⤓ Instalar no telefone</button>
   <a class="btn" id="btAbrir" href="./?v=epi&amp;sub=rapida&amp;modo=campo">Abrir agora</a>
-  <a class="btn sec" href="./">Abrir o sistema completo</a>
+  <a class="btn sec" id="btCompleto" href="./">Abrir o sistema completo</a>
 
   <div class="passos" id="passos" hidden>
     <b>Para deixar como aplicativo</b>

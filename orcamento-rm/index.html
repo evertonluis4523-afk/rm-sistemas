@@ -2320,6 +2320,15 @@ table.ctrltbl{width:max-content!important;min-width:100%!important;font-size:14p
 .det-best-total{font-family:var(--mono);font-size:20px;font-weight:800;color:var(--ok);white-space:nowrap}
 .cot-det-footer{margin-top:auto;padding:12px 22px;border-top:1px solid var(--line);display:flex;
   justify-content:flex-end;gap:8px;background:var(--surface);flex-wrap:wrap}
+/* aviso: o orçamento aberto mantém os preços de quando foi salvo */
+.aviso-preco{margin-bottom:14px;padding:11px 15px;border:1px solid var(--rm-linha-forte);border-left:3px solid var(--rm-marca);border-radius:var(--rm-raio);background:var(--rm-superficie);color:var(--rm-texto);font-size:13px;line-height:1.5}
+.aviso-preco .btn-sm{margin-left:6px}
+.orc-desfazer{position:fixed;left:50%;bottom:84px;transform:translate(-50%,20px);opacity:0;pointer-events:none;z-index:1300;display:flex;align-items:center;gap:12px;padding:10px 12px 10px 16px;border-radius:var(--rm-raio);background:var(--rm-texto);color:var(--rm-superficie);font-size:13px;font-weight:600;transition:opacity .2s,transform .2s;box-shadow:0 8px 24px rgba(0,0,0,.25)}
+.orc-desfazer.on{opacity:1;transform:translate(-50%,0);pointer-events:auto}
+.orc-desfazer .btn-sm{background:transparent;color:inherit;border-color:currentColor}
+.orc-estado{margin:-4px 0 12px;font-size:12px;color:var(--rm-apagado);font-weight:600}
+.orc-estado .oe-ok{color:var(--rm-ok)}
+.orc-estado .oe-pend{color:var(--rm-marca-escura)}
 </style>
 
 
@@ -2466,6 +2475,8 @@ body:not(.orc-em-orcamento) .orc-bar { display: none; }
 .orc-imp summary::after { content: ' ▾'; color: var(--muted, #6b7280); }
 .orc-imp[open] summary, .orc-imp summary:hover { border-color: var(--red, #D53309); }
 .orc-imp .imp-ico { display: none; font-size: 18px; line-height: 1; letter-spacing: 1px; }
+.orc-tab .nm-cel { display: none; }
+.orc-imp .imp-cel { display: none; font-weight: 700; margin-right: 4px; }
 .orc-imp-p {
   position: absolute; right: 0; bottom: calc(100% + 10px); z-index: 75; min-width: 250px;
   display: flex; flex-direction: column; gap: 8px; padding: 13px;
@@ -2484,6 +2495,7 @@ body:not(.orc-em-orcamento) .orc-bar { display: none; }
   .orc-bar .tot.grand .v { font-size: 17px; }
   .orc-bar .so-pc { display: none; }
   .orc-imp .imp-txt { display: none; }
+  .orc-imp .imp-cel { display: inline; }
   .orc-imp .imp-ico { display: inline; }
   .orc-imp summary { padding: 9px 13px; }
   .orc-imp summary::after { content: ''; }
@@ -2493,6 +2505,20 @@ body:not(.orc-em-orcamento) .orc-bar { display: none; }
   /* Com a aba Chave na mao as quatro abas passam da largura do celular: a
      faixa rola de lado e a engrenagem fica presa a' direita, sempre a' mao. */
   .orc-tabs { flex-wrap: nowrap; gap: 6px; overflow-x: auto; scrollbar-width: none; }
+  /* nomes curtos no celular: Salvos e Compras da obra ficavam fora da tela */
+  .orc-tab .nm-pc { display: none; }
+  .orc-tab .nm-cel { display: inline; }
+  .orc-tabs .orc-tab { padding-left: 9px; padding-right: 9px; font-size: 13px; }
+  /* Salvos logo depois de Orçamento: é a aba que mais se procura e ficava
+     fora da tela, sem sinal de que existia */
+  .orc-tab[data-aba="salvos"] { order: 1; }
+  .orc-tab[data-aba="esq"] { order: 2; } .orc-tab[data-aba="cnm"] { order: 3; } .orc-tab[data-aba="cob"] { order: 4; }
+  .orc-tabs > span, .orc-tab.gear { order: 5; }
+  /* tabela de itens: Espessura e Largura saem no celular; Quantidade e Total
+     ficavam escondidos à direita, sem sinal de que dava para arrastar */
+  table.items .col-esp, table.items .col-larg { display: none; }
+  .cp-panel { padding: 12px; min-width: 0; }
+  .cp-scroll { max-width: 100%; }
   .orc-tabs::-webkit-scrollbar { display: none; }
   .orc-tab { padding-left: 12px; padding-right: 12px; flex: 0 0 auto; white-space: nowrap; }
   .orc-tab.gear { position: sticky; right: 0; z-index: 1; box-shadow: -12px 0 10px -6px var(--bg, #f3f4f6); }
@@ -2564,7 +2590,7 @@ body.pm-interno .orc-selo { display: inline-block; }
     padding: 2px 7px !important; font-size: 7px !important;
     margin: 0 0 5px !important; letter-spacing: .6px !important;font-weight:600}
   #supplierBanner { padding: 3px 8px !important; font-size: 8px !important; margin: 0 0 5px !important;font-weight:600}
-  #persistWarn, #alertSemPrecoBanner { display: none !important; }
+  #persistWarn, #alertSemPrecoBanner, #avisoPrecoSalvo { display: none !important; }
 
   /* campos sem conteúdo não ocupam espaço */
   .fld.campo-vazio { display: none !important; }
@@ -4150,21 +4176,22 @@ body[data-theme="escuro"] .cob-t input[type=date]{color-scheme:dark}
     <div class="supwrap" title="Fornecedor de referência para os preços">
       <select id="supSelect" onchange="setFornecedor(this.value)"></select>
     </div>
-    <button class="btn" onclick="openDB('forn')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/><path d="M3 12c0 1.66 4 3 9 3s9-1.34 9-3"/></svg><span class="lbl">Banco de dados</span></button>
+    <button class="btn" id="btnBancoDados" onclick="openDB('forn')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/><path d="M3 12c0 1.66 4 3 9 3s9-1.34 9-3"/></svg><span class="lbl">Banco de dados</span></button>
     <!-- O botao "Relatorio" saiu: nao era usado, e no celular nao abria nada. -->
     <input type="file" id="importFile" accept="application/json" class="hidden" onchange="importJSON(event)">
     <!-- "Controle" e "Mais" sairam do topo: repetiam o menu da engrenagem
          (Cotacoes, Catalogos, Exportar, Importar) e, no celular, faziam a
          barra ocupar tres linhas. Tudo continua na engrenagem, ao lado das abas. -->
-    <button class="btn primary" onclick="orcImprimir()" title="Imprimir / PDF" aria-label="Imprimir / PDF"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg><span class="lbl">Imprimir / PDF</span></button>
+    <button class="btn primary" id="btnImprimirAba" onclick="imprimirDaAba()" title="Imprimir / PDF" aria-label="Imprimir / PDF"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg><span class="lbl">Imprimir / PDF</span></button>
   </div>
 </div>
 
 <div class="wrap">
  <div id="persistWarn" class="no-print" style="display:none;margin-bottom:14px;padding:12px 16px;background:#fff6e6;border:1px solid #f0d39a;border-radius:10px;color:#8a5a00;font-size:13px;font-weight:600;line-height:1.5">
-   ⚠ Este ambiente não está salvando o cadastro automaticamente (comum na pré-visualização ou em arquivo aberto localmente). Publique no <b>GitHub Pages</b> para salvar de forma permanente. Enquanto isso, use <b>Banco de dados → Baixar cadastro</b> para guardar suas alterações de preços em arquivo.
+   ⚠ Este ambiente não está salvando o cadastro automaticamente (comum na pré-visualização ou em arquivo aberto localmente). Publique no <b>GitHub Pages</b> para salvar de forma permanente. Enquanto isso, use <b>Banco de dados → Avançado → Baixar cadastro</b> para guardar suas alterações de preços em arquivo.
  </div>
  <div id="alertSemPrecoBanner" class="no-print" style="display:none;margin-bottom:14px;padding:11px 15px;background:#fff6e6;border:1px solid #f0d39a;border-radius:10px;color:#8a5a00;font-size:13px;font-weight:600;line-height:1.45"></div>
+ <div id="avisoPrecoSalvo" class="aviso-preco no-print" role="status" hidden></div>
  <div class="sheet">
   <div class="rm-dagua" aria-hidden="true"><img id="daguaImg" alt=""></div>
 
@@ -4386,7 +4413,7 @@ body[data-theme="escuro"] .cob-t input[type=date]{color-scheme:dark}
     <div class="panel" data-panel="forn">
       <div class="db-h"><h3>Preço por kg dos perfis</h3><span class="s" id="kgSub"></span><span class="sp"></span></div>
       <p class="note">O total de cada perfil é peso × R$/kg da espessura. Cada fornecedor tem a sua coluna; o menor preço de cada espessura fica em verde. O orçamento usa o fornecedor escolhido nele.</p>
-      <div class="db-bar"><span class="sp"></span><button class="btn-sm red" onclick="fornAdd('kg',this)">＋ Fornecedor</button></div>
+      
       <div class="db-tw"><table class="dbtbl limpa"><thead id="fornHead"></thead><tbody id="fornBody"></tbody></table></div>
     </div>
 
@@ -4451,8 +4478,7 @@ body[data-theme="escuro"] .cob-t input[type=date]{color-scheme:dark}
            lista: mesma telha, mesma descricao, uma coluna de preço por
            fornecedor (out/2026: antes era um "Preços de:" por vez). -->
       <div class="db-bar"><span class="note" style="margin:0">Uma coluna por fornecedor; o menor preço de cada telha fica em verde.</span><span class="sp"></span>
-        <button class="btn-sm" onclick="openBras()" title="A Brastelha tem linhas e larguras próprias (TP-40 com 980 mm úteis)">Catálogo Brastelha</button>
-        <button class="btn-sm red" onclick="fornAdd('telhas',this)">＋ Fornecedor</button></div>
+        <button class="btn-sm" onclick="openBras()" title="A Brastelha tem linhas e larguras próprias (TP-40 com 980 mm úteis)">Catálogo Brastelha</button></div>
       <div id="dbTelhaBody" style="margin-top:12px"></div>
       <div class="row-form">
         <div class="f" style="grid-column:span 5"><span class="lab">Categoria</span>
@@ -4474,7 +4500,7 @@ body[data-theme="escuro"] .cob-t input[type=date]{color-scheme:dark}
     <div class="panel" data-panel="chapas">
       <div class="db-h"><h3>Chapas e bobinas</h3><span class="s">R$ por kg</span></div>
       <p class="note">Vendidas por kg — para orçar, use o botão <b>🧮 Calcular perfil</b>, escolha o material aqui cadastrado e informe as dimensões. Valores sem IPI (use o IPI 3,25% na calculadora).</p>
-      <div class="db-bar"><span class="note" style="margin:0">Uma coluna por fornecedor; o menor preço de cada material fica em verde.</span><span class="sp"></span><button class="btn-sm red" onclick="fornAdd('chapas',this)">＋ Fornecedor</button></div>
+      <div class="db-bar"><span class="note" style="margin:0">Uma coluna por fornecedor; o menor preço de cada material fica em verde.</span></div>
       <div class="db-tw"><table class="dbtbl limpa"><thead id="chapasHead"></thead>
         <tbody id="chapasBody"></tbody></table></div>
       <div class="row-form" style="margin-top:10px">
@@ -4501,7 +4527,6 @@ body[data-theme="escuro"] .cob-t input[type=date]{color-scheme:dark}
   </div>
   </div>
   <div class="mfoot">
-    <button class="btn-sm" onclick="openImport()">⇪ Atualizar por planilha</button>
     <!-- Cópia do cadastro em arquivo e envio/recebimento forçado da nuvem:
          a sincronização e o backup da Central fazem isso sozinhos. Ficam
          guardados aqui para o dia de consertar um aparelho, não à vista.
@@ -4513,7 +4538,6 @@ body[data-theme="escuro"] .cob-t input[type=date]{color-scheme:dark}
     <input type="file" id="cadFile" accept="application/json" class="hidden" onchange="importCadastro(event)">
     <button class="btn-sm" onclick="fbForcePush()" title="Sobrescreve a nuvem com este aparelho">☁︎ Enviar à nuvem</button>
     <button class="btn-sm" onclick="fbForcePull()" title="Substitui este aparelho pelo que está na nuvem">⬇ Baixar da nuvem</button>
-    <button class="btn-sm" onclick="recAbrir()" title="Traz de volta categorias, itens, fornecedores e preços que sumiram — só acrescenta, não apaga nada">↺ Recuperar o que sumiu</button>
     <input type="file" id="recFile" accept="application/json,.json" class="hidden" onchange="recArquivo(event)">
     </div></details>
     <span class="spacer"></span>
@@ -4728,7 +4752,7 @@ body[data-theme="escuro"] .cob-t input[type=date]{color-scheme:dark}
       <div class="saved-prev" id="savedPrev" aria-live="polite"></div>
     </div>
   </div>
-  <div class="mfoot"><span class="note">Sincronizam entre os aparelhos pela nuvem (anexos ficam neste dispositivo). Use “Exportar” no topo para um backup em arquivo.</span><span class="spacer"></span><button class="btn-sm red" onclick="closeSaved()">Fechar</button></div>
+  <div class="mfoot"><span class="note">Sincronizam entre os aparelhos pela nuvem (anexos ficam neste dispositivo). Para um backup em arquivo: engrenagem ⚙ → Exportar cadastro.</span><span class="spacer"></span><button class="btn-sm red" onclick="closeSaved()">Fechar</button></div>
  </div>
 </div>
 
@@ -4737,7 +4761,7 @@ body[data-theme="escuro"] .cob-t input[type=date]{color-scheme:dark}
  <div class="modal ctrl-modal">
   <div class="mhead">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:18px;height:18px"><path d="M3 3v18h18"/><rect x="7" y="11" width="3" height="7"/><rect x="12" y="7" width="3" height="11"/><rect x="17" y="14" width="3" height="4"/></svg>
-    <h2>Comparativo de cotações</h2>
+    <h2>Cotações (histórico)</h2>
     <button class="x" onclick="closeControle()">&times;</button>
   </div>
   <div class="mbody">
@@ -4774,11 +4798,11 @@ body[data-theme="escuro"] .cob-t input[type=date]{color-scheme:dark}
       <select id="relvAno" onchange="renderRelatorio()"></select>
       <span class="spacer" style="flex:1"></span>
       <button class="btn-sm" onclick="relatorioCSV()">⬇ CSV</button>
-      <button class="btn-sm" onclick="imprimirRelatorio()">🖨 Imprimir / PDF</button>
+
     </div>
     <div id="relvBody"></div>
   </div>
-  <div class="mfoot"><span class="note">Alimentado pelos orçamentos salvos — marque o status (aberto/enviado/aprovado/perdido) na lista de salvos. Registrar a compra de uma obra no painel de Controle já marca o orçamento dela como aprovado. A coluna Economia vem dessas compras.</span><span class="spacer"></span><button class="btn-sm red" onclick="closeRelatorio()">Fechar</button></div>
+  <div class="mfoot"><span class="note">Alimentado pelos orçamentos salvos — marque o status (aberto/enviado/aprovado/perdido) na lista de salvos. Registrar a compra de uma obra em Cotações (histórico) já marca o orçamento dela como aprovado. A coluna Economia vem dessas compras.</span><span class="spacer"></span><button class="btn-sm red" onclick="closeRelatorio()">Fechar</button></div>
  </div>
 </div>
 
@@ -4819,8 +4843,6 @@ body[data-theme="escuro"] .cob-t input[type=date]{color-scheme:dark}
   <div class="esq-topo">
     <h2 class="esq-h">Esquadrias</h2>
     <span style="flex:1"></span>
-    <button class="btn-sm red" onclick="esqNovoOrc()" title="Limpa o orçamento atual e começa outro">+ Novo orçamento</button>
-    <button class="btn-sm" onclick="salvarOrcamento()" title="Guarda este orçamento em Salvos">Salvar</button>
     <span class="esq-sep"></span>
     <details class="esq-menu" id="esqMenuPedir">
       <summary class="btn-sm">Pedir preço ao fornecedor ▾</summary>
@@ -4868,9 +4890,7 @@ body[data-theme="escuro"] .cob-t input[type=date]{color-scheme:dark}
     <div><h2 class="esq-h">Chave na mão</h2>
       <p class="esq-sub">O que vai em cada serviço, item por item, e o valor de cada serviço — por m² ou o total. Serviços e itens são livres — acrescente quantos precisar.</p></div>
     <span style="flex:1"></span>
-    <button class="btn-sm red" onclick="cnmNova()" title="Limpa o orçamento atual e começa outro">+ Nova obra</button>
-    <button class="btn-sm" onclick="cnmSalvar()" title="Guarda o detalhamento na lista de detalhamentos salvos, abaixo">Salvar detalhamento</button>
-    <button class="btn-sm" onclick="cnmPDF()" title="Gera o PDF do detalhamento para salvar ou imprimir">Imprimir / PDF</button>
+
   </div>
   <div class="cnm-estado" id="cnmEstado"></div>
   <div class="esq-passo"><div class="esq-passo-t"><span class="esq-passo-n">1</span>Obra</div>
@@ -5895,11 +5915,55 @@ function catLinhaForn(cat,l){if(catSemFornecedor(cat))return catFornBase(cat);re
 /* valor unitário digitado na linha do orçamento (item de catálogo): vale só
    enquanto o fornecedor da linha for o mesmo de quando foi digitado */
 function catLinhaDigitado(cat,l){return l&&Number(l.valorDig)>0&&cpNorm(l.valorDigForn||'')===cpNorm(catLinhaForn(cat,l))?Number(l.valorDig):null;}
-function catLinhaSemPreco(cat,it,l){return !catItemManual(it)&&catLinhaDigitado(cat,l)==null&&catItemPrecoDe(cat,it,catLinhaForn(cat,l))==null;}
+function catLinhaSemPreco(cat,it,l){const ps=precoSalvoDe(l,catLinhaForn(cat,l));return !catItemManual(it)&&catLinhaDigitado(cat,l)==null&&!(ps&&ps.v>0)&&catItemPrecoDe(cat,it,catLinhaForn(cat,l))==null;}
+/* ---- PREÇO GUARDADO NO ORÇAMENTO SALVO ----
+   "Manter o antigo, a não ser que eu mude." Ao salvar, cada linha guarda o
+   preço que estava valendo (perfil: R$/kg e largura; telha: R$/m ou m²;
+   item do catálogo: valor unitário), junto com o fornecedor. Ao abrir de
+   novo -- e na prévia dos Salvos e na revisão -- vale esse preço, mesmo que
+   o banco de dados tenha mudado. Linha nova, ou que trocou de fornecedor,
+   usa o preço do banco até o próximo salvar. Se o banco mudou, um aviso
+   mostra quanto daria hoje, com "Usar os preços de hoje". */
+let IGNORA_SALVO=false;
+function precoSalvoDe(l,f){ const ps=!IGNORA_SALVO&&l&&l.precoSalvo; return ps&&cpNorm(ps.f||'')===cpNorm(f||'')?ps:null; }
+function congelaPrecos(){
+  (S.linhasPerfil||[]).forEach(l=>{ const p=perfilById(l.perfilId); if(!p)return; const f=cpSupplier(l);
+    if(precoSalvoDe(l,f))return; const c=cpCalc(l,p,'p');
+    if(c.pk>0) l.precoSalvo={f:f,pk:c.pk,larg:c.larg>0?c.larg:null}; else delete l.precoSalvo; });
+  (S.linhasTelha||[]).forEach(l=>{ const t=telhaById(l.telhaId); if(!t)return; const f=cpSupplier(l);
+    if(precoSalvoDe(l,f))return; const c=cpCalc(l,t,'t');
+    if(c.preco>0) l.precoSalvo={f:f,preco:c.preco,modo:c.modo}; else delete l.precoSalvo; });
+  (S.linhasCat||[]).forEach(l=>{ const cat=catById(l.catId), it=cat?catItemById(cat,l.itemId):null; if(!it||catItemManual(it))return;
+    const f=catLinhaForn(cat,l); if(precoSalvoDe(l,f))return; const v=catItemPrecoDe(cat,it,f);
+    if(v>0) l.precoSalvo={f:f,v:v}; else delete l.precoSalvo; });
+}
+/* o total do orçamento aberto com os preços guardados e com os de hoje */
+function totaisPrecoSalvo(){
+  const e={quote:snapshotQuote(),fornecedorAtivo:S.fornecedorAtivo};
+  const salvo=orcPrevia(e).total;
+  IGNORA_SALVO=true; let hoje; try{ hoje=orcPrevia(e).total; }finally{ IGNORA_SALVO=false; }
+  return {salvo:salvo,hoje:hoje};
+}
+function temPrecoSalvo(){ return ['linhasPerfil','linhasTelha','linhasCat'].some(k=>(S[k]||[]).some(l=>l&&l.precoSalvo)); }
+function avisoPrecoSalvo(){
+  const b=document.getElementById('avisoPrecoSalvo'); if(!b)return;
+  if(!temPrecoSalvo()){ b.hidden=true; return; }
+  const t=totaisPrecoSalvo();
+  if(Math.abs(t.hoje-t.salvo)<0.005){ b.hidden=true; return; }
+  b.hidden=false;
+  b.innerHTML='Este orçamento mantém os preços de quando foi salvo: <b>'+brl(t.salvo)+'</b>. Com os preços de hoje do banco de dados daria <b>'+brl(t.hoje)+'</b>. '
+    +'<button type="button" class="btn-sm" onclick="usarPrecosDeHoje()">Usar os preços de hoje</button>';
+}
+function usarPrecosDeHoje(){
+  ['linhasPerfil','linhasTelha','linhasCat'].forEach(k=>(S[k]||[]).forEach(l=>{ if(l) delete l.precoSalvo; }));
+  save(); renderLines(); recompute(); avisoPrecoSalvo();
+  toast('Preços de hoje aplicados. Salve para guardar.');
+}
 function catItemBaseValor(it,l){
   if(catItemManual(it))return (l&&l.valor)||0;
   if(!l)return (it&&it.valor)||0;
   const cat=catById(l.catId),dg=catLinhaDigitado(cat,l);if(dg!=null)return dg;
+  const ps=precoSalvoDe(l,catLinhaForn(cat,l));if(ps&&ps.v>0)return ps.v;
   const v=catItemPrecoDe(cat,it,catLinhaForn(cat,l));
   return v==null?0:v;
 }
@@ -6745,7 +6809,24 @@ function addTelhaLine(tid){
   if(largEl)largEl.value='';
   save();renderLines();focoQuieto(inp);
 }
-function delLine(arr,lidv){S[arr]=S[arr].filter(x=>x.lid!==lidv);save();renderLines();}
+/* A lixeira da linha tirava na hora, sem volta: um toque errado no celular
+   perdia a linha. Agora ela sai e um aviso com "Desfazer" fica alguns
+   segundos. Teste orcamento-desfazer-linha. */
+function delLine(arr,lidv){
+  const i=S[arr].findIndex(x=>x.lid===lidv); if(i<0)return;
+  const linha=S[arr][i];
+  S[arr]=S[arr].filter(x=>x.lid!==lidv);save();renderLines();
+  avisoDesfazer('Linha excluída',function(){ if(S[arr].some(x=>x.lid===linha.lid))return; S[arr].splice(Math.min(i,S[arr].length),0,linha); save(); renderLines(); toast('Linha de volta'); });
+}
+let _desfT=null;
+function avisoDesfazer(txt,fn){
+  let b=document.getElementById('orcDesfazer');
+  if(!b){ b=document.createElement('div'); b.id='orcDesfazer'; b.className='orc-desfazer no-print'; b.setAttribute('role','status'); document.body.appendChild(b); }
+  b.innerHTML='<span></span><button type="button" class="btn-sm">Desfazer</button>';
+  b.firstChild.textContent=txt;
+  b.lastChild.onclick=function(){ clearTimeout(_desfT); b.classList.remove('on'); fn(); };
+  b.classList.add('on'); clearTimeout(_desfT); _desfT=setTimeout(function(){ b.classList.remove('on'); },7000);
+}
 function copyIcon(){return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="11" height="11" rx="1.5"/><path d="M5 15H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1"/></svg>';}
 function dupLine(arr,lidv){
   const i=S[arr].findIndex(x=>x.lid===lidv); if(i<0)return;
@@ -7356,7 +7437,7 @@ function catPanelHTML(c){
       <input placeholder="Buscar em ${escapeAttr(nome.toLowerCase())}…" value="${escapeAttr(CAT_Q[c.id]||'')}" oninput="filterCatPanel('${c.id}',this.value)"></div>
       ${grupos.length>1?'<span class="db-chips">'+['',...grupos].map(x=>'<button type="button" class="db-chip'+(x===g?' on':'')+'" data-cgrp="'+c.id+'" data-g="'+escapeAttr(x)+'">'+escapeAttr(x?catNomeBonito(x):'Todos')+'</button>').join('')+'</span>':''}
       <span class="sp"></span><button class="btn-sm" type="button" onclick="catNovoItem('${c.id}')">＋ Item</button>
-      ${sem?'':`<button class="btn-sm red" type="button" onclick="fornAdd('cat:${c.id}',this)">＋ Fornecedor</button>`}</div>
+</div>
     <div class="db-tw"><table class="dbtbl limpa"><thead><tr><th>Item</th><th>Esp.</th><th>Unid.</th><th class="r">Comp. (mm)</th>${catTemFardo(c)?'<th class="r" title="Peças por fardo fechado">Pç/fardo</th>':''}${th}<th></th></tr></thead>
       <tbody id="catbody_${c.id}">${catCorpo(c)}</tbody>
       <tbody><tr><td colspan="99" class="db-novo"><button type="button" class="db-novol" onclick="catNovoItem('${c.id}')">＋ Novo item em ${escapeAttr(nome)}</button></td></tr></tbody></table></div>
@@ -7514,6 +7595,7 @@ function recompute(){
   updateSemPrecoBanner(semPreco);
   cpRender();
   save();
+  clearTimeout(window._avPrecoT); window._avPrecoT=setTimeout(function(){ avisoPrecoSalvo(); orcEstadoLinha(); },400);
 }
 // Resumo de onde vem o material orçado, por fornecedor -- uma linha por
 // categoria com o valor JÁ SOMANDO o frete (é custo real desse fornecedor),
@@ -7675,8 +7757,8 @@ function onFornecedorGrupoInput(grupo){
 }
 
 /* ============ DB MODAL ============ */
-function openDB(tab){document.getElementById('overlay').classList.add('open');renderFornCad();renderForn();renderDBPerfis();renderDBTelhas();renderChapasKg();renderCatTabs();renderEmpresa();renderCatAddSelect();renderAjustes();showTab(tab||'perfis');document.getElementById('storeNote').textContent=storageOK?'Salvamento automático ativo neste navegador.':'Atenção: este ambiente NÃO salva sozinho — use “Baixar cadastro” e publique no GitHub Pages.';}
-function closeDB(){commitEdits();document.getElementById('overlay').classList.remove('open');renderCompany();renderSupSelect();renderCatAddSelect();renderLines();if(typeof FB!=='undefined'&&FB.pending)fbApply(FB.pending);}
+function openDB(tab){document.getElementById('overlay').classList.add('open');const bdb=document.getElementById('btnBancoDados');if(bdb)bdb.classList.add('on');renderFornCad();renderForn();renderDBPerfis();renderDBTelhas();renderChapasKg();renderCatTabs();renderEmpresa();renderCatAddSelect();renderAjustes();showTab(tab||'perfis');document.getElementById('storeNote').textContent=storageOK?'Salvamento automático ativo neste navegador.':'Atenção: este ambiente NÃO salva sozinho — use “Baixar cadastro” e publique no GitHub Pages.';}
+function closeDB(){commitEdits();document.getElementById('overlay').classList.remove('open');const bdb=document.getElementById('btnBancoDados');if(bdb)bdb.classList.remove('on');renderCompany();renderSupSelect();renderCatAddSelect();renderLines();if(typeof FB!=='undefined'&&FB.pending)fbApply(FB.pending);}
 /* garante que a última edição (campo ainda em foco) seja gravada antes de sair/fechar */
 function commitEdits(){ try{ const a=document.activeElement; if(a && typeof a.blur==='function') a.blur(); save(); }catch(e){} }
 if(typeof window!=='undefined' && window.addEventListener){
@@ -7918,7 +8000,7 @@ function renderDbNav(){
     +'<button class="db-add" type="button" onclick="addCategoria()">＋ Nova categoria</button>'
     +(servs.length?'<div class="db-g">Serviços</div>'+servs.map(c=>it('cat:'+c.id,catNomeBonito(c.nome),c.items.length)).join(''):'')
     +'<div class="db-g">Cadastros</div>'+it('fornecedores','Fornecedores',(S.fornecedores||[]).length)+it('forn','Preço por kg (perfis)',(S.espessuras||[]).length)
-    +'<div class="db-g">Ferramentas</div><button class="db-i" type="button" onclick="openImport()"><span>Importar planilha</span></button><button class="db-i" type="button" onclick="recAbrir()"><span>Recuperar o que sumiu</span></button>';
+    +'<div class="db-g">Ferramentas</div><button class="db-i" type="button" onclick="openImport()"><span>Importar planilha</span></button><button class="db-i" type="button" onclick="recAbrir()"><span>Recuperar o que sumiu</span></button><button class="db-i" type="button" onclick="closeDB();openControle()"><span>Cotações (histórico)</span></button>';
   nav.querySelectorAll('.tab').forEach(x=>x.classList.toggle('on',x.dataset.tab===activeTab));
 }
 
@@ -8570,7 +8652,7 @@ function updateSemPrecoBanner(n){
   ensureCfg(); const b=document.getElementById('alertSemPrecoBanner'); if(!b)return;
   if(S.cfg.alertSemPreco!==false && n>0){
     b.style.display='block';
-    b.textContent='⚠ '+n+' item(ns) com cotação pendente. Total parcial: complete os dados em Compras por item.';
+    b.textContent='⚠ '+n+' item(ns) com cotação pendente. Total parcial: complete os dados em Fornecedor por item.';
   } else b.style.display='none';
 }
 function renderAjustes(){
@@ -8687,7 +8769,7 @@ function quoteVazio(){
     ||(S.esquadrias||[]).length||cnmTemConteudo()||S.cliente||S.obra||S.numero);
 }
 function novoOrcamento(){
-  ensureCfg(); if(!quoteVazio() && (S.cfg.alertSairSemSalvar!==false) && !confirm('Limpar o orçamento atual e começar um novo? Itens não salvos serão perdidos.'))return;
+  ensureCfg(); if(!quoteVazio() && (S.cfg.alertSairSemSalvar!==false) && !confirm('Começar um orçamento novo? Sai tudo o que está na tela — perfis, telhas, outros itens, esquadrias e chave na mão. O que não foi salvo se perde.'))return;
   clearQuote();toast('Novo orçamento');
 }
 function snapshotQuote(){const q={};QUOTE_KEYS.forEach(k=>q[k]=S[k]===undefined?null:JSON.parse(JSON.stringify(S[k])));return q;}
@@ -8763,6 +8845,50 @@ function proximoNumero(){
   S.seqNumero=mx+1;
   return String(mx+1).padStart(4,'0');
 }
+/* UM "IMPRIMIR / PDF" SÓ. O botão do alto imprime o que a aba mostra: a
+   folha do orçamento (e das esquadrias), o detalhamento da chave na mão ou
+   o relatório dos Salvos. Antes havia outros dois botões com o mesmo nome
+   dentro das abas, e o do alto sempre imprimia a folha.
+   PDF SEM SALVAR: imprimir dava número ao orçamento e não salvava -- o
+   cliente recebia o "Nº 0012" e o 0012 não aparecia nos Salvos. Agora, se
+   não está salvo (ou mudou desde o salvar), pergunta antes. Teste
+   orcamento-imprimir-salva. */
+function orcPrecisaSalvar(semCommit){
+  try{ if(quoteVazio())return false; }catch(e){ return false; }
+  const at=S.orcamentoAtualId?(S.orcamentosSalvos||[]).find(x=>x.id===S.orcamentoAtualId):null;
+  if(!at)return true;
+  if(!semCommit){ try{ commitEdits(); }catch(e){} }
+  return JSON.stringify(snapshotQuote())!==JSON.stringify(at.quote);
+}
+function imprimirOrcamentoSalvando(){
+  if(!orcPrecisaSalvar()){ orcImprimir(); return; }
+  const at=S.orcamentoAtualId?(S.orcamentosSalvos||[]).find(x=>x.id===S.orcamentoAtualId):null;
+  askEscolha(at?'Este orçamento mudou desde que foi salvo. O PDF sai com as mudanças; salvar antes guarda o que vai para o cliente.'
+      :'Este orçamento ainda não está salvo. O PDF sai com número, e salvar antes faz esse número aparecer nos Salvos.',
+    [['salvar','Salvar e imprimir','red'],['so','Só imprimir'],['','Cancelar']],
+    function(v){ if(v==='salvar'){ if(at)atualizaSalvo(at); else { garanteNumero(); salvaNovo(); } orcImprimir(); } else if(v==='so')orcImprimir(); },'Imprimir / PDF');
+}
+/* QUAL ORÇAMENTO ESTÁ ABERTO. Orçamento, Esquadrias e Chave na mão são o
+   mesmo orçamento, e só a Chave na mão dizia qual. Uma linha fina, igual nas
+   três abas: Nº · cliente · obra · salvo / não salvo / mudou. */
+function orcEstadoLinha(){
+  const el=document.getElementById('orcEstado'); if(!el)return;
+  const a=window.ORC_ABA||'orc';
+  if(a!=='orc'&&a!=='esq'&&a!=='cnm'){ el.hidden=true; return; }
+  let vazio=false; try{ vazio=quoteVazio(); }catch(e){}
+  if(vazio&&!S.orcamentoAtualId){ el.hidden=true; return; }
+  const at=S.orcamentoAtualId?(S.orcamentosSalvos||[]).find(x=>x.id===S.orcamentoAtualId):null;
+  const sit=!at?'não salvo':(orcPrecisaSalvar(true)?'mudou desde o salvar':'salvo');
+  const partes=[S.numero?'Nº '+S.numero:'',String(S.cliente||'').trim(),String(S.obra||'').trim()].filter(Boolean);
+  el.hidden=false;
+  el.innerHTML=escapeAttr(partes.join(' · ')||'Orçamento sem nome')+' · <span class="oe-'+(sit==='salvo'?'ok':'pend')+'">'+sit+'</span>';
+}
+function imprimirDaAba(){
+  const a=window.ORC_ABA||'orc';
+  if(a==='cnm'&&typeof cnmPDF==='function')return cnmPDF();
+  if(a==='salvos'&&typeof imprimirRelatorio==='function')return imprimirRelatorio();
+  return imprimirOrcamentoSalvando();
+}
 function garanteNumero(){
   if(String(S.numero||'').trim())return;
   S.numero=proximoNumero();
@@ -8783,6 +8909,7 @@ function totalDoSalvo(){
   return {str:document.getElementById('t_total').textContent,num:LAST_TOT.total};
 }
 function orcEntrada(nome,extra){
+  congelaPrecos();
   const TS=totalDoSalvo(); const totalStr=TS.str;
   return Object.assign({id:'orc'+Date.now().toString(36)+Math.random().toString(36).slice(2,5),nome:nome,cliente:S.cliente,obra:S.obra,numero:S.numero,
     salvoEm:new Date().toLocaleString('pt-BR'),editadoEm:Date.now(),total:totalStr,
@@ -8847,6 +8974,7 @@ function salvaNovo(){
   S.orcamentosSalvos.unshift(entry); S.orcamentoAtualId=entry.id; save(); descartarRascunho(); renderSavedCount(); toast('Orçamento Nº '+S.numero+' salvo ✓');
 }
 function atualizaSalvo(atual){
+  congelaPrecos();
   const TS=totalDoSalvo(); const totalStr=TS.str;
   atual.cliente=S.cliente; atual.obra=S.obra; atual.numero=S.numero;
   atual.salvoEm=new Date().toLocaleString('pt-BR'); atual.total=totalStr;
@@ -8937,7 +9065,7 @@ function renderSaved(){
     const sub=e.substituidoPor&&porId[e.substituidoPor];
     const idTxt=String(e.nome||'').indexOf(idOrc(e))===0?'':escapeAttr(idOrc(e))+' · ';
     return `<div class="saved-item${e.substituidoPor?' substituido':''}${e.id===SAVED_SEL?' sel':''}" data-sid="${e.id}" tabindex="0" role="button" aria-pressed="${e.id===SAVED_SEL}" onclick="salvoEscolhe('${e.id}')" ondblclick="loadOrcamento('${e.id}')" onkeydown="if(event.key==='Enter'&&event.target===this)salvoEscolhe('${e.id}')">
-    <div><div class="si-nome">${escapeAttr(e.nome)}${(typeof cnmEhDetalhamento==='function'&&cnmEhDetalhamento(e))?' <span class="si-tag">chave na mão</span>':''}${e.id===S.orcamentoAtualId?' <span class="si-tag">aberto</span>':''}${dsr>=ORC_COBRAR_DIAS?' <span class="si-tag cobrar" title="Enviado há '+dsr+' dias sem mudar de status">cobrar · '+dsr+' dias</span>':''}${orcValidadeVencida(e)?' <span class="si-tag cobrar" title="A validade do preço já passou">validade vencida</span>':''}${e.substituidoPor?' <span class="si-tag" title="Fica guardado, mas não conta no relatório">substituído'+(sub&&sub.numero?' por '+escapeAttr(sub.numero):'')+'</span>':''}</div>
+    <div><div class="si-nome">${escapeAttr(e.nome)}${(typeof cnmEhDetalhamento==='function'&&cnmEhDetalhamento(e))?' <span class="si-tag">chave na mão</span>':''}${e.id===S.orcamentoAtualId?' <span class="si-tag" title="É o orçamento que está aberto na tela">na tela agora</span>':''}${dsr>=ORC_COBRAR_DIAS?' <span class="si-tag cobrar" title="Enviado há '+dsr+' dias sem mudar de status">cobrar · '+dsr+' dias</span>':''}${orcValidadeVencida(e)?' <span class="si-tag cobrar" title="A validade do preço já passou">validade vencida</span>':''}${e.substituidoPor?' <span class="si-tag" title="Fica guardado, mas não conta no relatório">substituído'+(sub&&sub.numero?' por '+escapeAttr(sub.numero):'')+'</span>':''}</div>
       <div class="si-sub">${e.numero?'Nº '+escapeAttr(e.numero)+' · ':''}${idTxt}${quando}${e.total?' · '+e.total:''}${(e.status==='perdido'&&e.motivo)?' · <b>Perdido: '+escapeAttr(e.motivo)+'</b>':''}</div></div>
     <div class="si-act" onclick="event.stopPropagation()">
       ${statusSelHtml(e)}
@@ -8950,12 +9078,14 @@ function renderSaved(){
 }
 function loadOrcamento(id){
   const e=(S.orcamentosSalvos||[]).find(x=>x.id===id); if(!e)return;
-  if(!quoteVazio() && !confirm('Abrir este orçamento substitui o orçamento atual (não salvo). Continuar?'))return;
+  /* só pergunta quando o que está na tela não foi salvo (ou mudou): antes
+     dizia "não salvo" mesmo para o orçamento já salvo */
+  if(!quoteVazio() && S.orcamentoAtualId!==id && orcPrecisaSalvar(true) && !confirm('O orçamento que está na tela tem mudanças não salvas. Abrir este outro no lugar dele?'))return;
   const fq=freshQuote();
   QUOTE_KEYS.forEach(k=>{ S[k]=(e.quote&&e.quote[k]!=null)?JSON.parse(JSON.stringify(e.quote[k])):fq[k]; });
   if(e.fornecedorAtivo&&S.fornecedores.some(f=>f.id===e.fornecedorAtivo))S.fornecedorAtivo=e.fornecedorAtivo;
   S.orcamentoAtualId=e.id;
-  save();closeSaved();initRender();if(window.orcAba)orcAba('orc');toast('Orçamento aberto');
+  save();closeSaved();initRender();if(window.orcAba)orcAba('orc');avisoPrecoSalvo();toast('Orçamento aberto');
 }
 /* SALVOS COM PRÉVIA. Antes, para saber se era aquele mesmo, era preciso
    abrir o orçamento na tela principal -- e abrir já trocava o que estava
@@ -9402,9 +9532,15 @@ function renderSalvoPrevia(){
     +((r.sub>0)?'<div class="sp-tot"><div><span>Subtotal</span><b>'+brl(r.sub)+'</b></div>'+(r.desc>0?'<div><span>Desconto '+num(r.descPct,2).replace(/,00$/,'')+'%</span><b>− '+brl(r.desc)+'</b></div>':'')+'<div class="sp-tot-f"><span>Total</span><b>'+brl(r.sub-r.desc)+'</b></div></div>':'')
     +(c.obs?'<div class="sp-sec"><div class="sp-sec-t">Observações</div><div class="sp-obs">'+escapeAttr(c.obs)+'</div></div>':'');
 }
+/* o número da próxima revisão deste orçamento (R1, R2...) */
+function proximaRev(atual){
+  const raiz=atual.revDe||atual.id; let k=0;
+  (S.orcamentosSalvos||[]).forEach(e=>{ if(e.id===raiz||e.revDe===raiz){ const m=/R(\d+)\s*$/i.exec(String(e.numero||'')); if(m)k=Math.max(k,+m[1]); } });
+  return 'R'+(k+1);
+}
 function salvoAcoesHTML(e){
   return '<div class="sp-acoes"><button type="button" class="btn-sm red" onclick="loadOrcamento(\''+e.id+'\')" title="Abre este orçamento na tela principal para mudar">Editar orçamento</button>'
-    +'<button type="button" class="btn-sm" onclick="revisarOrcamento(\''+e.id+'\')" title="Abre como nova revisão (R1, R2...). A versão enviada fica guardada como está.">Revisar</button>'
+    +'<button type="button" class="btn-sm" onclick="revisarOrcamento(\''+e.id+'\')" title="Cria a próxima revisão e abre na tela. A versão enviada fica guardada como está.">Nova revisão ('+proximaRev(e)+')</button>'
     +(function(){ const r=typeof cobReg==='function'?cobReg(e.id):null, ja=r&&!r.removida;
       return '<button type="button" class="btn-sm" onclick="cobLancar(\''+e.id+'\')" title="'+(ja?'Abre a lista de compras desta obra':'Leva a obra para a aba Compras da obra, com as linhas deste orçamento')+'">'+(ja?'Ver no Compras da obra':'Lançar no Compras da obra')+'</button>'; })()+'</div>';
 }
@@ -9984,7 +10120,7 @@ function applyImport(){
    publicacao, e ha uma prova automatica que falha se um subir sem o outro.
    Assim o numero na tela e' o mesmo do arquivo que o aparelho guardou, e
    dizer "estou na v15" passa a significar alguma coisa. */
-const APP_VER='v134';
+const APP_VER='v135';
 (function(){ try{ const p=document.getElementById('verPill'); if(p)p.textContent=APP_VER; }catch(e){} })();
 /* Versao nova assumiu com a pagina aberta: avisa, em vez de recarregar por
    conta propria e jogar fora um orcamento pela metade. */
@@ -11441,7 +11577,7 @@ function cnmAcha(id){ return cnmDados().servicos.filter(s=>s.id===id)[0]||null; 
 function cnmRender(){
   const host=document.getElementById('cnmServ'); if(!host) return;
   const d=cnmDados();
-  [['cnmObra',S.obra||''],['cnmCidade',d.cidade||''],['cnmM2',d.m2==null?'':String(d.m2)]].forEach(([id,v])=>{
+  [['cnmObra',S.obra||''],['cnmCidade',d.cidade||((document.getElementById('x_cidade')||{}).value||'')],['cnmM2',d.m2==null?'':String(d.m2)]].forEach(([id,v])=>{
     const el=document.getElementById(id); if(el&&document.activeElement!==el) el.value=v;
   });
   host.innerHTML=d.servicos.map(cnmCartao).join('')
@@ -11475,7 +11611,7 @@ function cnmSalvosRender(){
   if(est){
     est.className='cnm-estado'+(atual?' ok':'');
     est.innerHTML=atual?'✓ Salvo'+(atual.numero?' · Nº '+escapeAttr(atual.numero):'')+(atual.salvoEm?' · '+escapeAttr(String(atual.salvoEm).replace(/(\d{2}:\d{2}):\d{2}$/,'$1')):'')
-        +' <span>— depois de mexer, clique em <b>Salvar detalhamento</b> de novo para atualizar.</span>'
+        +' <span>— depois de mexer, clique em <b>Salvar</b> (barra de baixo) de novo para atualizar.</span>'
       :(cnmTemConteudo()?'Este detalhamento ainda não foi salvo.':'');
   }
   const host=document.getElementById('cnmSalvos'); if(!host) return;
@@ -11483,7 +11619,7 @@ function cnmSalvosRender(){
   const todos=(S.orcamentosSalvos||[]).filter(cnmEhDetalhamento).sort((a,b)=>orcCriadoEm(b)-orcCriadoEm(a));
   const n=document.getElementById('cnmSalvosN'); if(n) n.textContent=todos.length?'('+todos.length+')':'';
   const L=q?todos.filter(e=>semAcento([e.obra,e.cliente,e.nome,e.quote.chaveMao.cidade].join(' ').toLowerCase()).indexOf(q)>=0):todos;
-  if(!todos.length){ host.innerHTML='<div class="esq-vazio">Nenhum detalhamento salvo ainda. Monte a obra acima e clique em <b>Salvar detalhamento</b>.</div>'; return; }
+  if(!todos.length){ host.innerHTML='<div class="esq-vazio">Nenhum detalhamento salvo ainda. Monte a obra acima e clique em <b>Salvar</b>, na barra de baixo.</div>'; return; }
   if(!L.length){ host.innerHTML='<div class="esq-vazio">Nenhum detalhamento com “'+escapeAttr(q)+'”.</div>'; return; }
   host.innerHTML='<table class="items cnm-sv"><thead><tr><th class="l">Obra</th><th class="l">Cidade</th><th>Metragem</th><th>Total</th><th class="l">Salvo em</th><th></th></tr></thead><tbody>'
     +L.map(e=>{ const d=e.quote.chaveMao, m2=cnmNum(d.m2), aberto=e.id===S.orcamentoAtualId;
@@ -11627,7 +11763,10 @@ function cnmNova(){
     const o=document.getElementById('cnmObra'), c=document.getElementById('cnmCidade'), m=document.getElementById('cnmM2');
     if(!o||!c||!m) return;
     o.oninput=function(){ S.obra=o.value; const q=document.getElementById('q_obra'); if(q&&q.value!==o.value) q.value=o.value; cnmGravou(); };
-    c.oninput=function(){ cnmDados().cidade=c.value; cnmGravou(); };
+    /* a Cidade da chave na mão e a de "+ Mais campos" são a mesma: uma
+       escreve na outra (eram dois campos que não se falavam) */
+    c.oninput=function(){ cnmDados().cidade=c.value; const x=document.getElementById('x_cidade'); if(x&&x.value!==c.value){ x.value=c.value; x.dispatchEvent(new Event('change')); } cnmGravou(); };
+    document.addEventListener('change',function(ev){ const x=ev.target; if(!x||x.id!=='x_cidade')return; if(cnmDados().cidade!==x.value){ cnmDados().cidade=x.value; const cc=document.getElementById('cnmCidade'); if(cc&&cc.value!==x.value) cc.value=x.value; cnmGravou(); } });
     const bu=document.getElementById('cnmBusca'); if(bu) bu.oninput=cnmSalvosRender;
     m.oninput=function(){ cnmDados().m2=m.value.trim(); cnmResumo(); cnmGravou(); };
   };
@@ -12886,7 +13025,7 @@ function cpCalc(l,p,k,supplier,row){
   if(catItemManual(it)){const tot=(Number(l.valor)||0)*qtd,semPreco=!(tot>0);
    return {...vazio,supplier:f,refNome,ref:semPreco?null:tot,preco:Number(l.valor)||0,tot:semPreco?0:tot,semPreco,delta:null};}
   const dg=cpNorm(f)===cpNorm(catLinhaForn(cat,l))?catLinhaDigitado(cat,l):null;
-  const pr=dg!=null?dg:catItemPrecoDe(cat,it,f),rp=catItemPrecoDe(cat,it,refNome);
+  const psc=precoSalvoDe(l,f),pr=dg!=null?dg:(psc&&psc.v>0?psc.v:catItemPrecoDe(cat,it,f)),rp=catItemPrecoDe(cat,it,refNome);
   const tot=pr!=null?pr*qtd:null,ref=rp!=null?rp*qtd:null,semPreco=tot==null;
   return {...vazio,supplier:f,refNome,ref,preco:pr,tot:semPreco?0:tot,semPreco,delta:!semPreco&&ref!=null?ref-tot:null};
  }
@@ -12916,6 +13055,16 @@ function cpCalc(l,p,k,supplier,row){
   preco=Number(gq.value);modo=gq.mode||CP_GROUP_DEF[grupo].modo;
   tot=modo==='m2'?preco*telhaAreaM2(l,p,metros):preco*metros;
  }
+ /* PREÇO DE QUANDO FOI SALVO: o orçamento salvo guarda o preço de cada linha
+    (precoSalvo) e é ele que vale ao abrir de novo -- o cadastro pode ter
+    mudado depois. Só o preço digitado na linha (logo abaixo) ganha dele, ou
+    "Usar os preços de hoje". Teste orcamento-preco-do-salvo. */
+ const ps=precoSalvoDe(l,f);
+ if(ps&&k==='p'&&ps.pk>0){
+  if(ps.larg>0&&!(w>0)){larg=ps.larg;pesoTot=larg*espNum(p)*dens()/1e6*metros;}
+  pk=ps.pk;tot=pesoTot!=null?pk*pesoTot:null;
+ }
+ if(ps&&k==='t'&&ps.preco>0){preco=ps.preco;modo=ps.modo||modo;tot=modo==='m2'?preco*telhaAreaM2(l,p,metros):preco*metros;}
  /* PREÇO DIGITADO NA LINHA (R$/kg do perfil, R$/m ou R$/m² da telha): vale
     para esta linha e este fornecedor, neste orçamento -- ganha da cotação e
     do cadastro, que não mudam. Apagar o número volta ao preço da tabela. */
@@ -13033,7 +13182,7 @@ function cpRender(){
  let ps=document.getElementById('cpPrintStatus');if(!ps){ps=document.createElement('div');ps.id='cpPrintStatus';ps.className='cp-print-status';document.querySelector('.sheet').insertBefore(ps,document.querySelector('.sheetfoot'));}ps.textContent=pending?'TOTAL PARCIAL — '+pending+' item(ns) com preço pendente.':'';
  const summary=Object.entries(sums).map(([f,s])=>'<tr><td>'+escapeAttr(f)+'</td><td>'+s.count+' item(ns)</td><td>'+brl(s.total)+(s.pending?' · '+s.pending+' pendente(s)':'')+(freteDoFornecedor(f)>0?'<small>+ frete '+brl(freteDoFornecedor(f))+' = '+brl(s.total+freteDoFornecedor(f))+'</small>':'')+'</td><td>'+(s.matched?cpDelta({delta:s.delta,ref:s.ref,supplier:f,refNome:s.refNome}):'Sem comparação')+'<small>'+s.matched+'/'+s.count+' item(ns) comparável(is)</small></td></tr>').join('');
  const comparableBase=rows.length;
- host.innerHTML='<summary>Compras por grupo e por item <span style="font-weight:465">· '+rows.length+' itens</span></summary><p class="cp-note">Primeiro escolha o fornecedor do grupo. Para telhas, informe um único R$/m²; o sistema usa a área de cada medida. Se uma linha tiver condição diferente, use “Cotar / comparar” nela: a exceção individual sempre prevalece.</p>'+(groupsHTML?'<h4 style="margin:14px 0 4px">Cotação por grupo</h4><div class="cp-groups">'+groupsHTML+'</div>':'')+(pending?'<div class="cp-warn">Total parcial: '+pending+' item(ns) aguardam cotação. Não considere o total como compra fechada.</div>':'')+'<h4 style="margin:14px 0 4px">Exceções e conferência por item</h4><div class="cp-scroll"><table class="cp-table"><thead><tr><th>Item / nomenclatura</th><th>Fornecedor</th><th>Base de cobrança</th><th>Custo e referência</th></tr></thead><tbody>'+body+'</tbody></table></div>'+(!rows.length?'<p class="cp-note">Adicione perfis ou telhas acima para começar.</p>':'')+'<h4 style="margin:18px 0 4px">Resumo por fornecedor</h4><div class="cp-scroll"><table class="cp-table">'+summary+'</table></div><div class="cp-total">'+(comparable?cpDelta({delta,ref:refSum}):'Sem itens comparáveis')+' · '+comparable+'/'+comparableBase+' itens comparados</div><p class="cp-note">Comparação dos materiais antes de frete e desconto. Cumeeiras ficam isoladas das telhas térmicas. Itens de categoria usam o preço de cada fornecedor do banco de dados, sem o acréscimo de venda; avulsos usam o valor digitado na linha.</p>';
+ host.innerHTML='<summary>Fornecedor por grupo e por item <span style="font-weight:465">· '+rows.length+' itens</span></summary><p class="cp-note">Primeiro escolha o fornecedor do grupo. Para telhas, informe um único R$/m²; o sistema usa a área de cada medida. Se uma linha tiver condição diferente, use “Cotar / comparar” nela: a exceção individual sempre prevalece.</p>'+(groupsHTML?'<h4 style="margin:14px 0 4px">Cotação por grupo</h4><div class="cp-groups">'+groupsHTML+'</div>':'')+(pending?'<div class="cp-warn">Total parcial: '+pending+' item(ns) aguardam cotação. Não considere o total como compra fechada.</div>':'')+'<h4 style="margin:14px 0 4px">Exceções e conferência por item</h4><div class="cp-scroll"><table class="cp-table"><thead><tr><th>Item / nomenclatura</th><th>Fornecedor</th><th>Base de cobrança</th><th>Custo e referência</th></tr></thead><tbody>'+body+'</tbody></table></div>'+(!rows.length?'<p class="cp-note">Adicione perfis ou telhas acima para começar.</p>':'')+'<h4 style="margin:18px 0 4px">Resumo por fornecedor</h4><div class="cp-scroll"><table class="cp-table">'+summary+'</table></div><div class="cp-total">'+(comparable?cpDelta({delta,ref:refSum}):'Sem itens comparáveis')+' · '+comparable+'/'+comparableBase+' itens comparados</div><p class="cp-note">Comparação dos materiais antes de frete e desconto. Cumeeiras ficam isoladas das telhas térmicas. Itens de categoria usam o preço de cada fornecedor do banco de dados, sem o acréscimo de venda; avulsos usam o valor digitado na linha.</p>';
  let report=document.getElementById('cpReport');if(!report){report=document.createElement('div');report.id='cpReport';report.className='cp-report';document.querySelector('.sheet').insertBefore(report,document.querySelector('.sheetfoot'));}
  report.innerHTML='<h3>Mapa interno de compras</h3><p>Custos de materiais antes de frete e desconto'+(pending?' · TOTAL PARCIAL: '+pending+' cotação(ões) pendente(s)':'')+'</p><table><thead><tr><th>Item / quantidade / comprimento</th><th>Fornecedor</th><th>Largura / peso</th><th>Custo</th><th>Referência</th><th>Comparação</th></tr></thead><tbody>'+rows.map(r=>{const c=cpCalc(r.l,r.p,r.k,null,r),ou=r.k==='c'||r.k==='a';return '<tr><td>'+escapeAttr(r.k==='p'?r.p.grupo+' '+r.p.dims+' #'+r.p.esp:cpRowLabel(r))+'<br>'+(ou?num(r.l.qtd,0)+' '+escapeAttr(r.k==='c'?(r.p.unidade||'un'):'un'):num(r.l.qtd,0)+' × '+num(r.l.comp||r.p.comp,0)+' mm')+'</td><td>'+escapeAttr(c.supplier||'—')+'</td><td>'+(r.k==='p'?(c.larg!=null?num(c.larg,2)+' mm':'—')+' / '+(c.pesoKnown?num(c.pesoTot,2)+' kg':'—'):ou?(c.preco?brl(c.preco)+'/un':'—'):num(c.metros,2)+' m')+'</td><td>'+(c.semPreco?'Pendente':brl(c.tot))+'</td><td>'+(c.ref==null?'Sem referência':brl(c.ref))+'</td><td>'+cpDelta(c)+(c.warning?'<br>'+escapeAttr(c.warning):'')+'</td></tr>';}).join('')+otherReport+'</tbody></table><p>'+(comparable?cpDelta({delta,ref:refSum}):'Sem comparação')+' · '+comparable+'/'+comparableBase+' itens comparáveis.</p>';
 }
@@ -13780,12 +13929,14 @@ initAuth();
     /* A aba Cadastros saiu: clicada direto, ela mostrava o banco de dados
        vazio (só o botão "Banco de dados" do topo monta o conteúdo), e esse
        botão já leva ao mesmo painel. */
-    var abas = [['orc', 'Orçamento'], ['esq', 'Esquadrias'], ['cnm', 'Chave na mão'], ['salvos', 'Salvos'], ['cob', 'Compras da obra']];
+    var abas = [['orc', 'Orçamento'], ['esq', 'Esquadrias'], ['cnm', 'Chave na mão', 'Chave'], ['salvos', 'Salvos'], ['cob', 'Compras da obra', 'Compras']];
     barra.innerHTML = abas.map(function (a, i) {
-      return '<button class="orc-tab' + (i === 0 ? ' on' : '') + '" data-aba="' + a[0] + '">' + a[1] +
+      return '<button class="orc-tab' + (i === 0 ? ' on' : '') + '" data-aba="' + a[0] + '" title="' + a[1] + '">' + (a[2] ? '<span class="nm-pc">' + a[1] + '</span><span class="nm-cel">' + a[2] + '</span>' : a[1]) +
         (a[0] === 'salvos' ? '<span class="n" id="orcNSalvos"></span>' : '') + (a[0] === 'cob' ? '<span class="n cob-n" id="orcNCob"></span>' : '') + '</button>';
     }).join('') + '<span style="flex:1"></span><button class="orc-tab gear" title="Ferramentas e configurações">⚙</button>';
     wrap.insertBefore(barra, sheet);
+    var est = document.createElement('div'); est.id = 'orcEstado'; est.className = 'orc-estado no-print'; est.hidden = true;
+    wrap.insertBefore(est, sheet);
 
     Array.prototype.forEach.call(barra.querySelectorAll('.orc-tab[data-aba]'), function (b) {
       b.addEventListener('click', function () { window.orcAba(b.getAttribute('data-aba')); });
@@ -13883,7 +14034,17 @@ initAuth();
       var saindo = (a !== abaAtual) ? abaAtual : null;
       /* o campo ainda em foco conta, e tem que ser lido com a aba visível */
       if (represada(saindo)) { try { commitEdits(); } catch (e) { } }
-      abaAtual = a;
+      abaAtual = a; window.ORC_ABA = a;
+      /* no celular a faixa rola: a aba escolhida fica inteira à vista */
+      var tb = document.querySelector('.orc-tab[data-aba="' + a + '"]'), fx = tb && tb.parentElement;
+      if (tb && fx && fx.scrollWidth > fx.clientWidth) {
+        var rf = fx.getBoundingClientRect(), rt = tb.getBoundingClientRect();
+        if (rt.left < rf.left) fx.scrollLeft -= rf.left - rt.left + 8; else if (rt.right > rf.right) fx.scrollLeft += rt.right - rf.right + 24;
+      }
+      /* o "Imprimir / PDF" do alto imprime o que esta aba mostra; onde não
+         há o que imprimir, ele some */
+      var bi = document.getElementById('btnImprimirAba'); if (bi) bi.hidden = (a === 'cob' || a === 'cot');
+      setTimeout(function () { try { orcEstadoLinha(); } catch (e) { } }, 0);
       Array.prototype.forEach.call(document.querySelectorAll('.orc-tab[data-aba]'), function (b) {
         b.classList.toggle('on', b.getAttribute('data-aba') === a);
       });
@@ -13915,7 +14076,6 @@ initAuth();
       var m = document.createElement('div');
       m.className = 'orc-menu no-print';
       var itens = [
-        ['Cotações (histórico — somente leitura)', 'openControle'],
         ['Catálogos de preços (PDF)', 'openCatalogos', 'recCatalogos'],
         ['Calculadora de perfil', 'openCalc'],
         ['-', ''],
@@ -14039,13 +14199,13 @@ initAuth();
       '<span class="sep"></span>' +
       '<span class="tot grand"><span class="k">Total</span><span class="v" id="bar_total">R$ 0,00</span></span>' +
       '<span class="push"></span>' +
-      '<button id="bar_novo">Novo</button>' +
+      '<button id="bar_novo">Novo<span class="so-pc"> orçamento</span></button>' +
       /* A versão do impresso e as partes que entram nele iam soltas na barra
          -- um seletor e quatro caixinhas -- e eram o que a fazia quebrar em
          duas linhas. Agora ficam num botão que abre para cima. No celular
          o mesmo botão (⋯) também leva Novo e Compras por item. */
       '<details class="orc-imp" id="orcImp"><summary title="Versão e partes que saem no Imprimir / PDF">' +
-      '<span class="imp-txt" id="orcImpLbl">Impresso · Cliente</span><span class="imp-ico" aria-label="Mais opções">⋯</span></summary>' +
+      '<span class="imp-txt" id="orcImpLbl">Impresso · Cliente</span><span class="imp-cel" id="orcImpCel">Cliente</span><span class="imp-ico" aria-label="Mais opções">⋯</span></summary>' +
       '<div class="orc-imp-p"><div class="lab">Versão do impresso</div>' +
       '<select id="orcPrintMode" title="Versão que sai no Imprimir / PDF">' +
       '<option value="cliente">Impresso · Cliente</option>' +
@@ -14055,22 +14215,33 @@ initAuth();
       SECOES.map(function (x) {
         return '<label><input type="checkbox" data-sec="' + x[0] + '" checked>' + x[1] + '</label>';
       }).join('') + '</span>' +
-      '<div class="so-cel"><button id="bar_novo_cel">Novo orçamento</button><button id="bar_painel_cel">Compras por item</button></div>' +
+      '<div class="so-cel"><button id="bar_novo_cel">Novo orçamento</button><button id="bar_painel_cel">Fornecedor por item</button></div>' +
       '</div></details>' +
-      '<button id="bar_painel">Compras por item</button>' +
+      '<button id="bar_painel">Fornecedor por item</button>' +
       '<button class="pri" id="bar_salvar">Salvar<span class="so-pc"> orçamento</span></button>';
     document.body.appendChild(bar);
 
     function liga(id, fn) { var b = $(id); if (b) b.addEventListener('click', fn); }
     function fechaImp() { var d = $('orcImp'); if (d) d.open = false; }
-    liga('bar_novo', function () { try { novoOrcamento(); } catch (e) { } });
-    liga('bar_novo_cel', function () { fechaImp(); try { novoOrcamento(); } catch (e) { } });
+    /* UM "NOVO ORÇAMENTO" E UM "SALVAR", aqui na barra, para as três abas do
+       orçamento (Orçamento, Esquadrias, Chave na mão): eram três nomes para
+       o mesmo botão ("+ Nova obra" na chave na mão limpava também os perfis
+       de outra aba). Na aba aberta, o Novo leva o cursor ao primeiro campo
+       dela. Teste orcamento-novo-salvar-unicos. */
+    function novoDaAba() { var a = window.ORC_ABA || 'orc';
+      if (a === 'esq' && window.esqNovoOrc) esqNovoOrc(); else if (a === 'cnm' && window.cnmNova) cnmNova(); else novoOrcamento(); }
+    liga('bar_novo', function () { try { novoDaAba(); } catch (e) { } });
+    liga('bar_novo_cel', function () { fechaImp(); try { novoDaAba(); } catch (e) { } });
     liga('bar_painel', function () { try { enviarParaPainel(); } catch (e) { } });
     liga('bar_painel_cel', function () { fechaImp(); try { enviarParaPainel(); } catch (e) { } });
-    liga('bar_salvar', function () { try { salvarOrcamento(); } catch (e) { } });
+    liga('bar_salvar', function () { try { if ((window.ORC_ABA || 'orc') === 'cnm' && window.cnmSalvar) cnmSalvar(); else salvarOrcamento(); } catch (e) { } });
     (function () {
-      var sel = $('orcPrintMode'), lbl = $('orcImpLbl');
-      function rot() { if (sel && lbl) lbl.textContent = sel.options[sel.selectedIndex].text; }
+      var sel = $('orcPrintMode'), lbl = $('orcImpLbl'), cel = $('orcImpCel');
+      /* no celular o botão era só "⋯": a versão que vai sair (Cliente,
+         Interno, Fornecedor) aparece também ali -- a interna, com custos,
+         não pode ir ao cliente por engano */
+      function rot() { if (sel && lbl) lbl.textContent = sel.options[sel.selectedIndex].text;
+        if (sel && cel) cel.textContent = sel.options[sel.selectedIndex].text.replace(/^Impresso · /, ''); }
       if (sel) sel.addEventListener('change', rot);
       rot();
     })();
@@ -14114,7 +14285,7 @@ initAuth();
     document.body.classList.add('pm-cliente');
   }
   /* Nome do PDF (o bloco de impressao pergunta aqui): o tipo que sai na
-     tarja, o cliente e a data do orcamento -- "Orcamento REFRICOMP - PORTAS
+     tarja, o cliente e a data do orcamento -- "Orcamento CLIENTE - OBRA
      28-09-2026". Antes era "RM Estruturas — Orcamentos Internos" + a data
      de hoje, igual para todo orcamento. */
   window.rmNomePDF = function () {

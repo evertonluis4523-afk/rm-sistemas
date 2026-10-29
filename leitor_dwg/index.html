@@ -1346,7 +1346,7 @@ else poe();
   .facoes{display:inline-flex;gap:6px;margin-left:auto;flex:none}
   .ficon,.fmais{border:1px solid var(--line);background:var(--surface);border-radius:7px;padding:3px 9px;font:inherit;font-size:12px;font-weight:600;color:var(--muted);cursor:pointer;min-height:28px}
   .ficon:hover,.fmais:hover,.fmais.on{border-color:var(--rm-laranja);color:var(--rm-laranja)}
-  .fajustes{margin:2px 0 6px 82px;padding:9px 11px;background:#fbfbf9;border:1px solid var(--line);border-radius:9px;display:grid;gap:8px}
+  .fajustes{margin:2px 0 6px 82px;padding:9px 11px;background:var(--rm-fundo,#fbfbf9);border:1px solid var(--line);border-radius:9px;display:grid;gap:8px}
   .fajustes.hide{display:none}
   .faj-cat input,.faj-cm input{display:block;width:100%;padding:5px 9px;font-size:12px;max-width:440px}
   .faj-cat .chips{max-height:120px;overflow:auto;margin-top:4px}
@@ -1361,7 +1361,7 @@ else poe();
   .fora-box input{font-family:var(--mono);font-size:12px;padding:4px 7px}
   .fora-box .hint{flex-basis:100%}
   .ftab{display:flex;align-items:center;gap:6px 8px;flex-wrap:wrap;padding:6px 0;border-bottom:1px dashed var(--line-2,var(--line))}
-  .ftab-it{display:inline-flex;align-items:center;gap:4px;border:1px solid var(--line);border-radius:6px;padding:2px 5px;background:#fbfbf9;font-size:11px;color:var(--muted)}
+  .ftab-it{display:inline-flex;align-items:center;gap:4px;border:1px solid var(--line);border-radius:6px;padding:2px 5px;background:var(--rm-fundo,#fbfbf9);font-size:11px;color:var(--muted)}
   .ftab-it input{width:54px;font-family:var(--mono);font-size:12px;padding:2px 4px}
   .ftab-it input+span+input{width:42px}
   .fpe{display:flex;align-items:center;gap:6px 10px;flex-wrap:wrap;padding-top:7px;font-size:11.5px}
@@ -1380,7 +1380,7 @@ else poe();
   /* 360 px: duas colunas nao cabem (o Fornecedor do pedido de chapas ficava
      pela metade fora da tela) */
   @media(max-width:420px){.settings{grid-template-columns:minmax(0,1fr)}}
-  .stage{background:#fbfbf9;border:1px solid var(--line);border-radius:12px;overflow:hidden;position:relative;touch-action:none;box-shadow:var(--shadow)}
+  .stage{background:var(--rm-fundo,#fbfbf9);border:1px solid var(--line);border-radius:12px;overflow:hidden;position:relative;touch-action:none;box-shadow:var(--shadow)}
   .stage svg{width:100%;height:auto;display:block}
   .zoom{position:absolute;top:8px;right:8px;display:flex;gap:6px}
   .zoom button{width:34px;height:34px;border:1px solid var(--line);background:#ffffffe6;color:var(--ink);border-radius:8px;font-size:18px;font-family:var(--mono);cursor:pointer;box-shadow:var(--shadow)}
@@ -1575,7 +1575,7 @@ else poe();
     .pln-row.dobra,.pln-row.dob{margin-left:10px;padding-left:11px}
   }
   /* ---- painel de custos (fechado por padrão: não é ajuste do dia a dia) ---- */
-  .custos{margin:10px 0 4px;border:1px solid var(--line);border-radius:9px;padding:0 12px 12px;background:#fbfbf9}
+  .custos{margin:10px 0 4px;border:1px solid var(--line);border-radius:9px;padding:0 12px 12px;background:var(--rm-fundo,#fbfbf9)}
   .custos>summary{cursor:pointer;padding:11px 0;font-weight:700;font-size:14px;list-style:none;display:flex;align-items:center;gap:8px}
   .custos>summary::-webkit-details-marker{display:none}
   .custos>summary::before{content:"▸";font-size:12px;color:var(--muted);font-weight:560}
@@ -1803,7 +1803,7 @@ else poe();
      #rm-dagua-imp) também ficam fora do #printArea: sem a exceção eles sumiam
      junto com a tela, e a folha da planificação saía sem rodapé. */
   body *{visibility:hidden}#printArea,#printArea *,#rm-pe-imp,#rm-pe-imp *,#rm-dagua-imp,#rm-dagua-imp *{visibility:visible}#printArea{position:static;left:auto;top:auto;width:100%;margin:0;border-radius:0;display:block!important}#printArea button{display:none}#printArea .lf-opc{display:none!important}#printArea .pa-topo{display:none!important}
-    #printArea select,#printArea .dxf-ctrl,#printArea #dxfAviso{display:none}
+    #printArea select,#printArea #dxfAviso{display:none}
     /* uma estrutura por folha, e a prancha ocupa a folha inteira */
     /* Quebra ANTES de cada prancha menos a primeira. Quebrar depois deixava
        uma folha em branco no fim -- a exceção do :last-child não bastava. */
@@ -1940,6 +1940,22 @@ else poe();
 @media print{.cp-split-ledger{break-inside:avoid;border-radius:0}.cp-split-ledger table{min-width:0}.cp-split-ledger h3{font-size:10px;padding:8px;font-weight:600}.cp-split-ledger th,.cp-split-ledger td{font-size:8px;padding:5px;font-weight:600}.cp-mark-legend{break-inside:avoid;padding:8px}.cp-mark-legend b{font-size:10px;font-weight:600}.cp-mark-legend p,.cp-mark-legend span{font-size:8px;font-weight:600}.cp-split-ledger .cp-notice{font-size:8px;font-weight:600}}
 .cp-engraving{border:1px solid #bdcfe0;border-radius:8px;padding:18px;background:#f8fbff;margin:20px 0 0}.cp-engraving h3{font-size:17px;color:#1d3757;margin-bottom:12px}.cp-engraving .btn{margin:12px 0}.cp-engraving-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:5px 0 12px}.cp-engraving-stats>div{background:#fff;border:1px solid #dce5ee;padding:12px;border-radius:6px}.cp-engraving-stats span,.cp-engraving-stats small{display:block;font-size:11px;color:var(--muted);font-weight:600}.cp-engraving-stats b{display:block;font-family:var(--mono);font-size:18px;margin:5px 0;color:#1d3757}@media(max-width:720px){.cp-engraving{padding:12px}.cp-engraving-stats{grid-template-columns:1fr}.cp-engraving h3{font-size:15px}}
 
+/* Conferência dos perfis e checagem: cor na folha (tema), e o texto de
+   apoio em <i> numa linha própria -- aparecia colado ("TESOURA 01banzo",
+   "176,0 mmcalculado pela bobina"). Teste leitor-revisao-ux. */
+.perf-audit{border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--rm-superficie,#fff)}
+.perf-audit-h{padding:11px 13px;background:var(--rm-fundo,#fbfbf9);display:flex;justify-content:space-between;gap:10px;align-items:center}
+.perf-audit td i{display:block;font-style:normal;font-size:11px;color:var(--muted);margin-top:2px}
+.caixa-suave{background:var(--rm-fundo,#fbfbf9);border:1px solid var(--line);border-radius:8px}
+.checagem-box{border:1px solid var(--line);border-left:3px solid var(--warn);border-radius:8px;padding:8px 12px;background:var(--rm-superficie,#fff)}
+@media (max-width:600px){ .rm-head .rm-logo img{max-height:34px;width:auto} .rm-head{padding:16px 14px 12px;gap:12px} }
+.dt-saidas{display:flex;flex-wrap:wrap;gap:10px 18px;align-items:flex-end;margin:0 0 12px;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--rm-superficie,#fff)}
+.dt-saidas-g{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.dt-saidas-t{flex-basis:100%;font-size:11px;font-weight:700;color:var(--muted);letter-spacing:.02em}
+@media print{.dt-saidas{display:none!important}}
+.fb-obra{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--muted)}
+.fb-obra input{min-width:180px}
+@media (max-width:600px){.fb-obra{flex-basis:100%}.fb-obra input{flex:1;min-width:0}}
 </style>
 <style>
 /* ===================== TIPOGRAFIA PADRAO . RM ESTRUTURAS =====================
@@ -3359,6 +3375,11 @@ body:not([data-theme="escuro"]){
         <span class="fb-name" id="fbName">arquivo carregado</span>
         <span class="fb-info" id="fbInfo"></span>
         <span class="fb-esp"></span>
+        <!-- primeiro se diz qual obra é: o campo e o Salvar obra ficam aqui,
+             sempre à mão (antes vinham depois da conferência, e o Salvar no
+             grupo "Compra"). Teste leitor-revisao-ux. -->
+        <label class="fb-obra"><span>Obra / Cliente</span><input id="obra" placeholder="ex.: Pavilhão 2 – cobertura"></label>
+        <button class="btn ghost" id="saveObra">Salvar obra</button>
         <button class="btn ghost hide" id="btnCotas" title="Lê as cotas do desenho e monta a lista de compra">&#8892; Lista pelas cotas</button>
         <button class="btn ghost" id="trocarArq">&#8617; trocar arquivo</button></div>
 
@@ -3368,34 +3389,9 @@ body:not([data-theme="escuro"]){
         <button type="button" role="tab" data-dsub="lista" class="on" aria-selected="true">Leitura e lista de compra</button>
         <button type="button" role="tab" data-dsub="comp" aria-selected="false">Comparativo de custo</button></div>
       <div id="detComp" class="hide"></div>
-      <div id="detLista">
-
-      <!-- CONFERIR A LEITURA -->
-      <h2 class="sec">Conferir a leitura</h2>
-      <div class="card conf-card"><div class="bd" id="conferir"></div></div>
-
-      <!-- AJUSTES -->
-      <div class="fld" style="margin:14px 0 8px"><label>Obra / Cliente</label><input id="obra" placeholder="ex.: Galpão Rogério"></div>
-      <details class="ajustes-box" id="ajustesBox"><summary><b>Ajustes</b> <span class="muted" id="ajustesResumo"></span></summary>
-      <div class="settings">
-        <div class="fld"><label>Unidade do desenho</label><select id="unit"><option value="10">cm → mm</option><option value="1">mm</option><option value="1000">m → mm</option></select><div class="hint" id="unitStatus">Será confirmada antes da importação.</div></div>
-        <div class="fld"><label>Quebra %</label><input id="quebra" type="number" value="10" inputmode="numeric">
-          <div class="hint" style="margin-top:3px;font-size:10px">Vale só para o que não tem detalhamento (ficha sem desenho ou medida digitada). Onde a lista diz “barras por encaixe” — banzo e interno detalhados —, a sobra é medida peça por peça e a quebra não entra.</div></div>
-        <div class="fld"><label>Barra (mm)</label><input id="barra" type="number" value="6000" step="100" inputmode="numeric"></div>
-        <div class="fld"><label>Folga de fabricação (mm)</label><input id="folga" type="number" value="6" step="1" min="0" inputmode="numeric">
-          <div class="hint" style="margin-top:3px;font-size:10px">Descontada uma vez de cada peça interna, igual em todas. Muda por projeto, conforme o montador.</div></div>
-        <div class="fld"><label>Encontro diagonal × montante</label>
-          <select id="afasta">
-            <option value="0">Distância zero</option>
-            <option value="20" selected>20 mm — padrão RM</option>
-          </select>
-          <div class="hint" style="margin-top:3px;font-size:10px">Quanto a ponta da diagonal recua da face do montante. Encostada, a tocha não alcança a raiz e o filete sai só de um lado. <b>Continua encostando na alma do banzo</b> — só afasta do montante. Muda o comprimento de corte de toda diagonal que morre num montante.</div></div>
-        <div class="fld"><label>Segurança (barras por perfil)</label><input id="seguranca" type="number" value="2" step="1" min="0" inputmode="numeric">
-          <div class="hint" style="margin-top:3px;font-size:10px">Somadas a cada perfil que a lista conta <b>por encaixe</b>. O encaixe pede o número exato: se um corte sair errado, não existe barra sobrando. Estas são a reserva para o erro humano, e aparecem separadas do número exato.</div></div>
-        <div class="fld"><label>Galvanizado R$/kg</label><input id="galvkg" type="number" value="8.93" step="0.01" inputmode="decimal"></div>
-      </div>
-      </details>
-
+      <!-- os custos do comparativo moram na aba dele (antes ficavam no meio da
+           leitura, 1.800 px longe do resultado) -->
+      <div id="detCustos" class="hide">
       <!-- CUSTOS DO COMPARATIVO -->
       <details class="custos" id="custosBox">
         <summary>Custos para o comparativo de economia <span class="cu-tag" id="cuTag"></span></summary>
@@ -3474,6 +3470,35 @@ body:not([data-theme="escuro"]){
           <button class="btn ghost" id="cuZerar" style="font-size:11px;padding:4px 10px">restaurar os valores de partida</button>
         </div>
       </details>
+      </div>
+      <div id="detLista">
+
+      <!-- CONFERIR A LEITURA -->
+      <h2 class="sec">Conferir a leitura</h2>
+      <div class="card conf-card"><div class="bd" id="conferir"></div></div>
+
+      <!-- AJUSTES -->
+      <details class="ajustes-box" id="ajustesBox"><summary><b>Ajustes</b> <span class="muted" id="ajustesResumo"></span></summary>
+      <div class="settings">
+        <div class="fld"><label>Unidade do desenho</label><select id="unit"><option value="10">cm → mm</option><option value="1">mm</option><option value="1000">m → mm</option></select><div class="hint" id="unitStatus">Será confirmada antes da importação.</div></div>
+        <div class="fld"><label>Quebra %</label><input id="quebra" type="number" value="10" inputmode="numeric">
+          <div class="hint" style="margin-top:3px;font-size:10px">Vale só para o que não tem detalhamento (ficha sem desenho ou medida digitada). Onde a lista diz “barras por encaixe” — banzo e interno detalhados —, a sobra é medida peça por peça e a quebra não entra.</div></div>
+        <div class="fld"><label>Barra (mm)</label><input id="barra" type="number" value="6000" step="100" inputmode="numeric"></div>
+        <div class="fld"><label>Folga de fabricação (mm)</label><input id="folga" type="number" value="6" step="1" min="0" inputmode="numeric">
+          <div class="hint" style="margin-top:3px;font-size:10px">Descontada uma vez de cada peça interna, igual em todas. Muda por projeto, conforme o montador.</div></div>
+        <div class="fld"><label>Encontro diagonal × montante</label>
+          <select id="afasta">
+            <option value="0">Distância zero</option>
+            <option value="20" selected>20 mm — padrão RM</option>
+          </select>
+          <div class="hint" style="margin-top:3px;font-size:10px">Quanto a ponta da diagonal recua da face do montante. Encostada, a tocha não alcança a raiz e o filete sai só de um lado. <b>Continua encostando na alma do banzo</b> — só afasta do montante. Muda o comprimento de corte de toda diagonal que morre num montante.</div></div>
+        <div class="fld"><label>Segurança (barras por perfil)</label><input id="seguranca" type="number" value="2" step="1" min="0" inputmode="numeric">
+          <div class="hint" style="margin-top:3px;font-size:10px">Somadas a cada perfil que a lista conta <b>por encaixe</b>. O encaixe pede o número exato: se um corte sair errado, não existe barra sobrando. Estas são a reserva para o erro humano, e aparecem separadas do número exato.</div></div>
+        <div class="fld"><label>Galvanizado R$/kg</label><input id="galvkg" type="number" value="8.93" step="0.01" inputmode="decimal"></div>
+      </div>
+      </details>
+
+
 
       <!-- FICHAS -->
       <h2 class="sec">Fichas lidas do desenho</h2>
@@ -3482,7 +3507,7 @@ body:not([data-theme="escuro"]){
         <button class="btn ghost" id="impMedicoes" style="font-size:11px;padding:4px 10px">📐 Importar medições do AutoCAD</button>
         <input type="file" id="impMedFile" accept=".txt,.json" style="display:none">
       </div>
-      <div id="diagPanel" class="hide" style="margin-bottom:12px;padding:12px;background:#fbfbf9;border:1px solid var(--line);border-radius:8px;font-size:12px"></div>
+      <div id="diagPanel" class="hide caixa-suave" style="margin-bottom:12px;padding:12px;font-size:12px"></div>
       <div id="padraoPanel" class="hide" style="margin-bottom:12px"></div>
       <div id="checagem" style="margin-bottom:12px"></div>
       <div id="perfilAudit" style="margin-bottom:12px"></div>
@@ -3497,10 +3522,9 @@ body:not([data-theme="escuro"]){
           <button class="btn primary" id="exportOrc">Importar p/ Orçamento RM</button>
           <button class="btn ghost" id="lfBarras">Pedido de barras 6 m ✉</button>
           <button class="btn ghost" id="copy">Copiar lista</button>
-          <button class="btn ghost" id="print">Imprimir / PDF</button>
-          <button class="btn ghost" id="saveObra">Salvar obra</button></div></div>
+          <button class="btn ghost" id="print">Imprimir / PDF</button></div></div>
         <div class="saida"><div class="saida-t">Fábrica</div><div class="btnrow">
-          <button class="btn" id="detalhar">Detalhamento ✂</button>
+          <button class="btn" id="detalhar">Pranchas de montagem ✂</button>
           <button class="btn ghost" id="cutReport">Aproveitamento em barra 6 m</button>
           <button class="btn ghost" id="listaForn">Pedido detalhado ✉</button></div></div>
         <div class="saida"><div class="saida-t">Laser</div><div class="btnrow">
@@ -3752,8 +3776,8 @@ body:not([data-theme="escuro"]){
             <button class="btn ghost" id="plnProjExcluir">× Excluir</button>
           </div>
           <div class="hint" id="plnProjMsg" style="margin-top:6px"></div>
-          <div class="fld pln-obra-fld" style="margin-top:12px"><label for="plnObra">Obra / pedido</label>
-            <input id="plnObra" type="text" maxlength="120" autocomplete="off" placeholder="ex.: Pavilhão Silva — sai na folha e no nome dos arquivos, separa um pedido do outro"></div>
+          <div class="fld pln-obra-fld" style="margin-top:12px"><label for="plnObra">Obra / Cliente</label>
+            <input id="plnObra" type="text" maxlength="120" autocomplete="off" placeholder="ex.: Pavilhão 2 – calhas — sai na folha e no nome dos arquivos, separa um pedido do outro"></div>
           <div id="plnLista" style="margin-top:14px"></div>
           <div class="btnrow" style="margin-top:12px">
             <button class="btn primary" id="plnDXF">⬇ DXF — 1 desenho por item</button>
@@ -4158,9 +4182,15 @@ function log(m,c){const s=document.createElement('span');if(c)s.className=c;s.te
    deixam de bater. */
 const BASE='https://cdn.jsdelivr.net/npm/@mlightcad/libredwg-web@0.7.14';
 let LibreDwg,Dwg_File_Type,lib=null,wasmBinary=null,wasmUrl=null;
-log('carregando módulo…');
-for(const u of [BASE+'/wasm/libredwg-web.wasm',BASE+'/wasm/libredwg.wasm']){try{const r=await fetch(u);if(r.ok){wasmBinary=await r.arrayBuffer();wasmUrl=u;log('✓ wasm '+Math.round(wasmBinary.byteLength/1024)+' KB','ok');break;}}catch(e){}}
-try{const m=await import(BASE+'/+esm');LibreDwg=m.LibreDwg;Dwg_File_Type=m.Dwg_File_Type;}catch(e){log('✗ wrapper: '+e.message,'err');}
+/* As mensagens técnicas da biblioteca de DWG ("carregando módulo… ✓ wasm
+   … KB ✓ pronto", ou "wrapper: Failed to fetch…" em inglês) ficavam acima
+   das abas. Deu certo: nada aparece. Falhou: uma frase só, em português, com
+   o que fazer; o detalhe vai para o console. Teste leitor-revisao-ux. */
+const LIB_FALHOU='Sem internet o leitor de DWG não carregou. Arquivo DXF abre normalmente; para abrir DWG, conecte e recarregue a página.';
+let LIB_AVISOU=false;
+function libFalha(det){console.warn('[leitor DWG]',det);if(!LIB_AVISOU){LIB_AVISOU=true;log(LIB_FALHOU,'err');}}
+for(const u of [BASE+'/wasm/libredwg-web.wasm',BASE+'/wasm/libredwg.wasm']){try{const r=await fetch(u);if(r.ok){wasmBinary=await r.arrayBuffer();wasmUrl=u;break;}}catch(e){}}
+try{const m=await import(BASE+'/+esm');LibreDwg=m.LibreDwg;Dwg_File_Type=m.Dwg_File_Type;}catch(e){libFalha('wrapper: '+e.message);}
 /* Um caminho so', o que funciona. Havia tres tentativas em fila, e as duas
    primeiras (LibreDwg.create) falhavam SEMPRE: create() recebe uma pasta e
    monta "pasta/arquivo" -- com a barra final daqui virava "wasm//...", e na
@@ -4178,8 +4208,8 @@ async function init(quieto){
     const mod=await cm(wasmBinary?{wasmBinary}:{locateFile:f=>BASE+'/wasm/'+f});
     let c=mod;
     if(LibreDwg){try{c=LibreDwg.createByWasmInstance?LibreDwg.createByWasmInstance(mod):new LibreDwg(mod);}catch(_){}}
-    if(c&&(typeof c.convert==='function'||typeof c.dwg_read_data==='function')){LIB_INST++;if(!quieto)log('\u2713 pronto','ok');return c;}
-  }catch(e){log('\u2717 biblioteca: '+(e&&e.message||e),'err');}
+    if(c&&(typeof c.convert==='function'||typeof c.dwg_read_data==='function')){LIB_INST++;return c;}
+  }catch(e){libFalha('biblioteca: '+(e&&e.message||e));}
   return null;
 }
 lib=await init();
@@ -4190,7 +4220,7 @@ lib=await init();
    exigia recarregar a página. Antes de cada DWG sai uma instância nova, do
    wasm já baixado (sem rede, o tempo de compilar). */
 async function libNova(){const c=await init(true);if(c)lib=c;return lib;}
-if(!lib)log('✗ não inicializou a biblioteca','err');
+if(!lib)libFalha('não inicializou a biblioteca');
 
 /* ===================== EXTRAÇÃO ===================== */
 const P=p=>p?({x:p.x??p[0]??0,y:p.y??p[1]??0}):null;
@@ -5682,7 +5712,7 @@ function renderConferir(){
   const ignG=resumoIgn(ignFora);
   el.innerHTML='<div class="conf-topo"><div class="conf-res">'+sec.length+' estrutura(s) detalhada(s)'+
       (nAvisos?' · <b style="color:var(--warn)">'+nAvisos+' aviso(s) marcados no desenho</b>':' · nenhum aviso')+
-      (nSolta?' · <b style="color:#e5484d">'+nSolta+' linha(s) de peça fora de estrutura</b>':' · nenhuma linha de peça sobrando')+
+      (nSolta?' · <b style="color:#e5484d">'+nSolta+' linha(s) de peça fora de estrutura</b>':' · nenhuma linha fora das estruturas')+
       (semEst?' · <b style="color:var(--warn)">'+semEst+' ficha(s) sem estrutura</b>':'')+
       (ignG?' · <span title="Não é peça: ignorado de propósito">ignorado fora das estruturas: '+escapeHtml(ignG)+'</span>':'')+'</div>'+
     '<div class="conf-modo" role="group" aria-label="Como mostrar"><button type="button" data-conf-modo="est" class="'+(CONF_MODO!=='tudo'?'on':'')+'">Por estrutura</button><button type="button" data-conf-modo="tudo" class="'+(CONF_MODO==='tudo'?'on':'')+'">Desenho inteiro</button></div></div>'+
@@ -5727,8 +5757,8 @@ function renderChecagem(){
     return;
   }
   const MAX=40;
-  el.innerHTML='<details'+(c.length<=8?' open':'')+' style="border:1px solid var(--line);border-left:3px solid var(--warn);border-radius:8px;padding:8px 12px;background:#fff">'+
-    '<summary style="cursor:pointer"><b>Checagem do desenho</b> — <b style="color:var(--warn)">'+c.length+' aviso(s)</b> '+
+  el.innerHTML='<details'+(c.length<=8?' open':'')+' class="checagem-box">'+
+    '<summary style="cursor:pointer"><b>Checagem do desenho</b> — <b style="color:var(--warn)">'+c.length+' ponto(s) para conferir</b> '+
       '<span class="muted" style="font-size:12px">coordenadas do próprio desenho, para achar no AutoCAD</span></summary>'+
     '<ul style="margin:8px 0 0;padding-left:18px;font-size:12px;line-height:1.6">'+
       c.slice(0,MAX).map(x=>'<li>'+txt(x)+' <span class="mono" style="color:var(--muted)">'+xy(x)+'</span></li>').join('')+
@@ -6179,8 +6209,8 @@ function renderPerfilAudit(){
       '<td>'+bob+'<i>'+escapeHtml(x.fonte)+' · '+peso+(x.rkg?' · R$ '+x.rkg.toFixed(2).replace('.',',')+'/kg':'')+'</i></td>'+ 
       '<td><b style="color:'+cor+'">'+rot+'</b></td></tr>';
   }).join('');
-  el.innerHTML='<div style="border:1px solid var(--line);border-radius:10px;overflow:hidden;background:#fff">'+
-    '<div style="padding:11px 13px;background:#fbfbf9;display:flex;justify-content:space-between;gap:10px;align-items:center">'+
+  el.innerHTML='<div class="perf-audit">'+
+    '<div class="perf-audit-h">'+
       '<div><b>Conferência automática dos perfis</b><div class="hint">O comparativo só é confiável quando não há item em vermelho.</div></div>'+
       '<b style="color:'+corResumo+';white-space:nowrap">'+(erros?erros+' para revisar':(inferidos?inferidos+' inferido(s)':'tudo conferido'))+'</b></div>'+
     '<div style="overflow-x:auto"><table style="width:100%;min-width:780px"><thead><tr><th>Uso</th><th>Lido → reconhecido</th><th>Bobina e aproveitamento</th><th>Status</th></tr></thead><tbody>'+linhas+'</tbody></table></div>'+
@@ -6781,7 +6811,7 @@ function compute(){
       const nomeMostra=p.name+selo;
       LASTROWS.push({name:p.name,lam:p.lam?p.lam.desc:'',mat:p.mat||'',bars,metros,kgm:p.kgm,peso,unit,unitTxt,custo,fora:p.fora||null,
         barraMM:lamBarra,terca:!!p.terca,pecas:p.terca?p.pieces.map(pc=>({len:pc.len,qty:pc.qty})):null});
-      rows+='<tr><td>'+nomeMostra+'</td><td class="n">'+bars+'</td><td class="n">'+metros.toFixed(1)+'</td><td class="n">'+(p.lam?'<span class="muted">—</span>':p.fora?('<span class="mono">'+p.kgm.toFixed(3)+'</span> <span title="Calculado pelo slitter" style="font-size:10px;color:var(--blue)">⚙ slitter</span>'):('<input data-kgm="'+pi+'" value="'+p.kgm+'" style="'+(p.kgmSource==='estimado'?'border-color:var(--warn);background:#fffbf0':'border-color:var(--ok);background:#f0fbf5')+'"> <span title="'+(p.kgmSource==='catalogo'?'Valor de catálogo':'Estimado — confira!')+'" style="font-size:10px;color:'+(p.kgmSource==='estimado'?'var(--warn)':'var(--ok)')+'">'+(p.kgmSource==='estimado'?'⚠ est.':'✓ cat.')+'</span>'))+'</td><td class="n">'+(p.lam?'<span class="muted">—</span>':Math.round(peso)+' kg')+'</td>'+
+      rows+='<tr><td>'+nomeMostra+'</td><td class="n">'+bars+'</td><td class="n">'+metros.toLocaleString('pt-BR',{minimumFractionDigits:1,maximumFractionDigits:1})+'</td><td class="n">'+(p.lam?'<span class="muted">—</span>':p.fora?('<span class="mono">'+p.kgm.toLocaleString('pt-BR',{minimumFractionDigits:3,maximumFractionDigits:3})+'</span> <span title="Calculado pelo slitter" style="font-size:10px;color:var(--blue)">⚙ slitter</span>'):('<input data-kgm="'+pi+'" value="'+String(p.kgm).replace('.',',')+'" style="'+(p.kgmSource==='estimado'?'border-color:var(--warn);background:#fffbf0':'border-color:var(--ok);background:#f0fbf5')+'"> <span title="'+(p.kgmSource==='catalogo'?'Valor de catálogo':'Estimado — confira!')+'" style="font-size:10px;color:'+(p.kgmSource==='estimado'?'var(--warn)':'var(--ok)')+'">'+(p.kgmSource==='estimado'?'⚠ est.':'✓ cat.')+'</span>'))+'</td><td class="n">'+(p.lam?'<span class="muted">—</span>':Math.round(peso)+' kg')+'</td>'+
         (temPreco?('<td class="n" style="font-size:11px">'+unitTxt+'</td><td class="n">'+(custo?'R$ '+custo.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}):'—')+'</td>'):'')+'</tr>';
     });
     rows+='</tbody></table><div class="hint">Barras de '+(barra/1000)+' m (perfis) — laminados usam a barra do catálogo. Terça é encomendada no comprimento de cada peça: a coluna traz o número de peças, não de barras. <b>Barras por encaixe</b>: com o detalhamento pronto, as barras do banzo e do interno são contadas encaixando peça por peça na barra (o banzo pelo plano de emenda), e não dividindo metros — essas linhas não levam quebra, porque a sobra ali é medida e já está no número; os metros são os das barras compradas, sobra inclusa. Carbono: peso × R$/kg da '+(PRECOS.fornecedor||'Perfitec')+' (por espessura). Galvanizado: peso × R$ '+rkgGalv.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})+'/kg (editável em Ajustes). Laminados: nº de barras × R$/barra. Cantoneira dupla conta ×2.'+(!temPreco?' <b style="color:var(--warn)">Abra o Orçamento RM uma vez neste navegador para sincronizar os preços.</b>':'')+'</div>';
@@ -6929,7 +6959,7 @@ async function handle(file,aba){
   if(importandoArquivo)return;
   aba=aba||'det';
   const isDxf=/\.dxf$/i.test(file.name||'');
-  if(!lib&&!isDxf){log('biblioteca não pronta','err');return;}
+  if(!lib&&!isDxf){log(LIB_FALHOU,'err');return;}
   importandoArquivo=true;
   log('lendo "'+file.name+'"…');
   try{
@@ -7061,7 +7091,14 @@ function abaPinta(){
 function abaVai(qual){
   if(qual===ABA.atual){abaPinta();return;}
   abaGuardaDesenho();
+  /* O RELATÓRIO É DA ABA QUE O ABRIU. A área de impressão fica fora das
+     abas: aberto no Detalhamento, o relatório seguia embaixo da Planificação
+     e da Escada (no celular, quase a página toda). Ao sair, ele some; ao
+     voltar para a aba dele, reaparece. Teste leitor-relatorio-da-aba. */
+  const pa=document.getElementById('printArea');
+  if(pa&&!pa.classList.contains('hide')){pa.dataset.dono=ABA.atual;pa.classList.add('hide');}
   ABA.atual=qual;
+  if(pa&&pa.dataset.dono===qual){pa.classList.remove('hide');delete pa.dataset.dono;}
   document.querySelectorAll('#abas .aba').forEach(b=>
     b.classList.toggle('on', b.dataset.aba===qual));
   document.querySelectorAll('.pane').forEach(p=>
@@ -11528,7 +11565,7 @@ function cotaAbrir(){
         '<button class="btn" id="ctDoc">Pedido ao fabricante</button>'+
         '<button class="btn ghost" id="ctX">Fechar</button></div>'+
       '<div class="ct-cfg">'+
-        '<div class="fld ct-obra"><label>Obra / Cliente</label><input id="ctObra" placeholder="ex.: Galpão Refricomp" autocomplete="off">'+
+        '<div class="fld ct-obra"><label>Obra / Cliente</label><input id="ctObra" placeholder="ex.: Pavilhão 2 – cobertura" autocomplete="off">'+
           '<div class="hint">Vai no alto do pedido. É o mesmo campo do sistema — mudar aqui muda lá.</div></div>'+
         '<div class="fld"><label>Cada peça vale por</label><input id="ctMult" type="number" min="1" step="1" value="'+CT.mult+'">'+
           '<div class="hint">O desenho traz meia tesoura, então cada cota vale por 2. Muda aqui se o desenho for inteiro.</div></div>'+
@@ -11679,7 +11716,7 @@ function cotaDocumento(){
    "uso a maior medida como base" que ele descreveu. E onde a linha nao desce
    ate o chao ha uma porta: a telha morre na verga.
 
-   Medido no TELHA_FECHAMENTO_REFRICOMP: preenchendo so a partir do contorno
+   Medido no arquivo de fechamento da obra de referência: preenchendo so a partir do contorno
    saem 76 das 78 telhas iguais as que ele tracou a mao, e as duas que sobram
    sao o vao que cai em cima do batente, onde ele parte a telha em duas.
 
@@ -11763,7 +11800,7 @@ function telhaLinhas(){
 
    Ate agora a leitura nao filtrava cor nenhuma: as bordas do quadro entravam
    na sacola junto com a parede. Tres estragos, todos medidos no
-   TELHA_FECHAMENTO_REFRICOMP novo:
+   arquivo de fechamento da obra de referência novo:
 
      · a borda de BAIXO do quadro ganhava a eleicao da base -- ela atravessa
        100% da face e esta mais embaixo que tudo. Na FRENTE o pe da parede
@@ -11844,7 +11881,7 @@ const tlhYem=(s,x)=>{
 /* ---- as faces tambem se separam DE LADO ----
    A faixa so quebrava por vao VERTICAL, porque ate aqui ele desenhava as
    elevacoes empilhadas, uma embaixo da outra -- e nos tres desenhos antigos
-   do REFRICOMP e assim que estao (tres faces, uma por faixa, 50 m cada).
+   da obra de referência e assim que estao (tres faces, uma por faixa, 50 m cada).
 
    No desenho novo as faces vem LADO A LADO. Todas caiam na mesma faixa e
    viravam UMA face de 184 m. Duas consequencias, as duas medidas:
@@ -12212,7 +12249,7 @@ function telhaFaces(){
        Sem estes filtros o botao aparecia tambem no detalhamento de tesoura e
        oferecia 425 telhas tiradas da planta baixa. Medido nos dois desenhos:
 
-                              esboco (REFRICOMP)   detalhamento (Planta_baixa)
+                              esboco (obra ref.)     detalhamento (Planta_baixa)
          linhas inclinadas          2 por face          233 a 780 por faixa
          inclinacoes diferentes     1 (7°)              20 a 38
          horizontais                2 a 4               29 a 620
@@ -12252,7 +12289,7 @@ function telhaFaces(){
     if(yEm(xIni)==null||yEm(xFim)==null)return;
     /* ---- onde fica a cumeeira ----
        Guarda TODOS os x que estão no ponto mais alto, e não só o primeiro. No
-       OITÃO do REFRICOMP as duas águas não terminam no mesmo lugar -- uma sobe
+       OITÃO da obra de referência as duas águas não terminam no mesmo lugar -- uma sobe
        até 29.050 e a outra até 29.052,5 -- e é 2,5 mm de desenho que depois
        viram uma tira de 497 de um lado contra 500 do outro. Sem guardar os
        dois, não há como avisar. */
@@ -12266,14 +12303,14 @@ function telhaFaces(){
        estao la, a abertura e CONFIRMADA e nao ha o que adivinhar.
 
        Sem os batentes sobra a deducao -- so a horizontal solta -- e foi ela
-       que me fez ler uma porta so na FRENTE do REFRICOMP, quando sao duas,
+       que me fez ler uma porta so na FRENTE da obra de referência, quando sao duas,
        uma de cada lado. O desenho tinha metade das telhas tracadas e metade
        das portas; o contorno era da face inteira e eu preenchi os dois lados,
        mas a porta do lado que ele nao tracou nao existia em lugar nenhum para
        eu ler. Deducao continua valendo, para nao quebrar desenho antigo, mas
        sai marcada como tal no painel e no pedido.
 
-       Duas linhas no mesmo trecho sao a MESMA abertura -- no REFRICOMP a
+       Duas linhas no mesmo trecho sao a MESMA abertura -- na obra de referência a
        porta tem uma a 2.450 e outra a 5.250 do chao -- e vale a mais BAIXA,
        que e onde a telha para. */
     const soltas=H.filter(s=>s!==base&&s.L<larguraFace*0.6&&s.a.y>base.a.y+1)
@@ -12374,7 +12411,7 @@ function telhaPreenche(f){
   const util=Math.max(1,TLH.util), cortes=new Set([f.xIni,f.xFim]);
   /* A grade nasce na CUMEEIRA e nao se desloca. Eu cheguei a por um campo
      para mover o inicio e uma sugestao dizendo que 320 mm economizariam
-     10,9 m² de perda no REFRICOMP -- numero certo, conselho errado: a
+     10,9 m² de perda na obra de referência -- numero certo, conselho errado: a
      montagem sempre comeca pelo centro da tesoura, para o gomo ficar reto.
      Deslocar a grade desalinharia a onda das duas aguas na cumeeira, que e
      onde ela mais aparece. Nao devolver esse campo. */
@@ -12471,7 +12508,7 @@ function telhaMonta(){
     gordas.slice(0,3).join('; ')+(gordas.length>3?'…':''));
   /* Abertura DEDUZIDA e a que nao tem batente: o sistema achou uma linha
      solta e chutou que ali ha uma porta, do tamanho dela ate o chao. Foi isso
-     que fez a FRENTE do REFRICOMP sair com uma porta so, quando sao duas --
+     que fez a FRENTE da obra de referência sair com uma porta so, quando sao duas --
      a do outro lado nao estava desenhada em lugar nenhum. Entao isso tem de
      saltar aos olhos, e nao ficar escondido num rodape. */
   const ded=TLH.faces.filter(f=>f.vergas.some(v=>!v.confirmada));
@@ -13163,7 +13200,7 @@ function telhaAbrir(){
              precisa poder voltar nele depois de mexer no desenho. */
           ['tlSalvar','Salvar obra'],['tlImportSkp','⇧ Importar SketchUp']])+'</div>'+
       '<div class="tl-sec"><div class="tl-sec-t">Pedido</div><div class="tl-campos tl-pedido">'+
-        '<div class="fld"><label>Obra / Cliente</label><input id="tlObra" placeholder="ex.: Galpão Refricomp" autocomplete="off"></div>'+
+        '<div class="fld"><label>Obra / Cliente</label><input id="tlObra" placeholder="ex.: Pavilhão 2 – cobertura" autocomplete="off"></div>'+
         '<div class="fld"><label>Telha do Orçamento RM</label><select id="tlPerfil" title="O item, a cor e o preço vêm do cadastro do Orçamento RM">'+ops+'</select></div>'+
         '<div class="fld"><label>Largura útil (mm)</label><input id="tlUtil" type="number" min="1" step="10" value="'+TLH.util+'"></div>'+
         '<div class="fld"><label>Fabricante</label><input id="tlFab" value="'+escapeAttr(escapeHtml(TLH.fabricante||''))+'" placeholder="nome do fabricante" autocomplete="off"></div>'+
@@ -14977,7 +15014,33 @@ function detRender(secoes,totGeral,pecasGeral){
       listaPos+'</div></div>';
   });
   pa.classList.remove('hide');
-  pa.innerHTML='<div class="rm-sheet rc-sheet">'+'<div class=\"rm-dagua\" aria-hidden=\"true\"><img src=\"'+LOGO_MARCA_DAGUA+'\" alt=\"\"></div>'+
+  /* SAÍDAS NO ALTO. As pranchas do montador ficavam no fim de um relatório
+     de ~1.700 px (3.400 no celular), seis botões e dois seletores juntos.
+     Agora vêm antes do papel, em grupos: o que vai para o montador (PDF) e
+     os arquivos (DXF). A folha escolhida vale para as pranchas e o DXF -- o
+     nome antigo ("Imprimir o DXF em") escondia isso. Teste leitor-revisao-ux. */
+  const saidas='<div class="dt-saidas no-print">'+
+    '<div class="dt-saidas-g"><span class="dt-saidas-t">Folha das pranchas e do DXF</span>'+
+      '<select id="dxfFolha" aria-label="Folha das pranchas e do DXF">'+
+      ['A4','A3','A2','A1'].map(f=>'<option value="'+f+'"'+(f===DXF_FOLHA?' selected':'')+'>'+f+'</option>').join('')+
+      '</select> em <select id="dxfPartes" aria-label="Folhas por estrutura">'+
+      [['0','partes automáticas'],['1','1 folha'],['2','2 folhas'],['3','3 folhas'],['4','4 folhas']]
+        .map(o=>'<option value="'+o[0]+'"'+(o[0]===String(DXF_PARTES)?' selected':'')+'>'+o[1]+'</option>').join('')+
+      '</select> por estrutura</div>'+
+    '<div class="dt-saidas-g"><span class="dt-saidas-t">Para o montador (PDF)</span>'+
+      '<button class="btn" id="dtPrancha">\u25a4 Prancha montagem — peça inteira</button>'+
+      '<button class="btn" id="dtPranchaDiv" title="Usa as mesmas divisões e identificações 1/2 e 2/2 do DXF das chapas">\u25a4 Prancha montagem — planificada</button>'+
+      '<button class="btn" id="dtGrupos">\u2261 Peças por grupo</button></div>'+
+    '<div class="dt-saidas-g"><span class="dt-saidas-t">Arquivos (DXF)</span>'+
+      '<button class="btn ghost" id="dtDxf">\u2b07 DXF montagem — peça inteira</button>'+
+      '<button class="btn ghost" id="dtDxfDiv" title="O mesmo desenho, lido pela planificação: as peças acima do limite da chapa aparecem em 1/2 e 2/2, na camada RM-CODIGO-DIVIDIDO">\u2b07 DXF fabricação — planificado</button></div>'+
+    '<div class="dt-saidas-g"><span class="dt-saidas-t">Este relatório</span>'+
+      '<button class="btn" id="dtPrint">Imprimir / PDF</button>'+
+      '<button class="btn ghost" id="dt3d">\u25c8 Conferir em 3D</button>'+
+      '<button class="btn ghost" id="dtUnid">Ver em '+(DET_UNID==='mm'?'cm':'mm')+'</button>'+
+      '<button class="btn ghost" id="dtClose">Fechar</button></div>'+
+    '</div>';
+  pa.innerHTML=saidas+'<div class="rm-sheet rc-sheet">'+'<div class=\"rm-dagua\" aria-hidden=\"true\"><img src=\"'+LOGO_MARCA_DAGUA+'\" alt=\"\"></div>'+
     '<div class="rm-head"><div class="rm-logo">'+logo+'</div><div class="rm-co">'+rmTimbre2()+'</div></div>'+'<div class="doc-tag tb2-tipo">Detalhamento · Mapa de montagem e lista de corte · medidas em '+(DET_UNID==='cm'?'cm':'mm')+'</div>'+ 
     '<div class="rm-body">'+
       '<div class="rm-obra"><span>Obra / Cliente</span><b>'+escapeHtml(obra||'(sem obra)')+'</b>'+
@@ -15007,24 +15070,6 @@ function detRender(secoes,totGeral,pecasGeral){
       estruturasGeral+' tesouras/estruturas lidas do DXF, com um perfil por peça — só dobra onde a ficha marca cantoneira dupla. As barras de banzo são contadas por encaixe, como as dos internos: cada linha vira barra cheia mais o resto, '+
       'sem pedaço menor que '+detFmt(DET_EMENDA_MIN)+' e com a emenda fugindo dos nós quando dá; é o mesmo número da lista de compra.</div>'+
     '</div></div>'+
-    '<div style="margin-top:12px"><button class="btn" id="dtPrint">Imprimir / PDF</button> '+
-    '<button class="btn" id="dtPrancha">\u25a4 Prancha montagem — peça inteira</button> '+
-    '<button class="btn" id="dtPranchaDiv" title="Usa as mesmas divisões e identificações 1/2 e 2/2 do DXF das chapas">\u25a4 Prancha montagem — planificada</button> '+
-    '<button class="btn" id="dtGrupos">\u2261 Peças por grupo</button> '+
-    '<button class="btn ghost" id="dtDxf">\u2b07 DXF montagem — peça inteira</button> '+
-    '<button class="btn ghost" id="dtDxfDiv" title="O mesmo desenho, lido pela planificação: as peças acima do limite da chapa aparecem em 1/2 e 2/2, na camada RM-CODIGO-DIVIDIDO">\u2b07 DXF fabricação — planificado</button> '+
-    '<button class="btn ghost" id="dt3d">\u25c8 Conferir em 3D</button> '+
-    '<label class="dxf-ctrl" style="margin-left:8px;font-size:12px;color:var(--muted)">Imprimir o DXF em '+
-      '<select id="dxfFolha" style="margin-left:4px">'+
-      ['A4','A3','A2','A1'].map(f=>'<option value="'+f+'"'+(f===DXF_FOLHA?' selected':'')+'>'+f+'</option>').join('')+
-      '</select></label> '+
-    '<label class="dxf-ctrl" style="margin-left:6px;font-size:12px;color:var(--muted)">em '+
-      '<select id="dxfPartes" style="margin-left:4px">'+
-      [['0','partes automáticas'],['1','1 folha'],['2','2 folhas'],['3','3 folhas'],['4','4 folhas']]
-        .map(o=>'<option value="'+o[0]+'"'+(o[0]===String(DXF_PARTES)?' selected':'')+'>'+o[1]+'</option>').join('')+
-      '</select> por estrutura</label> '+
-    '<button class="btn ghost" id="dtUnid">Ver em '+(DET_UNID==='mm'?'cm':'mm')+'</button> '+
-    '<button class="btn ghost" id="dtClose">Fechar</button></div>'+
     '<div id="dxfAviso" class="rc-note" style="margin-top:8px"></div>'+
     '<div id="dtPranchas" class="pranchas hide"></div>';
   dtLocMontar(pa,secoes);
@@ -15080,7 +15125,17 @@ function detRender(secoes,totGeral,pecasGeral){
   /* A prancha entra no MESMO #printArea que o @media print isola, logo o
      "Imprimir / PDF" leva tabela e desenho juntos. Cada estrutura ganha a sua
      página. */
+  /* A prancha sem obra sai "(sem obra)" e se mistura com a de outra obra na
+     oficina: com o campo vazio, pergunta antes (Cancelar leva ao campo). O
+     campo continua abrindo vazio, como o padrão manda. Teste leitor-revisao-ux. */
+  function obraOuPergunta(){
+    if(obraAtual().trim())return true;
+    if(confirm('A obra está em branco: a prancha sai "(sem obra)" e pode se misturar com a de outra obra na oficina.\n\nOK = gerar assim mesmo · Cancelar = voltar e escrever a obra'))return true;
+    const o=document.getElementById('obra'); if(o){o.scrollIntoView({behavior:'smooth',block:'center'});setTimeout(()=>o.focus(),250);}
+    return false;
+  }
   function imprimirPranchaMontagem(modo){
+    if(!obraOuPergunta())return;
     const planificada=modo==='dividido';
     if(susp.length && !confirm('A escala não fecha em '+susp.length+' estrutura(s).\n\n'+
         'A prancha vai sair com as peças finas como fio. Gerar mesmo assim?'))return;
@@ -15120,6 +15175,7 @@ function detRender(secoes,totGeral,pecasGeral){
   document.getElementById('dtPrancha').addEventListener('click',()=>imprimirPranchaMontagem('inteiro'));
   document.getElementById('dtPranchaDiv').addEventListener('click',()=>imprimirPranchaMontagem('dividido'));
   document.getElementById('dtGrupos').addEventListener('click',()=>{
+    if(!obraOuPergunta())return;
     const alvo=document.getElementById('dtPranchas');
     alvo.innerHTML=detPranchasGrupos(secoes);
     alvo.classList.remove('hide');
@@ -15796,14 +15852,20 @@ function cuCalcular(d){
   /* O aço evitado é por perfil: são as barras que aquele perfil poupou,
      ao preço daquele perfil. */
 
-  const barrasBanzo=compra.banzos.barras, barrasInterno=compra.internos.barras;
+  /* TUDO EM BARRAS = sem a intervenção do sistema: o banzo sai pelo MAIOR
+     entre a estimativa com quebra e o que o plano de emenda pede, para o
+     comparativo mostrar o custo real de comprar tudo em barra de 6 m. Antes
+     usava só a quebra e o caminho parecia mais barato do que era. Teste
+     leitor-barras-maior-custo. */
+  const barrasLinhaSem=g=>Math.max(g.barras,g.barrasExatas!=null?g.barrasExatas:0);
+  const barrasBanzo=compra.banzos.linhas.reduce((s,g)=>s+barrasLinhaSem(g),0), barrasInterno=compra.internos.barras;
   const barrasSem=barrasBanzo+barrasInterno, barrasPlanoFornecedor=d.economia.comPlano;
   /* Sem detalhamento: banzos + internos saem da lista simples, todos em barras
      de 6 m. Com detalhamento: os MESMOS banzos continuam inteiros e apenas os
      internos passam a ser cobrados pelo peso liquido das pecas. */
   const precoDet=g=>baseDet[chave(g)]?baseDet[chave(g)].valor:preco(g);
   const custoLinhas=linhas=>linhas.reduce((s,g)=>s+g.barras*preco(g),0);
-  const acoBanzo=custoLinhas(compra.banzos.linhas);
+  const acoBanzo=compra.banzos.linhas.reduce((s,g)=>s+barrasLinhaSem(g)*preco(g),0);
   /* com detalhamento: as barras do plano de emenda, sem a quebra */
   const barrasBanzoCom=compra.banzos.linhas.reduce((s,g)=>s+(g.barrasExatas!=null?g.barrasExatas:g.barras),0);
   const acoBanzoCom=compra.banzos.linhas.reduce((s,g)=>s+(g.barrasExatas!=null?g.barrasExatas:g.barras)*preco(g),0);
@@ -16215,7 +16277,12 @@ function dadosRelatorioCorte(){
        Descontar a reserva do numero da economia e o que impede a seguranca de
        se disfarcar de ganho. */
     poupadas:Math.max(0,totBase-aComprar),
-    pct:totBase?100*(totBase-aComprar)/totBase:0,
+    /* Quando a reserva de segurança passa do que o encaixe poupa, não há
+       economia: a tela dizia "0 barras · -50%". Agora a porcentagem não fica
+       negativa e "aMais" diz quantas barras a reserva acrescenta. Teste
+       leitor-revisao-ux. */
+    pct:totBase?Math.max(0,100*(totBase-aComprar)/totBase):0,
+    aMais:Math.max(0,aComprar-totBase),
     metros:Math.max(0,totBase-aComprar)*barra/1000,
     minimo:grupos.reduce((n,g)=>n+g.piso,0),
     minimoDivisao:Math.ceil(totUtil/barra),
@@ -16316,8 +16383,9 @@ function htmlRelatorioCorte(d){
         '<div><span>Encaixe exato · o que o plano precisa</span><b>'+nb(e.comPlano)+' barras</b></div>'+
         (e.segTotal?('<div><span>A comprar · com '+e.segPorPerfil+' de segurança por perfil</span><b>'+
           nb(e.aComprar)+' barras</b><i>'+nb(e.comPlano)+' + '+nb(e.segTotal)+' em '+e.nPerfis+(e.nPerfis===1?' perfil':' perfis')+'</i></div>'):'')+
+        (e.aMais>0?'<div class="destaque"><span>Sem economia</span><b>'+nb(e.aMais)+' barra(s) a mais</b><i>a reserva de segurança passa do que o encaixe poupa</i></div>':
         '<div class="destaque"><span>Economia</span><b>'+nb(e.poupadas)+' barras</b>'+
-          '<i>'+e.pct.toFixed(1).replace('.',',')+'% · '+nb(e.metros)+' m de perfil</i></div>'+
+          '<i>'+e.pct.toFixed(1).replace('.',',')+'% · '+nb(e.metros)+' m de perfil</i></div>')+
       '</div>'+
       '<div class="rc-econ-p">À esquerda, como se contava antes de haver detalhamento: soma dos metros '+
         'dos perfis internos, mais '+e.quebraPct+'% de quebra, dividido pela barra de '+
@@ -18417,6 +18485,8 @@ function cpEnableExports(){
 }
 function cpAbrir(){
   const panel=document.getElementById('cpPanel');panel.classList.remove('hide');
+  /* o painel de chapas toma o lugar do relatório aberto antes */
+  {const pa=document.getElementById('printArea');if(pa)pa.classList.add('hide');}
   try{cpRefresh(true);panel.scrollIntoView({behavior:'smooth',block:'start'});}catch(e){log('Chapas: '+rmErroPt(e),'err');alert('Não foi possível gerar o plano: '+rmErroPt(e));}
 }
 function cpFresh(){
@@ -18601,7 +18671,7 @@ function cmpDados(){
   const ov={p6,pDet,pCh,semBanzoChapa:!!po.semBanzoChapa};
   if(cu){
     const compra=d.compraBase||cuCompraBasePorFuncao(d.barra);
-    ov.kgBanzo=cmpPesoBarras(compra.banzos.linhas,d.barra);
+    ov.kgBanzo=cmpPesoBarras(compra.banzos.linhas.map(g=>({...g,barras:Math.max(g.barras,g.barrasExatas!=null?g.barrasExatas:0)})),d.barra);   // o maior: igual ao custo do cartão
     ov.kgBanzoCom=cmpPesoBarras(compra.banzos.linhas.map(g=>({...g,barras:g.barrasExatas!=null?g.barrasExatas:g.barras})),d.barra);
     ov.kgInterno=cmpPesoBarras(compra.internos.linhas,d.barra);
   }
@@ -18630,7 +18700,7 @@ function cmpRender(){
   const lin=(rot,val,sub)=>'<li><span>'+rot+(sub?'<i>'+sub+'</i>':'')+'</span><b>'+val+'</b></li>';
   /* banzo: sem detalhamento leva a quebra; detalhado, o plano de emenda */
   const sb=ov.semBanzoChapa,linB=k=>!cu?'':sb?lin('Banzos','—','fora da soma nos três caminhos'):k===0
-    ?lin('Banzos',cpR(cu.acoBanzo),nb(cu.barrasBanzo)+' barras de 6 m · com quebra'+(ov.p6?' · '+kgx(ov.kgBanzo,ov.p6):''))
+    ?lin('Banzos',cpR(cu.acoBanzo),nb(cu.barrasBanzo)+' barras de 6 m · o maior entre a quebra e o plano de emenda'+(ov.p6?' · '+kgx(ov.kgBanzo,ov.p6):''))
     /* no caminho das chapas o parceiro faz só as internas: o banzo continua
        barra comprada, e o R$/kg dele é o da barra, não o do parceiro --
        a linha diz isso, senão parece que o preço da chapa não pegou.
@@ -18690,10 +18760,11 @@ function cmpRender(){
       '<div><span>Sem detalhamento · + '+e.quebraPct+'% de quebra</span><b>'+nb(e.baseCompra)+' barras</b></div>'+
       '<div><span>A comprar'+(e.segTotal?' · com '+e.segPorPerfil+' de segurança por perfil':'')+'</span><b>'+nb(e.aComprar)+' barras</b>'+
         (e.segTotal?'<i>'+nb(e.comPlano)+' + '+nb(e.segTotal)+' em '+e.nPerfis+(e.nPerfis===1?' perfil':' perfis')+'</i>':'')+'</div>'+
-      '<div class="destaque"><span>Economia do encaixe</span><b>'+nb(e.poupadas)+' barras</b><i>'+cpN(e.pct,1)+'% · '+nb(e.metros)+' m de perfil</i></div>'+
+      (e.aMais>0?'<div class="destaque"><span>Sem economia do encaixe</span><b>'+nb(e.aMais)+' barra(s) a mais</b><i>a reserva de segurança passa do que o encaixe poupa</i></div>'
+        :'<div class="destaque"><span>Economia do encaixe</span><b>'+nb(e.poupadas)+' barras</b><i>'+cpN(e.pct,1)+'% · '+nb(e.metros)+' m de perfil</i></div>')+
     '</div></div>';
   box.innerHTML='<div class="cmp-head"><div><h2>Quanto custa esta obra em cada caminho</h2>'+
-      '<p>'+(obraAtual()?cpE(obraAtual())+' · ':'')+(ov.semBanzoChapa?'só as peças internas: banzos fora da soma nos três caminhos.':'banzos em barra de 6 m nos três; muda como chegam as peças internas.')+'</p></div>'+
+      '<p>'+(obraAtual()?cpE(obraAtual())+' · ':'')+(ov.semBanzoChapa?'só as peças internas: banzos fora da soma nos três caminhos.':'banzos em barra de 6 m nos três (sem detalhar: o maior entre a quebra e o plano de emenda; detalhado: plano de emenda); muda como chegam as peças internas.')+'</p></div>'+
       '<div class="cmp-acoes"><button type="button" class="btn ghost" data-cmp="custos">Ajustar custos</button>'+
       '<button type="button" class="btn ghost" data-cmp="chapas">Painel de chapas</button>'+
       '<button type="button" class="btn" data-cmp="relatorio">Relatório completo</button></div></div>'+
@@ -18710,6 +18781,7 @@ function detSub(nome){
   document.querySelectorAll('#detSub [data-dsub]').forEach(b=>{const on=b.dataset.dsub===nome;b.classList.toggle('on',on);b.setAttribute('aria-selected',on);});
   document.getElementById('detLista').classList.toggle('hide',comp);
   document.getElementById('detComp').classList.toggle('hide',!comp);
+  document.getElementById('detCustos').classList.toggle('hide',!comp);
   if(comp)cmpRender();
 }
 document.getElementById('detSub').addEventListener('click',e=>{const b=e.target.closest('[data-dsub]');if(b)detSub(b.dataset.dsub);});
@@ -18722,9 +18794,9 @@ document.getElementById('detComp').addEventListener('change',e=>{
 document.getElementById('detComp').addEventListener('click',e=>{
   const a=e.target.closest('[data-cmp]')?.dataset.cmp;if(!a)return;
   if(a==='relatorio'){document.getElementById('cutReport').click();return;}
+  if(a==='custos'){const c=document.getElementById('custosBox');c.open=true;c.scrollIntoView({behavior:'smooth',block:'start'});return;}
   detSub('lista');
   if(a==='chapas'){cpAbrir();return;}
-  if(a==='custos'){const c=document.getElementById('custosBox');c.open=true;c.scrollIntoView({behavior:'smooth',block:'start'});}
 });
 
 /* Gancho da bateria de testes (central_rm/ferramentas/testes/roda.js). O
@@ -24281,7 +24353,7 @@ function render(){
     +'<div class="es-v3" id="esV3"></div><div class="es-nota">Arraste para girar · roda do mouse para aproximar.</div></div>'
     +'<div class="es-card"><h3>Perfil da escada</h3><div id="esDes"></div><div class="es-res" id="esRes"></div></div>'
     +'<div class="es-card" id="esPed"><h3>Pedido de compra</h3><div class="es-f">'
-    +campo('Fornecedor','pedido.fornecedor',PD.fornecedor,{txt:1})+campo('Obra / cliente','pedido.obra',PD.obra,{txt:1})+campo('Nº do pedido','pedido.numero',PD.numero,{txt:1})
+    +campo('Fornecedor','pedido.fornecedor',PD.fornecedor,{txt:1})+campo('Obra / Cliente','pedido.obra',PD.obra,{txt:1})+campo('Nº do pedido','pedido.numero',PD.numero,{txt:1})
     +campo('Responsável','pedido.resp',PD.resp,{txt:1})+'<label>Previsão de entrega<input type="date" data-g="pedido.entrega" value="'+esc(PD.entrega)+'"></label></div>'
     +'<div class="es-ped-sec">'+PED_SEC.map(([k,n])=>'<label class="es-ck2"><input type="checkbox" data-ps="'+k+'"'+(PD.sec[k]?' checked':'')+'> '+n+'</label>').join('')+'</div>'
     +'<div id="esPedTab"></div>'
@@ -24362,7 +24434,7 @@ function pintaExtras(){const box=$('esPedEx');if(!box)return;
 function pedidoHTML(){
   resultado();
   const r=window.__escadaUltimo.r,PD=st.pedido,it=itensPedido(r),dt=v=>{const m=String(v||'').match(/^(\d{4})-(\d{2})-(\d{2})$/);return m?m[3]+'/'+m[2]+'/'+m[1]:'';};
-  const campos=[['Fornecedor',PD.fornecedor],['Obra / cliente',PD.obra||st.nome],['Nº do pedido',PD.numero],['Responsável',PD.resp],['Emissão',new Date().toLocaleDateString('pt-BR')],['Previsão de entrega',dt(PD.entrega)]];
+  const campos=[['Fornecedor',PD.fornecedor],['Obra / Cliente',PD.obra||st.nome],['Nº do pedido',PD.numero],['Responsável',PD.resp],['Emissão',new Date().toLocaleDateString('pt-BR')],['Previsão de entrega',dt(PD.entrega)]];
   return '<article class="es-print es-ped">'+ESTILO_PAPEL+cabecalho('Pedido de compra · escada',it.length+' itens')
     +'<div class="es-res" style="grid-template-columns:repeat(3,1fr)">'+campos.map(a=>'<div><span>'+a[0]+'</span><b>'+esc(a[1]||'—')+'</b></div>').join('')+'</div>'
     +'<h4>Itens</h4>'+tabelaPedido(it,'es-ptab')
@@ -26242,7 +26314,7 @@ render();
   }
   /* A TELHA TERMICA TEM DUAS CHAPAS, E ELAS NAO TEM O MESMO COMPRIMENTO.
 
-     Conferido contra o pedido do Refricomp, que o Everton mandou ao cliente
+     Conferido contra o pedido de uma obra, que o Everton mandou ao cliente
      e esta certo: o inclinado da agua e 25.921,7 mm; as chapas INFERIORES
      somam 13.600 + 12.320 = 25.920, ou seja, dividem o inclinado topo a topo
      na emenda; as SUPERIORES somam 26.220, que e 300 a mais -- 50 da
@@ -27325,7 +27397,7 @@ render();
         ['cob3d','▦ Ver em 3D'],['cobImportSkp','⇧ Importar SketchUp']])+
       '<input id="cobSkpFile" type="file" accept=".json,.rmcob" hidden></div>'+
       '<div class="tl-sec"><div class="tl-sec-t">Pedido</div><div class="tl-campos tl-pedido">'+
-        '<div class="fld"><label>Obra / Cliente</label><input id="cobObra" value="'+h(obra)+'" placeholder="ex.: Galpão Refricomp" autocomplete="off"></div>'+
+        '<div class="fld"><label>Obra / Cliente</label><input id="cobObra" value="'+h(obra)+'" placeholder="ex.: Pavilhão 2 – cobertura" autocomplete="off"></div>'+
         '<div class="fld"><label>Telha do Orçamento RM</label><select id="cobModelo" title="O item, a cor e o preço vêm do cadastro do Orçamento RM">'+opcoesCatalogo()+'</select></div>'+
         '<div class="fld"><label>Largura útil (mm)</label><input id="cobUtil" type="number" min="1" value="'+inteiro(COB.util)+'"></div>'+
         '<div class="fld"><label>Fabricante</label><input id="cobFabricante" value="'+h(COB.fabricante)+'" placeholder="nome do fabricante" autocomplete="off"></div>'+
@@ -27843,7 +27915,7 @@ render();
   /* A COR DIZ PARA QUE LADO A AGUA ESCOA.
 
      Antes ela so' alternava na ordem em que as faces saem do SketchUp, e
-     isso enganava: no arquivo do Refricomp as faces #14 e #19 escoam para o
+     isso enganava: no arquivo de uma obra as faces #14 e #19 escoam para o
      MESMO lado e sairam de cores diferentes; #10 e #13 tambem. So' #19 e
      #10, que escoam para lados opostos, ficaram diferentes -- por acaso.
      Como o Everton le o azul como "agua interna", a cor podia induzir a erro
@@ -29225,7 +29297,7 @@ if('serviceWorker' in navigator && location.protocol.startsWith('http')){
 }
 </script>
 <script>/* versão publicada (PADRAO_RM.md §3): sobe a cada publicação, junto com o CACHE do sw.js */
-const APP_VER='v239';
+const APP_VER='v241';
 </script>
 <script id="rmVersaoBloco">
 /* ===== SELO DE VERSÃO — igual em todos os sistemas (PADRAO_RM.md §3) =====

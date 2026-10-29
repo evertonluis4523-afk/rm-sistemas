@@ -2713,6 +2713,20 @@ body:not([data-theme="escuro"]){
 /* tela de salvos */
 .inicio{display:flex;flex-direction:column;gap:14px}
 body.com-doc .inicio{display:none}
+/* nos Salvos o "＋ Nova proposta" fica só ao lado do Importar (eram dois);
+   e o Imprimir sem documento aparece apagado, não laranja cheio como se
+   fosse imprimir algo. Teste propostas-revisao-ux. */
+body:not(.com-doc) #btnNova{display:none}
+.docs-mais{position:relative;display:inline-block}
+.docs-mais>summary{list-style:none;cursor:pointer}
+.docs-mais>summary::-webkit-details-marker{display:none}
+.docs-mais-m{position:absolute;right:0;top:calc(100% + 4px);z-index:40;display:flex;flex-direction:column;gap:4px;padding:6px;min-width:220px;background:var(--rm-superficie,#fff);border:1px solid var(--line);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.14)}
+.docs-mais-m .btn{justify-content:flex-start;width:100%}
+.btn-print:disabled{opacity:.45;cursor:default;filter:grayscale(.5)}
+.ficha-ind .fi-papel{display:none}
+.ficha-sub{margin:18px 0 6px;font-size:12px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-2,#4A515B)}
+.ficha-sub span{font-weight:500;text-transform:none;letter-spacing:0;margin-left:6px;color:var(--muted,#6b7280)}
+@media (max-width:760px){.topbar-right .so-pc{display:none}}
 body:not(.com-doc) .docs-card,body:not(.com-doc) .ed-grid{display:none}
 .ini-topo{display:flex;gap:14px;align-items:flex-end;flex-wrap:wrap}
 .ini-tit{flex:1 1 260px}
@@ -2996,6 +3010,13 @@ body:not(.com-doc) .docs-card,body:not(.com-doc) .ed-grid{display:none}
 
 @media (max-width:1100px){
   .ed-grid{grid-template-columns:1fr}
+  /* uma coluna (celular, janela estreita): os avisos ("Falta o nome do
+     cliente", "as parcelas não fecham") vinham depois da ficha inteira, a
+     ~5.000 px. Sobem para antes dela; "Ver o papel ↓" leva à folha. Teste
+     propostas-revisao-ux. */
+  .folha-col{display:contents}
+  .ed-grid #avisos{order:-1}
+  .ficha-ind .fi-papel{display:inline-flex}
   .ini-blocos{grid-template-columns:1fr}
   .salvo .s-sub{white-space:normal}
 }
@@ -3123,16 +3144,19 @@ body:not(.com-doc) .docs-card,body:not(.com-doc) .ed-grid{display:none}
       <div class="docs-b">
         <button class="btn btn-sm" id="btnFechar" type="button" disabled title="Guarda agora e volta para a lista de salvos">✓ Salvar e fechar</button>
         <button class="btn btn-ghost btn-sm" id="btnRev" type="button" disabled title="Guarda a versão atual como enviada e começa a próxima revisão">⟲ Nova revisão</button>
+        <!-- os de uso raro num menu: eram seis botões do mesmo peso (no
+             celular, cinco linhas antes da ficha). Teste propostas-revisao-ux. -->
+        <details class="docs-mais" id="docsMais"><summary class="btn btn-ghost btn-sm">Mais ▾</summary><div class="docs-mais-m">
         <button class="btn btn-ghost btn-sm" id="btnTipo" type="button" disabled title="O cliente mudou de ideia: passa a proposta para o outro tipo sem recomeçar">⇄ Passar para chave na mão</button>
         <button class="btn btn-ghost btn-sm" id="btnDup" type="button" disabled>⧉ Duplicar</button>
         <button class="btn btn-ghost btn-sm" id="btnDel" type="button" disabled>✕ Excluir</button>
-        <button class="btn btn-ghost btn-sm" id="btnImportar" type="button" title="Lê uma proposta ou um contrato em Word (.docx) ou PDF e monta no layout novo">⇪ Importar Word ou PDF</button>
-        <input type="file" id="arqWord" accept=".docx,.pdf,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document" hidden>
+        </div></details>
+ <input type="file" id="arqWord" accept=".docx,.pdf,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document" hidden>
       </div>
     </div>
     <div class="abas" role="tablist">
       <button class="aba on" id="abaProposta" type="button" role="tab">Proposta</button>
-      <button class="aba" id="abaContrato" type="button" role="tab">＋ Gerar contrato</button>
+      <button class="aba" id="abaContrato" type="button" role="tab">Contrato</button>
       <button class="aba" id="abaImagens" type="button" role="tab">Imagens</button>
     </div>
   </div>
@@ -3261,8 +3285,9 @@ body:not(.com-doc) .docs-card,body:not(.com-doc) .ed-grid{display:none}
     <div class="cfg-tit">Textos padrão</div>
     <p class="nota">Valem para as próximas propostas e contratos. Os que já existem guardam o texto com que nasceram. Uma linha é um parágrafo; linha que começa com "- " vira item de lista.</p>
     <div id="modeloCorpo"></div>
+    <!-- vale só para os Textos padrão: fica com eles, e não no rodapé da janela inteira -->
+    <p><button class="btn btn-ghost btn-sm" id="modeloVolta" type="button">Voltar os textos padrão ao original</button></p>
     <div class="mt-acoes">
-      <button class="btn btn-ghost" id="modeloVolta" type="button">Voltar ao texto original</button>
       <span class="grow"></span>
       <button class="btn btn-ghost" id="modeloFechar" type="button">Cancelar</button>
       <button class="btn btn-red" id="modeloSalvar" type="button">Salvar</button>
@@ -4319,6 +4344,9 @@ function fichaImagens(d) {
     '<div class="g2">' + campo('Título no papel', inp('imgs.titulo', im.titulo, { ph: 'Perspectivas da obra', rot: 'Título no papel' })) + campo('Desenhista', inp('imgs.desenhista', im.desenhista, { rot: 'Desenhista' })) + '</div>'
     + '<p class="nota">Saem com o número e a revisão da proposta (<b>' + esc(numeroRev(d).replace(' rev. ', ' · Rev. ')) + '</b>); cliente e cidade vêm da proposta.</p>'
     + '<label class="im-drop" id="imDrop"><input type="file" id="imArq" accept="image/png,image/jpeg,.png,.jpg,.jpeg" multiple hidden><input type="file" id="imTroca" accept="image/png,image/jpeg,.png,.jpg,.jpeg" hidden aria-label="Trocar a imagem"><b>＋ Adicionar imagens</b>PNG ou JPG · pode escolher várias de uma vez ou arrastar para cá</label>'
+    /* logo abaixo de "Adicionar imagens": no pé da aba, depois da lista,
+       passava despercebida. Teste propostas-revisao-ux. */
+    + '<label class="chk chk-bloco"><input type="checkbox" data-p="imgs.anexar" data-re="1"' + (im.anexar ? ' checked' : '') + '> anexar as imagens no fim da proposta (um PDF só)</label>'
     + '<p class="nota im-ext"><a href="sketchup/RM_Cenas.rbz" download="RM_Cenas.rbz">⬇ Extensão do SketchUp: exportar todas as cenas de uma vez (RM Cenas 1.6.0)</a> · instale em Janela → Gerenciador de extensões; depois Extensões → RM Cenas.</p>'
     + '<div class="im-lista">' + im.itens.map((x, i) => '<div class="im-card"><span class="mv-par">' + bt('imgUp', '▲', { i, rot: 'Subir imagem', cls: 'icon-btn mv' }) + bt('imgDown', '▼', { i, rot: 'Descer imagem', cls: 'icon-btn mv' }) + '</span>'
       + (IMG[x.id] ? '<img class="im-th" src="' + IMG[x.id] + '" alt="">' : '<span class="im-th im-th-vazia">carregando…</span>')
@@ -4326,7 +4354,6 @@ function fichaImagens(d) {
       + area('imgs.itens.' + i + '.desc', x.desc, 2, 'Descrição da imagem').replace('<textarea', '<textarea placeholder="Descrição (opcional)"')
       + '<div class="l2">No papel: ' + sel(i, x.tam) + bt('imgTroca', '⇄ Trocar imagem', { i, cls: 'btn btn-ghost btn-sm', rot: 'Trocar a imagem, mantendo título e descrição' }) + bt('imgReal', '✨ Realçar' + (realceDe(x) ? ' ✓' : ''), { i, cls: 'btn btn-ghost btn-sm', rot: 'Realçar a imagem' }) + bt('imgCorta', '✂ Recortar' + (recorteDe(x) ? ' ✓' : ''), { i, cls: 'btn btn-ghost btn-sm', rot: 'Recortar a imagem' }) + bt('imgCota', '↕ Seta de medida' + (cotasDe(x).length ? ' (' + cotasDe(x).length + ')' : ''), { i, cls: 'btn btn-ghost btn-sm', rot: 'Seta de medida na imagem' }) + (x.nuvem ? '' : '<span class="im-local" title="Sobe para a nuvem quando a internet voltar">só neste aparelho</span>') + '</div></div>'
       + bt('imgDel', '✕', { i, rot: 'Tirar a imagem', cls: 'icon-btn del im-del' }) + '</div>').join('') + '</div>'
-    + '<label class="chk chk-bloco"><input type="checkbox" data-p="imgs.anexar" data-re="1"' + (im.anexar ? ' checked' : '') + '> anexar as imagens no fim da proposta (um PDF só)</label>'
     + '<p class="nota">Cada imagem é reduzida para o papel A4 (continua nítida na impressão) e sai com a marca d\'água da empresa gravada nela, na intensidade de Configurações. "Trocar imagem" põe outra no lugar sem perder o título e a descrição; "Realçar" dá nitidez, volume e cor ao render (a imagem nova já entra realçada); "Recortar" tira as bordas (a imagem sai maior); "Seta de medida" desenha a altura (ou outra medida) sobre a imagem. Fica guardada à parte da proposta, para não pesar no salvar.</p>',
     { extra: n ? n + ' ' + (n === 1 ? 'imagem' : 'imagens') + ' · ' + pags + ' ' + (pags === 1 ? 'página' : 'páginas') : 'nenhuma imagem' });
 }
@@ -4610,7 +4637,11 @@ const inp = (p, val, o) => { o = o || {}; return '<input data-p="' + p + '"' + (
 const campo = (rot, html, cls) => '<div class="fld' + (cls ? ' ' + cls : '') + '"><label>' + esc(rot) + '</label>' + html + '</div>';
 const area = (p, val, linhas, rot) => '<textarea data-p="' + p + '" rows="' + (linhas || 3) + '"' + (rot ? ' aria-label="' + esc(rot) + '"' : '') + '>' + esc(val) + '</textarea>';
 const bt = (acao, txt, o) => { o = o || {}; return '<button type="button" class="' + (o.cls || 'icon-btn') + '" data-acao="' + acao + '"' + (o.i != null ? ' data-i="' + o.i + '"' : '') + (o.j != null ? ' data-j="' + o.j + '"' : '') + (o.rot ? ' aria-label="' + esc(o.rot) + '" title="' + esc(o.rot) + '"' : '') + '>' + txt + '</button>'; };
-const secao = (titulo, corpo, o) => { o = o || {}; return '<details class="sec"' + (o.aberta === false ? '' : ' open') + '><summary>' + esc(titulo) + (o.extra ? '<span class="sec-x">' + o.extra + '</span>' : '') + '</summary><div class="sec-b">' + corpo + '</div></details>'; };
+/* na aba Contrato, as seções da proposta (que vêm depois das do contrato)
+   abrem recolhidas: eram 12 seções abertas, 134 campos. Teste
+   propostas-revisao-ux. */
+let SECAO_RECOLHE = false;
+const secao = (titulo, corpo, o) => { o = o || {}; const aberta = o.aberta === false ? false : o.aberta === true ? true : !SECAO_RECOLHE; return '<details class="sec"' + (aberta ? ' open' : '') + '><summary>' + esc(titulo) + (o.extra ? '<span class="sec-x">' + o.extra + '</span>' : '') + '</summary><div class="sec-b">' + corpo + '</div></details>'; };
 
 /* select da forma de pagamento (dinheiro, depósito ou um bem) e, se for
    bem, o campo para dizer qual */
@@ -4621,7 +4652,13 @@ function formaSel(path, x) {
     + '<optgroup label="Bem como parte do pagamento">' + bensLista().concat(ehBem(f) && bensLista().indexOf(f) < 0 ? [f] : []).map(o => '<option' + (f === o ? ' selected' : '') + '>' + esc(o) + '</option>').join('') + '</optgroup></select>';
 }
 function bemCampo(path, x) { return ehBem(x.forma) ? '<div class="linha l-bem">' + inp(path + '.bem', x.bem || '', { ph: 'Qual ' + String(x.forma).toLowerCase() + ' (ex.: modelo, ano, matrícula, endereço)', rot: 'Descrição do bem' }) + '</div>' : ''; }
+function clientePF(cl) {
+  if (cl.tipoPessoa === 'pf') return true;
+  if (cl.tipoPessoa === 'pj') return !!(cl.nacionalidade || cl.profissao || cl.estadoCivil || cl.rg);
+  return String(cl.doc || '').replace(/\D/g, '').length === 11 || !!(cl.nacionalidade || cl.profissao || cl.estadoCivil || cl.rg);
+}
 function fichaHTML(d) {
+  SECAO_RECOLHE = false;
   if (aba === 'imagens') return fichaImagens(d);
   let h = '';
   if (aba === 'contrato' && d.contrato) {
@@ -4649,7 +4686,7 @@ function fichaHTML(d) {
       + '<div class="tot-linha" data-tot="contrato">Valor do contrato <b>' + brl(totalContrato(d)) + '</b><span>' + esc(extenso(totalContrato(d))) + '</span></div>');
     h += secao('Pagamento do contrato', pg);
     h += secao('Textos do contrato', Object.keys(c.textos).map(k => campo(ROTULOS_TEXTO['contrato.' + k] || k, area('contrato.textos.' + k, c.textos[k], Math.min(14, Math.max(2, Math.ceil(String(c.textos[k]).length / 90))), ROTULOS_TEXTO['contrato.' + k]))).join('')
-      + '<p class="nota">Mudanças aqui valem só para este contrato. Para mudar o padrão dos próximos, use "Textos padrão".</p>', { aberta: false });
+      + '<p class="nota">Mudanças aqui valem só para este contrato. Para mudar o padrão dos próximos: Configurações › Textos padrão.</p>', { aberta: false });
   }
   if ((d.revisoes || []).length && aba !== 'contrato') {
     h += secao('Revisões', d.revisoes.slice().reverse().map(r => '<div class="rev-l"><span><b>Rev. ' + r.rev + '</b> · guardada em ' + new Date(r.em).toLocaleDateString('pt-BR') + ' · ' + brl(r.total) + '</span>'
@@ -4657,13 +4694,18 @@ function fichaHTML(d) {
       + '<p class="nota">Esta é a Rev. ' + lerValor(d.rev) + '. "Voltar a esta" traz a versão de volta; a que está agora fica guardada.</p>', { aberta: false, extra: d.revisoes.length + ' guardada(s)' });
   }
   const cl = d.cliente;
+  if (aba === 'contrato' && d.contrato) { h += '<div class="ficha-sub">Dados da proposta <span>valem também para o contrato</span></div>'; SECAO_RECOLHE = true; }
   h += secao('Cliente', campo('Nome ou razão social', inp('cliente.nome', cl.nome, { ph: 'ex.: Frigorífico Exemplo Ltda' }))
-    + '<div class="g2">' + campo('CNPJ ou CPF', inp('cliente.doc', cl.doc)) + campo('CEP', inp('cliente.cep', cl.cep, { mode: 'numeric' })) + '</div>'
-    /* pessoa física: a qualificação que o contrato pede ("brasileiro,
-       empresário, casado, RG nº...") */
-    + '<div class="g4">' + campo('Nacionalidade', inp('cliente.nacionalidade', cl.nacionalidade, { ph: 'ex.: brasileiro' })) + campo('Profissão', inp('cliente.profissao', cl.profissao, { ph: 'ex.: empresário' }))
+    + '<div class="g2">' + campo('Pessoa', '<select data-p="cliente.tipoPessoa" data-re="1"><option value=""' + (!cl.tipoPessoa ? ' selected' : '') + '>— pelo CPF/CNPJ —</option><option value="pf"' + (cl.tipoPessoa === 'pf' ? ' selected' : '') + '>Pessoa física</option><option value="pj"' + (cl.tipoPessoa === 'pj' ? ' selected' : '') + '>Pessoa jurídica</option></select>')
+      + campo('CNPJ ou CPF', inp('cliente.doc', cl.doc)) + '</div>'
+    /* PESSOA FÍSICA: a qualificação que o contrato pede ("brasileiro,
+       empresário, casado, RG nº...") aparece só quando é pessoa física --
+       escolhida, ou deduzida do CPF (11 dígitos). Com algo já preenchido,
+       continua à mostra. Teste propostas-revisao-ux. */
+    + (clientePF(cl) ? '<div class="g4">' + campo('Nacionalidade', inp('cliente.nacionalidade', cl.nacionalidade, { ph: 'ex.: brasileiro' })) + campo('Profissão', inp('cliente.profissao', cl.profissao, { ph: 'ex.: empresário' }))
       + campo('Estado civil', inp('cliente.estadoCivil', cl.estadoCivil, { ph: 'ex.: casado', lista: 'dlCivil' })) + campo('RG', inp('cliente.rg', cl.rg)) + '</div>'
-    + '<p class="nota">Nacionalidade, profissão, estado civil e RG: para cliente pessoa física; saem no contrato.</p>'
+    + '<p class="nota">Pessoa física: nacionalidade, profissão, estado civil e RG saem no contrato.</p>' : '')
+    + '<div class="g2">' + campo('CEP', inp('cliente.cep', cl.cep, { mode: 'numeric' })) + '</div>'
     + '<div class="g2">' + campo('Endereço', inp('cliente.endereco', cl.endereco)) + campo('Cidade/UF', inp('cliente.cidade', cl.cidade, { ph: 'ex.: Santa Cruz do Sul/RS' })) + '</div>'
     + '<div class="g2">' + campo('Representante', inp('cliente.rep', cl.rep)) + campo('CPF do representante', inp('cliente.repDoc', cl.repDoc)) + '</div>'
     + campo('Tratamento na proposta', '<select data-p="tratamento">' + ['Prezado Senhor', 'Prezada Senhora', 'Prezados Senhores', ''].map(t => '<option value="' + t + '"' + (d.tratamento === t ? ' selected' : '') + '>' + (t || '(sem saudação)') + '</option>').join('') + '</select>'));
@@ -4698,7 +4740,7 @@ function fichaHTML(d) {
       + inp('comp.' + i + '.valor', lerValor(c.valor) ? fmtNum(c.valor, 2) : '', { tipo: 'valor', mode: 'decimal', ph: 'valor (opcional)', rot: 'Valor', cls: 'val' }) + '</div></div>').join('')
     + bt('compAdd', '＋ Item', { cls: 'btn btn-ghost btn-sm' })
     + '<div class="l-ops"><label class="chk"><input type="checkbox" data-p="compCfg.mostrar" data-re="1"' + (d.compCfg.mostrar !== false ? ' checked' : '') + '> mostrar os valores na proposta</label><label class="chk"><input type="checkbox" data-p="compCfg.somar" data-re="1"' + (d.compCfg.somar !== false ? ' checked' : '') + '> somar ao total da obra</label></div>'
-    + '<div class="g2">' + campo('Acréscimo sobre o total (%)', inp('compCfg.pct', lerValor(d.compCfg.pct) ? fmtNum(d.compCfg.pct, lerValor(d.compCfg.pct) % 1 ? 2 : 0) : '', { tipo: 'num', mode: 'decimal', ph: '0', rot: 'Acréscimo (%)' })) + '</div>'
+    + '<div class="g2">' + campo('Acréscimo nos itens complementares (%)', inp('compCfg.pct', lerValor(d.compCfg.pct) ? fmtNum(d.compCfg.pct, lerValor(d.compCfg.pct) % 1 ? 2 : 0) : '', { tipo: 'num', mode: 'decimal', ph: '0', rot: 'Acréscimo (%)' })) + '</div>'
     + '<div class="tot-linha" data-tot="comp">Subtotal dos itens complementares <b>' + brl(totalComp(d)) + '</b><span>' + esc(notaComp(d)) + '</span></div>'
     + '<p class="nota">O valor é opcional. Somam no subtotal os itens com valor, menos os "Não incluso" e "Cortesia". O acréscimo vai distribuído nos itens (cada valor sai no papel já com ele).</p>', { extra: totalComp(d) ? brl(totalComp(d)) : '' });
   const pct = d.pagProp.reduce((s, x) => s + lerValor(x.pct), 0);
@@ -4721,7 +4763,7 @@ function fichaHTML(d) {
     });
     h += secao('Chave na mão', sv + bt('cnmAdd', '＋ Serviço', { cls: 'btn btn-ghost btn-sm' })
       + campo('Título do bloco no papel', inp('cnm.titulo', cn.titulo, { ph: CNM_TITULO, rot: 'Título do bloco no papel' }))
-      + '<div class="g2">' + campo('Acréscimo sobre o total (%)', inp('cnm.pct', lerValor(cn.pct) ? fmtNum(cn.pct, lerValor(cn.pct) % 1 ? 2 : 0) : '', { tipo: 'num', mode: 'decimal', ph: '0', rot: 'Acréscimo (%)' }))
+      + '<div class="g2">' + campo('Acréscimo nos serviços (%)', inp('cnm.pct', lerValor(cn.pct) ? fmtNum(cn.pct, lerValor(cn.pct) % 1 ? 2 : 0) : '', { tipo: 'num', mode: 'decimal', ph: '0', rot: 'Acréscimo (%)' }))
       + '<label class="chk chk-bloco"><input type="checkbox" data-p="cnm.somar" data-re="1"' + (cn.somar !== false ? ' checked' : '') + '> somar ao total da obra</label></div>'
       + '<div class="tot-linha" data-tot="cnm">Total dos serviços <b>' + brl(totalCnm(d)) + '</b><span>' + esc(notaCnm(d)) + '</span></div>'
       + '<p class="nota">Escolhendo um serviço da lista (esquadrias, banheiros, elétrica...), o texto padrão dele entra sozinho; dá para mudar. O acréscimo vai distribuído nos serviços (cada valor sai no papel já com ele). "Mostrar valor" desmarcado: o serviço aparece sem o valor, e o total continua.</p>',
@@ -4729,17 +4771,17 @@ function fichaHTML(d) {
   }
   h += secao('Valores', d.valores.map((v, i) => '<div class="linha l-val">' + inp('valores.' + i + '.etapa', v.etapa, { rot: 'Etapa', ph: 'Etapa', lista: 'dlEtapa' }) + inp('valores.' + i + '.valor', lerValor(v.valor) ? fmtNum(v.valor, 2) : '', { tipo: 'valor', mode: 'decimal', ph: '0,00', rot: 'Valor', cls: 'val' })
     + bt('valDel', '✕', { i, rot: 'Excluir valor', cls: 'icon-btn del' })
-    + '<div class="l-ops"><label class="chk"><input type="checkbox" data-p="valores.' + i + '.opcional"' + (v.opcional ? ' checked' : '') + '> opcional</label><label class="chk"><input type="checkbox" data-p="valores.' + i + '.contrato"' + (v.contrato ? ' checked' : '') + '> no contrato</label><label class="chk"><input type="checkbox" data-p="valores.' + i + '.mostrar"' + (v.mostrar !== false ? ' checked' : '') + '> mostrar valor</label><label class="chk"><input type="checkbox" data-p="valores.' + i + '.cortesia"' + (v.cortesia ? ' checked' : '') + '> cortesia</label></div></div>').join('')
+    + '<div class="l-ops"><label class="chk" title="Sai na proposta à parte, fora do total"><input type="checkbox" data-p="valores.' + i + '.opcional"' + (v.opcional ? ' checked' : '') + '> opcional</label><label class="chk" title="Entra no valor do contrato"><input type="checkbox" data-p="valores.' + i + '.contrato"' + (v.contrato ? ' checked' : '') + '> no contrato</label><label class="chk" title="Desmarcado: a etapa aparece sem o valor; o total continua"><input type="checkbox" data-p="valores.' + i + '.mostrar"' + (v.mostrar !== false ? ' checked' : '') + '> mostrar valor</label><label class="chk" title="Sai como brinde; o valor fica fora do total"><input type="checkbox" data-p="valores.' + i + '.cortesia"' + (v.cortesia ? ' checked' : '') + '> cortesia</label></div></div>').join('')
     + bt('valAdd', '＋ Valor', { cls: 'btn btn-ghost btn-sm' })
     + '<div class="g2 tot-campos">' + campo('Total digitado (R$)', inp('tot.manual', totManual(d) ? fmtNum(d.tot.manual, 2) : '', { tipo: 'valor', mode: 'decimal', ph: 'pela soma das etapas', rot: 'Total digitado' }))
-    + campo('+ Acréscimo (%)', inp('tot.pct', totPct(d) ? fmtNum(d.tot.pct, totPct(d) % 1 ? 2 : 0) : '', { tipo: 'num', mode: 'decimal', ph: '0', rot: 'Acréscimo (%)' })) + '</div>'
-    + '<div class="g2 tot-campos tot-geral">' + campo('Acréscimo geral (%)', inp('tot.geral', geralPct(d) ? fmtNum(d.tot.geral, geralPct(d) % 1 ? 2 : 0) : '', { tipo: 'num', mode: 'decimal', ph: '0', rot: 'Acréscimo geral (%)' }))
+    + campo('Acréscimo ou desconto nas etapas (%)', inp('tot.pct', totPct(d) ? fmtNum(d.tot.pct, totPct(d) % 1 ? 2 : 0) : '', { tipo: 'num', mode: 'decimal', ph: 'ex.: 10 ou -5', rot: 'Acréscimo ou desconto nas etapas (%)' })) + '</div>'
+    + '<div class="g2 tot-campos tot-geral">' + campo('Acréscimo ou desconto geral, sobre tudo (%)', inp('tot.geral', geralPct(d) ? fmtNum(d.tot.geral, geralPct(d) % 1 ? 2 : 0) : '', { tipo: 'num', mode: 'decimal', ph: 'ex.: 10 ou -5', rot: 'Acréscimo ou desconto geral (%)' }))
     + '<p class="nota">Sobre todos os valores: etapas, opcionais' + (d.tipo === 'chave' ? ', chave na mão' : '') + ' e itens complementares, por cima do acréscimo de cada bloco.</p></div>'
     + '<div class="tot-linha" data-tot="proposta">Total da proposta <b>' + brl(totalProposta(d)) + '</b><span>' + esc(notaProposta(d)) + '</span></div>'
-    + '<p class="nota">"Opcional" sai na proposta à parte, fora do total. "No contrato" entra no valor do contrato. "Mostrar valor" desmarcado: a etapa aparece sem o valor, e o total continua. "Cortesia": a etapa sai como brinde, e o valor fica fora do total.' + (cnmNoTotal(d) && !totManual(d) ? ' O total inclui os serviços da chave na mão (' + brl(cnmNoTotal(d)) + ').' : '')
-    + ' "Total digitado": vale mesmo sem as etapas com valor, e no papel elas saem sem valor, só o total. "Acréscimo": vai distribuído nas etapas (cada valor sai no papel já com ele); com o total digitado, vai sobre ele. "Acréscimo geral": o mesmo, em todos os valores da proposta.</p>', { extra: brl(totalProposta(d)) });
+    + '<p class="nota">Passe o mouse em cada caixinha para ver o que ela faz. Desconto é o acréscimo com sinal de menos (ex.: -5).' + (cnmNoTotal(d) && !totManual(d) ? ' O total inclui os serviços da chave na mão (' + brl(cnmNoTotal(d)) + ').' : '')
+    + ' "Total digitado" vale mesmo sem valor nas etapas (no papel sai só o total).</p>', { extra: brl(totalProposta(d)) });
   h += secao('Textos da proposta', Object.keys(d.textos).map(k => k === 'fundacoes' || k === 'fundacoesObs' ? '' : campo(ROTULOS_TEXTO['proposta.' + k] || k, area('textos.' + k, d.textos[k], Math.min(8, Math.max(2, Math.ceil(String(d.textos[k]).length / 90))), ROTULOS_TEXTO['proposta.' + k]))).join('')
-    + '<p class="nota">Mudanças aqui valem só para esta proposta. Para mudar o padrão das próximas, use "Textos padrão".</p>', { aberta: false });
+    + '<p class="nota">Mudanças aqui valem só para esta proposta. Para mudar o padrão das próximas: Configurações › Textos padrão.</p>', { aberta: false });
   return h;
 }
 
@@ -4757,13 +4799,21 @@ function renderLista() {
   $('abaContrato').classList.toggle('on', aba === 'contrato');
   $('abaImagens').classList.toggle('on', aba === 'imagens');
   $('abaImagens').innerHTML = 'Imagens' + (d && d.imgs.itens.length ? ' <span class="aba-n">' + d.imgs.itens.length + '</span>' : '');
-  $('abaContrato').textContent = d && d.contrato ? 'Contrato' : '＋ Gerar contrato';
+  $('abaImagens').title = d && d.imgs.itens.length ? (d.imgs.anexar ? 'Imagens anexadas no fim da proposta' : 'Imagens não anexadas à proposta (marque na aba Imagens)') : '';
+  $('abaContrato').textContent = 'Contrato';
+  $('abaContrato').title = d && !d.contrato ? 'Ainda não há contrato: clique para gerar a partir desta proposta' : '';
+  /* o Imprimir e o Word dizem o que sai: a aba aberta (proposta, contrato ou
+     imagens) -- quem estava no contrato gerava o contrato achando que
+     mandava a proposta. Teste propostas-revisao-ux. */
+  const qual = aba === 'contrato' && d && d.contrato ? 'do contrato' : aba === 'imagens' ? 'das imagens' : 'da proposta';
+  $('btnImprimir').innerHTML = 'Imprimir / PDF<span class="so-pc"> ' + qual + '</span>';
+  $('btnWord').innerHTML = 'Baixar Word<span class="so-pc"> ' + qual + '</span>';
   /* na aba Contrato, excluir tira só o contrato; a proposta fica */
   $('btnDel').textContent = d && d.contrato && aba === 'contrato' ? '✕ Excluir contrato' : '✕ Excluir';
 }
 /* ÍNDICE DA FICHA: um atalho por seção (abre e leva até ela), e abrir ou
    recolher tudo -- a proposta de chave na mão tem muitas seções. */
-function fichaIndice() { return '<nav class="ficha-ind" aria-label="Seções"><span class="fi-chips"></span><span class="fi-acoes"><button type="button" data-fiabre="1">Abrir tudo</button><button type="button" data-fifecha="1">Recolher tudo</button></span></nav>'; }
+function fichaIndice() { return '<nav class="ficha-ind" aria-label="Seções"><span class="fi-chips"></span><span class="fi-acoes"><button type="button" class="fi-papel" data-fipapel="1">Ver o papel ↓</button><button type="button" data-fiabre="1">Abrir tudo</button><button type="button" data-fifecha="1">Recolher tudo</button></span></nav>'; }
 function montarIndice() {
   const f = $('ficha'), box = f.querySelector('.fi-chips'); if (!box) return;
   box.innerHTML = [...f.querySelectorAll('details.sec > summary')].map((s, i) => '<button type="button" data-fivai="' + i + '">' + esc(s.firstChild.textContent) + '</button>').join('');
@@ -4773,6 +4823,7 @@ $('ficha').addEventListener('click', e => {
   const v = e.target.closest('[data-fivai]');
   if (v) { const s = secs[+v.dataset.fivai]; if (s) { s.open = true; const y = s.getBoundingClientRect().top + window.scrollY - 110; window.scrollTo({ top: Math.max(0, y), behavior: 'smooth' }); } return; }
   if (e.target.closest('[data-fiabre]')) secs.forEach(s => { s.open = true; });
+  if (e.target.closest('[data-fipapel]')) { const y = $('folhaPapel').getBoundingClientRect().top + window.scrollY - 70; window.scrollTo({ top: Math.max(0, y), behavior: 'smooth' }); }
   if (e.target.closest('[data-fifecha]')) secs.forEach(s => { s.open = false; });
 });
 function renderFicha() {
@@ -4874,9 +4925,9 @@ function renderSalvos() {
   document.querySelectorAll('.ini-filtro [data-fsit]').forEach(b => b.classList.toggle('on', b.dataset.fsit === filtroSit));
   const acha = d => !q || ((d.numero || '') + ' ' + (d.cliente && d.cliente.nome || '') + ' ' + (d.obra && d.obra.cidade || '') + ' ' + (d.cliente && d.cliente.cidade || '')).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().indexOf(q) >= 0;
   const props = todos.filter(acha), conts = todos.filter(d => d.contrato).filter(acha);
-  const vazio = (n, txt) => '<div class="ini-vazio">' + (q && n ? 'Nada encontrado com "' + esc($('salvoBusca').value.trim()) + '".' : txt) + '</div>';
+  const vazio = (n, txt) => '<div class="ini-vazio">' + (LENDO_NUVEM && !vivos.length ? 'Lendo as propostas da nuvem…' : q && n ? 'Nada encontrado com "' + esc($('salvoBusca').value.trim()) + '".' : txt) + '</div>';
   $('listaProp').innerHTML = props.length ? props.map(d => salvoHTML(d, 'proposta')).join('') : vazio(todos.length, 'Nenhuma proposta salva ainda. Clique em <b>＋ Nova proposta</b>.');
-  $('listaCont').innerHTML = conts.length ? conts.map(d => salvoHTML(d, 'contrato')).join('') : vazio(todos.filter(d => d.contrato).length, 'Nenhum contrato ainda. Abra uma proposta e use <b>Gerar contrato</b>.');
+  $('listaCont').innerHTML = conts.length ? conts.map(d => salvoHTML(d, 'contrato')).join('') : vazio(todos.filter(d => d.contrato).length, 'Nenhum contrato ainda. Abra uma proposta e clique na aba <b>Contrato</b>.');
   $('nProp').textContent = props.length; $('nCont').textContent = conts.length;
 }
 /* proposta nova que ninguém preencheu não vira item salvo */
@@ -4968,6 +5019,8 @@ $('ficha').addEventListener('change', e => {
   if (mc) { const x = d.cnm.itens[+mc[1]]; if (x && !String(x.texto || '').trim() && cnmTextoPadrao(x.nome)) { x.texto = cnmTextoPadrao(x.nome); alterou(d, true); return; } }
   if (el.dataset.t === 'valor' && el.value.trim()) el.value = fmtNum(lerValor(el.value), 2);
   if (el.type === 'checkbox' || el.tagName === 'SELECT') atualizarResumos();
+  /* CPF de 11 dígitos digitado: aparecem os campos de pessoa física */
+  if (el.dataset.p === 'cliente.doc' && !d.cliente.tipoPessoa) renderFicha();
 });
 $('ficha').addEventListener('click', e => {
   const b = e.target.closest('[data-acao]'), d = atual();
@@ -5423,9 +5476,18 @@ $('ficha').addEventListener('change', e => {
 ['dragover', 'dragenter'].forEach(t => $('ficha').addEventListener(t, e => { const z = e.target.closest && e.target.closest('#imDrop'); if (z) { e.preventDefault(); z.classList.add('on'); } }));
 $('ficha').addEventListener('dragleave', e => { const z = e.target.closest && e.target.closest('#imDrop'); if (z) z.classList.remove('on'); });
 $('ficha').addEventListener('drop', e => { const z = e.target.closest && e.target.closest('#imDrop'); if (!z || !atual()) return; e.preventDefault(); z.classList.remove('on'); adicionarImagens(atual(), e.dataTransfer.files); });
+/* A ABA NÃO EXECUTA SOZINHA. "＋ Gerar contrato" era uma aba que, clicada,
+   já criava e gravava o contrato -- quem só queria espiar ganhava um
+   contrato na lista. Agora a aba se chama sempre "Contrato" e, sem contrato,
+   pergunta antes. Teste propostas-revisao-ux. */
 $('abaContrato').addEventListener('click', () => {
   const d = atual(); if (!d) return;
-  if (!d.contrato) { d.contrato = novoContrato(d); aba = 'contrato'; alterou(d, true); avisoTopo('Contrato montado a partir da proposta ' + d.numero + '. Confira a forma de pagamento.'); }
+  if (!d.contrato) {
+    confirmar('<b>Gerar o contrato desta proposta?</b><br>Ele nasce da proposta ' + esc(numeroRev(d)) + ': o mesmo cliente, os mesmos valores e as mesmas peças. Depois dá para excluir só o contrato.', () => {
+      d.contrato = novoContrato(d); aba = 'contrato'; alterou(d, true); avisoTopo('Contrato montado a partir da proposta ' + d.numero + '. Confira a forma de pagamento.'); redesenhar();
+    });
+    return;
+  }
   aba = 'contrato'; redesenhar();
 });
 window.rmNomePDF = function () {
@@ -5434,6 +5496,8 @@ window.rmNomePDF = function () {
   const data = dataBR(aba === 'contrato' && d.contrato ? d.contrato.data : d.data).replace(/\//g, '-');
   return (aba === 'imagens' ? 'Imagens ' : aba === 'contrato' && d.contrato ? 'Contrato ' : 'Proposta ') + quem + ' ' + data;
 };
+$('docsMais').addEventListener('click', e => { if (e.target.closest('.docs-mais-m button')) $('docsMais').open = false; });
+document.addEventListener('click', e => { const m = $('docsMais'); if (m && m.open && !m.contains(e.target)) m.open = false; });
 $('btnImprimir').addEventListener('click', async () => { const d = atual(); if (d) await carregaImagensDoc(d); renderFolha(); window.print(); });
 $('btnWord').addEventListener('click', async () => {
   const d = atual(); if (!d) return;
@@ -5616,6 +5680,10 @@ function salvarConfig() {
 function escalaLetra() { return (LETRAS[config.letra] || LETRAS.normal).k; }
 function editandoAqui() { const a = document.activeElement; return a && $('ficha').contains(a) && /INPUT|TEXTAREA|SELECT/.test(a.tagName); }
 let remotoEsperando = null;
+/* Num aparelho novo, enquanto a primeira leitura da nuvem não volta, as
+   listas diziam "Nenhuma proposta salva ainda" -- parecia que tudo tinha
+   sumido. Teste propostas-revisao-ux. */
+let LENDO_NUVEM = false;
 function aplicarRemoto(v) {
   v = v || {};
   let mudouAberta = false;
@@ -5710,7 +5778,8 @@ async function iniciarApp() {
   fbDB.ref(FB_NO + '/modelo').on('value', s => { modeloNuvem = s.val(); try { localStorage.setItem(LS_KEY + '_modelo', JSON.stringify(modeloNuvem)); } catch (e) { } }, e => { if (window.rmNuvemErro) rmNuvemErro('ler os textos padrão', e); });
   fbDB.ref(FB_NO + '/listas').on('value', s => { const v = s.val(); if (v) { listasNuvem = v; try { localStorage.setItem(LS_KEY + '_listas', JSON.stringify(v)); } catch (e) { } preencherListas(); } });
   fbDB.ref(FB_NO + '/config').on('value', s => { const v = s.val(); if (v) { config = Object.assign({}, config, v); guardarLocal(); if (!editandoAqui()) renderFolha(); } });
-  fbDB.ref(FB_NO + '/docs').on('value', s => aplicarRemoto(s.val()), e => { if (window.rmNuvemErro) rmNuvemErro('ler as propostas', e); });
+  LENDO_NUVEM = true; if (!atual()) renderSalvos();
+  fbDB.ref(FB_NO + '/docs').on('value', s => { LENDO_NUVEM = false; aplicarRemoto(s.val()); }, e => { LENDO_NUVEM = false; renderSalvos(); if (window.rmNuvemErro) rmNuvemErro('ler as propostas', e); });
 }
 
 /* para os testes e para quem precisar conferir pelo console */
@@ -6151,7 +6220,6 @@ function abrirRevisao(d, r, nome) {
     if (n) { alterou(d, true); avisoTopo(n + ' trecho(s) revisado(s) entraram na proposta.'); }
   };
 }
-$('btnImportar').addEventListener('click', () => $('arqWord').click());
 $('arqWord').addEventListener('change', async e => { const f = e.target.files[0]; e.target.value = ''; if (f) await importarWord(f); });
 
 window.__prop = { lerDocx, lerPdf, interpretar, importarWord, abrirRevisao, novoDoc, novoContrato, normalizar, blocosProposta, blocosContrato, blocosHTML, extenso, totalProposta, totalContrato, parcelasContrato, avisos, docxBytes, lerValor,
@@ -6715,7 +6783,7 @@ if ('serviceWorker' in navigator) {
 })();
 </script>
 <script>/* versão publicada (PADRAO_RM.md §3): sobe a cada publicação, junto com o CACHE do sw.js */
-const APP_VER='v37';
+const APP_VER='v38';
 </script>
 <script id="rmVersaoBloco">
 /* ===== SELO DE VERSÃO — igual em todos os sistemas (PADRAO_RM.md §3) =====
