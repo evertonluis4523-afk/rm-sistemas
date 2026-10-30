@@ -2918,6 +2918,10 @@ function nomeArquivoSeguro(s,limite){
 .cnm-in.calc{background:#f6f7f9;color:#5f6670;font-weight:600;border-style:dashed}
 .cnm-srv-b{padding:4px 14px 12px}
 .cnm-it td{padding:4px 6px}
+.cnm-itot{font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap}
+.cnm-modo{display:inline-flex;gap:0;margin-right:8px}
+.cnm-modo .btn-sm{border-radius:0}.cnm-modo .btn-sm:first-child{border-radius:8px 0 0 8px}.cnm-modo .btn-sm:last-child{border-radius:0 8px 8px 0;margin-left:-1px}
+.cnm-modo .btn-sm.on,.cnm-modo .btn-sm[aria-pressed="true"]{background:var(--red,#D53309);border-color:var(--red,#D53309);color:#fff}
 .cnm-cel{width:100%;box-sizing:border-box;border:1px solid transparent;border-radius:6px;padding:6px 7px;font:inherit;font-size:14px;background:transparent;color:var(--ink,#17181b)}
 .cnm-cel:hover{border-color:var(--line,#e6e7ea)}
 .cnm-x{border:0;background:none;color:#a5abb3;font-size:18px;font-weight:700;cursor:pointer;padding:0 4px}
@@ -2952,6 +2956,10 @@ function nomeArquivoSeguro(s,limite){
 @media(max-width:560px){.cnm-vals{order:5;width:100%;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.2fr);gap:8px}.cnm-rm2{display:flex;min-width:0;gap:4px}.cnm-rm2 .cnm-in,.cnm-tt .cnm-in{flex:1;width:auto;min-width:0;padding:6px 6px;font-size:13.5px}
   /* item em duas linhas: a descricao inteira em cima, unidade e quantidade embaixo */
   .cnm-it thead{display:none}
+  .cnm-it.cnm-it-v tbody tr{grid-template-columns:1fr 1fr}
+  .cnm-it.cnm-it-v tbody td:nth-child(6){grid-column:1/-1;text-align:right}
+  .cnm-it.cnm-it-v tbody td:nth-child(4) .cnm-cel{border-color:var(--line,#e6e7ea)}
+  .cnm-it.cnm-it-v tbody td.cnm-itot{align-self:center;text-align:right;padding-right:8px;font-size:15px}
   .cnm-it tbody tr{display:grid;grid-template-columns:1fr 1fr 32px;border-bottom:1px solid var(--line-2,#eef0f3);padding:4px 0}
   .cnm-it tbody td{border:0;padding:2px 4px}
   .cnm-it tbody td:first-child{grid-column:1/-1}
@@ -4900,8 +4908,10 @@ body[data-theme="escuro"] .cob-t input[type=date]{color-scheme:dark}
       <label><span class="cnm-k">Metragem total (m²)</span><input class="cnm-in num" id="cnmM2" inputmode="decimal" placeholder="0,00" autocomplete="off"></label>
     </div></div>
   <div class="cnm-duas">
-    <div class="esq-passo"><div class="esq-passo-t"><span class="esq-passo-n">2</span>Serviços <span>— dê o valor por m² ou o total do serviço: o outro sai calculado</span>
-        <span style="flex:1"></span><button class="btn-sm" id="cnmAbreTodos" onclick="cnmAbreTodos()">Abrir todos</button></div>
+    <div class="esq-passo"><div class="esq-passo-t"><span class="esq-passo-n">2</span>Serviços <span id="cnmDica">— dê o valor por m² ou o total do serviço: o outro sai calculado</span>
+        <span style="flex:1"></span>
+        <span class="cnm-modo" id="cnmModo" role="group" aria-label="Como dar o valor"><button type="button" class="btn-sm" data-cnmpor="servico" aria-pressed="true" title="Valor por m² ou total de cada serviço">Por serviço</button><button type="button" class="btn-sm" data-cnmpor="item" aria-pressed="false" title="Valor unitário em cada item: quantidade × valor = total do item">Por item</button></span>
+        <button class="btn-sm" id="cnmAbreTodos" onclick="cnmAbreTodos()">Abrir todos</button></div>
       <div id="cnmServ"></div>
       <div class="cnm-add"><button class="btn-sm red" onclick="cnmAddServico()">+ Adicionar serviço</button>
         <span class="cnm-sug-t">sugestões:</span><span id="cnmSug"></span></div>
@@ -10120,7 +10130,7 @@ function applyImport(){
    publicacao, e ha uma prova automatica que falha se um subir sem o outro.
    Assim o numero na tela e' o mesmo do arquivo que o aparelho guardou, e
    dizer "estou na v15" passa a significar alguma coisa. */
-const APP_VER='v135';
+const APP_VER='v136';
 (function(){ try{ const p=document.getElementById('verPill'); if(p)p.textContent=APP_VER; }catch(e){} })();
 /* Versao nova assumiu com a pagina aberta: avisa, em vez de recarregar por
    conta propria e jogar fora um orcamento pela metade. */
@@ -11521,9 +11531,10 @@ function esqNovoOrc(){
 /* ===================== CHAVE NA MAO =====================
    A obra entregue pronta, por servico: Eletrica, Hidraulica, Pintura... Cada
    servico lista o que vai ser usado (descricao, unidade, quantidade) e tem UM
-   valor, o R$/m2 -- pedido do Everton: "nao preciso de valor por item, vale
-   apenas o total que faco por m2". O valor do servico e' o R$/m2 vezes a
-   metragem da obra; o total e' a soma dos servicos.
+   valor, o R$/m2 (ou o total do servico). O valor do servico e' o R$/m2 vezes
+   a metragem da obra; o total e' a soma dos servicos. Quando o cliente pede,
+   a obra pode dar o valor ITEM A ITEM (quantidade x valor unitario) -- a
+   opcao "Por item" da etapa 2.
 
    Mora em S.chaveMao, uma das QUOTE_KEYS: e' parte do orcamento aberto, como
    as esquadrias -- vai no rascunho, salva e reabre junto dele em Salvos. A
@@ -11551,15 +11562,35 @@ function cnmNum(v){
   const n=parseFloat(t); return isFinite(n)?n:0;
 }
 function cnmM2(){ return cnmNum(cnmDados().m2); }
+/* O jeito de dar o valor é da obra toda: "Por item" põe todos os serviços em
+   item; "Por serviço" devolve cada um ao modo que tinha (m² ou total). O que
+   foi digitado nos dois jeitos fica guardado -- trocar não apaga nada. */
+function cnmPorItem(){ return cnmDados().valorPor==='item'; }
+function cnmDefinePor(por){
+  const d=cnmDados(), item=por==='item';
+  d.valorPor=item?'item':'servico';
+  d.servicos.forEach(s=>{
+    if(item){ if(s.modo!=='item'){ s.modoAnt=s.modo==='total'?'total':'m2'; s.modo='item'; } }
+    else if(s.modo==='item'){ s.modo=s.modoAnt==='total'?'total':'m2'; }
+  });
+  cnmGravou(); cnmRender();
+}
 /* DOIS JEITOS DE DAR O VALOR DO SERVICO: por m2 ou o total do servico.
    Digitou um, o outro sai calculado. s.modo diz qual foi digitado -- e e'
    ele que fica parado quando a metragem muda: por m2, o total acompanha a
    metragem; total fechado, o que muda e' o R$/m2. */
-function cnmSubCom(s,m2){ return s&&s.modo==='total'?cnmNum(s.total):cnmNum(s&&s.rm2)*m2; }
-function cnmRm2Com(s,m2){ return s&&s.modo==='total'?(m2>0?cnmNum(s.total)/m2:0):cnmNum(s&&s.rm2); }
+/* TERCEIRO JEITO, A PEDIDO DO CLIENTE: valor por item (s.modo==='item').
+   Cada item tem quantidade e valor unitário; o total do item é a conta dos
+   dois (arredondada em centavos, para a soma do papel bater com a da tela) e
+   o do serviço é a soma dos itens. O R$/m² sai calculado. Teste
+   orcamento-chave-valor-por-item. */
+function cnmItemTot(i){ return Math.round(cnmNum(i&&i.qtd)*cnmNum(i&&i.vu)*100)/100; }
+function cnmSomaItens(s){ return cnmLista(s&&s.itens).reduce((a,i)=>a+cnmItemTot(i),0); }
+function cnmSubCom(s,m2){ return s&&s.modo==='item'?cnmSomaItens(s):s&&s.modo==='total'?cnmNum(s.total):cnmNum(s&&s.rm2)*m2; }
+function cnmRm2Com(s,m2){ return s&&s.modo==='item'?(m2>0?cnmSomaItens(s)/m2:0):s&&s.modo==='total'?(m2>0?cnmNum(s.total)/m2:0):cnmNum(s&&s.rm2); }
 function cnmSub(s){ return cnmSubCom(s,cnmM2()); }
 function cnmRm2(s){ return cnmRm2Com(s,cnmM2()); }
-function cnmTemValor(s){ return cnmNum(s.rm2)>0||cnmNum(s.total)>0; }
+function cnmTemValor(s){ return cnmNum(s.rm2)>0||cnmNum(s.total)>0||cnmSomaItens(s)>0; }
 /* o campo calculado mostra o numero pronto (ou vazio, se nao ha o que mostrar) */
 function cnmCalcTxt(v){ return v>0?num(v,2):''; }
 function cnmTotal(){ return cnmDados().servicos.reduce((a,s)=>a+cnmSub(s),0); }
@@ -11585,6 +11616,10 @@ function cnmRender(){
   const sug=document.getElementById('cnmSug');
   if(sug){ const tem={}; d.servicos.forEach(s=>{ tem[esqNorm(s.nome)]=1; });
     sug.innerHTML=CNM_SUG.concat(cnmPadrao()).filter(n=>!tem[esqNorm(n)]).map(n=>'<button type="button" class="cnm-chip" data-cnmsug="'+escapeAttr(n)+'">+ '+escapeAttr(n)+'</button>').join(''); }
+  const por=cnmPorItem()?'item':'servico';
+  document.querySelectorAll('#cnmModo [data-cnmpor]').forEach(b=>{ const on=b.dataset.cnmpor===por; b.setAttribute('aria-pressed',on?'true':'false'); b.classList.toggle('on',on); });
+  const dica=document.getElementById('cnmDica');
+  if(dica) dica.textContent=por==='item'?'— dê o valor unitário de cada item: quantidade × valor = total do item, e o serviço soma':'— dê o valor por m² ou o total do serviço: o outro sai calculado';
   const ab=document.getElementById('cnmAbreTodos');
   if(ab) ab.textContent=d.servicos.length&&d.servicos.every(s=>s.aberto)?'Fechar todos':'Abrir todos';
   cnmResumo();
@@ -11634,26 +11669,29 @@ function cnmSalvosRender(){
   host.querySelectorAll('[data-cnmexc]').forEach(b=>b.onclick=()=>{ delOrcamento(b.dataset.cnmexc); cnmSalvosRender(); });
 }
 function cnmCartao(s){
-  const n=s.itens.length, esq=esqNorm(s.nome)==='esquadrias', porTotal=s.modo==='total';
+  const n=s.itens.length, esq=esqNorm(s.nome)==='esquadrias', porTotal=s.modo==='total', porItem=s.modo==='item';
   let h='<div class="cnm-srv'+(s.aberto?'':' fech')+'" data-srv="'+s.id+'">'
     +'<div class="cnm-srv-h" data-cnmtog="'+s.id+'">'
     +'<span class="cnm-seta">'+(s.aberto?'▾':'▸')+'</span>'
     +'<b>'+escapeAttr(s.nome||'Serviço')+'</b><span class="cnm-n">· '+n+' '+(n===1?'item':'itens')+'</span>'
     +'<span style="flex:1"></span>'
     +'<span class="cnm-vals">'
-    +'<label class="cnm-rm2" title="Valor deste serviço por m² da obra — o total sai calculado"><span>R$</span>'
-    +'<input class="cnm-in num'+(porTotal?' calc':'')+'" data-cnmrm2="'+s.id+'" inputmode="decimal" placeholder="0,00" value="'+escapeAttr(porTotal?cnmCalcTxt(cnmRm2(s)):(s.rm2==null?'':s.rm2))+'"><span>/m²</span></label>'
-    +'<label class="cnm-rm2 cnm-tt" title="Valor total deste serviço — o R$/m² sai calculado"><span>Total R$</span>'
-    +'<input class="cnm-in num'+(porTotal?'':' calc')+'" data-cnmtot="'+s.id+'" inputmode="decimal" placeholder="0,00" value="'+escapeAttr(porTotal?(s.total==null?'':s.total):cnmCalcTxt(cnmSub(s)))+'"></label>'
+    +'<label class="cnm-rm2" title="'+(porItem?'R$/m² calculado pela soma dos itens':'Valor deste serviço por m² da obra — o total sai calculado')+'"><span>R$</span>'
+    +'<input class="cnm-in num'+(porTotal?' calc':'')+(porItem?' calc':'')+'"'+(porItem?' readonly tabindex="-1"':'')+' data-cnmrm2="'+s.id+'" inputmode="decimal" placeholder="0,00" value="'+escapeAttr(porItem||porTotal?cnmCalcTxt(cnmRm2(s)):(s.rm2==null?'':s.rm2))+'"><span>/m²</span></label>'
+    +'<label class="cnm-rm2 cnm-tt" title="'+(porItem?'Soma dos itens abaixo':'Valor total deste serviço — o R$/m² sai calculado')+'"><span>Total R$</span>'
+    +'<input class="cnm-in num'+(porTotal?'':' calc')+'"'+(porItem?' readonly tabindex="-1"':'')+' data-cnmtot="'+s.id+'" inputmode="decimal" placeholder="0,00" value="'+escapeAttr(porTotal?(s.total==null?'':s.total):cnmCalcTxt(cnmSub(s)))+'"></label>'
     +'</span></div>';
   if(s.aberto){
     h+='<div class="cnm-srv-b">';
     if(n){
-      h+='<table class="items cnm-it"><thead><tr><th class="l">Item / descrição</th><th class="l" style="width:110px">Unid.</th><th style="width:110px">Qtd.</th><th style="width:36px"></th></tr></thead><tbody>'
+      h+='<table class="items cnm-it'+(porItem?' cnm-it-v':'')+'"><thead><tr><th class="l">Item / descrição</th><th class="l" style="width:110px">Unid.</th><th style="width:110px">Qtd.</th>'
+        +(porItem?'<th style="width:130px">Valor unit. R$</th><th style="width:130px">Total R$</th>':'')+'<th style="width:36px"></th></tr></thead><tbody>'
         +s.itens.map(i=>'<tr>'
           +'<td class="l"><input class="cnm-cel" data-cnmit="'+s.id+'|'+i.id+'" data-k="desc" value="'+escapeAttr(i.desc||'')+'" placeholder="o que vai ser usado"></td>'
           +'<td class="l"><input class="cnm-cel" data-cnmit="'+s.id+'|'+i.id+'" data-k="un" value="'+escapeAttr(i.un||'')+'" placeholder="un, m, m²…" list="cnmUnidades"></td>'
           +'<td><input class="cnm-cel num" data-cnmit="'+s.id+'|'+i.id+'" data-k="qtd" value="'+escapeAttr(i.qtd==null?'':i.qtd)+'" inputmode="decimal" placeholder="0"></td>'
+          +(porItem?'<td><input class="cnm-cel num" data-cnmit="'+s.id+'|'+i.id+'" data-k="vu" value="'+escapeAttr(i.vu==null?'':i.vu)+'" inputmode="decimal" placeholder="0,00"></td>'
+            +'<td class="cnm-itot num" data-cnmitot="'+s.id+'|'+i.id+'">'+escapeAttr(cnmCalcTxt(cnmItemTot(i)))+'</td>':'')
           +'<td><button type="button" class="cnm-x" data-cnmitdel="'+s.id+'|'+i.id+'" title="Tirar este item">×</button></td></tr>').join('')
         +'</tbody></table>';
     } else h+='<div class="cnm-vazio">Nenhum item ainda.</div>';
@@ -11671,10 +11709,10 @@ function cnmResumo(){
   /* o campo que nao foi digitado acompanha (sem mexer no que esta' em foco) */
   d.servicos.forEach(s=>{
     const a=document.querySelector('[data-cnmrm2="'+s.id+'"]'), b=document.querySelector('[data-cnmtot="'+s.id+'"]');
-    const porTotal=s.modo==='total';
-    if(a&&document.activeElement!==a&&porTotal) a.value=cnmCalcTxt(cnmRm2(s));
+    const porTotal=s.modo==='total', porItem=s.modo==='item';
+    if(a&&document.activeElement!==a&&(porTotal||porItem)) a.value=cnmCalcTxt(cnmRm2(s));
     if(b&&document.activeElement!==b&&!porTotal) b.value=cnmCalcTxt(cnmSub(s));
-    if(a) a.classList.toggle('calc',porTotal); if(b) b.classList.toggle('calc',!porTotal);
+    if(a) a.classList.toggle('calc',porTotal||porItem); if(b) b.classList.toggle('calc',!porTotal);
   });
   r.innerHTML='<div class="cnm-tot"><div class="k">Total da obra</div><div class="v">'+brl(tot)+'</div>'
     +'<div class="m2">'+(m2>0?brl(tot/m2)+' por m² · '+num(m2,2).replace(/,00$/,'')+' m²':'informe a metragem total')+'</div></div>'
@@ -11697,7 +11735,10 @@ function cnmLiga(){
   });
   host.querySelectorAll('[data-cnmit]').forEach(i=>{
     i.oninput=()=>{ const [sid,iid]=i.dataset.cnmit.split('|'), s=cnmAcha(sid); if(!s) return;
-      const it=s.itens.filter(x=>x.id===iid)[0]; if(!it) return; it[i.dataset.k]=i.value; cnmGravou(); };
+      const it=s.itens.filter(x=>x.id===iid)[0]; if(!it) return; it[i.dataset.k]=i.value;
+      const tc=host.querySelector('[data-cnmitot="'+sid+'|'+iid+'"]'); if(tc) tc.textContent=cnmCalcTxt(cnmItemTot(it));
+      if(s.modo==='item') cnmResumo();
+      cnmGravou(); };
     /* Enter no ultimo campo da ultima linha abre a proxima linha */
     i.onkeydown=ev=>{ if(ev.key!=='Enter') return; ev.preventDefault();
       const [sid,iid]=i.dataset.cnmit.split('|'), s=cnmAcha(sid); if(!s) return;
@@ -11721,6 +11762,7 @@ function cnmLiga(){
   host.querySelectorAll('[data-cnmesq]').forEach(b=>b.onclick=()=>cnmTrazEsquadrias(b.dataset.cnmesq));
   const sug=document.getElementById('cnmSug');
   if(sug) sug.querySelectorAll('[data-cnmsug]').forEach(b=>b.onclick=()=>cnmAddServico(b.dataset.cnmsug));
+  document.querySelectorAll('#cnmModo [data-cnmpor]').forEach(b=>b.onclick=()=>{ if((b.dataset.cnmpor==='item')!==cnmPorItem()) cnmDefinePor(b.dataset.cnmpor); });
 }
 function cnmAddItem(sid){
   const s=cnmAcha(sid); if(!s) return;
@@ -11730,8 +11772,10 @@ function cnmAddItem(sid){
 function cnmAddServico(nome){
   const vai=function(v){
     if(v==null) return; v=String(v).trim(); if(!v) return;
-    const s=cnmServNovo(v); s.aberto=true; cnmDados().servicos.push(s); cnmGravou(); cnmRender();
-    const c=document.querySelector('[data-cnmrm2="'+s.id+'"]'); if(c){ c.scrollIntoView({block:'center'}); c.focus(); }
+    const s=cnmServNovo(v); s.aberto=true;
+    if(cnmPorItem()){ s.modoAnt='m2'; s.modo='item'; }
+    cnmDados().servicos.push(s); cnmGravou(); cnmRender();
+    const c=document.querySelector(s.modo==='item'?'[data-cnmitadd="'+s.id+'"]':'[data-cnmrm2="'+s.id+'"]'); if(c){ c.scrollIntoView({block:'center'}); c.focus(); }
   };
   if(nome) vai(nome); else askText('Nome do serviço (ex.: Fundação, Cobertura)','',vai,'Adicionar serviço');
 }
@@ -11748,7 +11792,7 @@ function cnmTrazEsquadrias(sid){
   const ja={}; s.itens.forEach(i=>{ if(i.esq) ja[i.esq]=1; });
   let n=0;
   L.forEach(e=>{ if(ja[e.id]) return;
-    s.itens.push({id:cnmId('i'),esq:e.id,desc:[esqDesc(e)||e.tipo||'Esquadria',esqMed(e)].filter(Boolean).join(' · '),un:'un',qtd:String(Math.max(1,esqNum(e.qtd)||1))}); n++; });
+    s.itens.push({id:cnmId('i'),esq:e.id,desc:[esqDesc(e)||e.tipo||'Esquadria',esqMed(e)].filter(Boolean).join(' · '),un:'un',qtd:String(Math.max(1,esqNum(e.qtd)||1)),vu:(s.modo==='item'&&esqNum(e.unit)>0)?num(esqNum(e.unit),2):''}); n++; });
   s.aberto=true; cnmGravou(); cnmRender();
   toast(n?n+' esquadria(s) trazida(s) da aba Esquadrias':'As esquadrias da aba já estão na lista');
 }
@@ -11775,14 +11819,16 @@ function cnmNova(){
 function cnmPDF(){
   const d=cnmDados(), m2=cnmM2(), tot=cnmTotal(), hoje=new Date().toLocaleDateString('pt-BR');
   const servs=d.servicos.filter(s=>s.itens.length||cnmTemValor(s));
-  if(!servs.length){ alert('Preencha ao menos um serviço (itens ou R$/m²) antes de imprimir.'); return; }
+  if(!servs.length){ alert('Preencha ao menos um serviço (itens ou valores) antes de imprimir.'); return; }
   const qtd=v=>{ const n=cnmNum(v); return String(v==null?'':v).trim()===''?'':num(n,n%1?2:0); };
   let corpo='';
   servs.forEach(s=>{
     corpo+='<div class="sv"><div class="sv-h"><b>'+escapeAttr(s.nome||'Serviço')+'</b>'
       +'<span>'+(cnmRm2(s)>0?brl(cnmRm2(s))+'/m² · ':'')+'<b>'+brl(cnmSub(s))+'</b></span></div>'
-      +(s.itens.length?'<table><thead><tr><th class="l">Item / descrição</th><th class="l" style="width:22mm">Unid.</th><th style="width:22mm">Qtd.</th></tr></thead><tbody>'
-        +s.itens.map(i=>'<tr><td class="l">'+escapeAttr(i.desc||'—')+'</td><td class="l">'+escapeAttr(i.un||'')+'</td><td>'+qtd(i.qtd)+'</td></tr>').join('')
+      +(s.itens.length?'<table><thead><tr><th class="l">Item / descrição</th><th class="l" style="width:22mm">Unid.</th><th style="width:22mm">Qtd.</th>'
+        +(s.modo==='item'?'<th style="width:28mm">Valor unit.</th><th style="width:28mm">Total</th>':'')+'</tr></thead><tbody>'
+        +s.itens.map(i=>'<tr><td class="l">'+escapeAttr(i.desc||'—')+'</td><td class="l">'+escapeAttr(i.un||'')+'</td><td>'+qtd(i.qtd)+'</td>'
+          +(s.modo==='item'?'<td>'+(cnmNum(i.vu)>0?brl(cnmNum(i.vu)):'')+'</td><td>'+(cnmItemTot(i)>0?brl(cnmItemTot(i)):'')+'</td>':'')+'</tr>').join('')
         +'</tbody></table>':'')+'</div>';
   });
   const est='@page{size:210mm 297mm;margin:12mm}*{box-sizing:border-box}'

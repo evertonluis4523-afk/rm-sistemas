@@ -12,7 +12,7 @@
      ASSETS (ex.: o jsPDF da Telha, guardado para funcionar sem internet).
    Medido: com este arquivo a versão publicada aparece na próxima abertura;
    com o anterior, e sem service worker nenhum, voltava a versão velha. */
-const CACHE = 'rm-orc-v135';
+const CACHE = 'rm-orc-v136';
 const ASSETS = ['./', './index.html', './Orcamento_RM_Estruturas.html', './manifest.json', './icon-192.png', './icon-512.png'];
 const PAGINA = './index.html';
 
