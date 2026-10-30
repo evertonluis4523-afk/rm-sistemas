@@ -5058,6 +5058,21 @@ if(window.RM_CELULAR) document.body.classList.add('rm-campo');
   </div>
 </div></div>
 
+<div class="overlay" id="recEditModal"><div class="modal" style="max-width:640px">
+  <div class="mhead"><h2>Editar valor a receber</h2><button class="x" data-close>✕</button></div>
+  <div class="mbody">
+    <p class="rel-note" id="recEditAviso" hidden></p>
+    <div class="form-grid">
+      <div class="f span12"><span class="lab">Funcionário</span><select id="recEditFunc"></select></div>
+      <div class="f span12"><span class="lab">Motivo</span><input id="recEditDesc"></div>
+      <div class="f span4"><span class="lab">Valor (R$)</span><input id="recEditValor" class="mono" inputmode="decimal"></div>
+      <div class="f span4"><span class="lab">Data prevista</span><input id="recEditData" type="date"></div>
+      <div class="f span4"><span class="lab">Entra no</span><select id="recEditDesde"><option value="adiantamento">Adiantamento</option><option value="pagamento">Pagamento</option></select></div>
+    </div>
+  </div>
+  <div class="mfoot"><button class="btn-act dim" data-close>Cancelar</button><button class="btn-act save" id="btnRecEditSalvar">Salvar</button></div>
+</div></div>
+
 <div class="overlay" id="recConfModal"><div class="modal" style="max-width:820px">
   <div class="mhead"><h2 id="recConfTitle">Valores a receber deste ciclo</h2><button class="x" data-close>✕</button></div>
   <div class="mbody">
@@ -12939,16 +12954,17 @@ function renderEmpr(){
       '<td class="r val" data-label="Pago">R$ '+fmtBRL(pago)+'</td>'+
       '<td class="r val" data-label="Saldo">R$ '+fmtBRL(saldo)+'</td>'+
       '<td class="c mono" data-label="Parcelas">'+em.parcelas.filter(p=>p.pago).length+'/'+em.parcelas.length+'</td>'+
-      '<td class="r" data-label="Ações"><div class="rowact"><button class="ia" data-edetail="'+em.id+'_'+em.empId+'" title="Detalhes">👁</button><button class="ia del" data-edelete="'+em.id+'_'+em.empId+'" title="Excluir">✕</button></div></td>';
+      '<td class="r" data-label="Ações"><div class="rowact"><button class="ia" data-eedit="'+em.id+'_'+em.empId+'" title="Editar">✎</button><button class="ia" data-edetail="'+em.id+'_'+em.empId+'" title="Detalhes">👁</button><button class="ia del" data-edelete="'+em.id+'_'+em.empId+'" title="Excluir">✕</button></div></td>';
     b.appendChild(tr);});
+  b.querySelectorAll('[data-eedit]').forEach(x=>x.onclick=()=>{const[emId,empId]=x.dataset.eedit.split('_');const e=state.employees.find(y=>y.id===empId);const em=e&&e.emprestimos.find(y=>y.id===emId);if(em)showEmprDetail(em,empId,true);});
   b.querySelectorAll('[data-edetail]').forEach(x=>x.onclick=()=>{const[emId,empId]=x.dataset.edetail.split('_');const e=state.employees.find(y=>y.id===empId);const em=e.emprestimos.find(y=>y.id===emId);showEmprDetail(em,empId);});
   b.querySelectorAll('[data-edelete]').forEach(x=>x.onclick=()=>{const[emId,empId]=x.dataset.edelete.split('_');const e=state.employees.find(y=>y.id===empId);if(!confirm('Excluir este empréstimo?'))return;e.emprestimos=e.emprestimos.filter(y=>y.id!==emId);persist();renderEmpr();toast('Excluído');});
 }
 let curEmpr=null,curEmprEmpId=null;
-function showEmprDetail(em,empId){
+function showEmprDetail(em,empId,editar){
   curEmpr=em;curEmprEmpId=empId;
   const emp=state.employees.find(x=>x.id===empId)||{};
-  $('#emprMTitle').textContent='Empréstimo · '+esc(titlePt(emp.nome||''));
+  $('#emprMTitle').textContent=(editar?'Editar empréstimo · ':'Empréstimo · ')+esc(titlePt(emp.nome||''));
   $('#emprEditDesc').value=em.desc||'';
   $('#emprEditDesde').value=em.desde||'pagamento';
   $('#emprEditData').value=em.data||'';
@@ -12974,6 +12990,10 @@ function emprSyncFromDOM(){
   curEmpr.data=$('#emprEditData').value;
   document.querySelectorAll('#emprParcsBody [data-pvenc]').forEach(x=>{curEmpr.parcelas[+x.dataset.pvenc].vencimento=x.value;});
   document.querySelectorAll('#emprParcsBody [data-pval]').forEach(x=>{if(String(x.value).trim()!=='')curEmpr.parcelas[+x.dataset.pval].valor=parseValor(x.value);});
+  /* o valor total é a soma das parcelas: editar uma parcela sem isto deixava
+     o "Valor total" e o "Saldo" da lista contando o valor antigo */
+  const soma=Math.round(curEmpr.parcelas.reduce((a,p)=>a+(Number(p.valor)||0),0)*100)/100;
+  if(soma>0)curEmpr.valor=soma;
 }
 $('#btnEmprSave').onclick=()=>{if(!curEmpr){closeAll();return;}emprSyncFromDOM();persist();renderEmpr();closeAll();toast('Empréstimo salvo','ok');};
 $('#btnEmprDel').onclick=()=>{if(!curEmpr)return;if(!confirm('Excluir empréstimo e suas parcelas?'))return;const e=state.employees.find(y=>y.id===curEmprEmpId);e.emprestimos=e.emprestimos.filter(y=>y.id!==curEmpr.id);persist();closeAll();renderEmpr();toast('Excluído');};
@@ -13424,13 +13444,15 @@ function renderReceber(){
       +'<td class="r val" data-label="Valor">R$ '+fmtBRL(Number(r.valor)||0)+'</td>'
       +'<td class="c" data-label="Situação">'+recSituacao(r)+'</td>'
       +'<td class="r" data-label="Ações"><div class="rowact">'
-        +(r.recebido?'<button class="ia" data-recreab="'+r.id+'_'+e.id+'" title="Voltar a pendente">↺</button>'
+        +'<button class="ia" data-rcedit="'+r.id+'_'+e.id+'" title="Editar">✎</button>'
+        +(r.recebido?'<button class="ia" data-recreab=""'+r.id+'_'+e.id+'" title="Voltar a pendente">↺</button>'
           :(r.lancadaEm?'<button class="ia" data-recsolta="'+r.id+'_'+e.id+'" title="Voltar a pendente (não tira o valor já somado no ciclo)">↺</button>'
             :'<button class="ia" data-recok="'+r.id+'_'+e.id+'" title="Marcar como recebido, sem somar na folha">✓</button>'))
         +'<button class="ia del" data-recdel="'+r.id+'_'+e.id+'" title="Excluir">✕</button></div></td>';
     b.appendChild(tr);
   });
   const acha=v=>{const[rid,eid]=v.split('_');const e=state.employees.find(x=>x.id===eid);return {e,r:e&&recDe(e).find(x=>x.id===rid)};};
+  b.querySelectorAll('[data-rcedit]').forEach(x=>x.onclick=()=>{const {e,r}=acha(x.dataset.rcedit);if(r)recAbrirEdicao(e,r);});
   b.querySelectorAll('[data-recdel]').forEach(x=>x.onclick=()=>{const {e,r}=acha(x.dataset.recdel);if(!r)return;
     if(!confirm('Excluir este valor a receber?'+(r.lancadaEm&&!r.recebido?'\n\nEle já foi somado no '+cicloRotuloDaChave(r.lancadaEm).toLowerCase()+': a soma continua lá até você tirar na folha.':'')))return;
     e.aReceber=recDe(e).filter(y=>y.id!==r.id);persist();renderReceber();renderRecSelo();});
@@ -13452,6 +13474,38 @@ $('#btnRecSalvar')&&($('#btnRecSalvar').onclick=()=>{
   renderReceber();toast('Valor a receber registrado','ok');
 });
 $('#recSearch')&&($('#recSearch').oninput=renderReceber);
+/* EDITAR: motivo, valor, data, onde entra e até o funcionário. Se o valor já
+   foi somado num ciclo, mudar valor ou destino aqui NÃO mexe na folha: o
+   aviso diz isso e pede confirmação. */
+let recEditando=null;
+function recAbrirEdicao(e,r){
+  recEditando={empId:e.id,rId:r.id};
+  $('#recEditFunc').innerHTML=empAtivos().filter(x=>x.status==='ativo'||x.id===e.id).map(x=>'<option value="'+esc(x.id)+'"'+(x.id===e.id?' selected':'')+'>'+esc(titlePt(x.nome))+'</option>').join('');
+  $('#recEditDesc').value=r.desc||''; $('#recEditValor').value=Number(r.valor)>0?fmtBRL(Number(r.valor)):'';
+  $('#recEditData').value=r.data||''; $('#recEditDesde').value=(r.desde||'pagamento')==='adiantamento'?'adiantamento':'pagamento';
+  const av=$('#recEditAviso'), no=r.lancadaEm&&!r.recebido?cicloRotuloDaChave(r.lancadaEm).toLowerCase():'';
+  av.hidden=!(no||r.recebido);
+  av.textContent=r.recebido?'Este valor já foi recebido. Editar aqui só muda o registro; a folha fechada não muda.'
+    :(no?'Este valor já foi somado no '+no+'. Mudar valor ou destino aqui não altera o que já está na folha.':'');
+  $('#recEditModal').classList.add('open');
+}
+$('#btnRecEditSalvar')&&($('#btnRecEditSalvar').onclick=()=>{
+  if(!recEditando)return;
+  const e=state.employees.find(x=>x.id===recEditando.empId), r=e&&recDe(e).find(x=>x.id===recEditando.rId);
+  if(!r){closeAll();return;}
+  const valor=parseValor($('#recEditValor').value), desc=$('#recEditDesc').value.trim(), desde=$('#recEditDesde').value==='adiantamento'?'adiantamento':'pagamento', data=$('#recEditData').value;
+  if(!(valor>0)){toast('Informe o valor','err');return;}
+  if(!desc){toast('Diga o motivo','err');return;}
+  const somado=r.lancadaEm&&!r.recebido;
+  if(somado&&(Math.abs(valor-(Number(r.valor)||0))>0.004||desde!==(r.desde||'pagamento'))&&!confirm('Este valor já foi somado no '+cicloRotuloDaChave(r.lancadaEm).toLowerCase()+'. A folha não muda sozinha. Salvar mesmo assim?'))return;
+  r.desc=desc; r.valor=valor; r.desde=desde; r.data=data||'';
+  const novoId=$('#recEditFunc').value;
+  if(novoId&&novoId!==e.id){
+    const novo=state.employees.find(x=>x.id===novoId);
+    if(novo){e.aReceber=recDe(e).filter(x=>x.id!==r.id);if(!Array.isArray(novo.aReceber))novo.aReceber=[];novo.aReceber.push(r);}
+  }
+  recEditando=null; persist(); closeAll(); renderReceber(); renderRecSelo(); toast('Valor a receber salvo','ok');
+});
 /* =================== FIM VALORES A RECEBER =================== */
 
 
@@ -18002,7 +18056,7 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape'){if(fecharSemPerder(
    juntos a cada publicacao, e ha uma prova automatica que falha se um subir
    sem o outro. Assim o numero na tela e o mesmo do arquivo que o aparelho
    guardou, e dizer "estou na v81" passa a significar alguma coisa. */
-const APP_VER='v276';
+const APP_VER='v277';
 (function(){var p=document.getElementById('verPill'); if(p)p.textContent=APP_VER;})();
 
 if('serviceWorker' in navigator){
