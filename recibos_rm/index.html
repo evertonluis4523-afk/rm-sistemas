@@ -3860,6 +3860,7 @@ if(window.RM_CELULAR) document.body.classList.add('rm-campo');
       <button class="vtab" data-v="extra">13º e Férias</button>
       <button class="vtab" data-v="sal">Salários</button>
       <button class="vtab" data-v="empr">Empréstimos</button>
+      <button class="vtab" data-v="receber">Valores a receber<span class="vtab-sel" id="recSelo"></span></button>
       <button class="vtab" data-v="indic">Indicações<span class="vtab-sel" id="indicSelo"></span></button>
       <button class="vtab" data-v="assid">Assiduidade/Rancho</button>
       <button class="vtab" data-v="terc">Terceiros</button>
@@ -4206,6 +4207,33 @@ if(window.RM_CELULAR) document.body.classList.add('rm-campo');
         <table class="list cartao-mob">
           <thead><tr><th>Funcionário</th><th>Descrição</th><th>Próxima parcela</th><th class="r">Valor total</th><th class="r">Pago</th><th class="r">Saldo</th><th class="c">Parcelas</th><th class="r">Ações</th></tr></thead>
           <tbody id="emprBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- VALORES A RECEBER: o que o funcionário vai ganhar de extra; a folha pergunta se entra -->
+    <div class="view" id="v-receber">
+      <div class="addzone">
+        <div class="section-lab">Novo valor a receber <span class="ln"></span></div>
+        <p class="rel-note">Um extra que o funcionário vai ter durante o mês (reembolso, prêmio, serviço avulso...). Ao gerar os recibos do adiantamento ou do pagamento, o sistema avisa e pergunta se ele entra.</p>
+        <div class="form-grid">
+          <div class="f span6"><span class="lab">Funcionário</span><select id="recFunc"><option value="">— selecione —</option></select></div>
+          <div class="f span3"><span class="lab">Valor (R$)</span><input id="recValor" class="mono" placeholder="0,00" inputmode="decimal"></div>
+          <div class="f span3"><span class="lab">Data prevista</span><input id="recData" type="date"></div>
+        </div>
+        <div class="form-grid">
+          <div class="f span8"><span class="lab">Motivo</span><input id="recDesc" placeholder="Ex: reembolso de viagem, prêmio, serviço extra..."></div>
+          <div class="f span4"><span class="lab">Entra no</span><select id="recDesde"><option value="adiantamento">Adiantamento</option><option value="pagamento" selected>Pagamento</option></select></div>
+        </div>
+        <div class="addbtns">
+          <button class="btn-act save" id="btnRecSalvar">＋ Registrar valor a receber</button>
+        </div>
+      </div>
+      <div class="filters"><div class="section-lab" style="margin:0;flex:1">Valores cadastrados <span class="ln"></span></div><div class="fi grow"><span class="lab">Filtrar</span><input id="recSearch" placeholder="funcionário ou motivo"></div></div>
+      <div class="tbl-wrap">
+        <table class="list cartao-mob">
+          <thead><tr><th>Funcionário</th><th>Motivo</th><th>Entra no</th><th class="c">Data prevista</th><th class="r">Valor</th><th class="c">Situação</th><th class="r">Ações</th></tr></thead>
+          <tbody id="recBody"></tbody>
         </table>
       </div>
     </div>
@@ -5030,6 +5058,26 @@ if(window.RM_CELULAR) document.body.classList.add('rm-campo');
   </div>
 </div></div>
 
+<div class="overlay" id="recConfModal"><div class="modal" style="max-width:820px">
+  <div class="mhead"><h2 id="recConfTitle">Valores a receber deste ciclo</h2><button class="x" data-close>✕</button></div>
+  <div class="mbody">
+    <p class="rel-note" id="recConfIntro"></p>
+    <div class="tbl-wrap" style="max-height:44vh;overflow:auto">
+      <table class="list" style="font-size:12.5px">
+        <thead><tr><th class="c" style="width:44px"><input class="chk" type="checkbox" id="recConfTodos" title="marcar todos"></th>
+          <th>Funcionário</th><th>Motivo</th><th>Data prevista</th><th class="r">Valor</th></tr></thead>
+        <tbody id="recConfBody"></tbody>
+      </table>
+    </div>
+    <div id="recConfTotal" style="margin-top:12px;font-size:12.5px;font-weight:600"></div>
+  </div>
+  <div class="mfoot">
+    <button class="btn-act dim" data-close>Cancelar</button>
+    <button class="btn-act" id="btnRecConfPular">Gerar sem adicionar</button>
+    <button class="btn-act save" id="btnRecConfOk">Adicionar e gerar →</button>
+  </div>
+</div></div>
+
 <!-- MODAL TERCEIRO -->
 <div class="overlay" id="indicModal"><div class="modal">
   <div class="mhead"><h2 id="inTitle">Nova indicação</h2><button class="x" data-close>✕</button></div>
@@ -5577,7 +5625,7 @@ function definirInsalubFuncao(fn,p){
   if(p>0){ if(i>=0) L[i]={f:fn,p:p}; else L.push({f:fn,p:p}); } else if(i>=0) L.splice(i,1);
 }
 function insalubTxt(e){ const n=Number(e&&e.insalubridade)||0; return n>0?String(n).replace('.',',')+'%':'—'; }
-function empsToMap(){const m={};state.employees.forEach((e,i)=>{m[e.id]={nome:e.nome,docTipo:e.docTipo,doc:e.doc||"",status:e.status,afastMotivo:e.afastMotivo||"",afastDesde:e.afastDesde||"",afastHist:Array.isArray(e.afastHist)?e.afastHist:[],funcao:e.funcao||"",banco:e.banco||"",dtInicio:e.dtInicio||"",dtCarteira:e.dtCarteira||"",nascimento:e.nascimento||"",dtDesligamento:e.dtDesligamento||"",salario:Number(e.salario)||0,salarioCarteira:Number(e.salarioCarteira)||0,metodo:e.metodo||"banco",obs:e.obs||"",base:Number(e.base)||0,descRM:Number(e.descRM)||0,acresc:Number(e.acresc)||0,banheiro:Number(e.banheiro)||0,almoco:Number(e.almoco)||0,he:Number(e.he)||0,faltas:Number(e.faltas)||0,plano:Number(e.plano)||0,inss:Number(e.inss)||0,econ:Number(e.econ)||0,adicional:Number(e.adicional)||0,desconto:Number(e.desconto)||0,adiantBase:Number(e.adiantBase)||0,valPagamento:Number(e.valPagamento)||0,valAdiantamento:Number(e.valAdiantamento)||0,obsCadastro:e.obsCadastro||"",isentoINSS:!!e.isentoINSS,insalubridade:Number(e.insalubridade)||0,emprestimos:e.emprestimos||[],registro:e.registro||"",telefone:e.telefone||"",historicoSalario:e.historicoSalario||[],historicoFuncao:e.historicoFuncao||[],fichasEpi:e.fichasEpi||[],folhaExtra:e.folhaExtra||[],contrato:e.contrato||null,docsRescEm:e.docsRescEm||"",docsRescFolhas:Number(e.docsRescFolhas)||0,ord:(e.ord!=null?e.ord:i)};});return m;}
+function empsToMap(){const m={};state.employees.forEach((e,i)=>{m[e.id]={nome:e.nome,docTipo:e.docTipo,doc:e.doc||"",status:e.status,afastMotivo:e.afastMotivo||"",afastDesde:e.afastDesde||"",afastHist:Array.isArray(e.afastHist)?e.afastHist:[],funcao:e.funcao||"",banco:e.banco||"",dtInicio:e.dtInicio||"",dtCarteira:e.dtCarteira||"",nascimento:e.nascimento||"",dtDesligamento:e.dtDesligamento||"",salario:Number(e.salario)||0,salarioCarteira:Number(e.salarioCarteira)||0,metodo:e.metodo||"banco",obs:e.obs||"",base:Number(e.base)||0,descRM:Number(e.descRM)||0,acresc:Number(e.acresc)||0,banheiro:Number(e.banheiro)||0,almoco:Number(e.almoco)||0,he:Number(e.he)||0,faltas:Number(e.faltas)||0,plano:Number(e.plano)||0,inss:Number(e.inss)||0,econ:Number(e.econ)||0,adicional:Number(e.adicional)||0,desconto:Number(e.desconto)||0,adiantBase:Number(e.adiantBase)||0,valPagamento:Number(e.valPagamento)||0,valAdiantamento:Number(e.valAdiantamento)||0,obsCadastro:e.obsCadastro||"",isentoINSS:!!e.isentoINSS,insalubridade:Number(e.insalubridade)||0,emprestimos:e.emprestimos||[],registro:e.registro||"",telefone:e.telefone||"",historicoSalario:e.historicoSalario||[],historicoFuncao:e.historicoFuncao||[],fichasEpi:e.fichasEpi||[],folhaExtra:e.folhaExtra||[],aReceber:e.aReceber||[],contrato:e.contrato||null,docsRescEm:e.docsRescEm||"",docsRescFolhas:Number(e.docsRescFolhas)||0,ord:(e.ord!=null?e.ord:i)};});return m;}
 function mapToEmps(m){return Object.keys(m||{}).map(id=>Object.assign({id},m[id])).sort((a,b)=>(a.ord||0)-(b.ord||0));}
 
 /* INDICAÇÕES — bônus de quem trouxe alguém que ficou.
@@ -5605,7 +5653,7 @@ function listaFb(v){
 }
 function normalizarListas(){
   state.employees.forEach(e=>{
-    ['emprestimos','historicoSalario','historicoFuncao','fichasEpi','folhaExtra'].forEach(k=>{e[k]=listaFb(e[k]);});
+    ['emprestimos','historicoSalario','historicoFuncao','fichasEpi','folhaExtra','aReceber'].forEach(k=>{e[k]=listaFb(e[k]);});
     e.emprestimos.forEach(em=>{if(em&&typeof em==='object')em.parcelas=listaFb(em.parcelas);});
   });
   [state.fechamentos,state.historico].forEach(m=>Object.keys(m||{}).forEach(k=>{
@@ -5755,7 +5803,7 @@ function bootUI(){
      viesse depois, a primeira tela ainda sairia com o que estava gravado. */
   passo('funções',()=>{ if(padronizarFuncoes()) persist(); });
   passo('configuração',loadCfg); passo('Funcionários',renderEmps); passo('Terceiros',renderTerc); passo('aniversários',renderAnivSelo);
-  if(aba('aniv')) passo('Aniversários',renderAniversariantes); if(aba('pf')) passo('PF',renderPF); if(aba('sal')) passo('Salários',renderSal); if(aba('empr')) passo('Empréstimos',renderEmpr); if(aba('assid')) passo('Assiduidade',renderAssid); if(aba('terclanc')) passo('Recibos terceiros',renderTercLanc); if(aba('rel')) passo('Relatórios',renderRel); if(aba('bh')) passo('Banco de horas',renderBH); if(aba('cli')) passo('Clientes',renderCli); if(aba('resc')) passo('Rescisão',renderResc); if(aba('extra')) passo('13º e férias',renderExtra);
+  if(aba('aniv')) passo('Aniversários',renderAniversariantes); if(aba('pf')) passo('PF',renderPF); if(aba('sal')) passo('Salários',renderSal); if(aba('empr')) passo('Empréstimos',renderEmpr); passo('valores a receber',renderRecSelo); if(aba('receber')) passo('Valores a receber',renderReceber); if(aba('assid')) passo('Assiduidade',renderAssid); if(aba('terclanc')) passo('Recibos terceiros',renderTercLanc); if(aba('rel')) passo('Relatórios',renderRel); if(aba('bh')) passo('Banco de horas',renderBH); if(aba('cli')) passo('Clientes',renderCli); if(aba('resc')) passo('Rescisão',renderResc); if(aba('extra')) passo('13º e férias',renderExtra);
   passo('indicações',renderIndicSelo); if(aba('indic')) passo('Indicações',renderIndic); if(typeof admListaRender==='function') passo('Admissão',admListaRender);
   /* A Ficha de EPI é desenhada por um módulo à parte, e ele não estava nesta
      lista: quando os dados chegavam do servidor, todas as abas se redesenhavam
@@ -6449,6 +6497,7 @@ document.querySelectorAll('#abasMain .vtab').forEach(t=>t.onclick=()=>{
   if(t.dataset.v==='pf')renderPF();
   if(t.dataset.v==='sal'){defaultsSalarios();renderSal();}
   if(t.dataset.v==='empr')renderEmpr();
+  if(t.dataset.v==='receber')renderReceber();
   if(t.dataset.v==='assid')renderAssid();
   if(t.dataset.v==='terc')renderTerc();
   if(t.dataset.v==='extra')renderExtra();
@@ -6480,7 +6529,7 @@ document.querySelectorAll('#abasMain .vtab').forEach(t=>t.onclick=()=>{
                 ['emp','Empresa']];
   const DE={func:'func',aniv:'func',pf:'func',bh:'func',
             entrev:'doc',epi:'doc',carta:'doc',adv:'doc',adm:'doc',demis:'doc',
-            sal:'sal',empr:'sal',indic:'sal',assid:'sal',
+            sal:'sal',empr:'sal',receber:'sal',indic:'sal',assid:'sal',
             terc:'terc',
             cli:'cli',terclanc:'cli',resc:'cli',rescdoc:'cli',extra:'cli',
             rel:'rel',emp:'emp'};
@@ -10514,6 +10563,7 @@ $('#btnSalLimpa').onclick=()=>{
   if(!lista.length){toast('Não há valores para limpar neste ciclo');return;}
   if(!confirm('Limpar os valores do '+cicloRotulo(salCiclo)+' de '+lista.length+' funcionário(s)?\n\nSalário do cadastro e "vales, extras e descontos" ficam. A planilha e os almoços podem ser importados de novo.'))return;
   lista.forEach(e=>{campos.forEach(c=>{e[c]=0;});if(ad)e.valAdiantamento=calcAdiant(e);else e.valPagamento=calcPag(e);});
+  if(ad)recSoltaDoCiclo(cicloKey(salCiclo));   // o que entrou no adicional saiu junto: volta a pendente
   persist();renderSal();toast('Valores limpos · '+lista.length+' funcionário(s)','ok');
 };
 
@@ -10666,7 +10716,8 @@ async function fecharCompetencia(tipo){
      vez de repetir esta. A lista fica gravada no ciclo para que reabrir
      saiba o que desfazer. */
   reg.parcelasBaixadas=emprBaixarNoFechamento(tipo);
-  persist(); renderSal();
+  reg.recebiveisBaixados=recBaixarNoFechamento(cicloKey(cic));
+  persist(); renderSal(); renderRecSelo();
   toast((tipo==='adiantamento'?'Adiantamento':'Pagamento')+' de '+rotulo+' fechado \u2713'
     +(reg.parcelasBaixadas.length?' \u00b7 '+reg.parcelasBaixadas.length+(reg.parcelasBaixadas.length===1?' parcela de empr\u00e9stimo baixada':' parcelas de empr\u00e9stimo baixadas'):''),'ok');
 }
@@ -10698,6 +10749,7 @@ function reabrirCiclo(){
      valores que tinha, e com a parcela paga o l\u00edquido voltaria maior. */
   const devolvidas=emprDesfazerBaixa(r.parcelasBaixadas);
   delete r.parcelasBaixadas;
+  recDesfazerBaixa(r.recebiveisBaixados); delete r.recebiveisBaixados; renderRecSelo();
   persist(); abrirCiclo(salCiclo,true);
   toast(rot+' reaberto \u2014 o motivo ficou registrado'
     +(devolvidas?' \u00b7 '+devolvidas+(devolvidas===1?' parcela de empr\u00e9stimo voltou a descontar':' parcelas de empr\u00e9stimo voltaram a descontar'):''),'ok');
@@ -11641,6 +11693,7 @@ function gerarSalario(tipo){
      abre e esta chamada para — quem responder chama gerarSalario de novo. */
   const dataCiclo=(tipo==='adiantamento'?$('#salDataAdiant').value:$('#salDataPagto').value)||toISO(new Date());
   if(!emprConferir(tipo,dataCiclo,list,()=>gerarSalario(tipo)))return;
+  if(!recConferir(tipo,dataCiclo,list,()=>gerarSalario(tipo)))return;
   if(pagos.length){
     const nomes=pagos.map(e=>titlePt(e.nome)).join(', ');
     toast(pagos.length+(pagos.length===1?' pessoa já paga ficou de fora: ':' pessoas já pagas ficaram de fora: ')+nomes
@@ -13182,6 +13235,225 @@ function emprDesfazerBaixa(baixadas){
   return n;
 }
 /* =================== FIM EMPRÉSTIMOS =================== */
+
+/* ===================== VALORES A RECEBER =====================
+   O espelho do empréstimo: lá o funcionário DEVE à empresa e a parcela é
+   descontada; aqui a empresa deve ao funcionário um extra (reembolso, prêmio,
+   serviço avulso) e ele é SOMADO. Cada valor mora no cadastro do funcionário
+   (e.aReceber) com motivo, valor, data prevista e onde entra (adiantamento ou
+   pagamento).
+
+   Na hora de gerar os recibos o sistema junta o que está esperando naquele
+   tipo -- vence até três dias depois da data do recibo, ou já passou e nunca
+   entrou -- e PERGUNTA, uma linha por valor. Confirmado, o valor entra pelo
+   caminho que a folha já tem: no pagamento vira um lançamento em "Vales,
+   extras e descontos" (com o motivo); no adiantamento soma no Adicional e o
+   motivo vai na observação. Ele guarda em que ciclo entrou (lancadaEm) para
+   não entrar duas vezes, e só vira "recebido" quando o ciclo é fechado --
+   reabrir o ciclo o devolve. Teste recibos-valores-a-receber. */
+function recCicloAberto(tipo){return emprCicloAberto(tipo);}
+function recDe(e){return (e&&Array.isArray(e.aReceber))?e.aReceber:[];}
+/* Entrou de fato neste ciclo? No pagamento confere a linha na folha: se ela
+   foi apagada, o valor volta a ser oferecido em vez de ficar preso. */
+function recAdicionada(e,r,key){
+  if(!r.lancadaEm||r.lancadaEm!==key)return false;
+  if((r.desde||'pagamento')==='pagamento')return (e.folhaExtra||[]).some(x=>x&&x.rid===r.id);
+  return true;
+}
+function recLinhasDoCiclo(tipo,dataISO,list){
+  const key=recCicloAberto(tipo),out=[];
+  (list||[]).forEach(e=>{
+    recDe(e).forEach(r=>{
+      if(!r||r.recebido||(r.desde||'pagamento')!==tipo)return;
+      const d=emprDifDias(r.data,dataISO);
+      if(d!==null&&d>EMPR_TOL_DIAS)return;
+      const ja=recAdicionada(e,r,key);
+      const outro=(!ja&&r.lancadaEm&&r.lancadaEm!==key)?r.lancadaEm:'';
+      out.push({empId:e.id,nome:e.nome,rId:r.id,tipo:tipo,desc:r.desc||'valor a receber',valor:Number(r.valor)||0,
+        data:r.data||'',atraso:(d!==null&&d<-EMPR_TOL_DIAS)?-d:0,jaAdicionada:ja,deOutroCiclo:outro,marcada:!ja&&!outro});
+    });
+  });
+  return out.sort((a,b)=>String(a.nome).localeCompare(String(b.nome),'pt-BR')||String(a.data).localeCompare(String(b.data)));
+}
+let REC_CONF={tipo:'',dataISO:'',linhas:[],seguir:null,ciclo:''};
+let recPulaConferencia=false;
+function recConfTotais(){
+  const m=REC_CONF.linhas.filter(x=>x.marcada&&!x.jaAdicionada&&!x.deOutroCiclo);
+  const t=m.reduce((s,x)=>s+x.valor,0);
+  const cx=$('#recConfTotal');
+  if(cx)cx.textContent=m.length
+    ? m.length+(m.length===1?' valor marcado · R$ ':' valores marcados · R$ ')+fmtBRL(t)+' a somar'
+    : 'Nenhum valor marcado — os recibos saem sem esses extras.';
+  const td=$('#recConfTodos');
+  if(td){const livres=REC_CONF.linhas.filter(x=>!x.jaAdicionada&&!x.deOutroCiclo);td.checked=!!livres.length&&livres.every(x=>x.marcada);}
+}
+function recConfRender(){
+  const b=$('#recConfBody'); if(!b)return;
+  b.innerHTML='';
+  REC_CONF.linhas.forEach((x,i)=>{
+    const tr=el('tr'), trava=x.jaAdicionada||x.deOutroCiclo;
+    tr.innerHTML='<td class="c"><input class="chk" type="checkbox" data-rci="'+i+'"'+(x.marcada?' checked':'')+(trava?' disabled':'')+'></td>'
+      +'<td><div>'+esc(titlePt(x.nome))+'</div>'
+        +(x.jaAdicionada?'<div class="sub">já entrou neste ciclo</div>':'')
+        +(x.deOutroCiclo?'<div class="sub" style="color:var(--red-d)">já entrou no '+esc(cicloRotuloDaChave(x.deOutroCiclo).toLowerCase())+', que não foi fechado</div>':'')+'</td>'
+      +'<td>'+esc(x.desc)+'</td>'
+      +'<td>'+(x.data?fmtDate(x.data):'—')
+        +(x.atraso?'<div class="sub" style="color:var(--red-d)">esperando há '+x.atraso+(x.atraso===1?' dia':' dias')+'</div>':'')+'</td>'
+      +'<td class="r val">R$ '+fmtBRL(x.valor)+'</td>';
+    b.appendChild(tr);
+  });
+  b.querySelectorAll('[data-rci]').forEach(c=>c.onchange=()=>{REC_CONF.linhas[+c.dataset.rci].marcada=c.checked;recConfTotais();});
+  recConfTotais();
+}
+/* Devolve true quando pode seguir direto para os recibos. Havendo o que
+   perguntar, abre a conversa e devolve false -- quem responde chama o seguir. */
+function recConferir(tipo,dataISO,list,seguir){
+  if(recPulaConferencia){recPulaConferencia=false;return true;}
+  if(!salCiclo||salCiclo.tipo!==tipo)return true;
+  const lab=tipo==='adiantamento'?'adiantamento':'pagamento';
+  const linhas=recLinhasDoCiclo(tipo,dataISO,list);
+  if(!linhas.length)return true;
+  if(!linhas.some(x=>x.marcada)){
+    const ja=linhas.filter(x=>x.jaAdicionada), t=ja.reduce((s,x)=>s+x.valor,0);
+    if(ja.length)toast(ja.length+(ja.length===1?' valor a receber (R$ ':' valores a receber (R$ ')+fmtBRL(t)+') já entram neste '+lab);
+    return true;
+  }
+  REC_CONF={tipo:tipo,dataISO:dataISO,linhas:linhas,seguir:seguir,ciclo:recCicloAberto(tipo)};
+  $('#recConfTitle').textContent='Valores a receber no '+lab+' de '+fmtDate(dataISO);
+  $('#recConfIntro').innerHTML='Estes valores estão esperando para entrar no '+lab
+    +'. Entra o que está previsto até '+EMPR_TOL_DIAS+' dias depois de '+fmtDate(dataISO)+' e o que já passou e ainda não entrou. '
+    +'<b>Desmarque o que não quer somar agora</b>; o que ficar de fora continua esperando o próximo ciclo.';
+  recConfRender();
+  $('#recConfModal').classList.add('open');
+  return false;
+}
+function recConfAplicar(aplicar){
+  const key=REC_CONF.ciclo, mexidos={};
+  if(aplicar)REC_CONF.linhas.forEach(x=>{
+    if(!x.marcada||x.jaAdicionada||x.deOutroCiclo)return;
+    const e=state.employees.find(y=>y.id===x.empId); if(!e)return;
+    const r=recDe(e).find(y=>y.id===x.rId); if(!r)return;
+    const v=Number(r.valor)||0; if(!(v>0))return;
+    if(x.tipo==='pagamento'){
+      if(!Array.isArray(e.folhaExtra))e.folhaExtra=[];
+      e.folhaExtra=e.folhaExtra.filter(f=>!(f&&f.rid===r.id));
+      e.folhaExtra.push({desc:r.desc||'Valor a receber',valor:v,rid:r.id});
+    }else{
+      e.adicional=Math.round(((Number(e.adicional)||0)+v)*100)/100;
+      const linha='Valor a receber: '+(r.desc||'extra')+' — R$ '+fmtBRL(v);
+      if(String(e.obs||'').indexOf(linha)<0)e.obs=e.obs?linha+'\n'+e.obs:linha;
+    }
+    r.lancadaEm=key; mexidos[e.id]=e;
+  });
+  Object.keys(mexidos).forEach(id=>{aplicarDescontoEmprestimo(mexidos[id]);atualizarObsAuto(mexidos[id]);});
+  persist(); closeAll();
+  if(typeof renderSal==='function')renderSal();
+  renderRecSelo(); if($('#v-receber')&&$('#v-receber').classList.contains('on'))renderReceber();
+  const n=Object.keys(mexidos).length?REC_CONF.linhas.filter(x=>x.marcada&&!x.jaAdicionada&&!x.deOutroCiclo).length:0;
+  if(aplicar&&n)toast(n+(n===1?' valor somado':' valores somados')+' ao '+(REC_CONF.tipo==='adiantamento'?'adiantamento':'pagamento'),'ok');
+  if(!aplicar)toast('Recibos sem os valores a receber — eles continuam esperando');
+  const seguir=REC_CONF.seguir; REC_CONF.seguir=null;
+  recPulaConferencia=true;
+  if(seguir)seguir();
+}
+$('#recConfTodos')&&($('#recConfTodos').onchange=()=>{
+  const v=$('#recConfTodos').checked;
+  REC_CONF.linhas.forEach(x=>{if(!x.jaAdicionada&&!x.deOutroCiclo)x.marcada=v;});
+  recConfRender();});
+$('#btnRecConfOk')&&($('#btnRecConfOk').onclick=()=>recConfAplicar(true));
+$('#btnRecConfPular')&&($('#btnRecConfPular').onclick=()=>recConfAplicar(false));
+
+/* A BAIXA SE FECHA COM O CICLO: o que entrou nele vira "recebido" quando ele
+   é fechado, e reabrir devolve. Sem isso o mesmo extra voltaria a ser
+   oferecido no ciclo seguinte. */
+function recBaixarNoFechamento(key){
+  const baixados=[];
+  state.employees.forEach(e=>recDe(e).forEach(r=>{
+    if(r&&!r.recebido&&r.lancadaEm===key){r.recebido=true;r.recebidoEm=toISO(new Date());baixados.push({empId:e.id,rId:r.id});}
+  }));
+  return baixados;
+}
+function recDesfazerBaixa(baixados){
+  (baixados||[]).forEach(b=>{
+    const e=state.employees.find(y=>y.id===b.empId); if(!e)return;
+    const r=recDe(e).find(y=>y.id===b.rId); if(!r)return;
+    r.recebido=false; delete r.recebidoEm;
+  });
+}
+/* O que entrou num ciclo e foi zerado (Limpar valores) volta a ser oferecido. */
+function recSoltaDoCiclo(key){
+  state.employees.forEach(e=>recDe(e).forEach(r=>{if(r&&!r.recebido&&r.lancadaEm===key)delete r.lancadaEm;}));
+}
+
+function recPendentes(){
+  const hoje=toISO(new Date()),out=[];
+  state.employees.filter(e=>!isOculto(e)).forEach(e=>recDe(e).forEach(r=>{
+    if(!r||r.recebido)return;
+    const d=emprDifDias(r.data,hoje);
+    if(d===null||d<=EMPR_TOL_DIAS)out.push({e,r});
+  }));
+  return out;
+}
+function renderRecSelo(){
+  const s=$('#recSelo'); if(!s)return;
+  const n=recPendentes().filter(x=>!x.r.lancadaEm).length;
+  s.textContent=n?String(n):''; s.style.display=n?'inline-block':'none';
+}
+function recSituacao(r){
+  if(r.recebido)return '<span class="badge atv"><span class="d"></span>Recebido'+(r.recebidoEm?' '+fmtDate(r.recebidoEm):'')+'</span>';
+  if(r.lancadaEm)return '<span class="badge des"><span class="d"></span>No '+esc(cicloRotuloDaChave(r.lancadaEm).toLowerCase())+'</span>';
+  return '<span class="badge afa"><span class="d"></span>Pendente</span>';
+}
+function renderReceber(){
+  const sel=$('#recFunc');
+  if(sel&&document.activeElement!==sel){const v=sel.value;sel.innerHTML='<option value="">— selecione —</option>'+empAtivos().filter(e=>e.status==='ativo').map(e=>'<option value="'+esc(e.id)+'"'+(e.id===v?' selected':'')+'>'+esc(titlePt(e.nome))+'</option>').join('');}
+  if($('#recData')&&$('#recData').value==='')$('#recData').value=rmDiaISO();
+  const q=buscaTxt(($('#recSearch')||{}).value||''),b=$('#recBody'); if(!b)return;
+  b.innerHTML='';
+  const hoje=toISO(new Date());
+  const list=[];
+  state.employees.forEach(e=>{if(e.status==='excluido')return;recDe(e).forEach(r=>{if(r&&(!q||buscaTxt(e.nome).includes(q)||buscaTxt(r.desc).includes(q)))list.push({e,r});});});
+  if(!list.length){b.innerHTML='<tr><td colspan="7"><div class="empty"><b>Nenhum valor a receber</b>Cadastre um novo acima.</div></td></tr>';renderRecSelo();return;}
+  list.sort((a,c)=>(a.r.recebido?1:0)-(c.r.recebido?1:0)||String(a.r.data||'').localeCompare(String(c.r.data||'')));
+  list.forEach(({e,r})=>{
+    const d=emprDifDias(r.data,hoje), atraso=(!r.recebido&&!r.lancadaEm&&d!==null&&d<-EMPR_TOL_DIAS)?-d:0;
+    const tr=el('tr');
+    tr.innerHTML='<td class="forn">'+esc(titlePt(e.nome))+'</td><td data-label="Motivo">'+esc(r.desc||'')+'</td>'
+      +'<td data-label="Entra no">'+((r.desde||'pagamento')==='adiantamento'?'Adiantamento':'Pagamento')+'</td>'
+      +'<td class="c" data-label="Data prevista">'+(r.data?fmtDate(r.data):'—')+(atraso?'<div class="sub" style="color:var(--red-d)">esperando há '+atraso+' dias</div>':'')+'</td>'
+      +'<td class="r val" data-label="Valor">R$ '+fmtBRL(Number(r.valor)||0)+'</td>'
+      +'<td class="c" data-label="Situação">'+recSituacao(r)+'</td>'
+      +'<td class="r" data-label="Ações"><div class="rowact">'
+        +(r.recebido?'<button class="ia" data-recreab="'+r.id+'_'+e.id+'" title="Voltar a pendente">↺</button>'
+          :(r.lancadaEm?'<button class="ia" data-recsolta="'+r.id+'_'+e.id+'" title="Voltar a pendente (não tira o valor já somado no ciclo)">↺</button>'
+            :'<button class="ia" data-recok="'+r.id+'_'+e.id+'" title="Marcar como recebido, sem somar na folha">✓</button>'))
+        +'<button class="ia del" data-recdel="'+r.id+'_'+e.id+'" title="Excluir">✕</button></div></td>';
+    b.appendChild(tr);
+  });
+  const acha=v=>{const[rid,eid]=v.split('_');const e=state.employees.find(x=>x.id===eid);return {e,r:e&&recDe(e).find(x=>x.id===rid)};};
+  b.querySelectorAll('[data-recdel]').forEach(x=>x.onclick=()=>{const {e,r}=acha(x.dataset.recdel);if(!r)return;
+    if(!confirm('Excluir este valor a receber?'+(r.lancadaEm&&!r.recebido?'\n\nEle já foi somado no '+cicloRotuloDaChave(r.lancadaEm).toLowerCase()+': a soma continua lá até você tirar na folha.':'')))return;
+    e.aReceber=recDe(e).filter(y=>y.id!==r.id);persist();renderReceber();renderRecSelo();});
+  b.querySelectorAll('[data-recok]').forEach(x=>x.onclick=()=>{const {r}=acha(x.dataset.recok);if(!r)return;r.recebido=true;r.recebidoEm=toISO(new Date());persist();renderReceber();renderRecSelo();});
+  b.querySelectorAll('[data-recreab]').forEach(x=>x.onclick=()=>{const {r}=acha(x.dataset.recreab);if(!r)return;r.recebido=false;delete r.recebidoEm;delete r.lancadaEm;persist();renderReceber();renderRecSelo();});
+  b.querySelectorAll('[data-recsolta]').forEach(x=>x.onclick=()=>{const {r}=acha(x.dataset.recsolta);if(!r)return;delete r.lancadaEm;persist();renderReceber();renderRecSelo();});
+  renderRecSelo();
+}
+$('#btnRecSalvar')&&($('#btnRecSalvar').onclick=()=>{
+  const empId=$('#recFunc').value,valor=parseValor($('#recValor').value),desc=$('#recDesc').value.trim(),data=$('#recData').value,desde=$('#recDesde').value;
+  if(!empId){toast('Selecione o funcionário','err');return;}
+  if(!(valor>0)){toast('Informe o valor','err');return;}
+  if(!desc){toast('Diga o motivo','err');$('#recDesc').focus();return;}
+  const e=state.employees.find(x=>x.id===empId); if(!e)return;
+  if(!Array.isArray(e.aReceber))e.aReceber=[];
+  e.aReceber.push({id:'rc'+Date.now()+Math.random().toString(36).slice(2,5),desc:desc,valor:valor,data:data||'',desde:desde==='adiantamento'?'adiantamento':'pagamento',recebido:false,criadoEm:new Date().toISOString()});
+  persist();
+  $('#recFunc').value='';$('#recValor').value='';$('#recDesc').value='';$('#recData').value=rmDiaISO();
+  renderReceber();toast('Valor a receber registrado','ok');
+});
+$('#recSearch')&&($('#recSearch').oninput=renderReceber);
+/* =================== FIM VALORES A RECEBER =================== */
+
 
 /* ===================== EXPORT PDF RELATÓRIO ===================== */
 /* Os relatórios saem pelo mecanismo de impressão do próprio navegador: o
@@ -17730,7 +18002,7 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape'){if(fecharSemPerder(
    juntos a cada publicacao, e ha uma prova automatica que falha se um subir
    sem o outro. Assim o numero na tela e o mesmo do arquivo que o aparelho
    guardou, e dizer "estou na v81" passa a significar alguma coisa. */
-const APP_VER='v275';
+const APP_VER='v276';
 (function(){var p=document.getElementById('verPill'); if(p)p.textContent=APP_VER;})();
 
 if('serviceWorker' in navigator){
