@@ -4130,7 +4130,8 @@ if(window.RM_CELULAR) document.body.classList.add('rm-campo');
         <label class="fi" id="salIncPagosBox" style="flex-direction:row;align-items:center;gap:6px;align-self:flex-end;font-size:12.5px;font-weight:700;cursor:pointer" title="Por padrão, quem já está confirmado como PAGO nesta competência fica de fora dos recibos e do relatório — o recibo dele já foi assinado no dia. Marque aqui só para tirar uma segunda via."><input type="checkbox" id="salIncPagos"> Incluir já pagos</label>
         <div class="fi" data-so="adiantamento"><span class="lab">Adiant. %</span><input id="salPct" class="mono" value="50" style="width:62px"></div>
         <button class="btn-act dim" id="btnSalAuto" data-so="adiantamento" style="align-self:flex-end" title="Usa a % para todos; para quem foi admitido no mês, calcula salário/30 × dias até o dia 15">Adiant. = % do salário</button>
-        <button class="btn-act dim" id="btnSalResto" data-so="pagamento" style="align-self:flex-end">Pagto = salário − adiant.</button>
+        <button class="btn-act dim" id="btnSalResto" data-so="pagamento" style="align-self:flex-end" title="Usa o adiantamento da planilha da contabilidade; sem planilha, o que foi pago no adiantamento do mês">Pagto = salário − adiant.</button>
+        <button class="btn-act dim" id="btnSalLimpa" style="align-self:flex-end" title="Zera os valores deste ciclo (não mexe no salário do cadastro nem nos vales, extras e descontos) para lançar de novo">Limpar valores</button>
         <button class="btn-act dim" id="btnSalDet" data-so="pagamento" style="align-self:flex-end" title="Mostra na tabela a base líquida e os almoços; os dois continuam na ficha de qualquer jeito">Ocultar base e almoços</button>
         <button class="btn-act dim" id="btnImportAlmocos" data-so="pagamento" style="align-self:flex-end" title="Puxa o valor 'A pagar' do mês (competência) direto do sistema de Almoços">🍽️ Importar Almoços</button>
         <button class="btn-act dim" id="btnImportXlsx" style="align-self:flex-end">⭳ Importar Excel</button>
@@ -10476,7 +10477,45 @@ $('#btnSalAuto').onclick=()=>{const pct=parseValor($('#salPct').value)||0;if(pct
   if(aposDia15.length)partes.push(aposDia15.length+' admitido(s) ap\u00f3s o dia 15, sem adiantamento ('+nomes(aposDia15)+')');
   const houveFora=semSalario.length||aposDia15.length;
   toast('Adiantamento preenchido'+(partes.length?' \u00b7 '+partes.join(' \u00b7 '):''), houveFora?'err':'ok');};
-$('#btnSalResto').onclick=()=>{empAtivos().forEach(e=>{const s=Number(e.salario)||0,a=Number(e.valAdiantamento)||0;if(s>0){e.base=Math.max(0,Math.round((s-a)*100)/100);e.descRM=0;e.acresc=0;e.banheiro=0;e.almoco=0;}});persist();renderSal();toast('Pagamento = salário − adiantamento','ok');};
+/* PAGTO = SALÁRIO − ADIANTAMENTO. O adiantamento é o da planilha da
+   contabilidade, quando ela foi importada; sem ela, o botão não achava
+   nada (só olhava o valor da planilha) e deixava o pagamento igual ao
+   salário inteiro. Agora cai no que foi PAGO no adiantamento do mesmo mês.
+   Quando vem do pago, ele também entra na linha "(-) Adiantamento" do
+   recibo. Teste recibos-pagto-adiantamento-pago. */
+$('#btnSalResto').onclick=()=>{
+  if(!salCiclo||cicloFechado(salCiclo)){toast('Este pagamento já está fechado','err');return;}
+  const comp=cicloComp(salCiclo);let planilha=0,pago=0,sem=0,semSal=0;
+  empAtivos().forEach(e=>{
+    const s=Number(e.salario)||0; if(!(s>0)){semSal++;return;}
+    let a=Number(e.valAdiantamento)||0;
+    if(a>0)planilha++;
+    else{a=adiantPagoDoMes(e.id,comp);if(a>0){pago++;e.adiantBase=a;e.valAdiantamento=a;}else sem++;}
+    e.base=Math.max(0,Math.round((s-a)*100)/100);e.descRM=0;e.acresc=0;e.banheiro=0;e.almoco=0;
+    e.valPagamento=calcPag(e);
+  });
+  persist();renderSal();
+  const partes=[];
+  if(planilha)partes.push(planilha+' pelo adiantamento da planilha');
+  if(pago)partes.push(pago+' pelo adiantamento já pago');
+  if(sem)partes.push(sem+' sem adiantamento (pagamento = salário inteiro)');
+  if(semSal)partes.push(semSal+' sem salário cadastrado');
+  toast('Pagamento = salário − adiantamento'+(partes.length?' · '+partes.join(' · '):''),(sem||semSal)?'err':'ok');
+};
+/* LIMPAR VALORES do ciclo aberto, para lançar de novo. Não toca no salário do
+   cadastro nem nos "vales, extras e descontos", e a planilha e os almoços
+   podem ser importados outra vez. */
+$('#btnSalLimpa').onclick=()=>{
+  if(!salCiclo||cicloFechado(salCiclo)){toast('Este ciclo já está fechado','err');return;}
+  const ad=salCiclo.tipo==='adiantamento';
+  const campos=ad?['adiantBase','adicional','desconto','valAdiantamento']
+    :['base','descRM','banheiro','acresc','almoco','he','faltas','plano','inss','econ','adicional','desconto','adiantBase','valAdiantamento','valPagamento'];
+  const lista=empAtivos().filter(e=>campos.some(c=>Number(e[c])||0));
+  if(!lista.length){toast('Não há valores para limpar neste ciclo');return;}
+  if(!confirm('Limpar os valores do '+cicloRotulo(salCiclo)+' de '+lista.length+' funcionário(s)?\n\nSalário do cadastro e "vales, extras e descontos" ficam. A planilha e os almoços podem ser importados de novo.'))return;
+  lista.forEach(e=>{campos.forEach(c=>{e[c]=0;});if(ad)e.valAdiantamento=calcAdiant(e);else e.valPagamento=calcPag(e);});
+  persist();renderSal();toast('Valores limpos · '+lista.length+' funcionário(s)','ok');
+};
 
 /* ---------- Importar Almoços (do sistema de Almoços) ---------- */
 /* BUSCA SEM ACENTO. Os campos de busca comparavam letra por letra: "joao"
@@ -17691,7 +17730,7 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape'){if(fecharSemPerder(
    juntos a cada publicacao, e ha uma prova automatica que falha se um subir
    sem o outro. Assim o numero na tela e o mesmo do arquivo que o aparelho
    guardou, e dizer "estou na v81" passa a significar alguma coisa. */
-const APP_VER='v274';
+const APP_VER='v275';
 (function(){var p=document.getElementById('verPill'); if(p)p.textContent=APP_VER;})();
 
 if('serviceWorker' in navigator){
