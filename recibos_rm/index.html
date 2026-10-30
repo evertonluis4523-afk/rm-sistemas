@@ -4250,12 +4250,12 @@ if(window.RM_CELULAR) document.body.classList.add('rm-campo');
       </div>
       <div class="cards">
         <div class="card atv"><div class="k"><span class="dotk g"></span>Assíduos</div><div class="v" id="asAssiduos">0</div><div class="s" id="asAssiduosS">1 prêmio + 1 rancho</div></div>
-        <div class="card afa"><div class="k"><span class="dotk w"></span>Faltaram</div><div class="v" id="asFaltaram">0</div><div class="s">concorrem ao sorteio</div></div>
+        <div class="card afa"><div class="k"><span class="dotk w"></span>Faltaram</div><div class="v" id="asFaltaram">0</div><div class="s" id="asFaltaramS">concorrem ao sorteio</div></div>
         <div class="card"><div class="k"><span class="dotk b"></span>Total prêmios</div><div class="v" id="asTotPremio">R$ 0,00</div></div>
         <div class="card sem"><div class="k"><span class="dotk r"></span>Ranchos</div><div class="v" id="asRanchos">0</div><div class="s">assíduos + 1 sorteado</div></div>
       </div>
       <div class="addzone" style="padding-bottom:0">
-        <div class="section-lab">Rancho extra — sorteio entre quem faltou <span class="ln"></span></div>
+        <div class="section-lab">Rancho extra — sorteio entre quem faltou e quem ainda não tem 30 dias <span class="ln"></span></div>
       </div>
       <div class="sortbox">
         <div class="sortname" id="asSortNome">—</div>
@@ -4266,6 +4266,7 @@ if(window.RM_CELULAR) document.body.classList.add('rm-campo');
         <button class="btn-act dim" id="btnAsTodosAssid">Marcar todos assíduos</button>
         <button class="btn-act dim" id="btnAsTodosFalta">Desmarcar todos</button>
       </div>
+      <div id="asRegra"></div>
       <div id="asFonte"></div>
       <div class="tbl-wrap">
         <table class="list cartao-mob as-tab">
@@ -11897,7 +11898,52 @@ function assidAbertos(r){return assidPessoas(r).filter(e=>assidEstado(r,e.id)===
    · afastado: conta se o afastamento começou depois do fim do mês;
    · em teste e excluído: não contam, como antes. */
 function assidFimMes(comp){const p=String(comp||'').split('-').map(Number);return toISO(new Date(p[0],p[1],0));}
-function assidElegivel(e,comp,rec){
+/* REGRA: PELO MENOS 30 DIAS DE CASA. Conta do dia da admissão (ele é o dia 1)
+   até o fim do mês trabalhado: admitido no dia 2 de maio completa 30 em 31/05
+   e já concorre ao prêmio de maio; no dia 3, só ao de junho. Sem data de
+   admissão não dá para conferir -- fica dentro e a aba avisa. O que já foi
+   decidido naquele mês (assíduo ou faltou) não muda por causa da regra, para
+   não mexer em mês fechado. Teste recibos-assiduidade-30-dias. */
+const ASSID_MIN_DIAS=30;
+function assidDiasDeCasa(e,comp){
+  const adm=(e&&(e.dtInicio||e.dtCarteira))||''; if(!adm)return null;
+  const d=emprDifDias(assidFimMes(comp),adm); return d===null?null:d+1;
+}
+function assidCompletaEm(e){
+  const adm=(e&&(e.dtInicio||e.dtCarteira))||''; if(!adm)return '';
+  const d=new Date(adm+'T12:00:00'); if(isNaN(d.getTime()))return '';
+  d.setDate(d.getDate()+ASSID_MIN_DIAS-1); return toISO(d);
+}
+function assidSemTempo(e,comp,rec){
+  if(rec&&((rec.assid&&rec.assid[e.id])||(rec.faltou&&rec.faltou[e.id])))return false;
+  const d=assidDiasDeCasa(e,comp); return d!==null&&d<ASSID_MIN_DIAS;
+}
+function assidElegivel(e,comp,rec){return assidElegivelBase(e,comp,rec)&&!assidSemTempo(e,comp,rec);}
+/* quem estaria na lista do mês se não fosse a regra dos 30 dias, e os que
+   estão sem data de admissão (a regra não consegue conferir) */
+function assidSemTempoLista(rec,comp){
+  return sortByNome(state.employees.filter(e=>assidElegivelBase(e,comp,rec)&&assidSemTempo(e,comp,rec)));
+}
+/* QUEM CONCORRE AO SORTEIO DO RANCHO EXTRA: quem faltou E quem ainda não tem
+   os 30 dias de casa -- a regra é do prêmio, no sorteio entra qualquer um. */
+function assidPoolSorteio(rec){
+  const comp=asKey();
+  return sortByNome(assidPessoas(rec).filter(e=>rec.faltou[e.id]).concat(assidSemTempoLista(rec,comp)));
+}
+function assidSemAdmissao(rec,comp){
+  return sortByNome(state.employees.filter(e=>assidElegivelBase(e,comp,rec)&&assidDiasDeCasa(e,comp)===null));
+}
+/* o aviso que vai junto da importação do cartão RHID: de quem veio no
+   arquivo, quem não completa 30 dias no mês importado */
+function assidAvisoRhid(comp,empIds){
+  const ids={};(empIds||[]).forEach(i=>{if(i)ids[i]=true;});
+  const rec=(state.assiduidade&&state.assiduidade[comp])||null;
+  const lista=assidSemTempoLista(rec,comp).filter(e=>ids[e.id]);
+  if(!lista.length)return '';
+  const nomes=lista.slice(0,3).map(e=>titlePt(e.nome).split(' ')[0]).join(', ')+(lista.length>3?' e mais '+(lista.length-3):'');
+  return lista.length+(lista.length===1?' funcionário com menos de ':' funcionários com menos de ')+ASSID_MIN_DIAS+' dias de casa ('+nomes+') fica'+(lista.length===1?'':'m')+' fora do prêmio de assiduidade';
+}
+function assidElegivelBase(e,comp,rec){
   if(!e||!e.id||e.status==='excluido'||e.status==='teste')return false;
   const fim=assidFimMes(comp),adm=e.dtInicio||e.dtCarteira||'';
   if(adm&&adm>fim)return false;
@@ -11982,6 +12028,17 @@ function renderAssid(){
   const fonte=$('#asFonte');
   if(fonte){fonte.innerHTML=assidFonteHTML(comp,nomeMes);
     const ir=$('#asIrPF');if(ir)ir.onclick=()=>{const pm=$('#pfMes');if(pm)pm.value=comp;const bt=document.querySelector('.vtab[data-v="pf"]');if(bt)bt.click();};}
+  const regra=$('#asRegra');
+  if(regra){
+    const sem=assidSemTempoLista(rec,comp),semAdm=assidSemAdmissao(rec,comp);
+    let h='';
+    if(sem.length)h+='<div class="as-fonte aviso"><span><b>Regra: pelo menos '+ASSID_MIN_DIAS+' dias de casa</b>, contando do dia da admissão até o fim de '+esc(nomeMes)
+      +'. Ficam de fora do prêmio deste mês, mas <b>concorrem ao sorteio do rancho</b>: '
+      +sem.map(e=>'<b>'+esc(titlePt(e.nome))+'</b> (admitido em '+fmtDate(e.dtInicio||e.dtCarteira)+' · '+assidDias(assidDiasDeCasa(e,comp))+' · completa '+ASSID_MIN_DIAS+' em '+fmtDate(assidCompletaEm(e))+')').join('; ')+'.</span></div>';
+    if(semAdm.length)h+='<div class="as-fonte aviso"><span>Sem data de admissão no cadastro, a regra dos '+ASSID_MIN_DIAS+' dias não consegue conferir: '
+      +semAdm.map(e=>'<b>'+esc(titlePt(e.nome))+'</b>').join(', ')+'.</span></div>';
+    regra.innerHTML=h;
+  }
   if(document.activeElement!==$('#asPremio'))$('#asPremio').value=rec.premio?fmtBRL(rec.premio):'170,00';
   envTextosTela();
   const ativos=assidPessoas(rec);
@@ -11993,11 +12050,13 @@ function renderAssid(){
   $('#asAssiduos').textContent=assiduos.length;
   const asS=$('#asAssiduosS');if(asS){asS.textContent=abertos.length?abertos.length+' em aberto':'1 prêmio + 1 rancho';asS.classList.toggle('as-ab',!!abertos.length);}
   $('#btnAsTodosAssid').textContent=abertos.length?'Marcar os '+abertos.length+' em aberto como assíduos':'Marcar todos assíduos';
+  const poolSort=assidPoolSorteio(rec);
   $('#asFaltaram').textContent=faltaram.length;
+  const fS=$('#asFaltaramS'); if(fS)fS.textContent=poolSort.length>faltaram.length?'concorrem ao sorteio (+'+(poolSort.length-faltaram.length)+' sem '+ASSID_MIN_DIAS+' dias)':'concorrem ao sorteio';
   $('#asTotPremio').textContent='R$ '+fmtBRL(assiduos.length*premio);
-  $('#asRanchos').textContent=assiduos.length+(faltaram.length?1:0);
+  $('#asRanchos').textContent=assiduos.length+(poolSort.length?1:0);
   const sn=$('#asSortNome');
-  if(rec.sortId&&!rec.faltou[rec.sortId]){rec.sortId='';rec.sortNome='';}
+  if(rec.sortId&&!poolSort.some(e=>e.id===rec.sortId)){rec.sortId='';rec.sortNome='';}
   if(rec.sortNome){sn.textContent=titlePt(rec.sortNome);sn.classList.add('winner');}else{sn.textContent='—';sn.classList.remove('winner','spin');}
   const b=$('#assidBody');b.innerHTML='';
   if(!ativos.length){b.innerHTML='<tr><td colspan="4"><div class="empty"><b>Nenhum funcionário ativo</b>Cadastre ou reative funcionários.</div></td></tr>';return;}
@@ -12030,7 +12089,7 @@ $('#btnSortear').onclick=()=>{
   const rec=getAssid();
   const ab=assidAbertos(rec);
   if(ab.length){toast('Ainda há '+ab.length+' em aberto: decida todos antes do sorteio','err');return;}
-  const pool=assidPessoas(rec).filter(e=>rec.faltou[e.id]);
+  const pool=assidPoolSorteio(rec);
   if(!pool.length){toast('Ninguem faltou neste mes - nao ha sorteio','err');return;}
   const sn=$('#asSortNome');sn.classList.remove('winner');
   const applyWinner=w=>{rec.sortId=w.id;rec.sortNome=w.nome;persist();sn.classList.remove('spin');sn.textContent=titlePt(w.nome);sn.classList.add('winner');toast('\ud83c\udf89 '+titlePt(w.nome)+' ganhou o rancho extra!','ok');$('#btnSortear').disabled=false;};
@@ -12053,7 +12112,8 @@ function assidLista(){
   const premio=Number(rec.premio)||0;
   if(!ativos.length){toast('Nenhum funcionário ativo neste mês','err');return null;}
   if(abertos.length){toast('Ainda há '+abertos.length+' em aberto: decida todos antes de gerar','err');return null;}
-  if(faltaram.length&&!rec.sortNome){toast('Sorteie o rancho extra antes de gerar o arquivo','err');return null;}
+  const poolSort=assidPoolSorteio(rec);
+  if(poolSort.length&&!rec.sortNome){toast('Sorteie o rancho extra antes de gerar o arquivo','err');return null;}
 
   const cfg=state.cfg;
   const RED='#D53309', INK='#1d2127', GRAY='#585758';
@@ -17563,7 +17623,8 @@ async function pfRhidLerArquivo(file){
   if(!comp)comp=pfCompAtual();
   state.rhid[comp]={arquivo:file.name,importadoEm:new Date().toISOString(),casados,conferir:semColuna,itens};persist();
   if($('#pfMes'))$('#pfMes').value=comp;renderPF();
-  toast(itens.length+' cartões RHID importados para '+comp+(semColuna?' · '+semColuna+' a conferir':''),semColuna?'err':'ok');
+  const avisoAs=assidAvisoRhid(comp,itens.map(x=>x.empId));
+  toast(itens.length+' cartões RHID importados para '+comp+(semColuna?' · '+semColuna+' a conferir':'')+(avisoAs?' · '+avisoAs:''),(semColuna||avisoAs)?'err':'ok');
 }
 function pfImportarRhid(file){if(!file)return;pfLoadPdfJS(()=>pfRhidLerArquivo(file).catch(e=>{console.error(e);toast('Não consegui ler este cartão-ponto do RHID','err');}));}
 function pfAdiantamentoDoMes(comp){
@@ -18056,7 +18117,7 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape'){if(fecharSemPerder(
    juntos a cada publicacao, e ha uma prova automatica que falha se um subir
    sem o outro. Assim o numero na tela e o mesmo do arquivo que o aparelho
    guardou, e dizer "estou na v81" passa a significar alguma coisa. */
-const APP_VER='v277';
+const APP_VER='v278';
 (function(){var p=document.getElementById('verPill'); if(p)p.textContent=APP_VER;})();
 
 if('serviceWorker' in navigator){
