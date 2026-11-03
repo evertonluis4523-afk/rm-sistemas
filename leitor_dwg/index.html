@@ -28656,7 +28656,7 @@ render();
       +'.tmf-ok{display:inline-block;width:3.2mm;height:3.2mm;border:.25mm solid #141414;border-radius:.6mm}'
       +'.tmf-pe{display:flex;justify-content:space-between;gap:6mm;font-size:7.5pt;color:#777;border-top:.2mm solid #ccc;padding-top:1.5mm}'
       +'#printArea .tmf-sep td{font-size:10pt;padding:1.2mm 1mm}.tmf-cod span{white-space:nowrap}'
-      +'.tmf-corpo.longa{grid-template-columns:1fr;grid-template-rows:auto 1fr}.tmf-corpo.longa svg{max-height:80mm}.tmf-corpo.longa .tmf-lst{columns:4;column-gap:6mm}.tmf-l{display:grid;grid-template-columns:11mm 12mm 1fr 4mm;gap:1.5mm;align-items:baseline;font-size:8.5pt;padding:.4mm 0;border-bottom:.15mm solid #ddd;break-inside:avoid}.tmf-l b{text-align:right;font-size:9.5pt}.tmf-l .tmf-ob{font-size:7pt;color:#555}</style>';
+      +'.tmf-corpo.longa{grid-template-columns:1fr;grid-template-rows:auto 1fr}.tmf-corpo.longa svg{max-height:80mm}.tmf-corpo.longa .tmf-lst{columns:4;column-gap:6mm}.tmf-l{display:grid;grid-template-columns:11mm 12mm 1fr 4mm;gap:1.5mm;align-items:baseline;font-size:8.5pt;padding:.4mm 0;border-bottom:.15mm solid #ddd;break-inside:avoid}.tmf-l b{text-align:right;font-size:9.5pt}.tmf-l .tmf-ob{font-size:7pt;color:#555}.tmf-corpo.larga{grid-template-columns:1fr 100mm}.tmf-lst.dupla{columns:2;column-gap:4mm}.tmf-lst.mini .tmf-l{font-size:7.5pt;padding:.2mm 0}.tmf-lst.mini .tmf-l b{font-size:8pt}.tmf-lst.mini .tmf-ok{width:2.8mm;height:2.8mm}</style>';
     const topo=(t,l1,l2)=>'<div class="tmf-top"><div class="tmf-tx"><div class="t">'+t+'</div>'+l1+'<div class="tmf-tx2">'+l2+'</div></div>'
       +'<div class="tmf-logo">'+logo+escapeHtml(obra)+' · '+dataBr+'</div></div>';
     const vezes=e>1?' · <b>'+e+'</b> estruturas iguais (monte cada face '+e+' vezes)':'';
@@ -28688,7 +28688,9 @@ render();
       (bloco.poligono||[]).forEach(p=>{xs.push(num(p.x));ys.push(num(p.y));});
       if(!xs.length)return '';
       const xMin=Math.min(...xs),xMax=Math.max(...xs),yMin=Math.min(...ys),yMax=Math.max(...ys);
-      const longa=faixas.length>24||(xMax-xMin)/Math.max(1,yMax-yMin)>2.2;
+      const nF=faixas.length,longa=nF>40||(xMax-xMin)/Math.max(1,yMax-yMin)>2.2;
+      const rowH=nF>30?5:6;let nCol=4;while(nCol<8&&Math.ceil(nF/nCol)*rowH>55)nCol++;
+      const svgMax=Math.max(30,Math.min(80,118-Math.ceil(nF/nCol)*rowH-2));
       const W=1000,m=34;
       const sX=(W-2*m)/Math.max(1,xMax-xMin),sY=(longa?200:600)/Math.max(1,yMax-yMin),s=Math.min(sX,sY);
       const H=Math.round((yMax-yMin)*s+2*m+30);
@@ -28730,7 +28732,7 @@ render();
         const rAng=(ang2>90||ang2<-90)?ang2+180:ang2;
         g+='<text x="'+cx+'" y="'+cy+'" font-size="'+r1(fs)+'" font-weight="700" fill="#141414" text-anchor="middle" dominant-baseline="middle" transform="rotate('+r1(rAng)+' '+cx+' '+cy+')">'+cod+'</text>';
       });
-      const svg='<svg viewBox="0 0 '+W+' '+H+'">'+g+'</svg>';
+      const svg='<svg viewBox="0 0 '+W+' '+H+'"'+(longa?' style="max-height:'+r1(svgMax)+'mm"':'')+'>'+g+'</svg>';
       const curto2=f=>String.fromCharCode(65+(f.setor||0))+'-'+String(f.ordem).padStart(2,'0');
       const obs=f=>{const o=[];
         if(f.diagonal)o.push('diagonal');
@@ -28738,13 +28740,13 @@ render();
         if(f.foraCumeeira)o.push('fora da cumeeira');
         return o.join(' · ');};
       const linha=f=>'<tr><td>'+curto2(f)+'</td><td class="r"><b>'+n0(f.pedido)+'</b></td><td class="tmf-ob">'+obs(f)+'</td><td><span class="tmf-ok"></span></td></tr>';
-      const lista=longa
+      const lista=(longa||nF>12)
         ?faixas.map(f=>'<div class="tmf-l"><span>'+curto2(f)+'</span><b>'+n0(f.pedido)+'</b><span class="tmf-ob">'+obs(f)+'</span><span class="tmf-ok"></span></div>').join('')
         :'<table><thead><tr><th>Nº</th><th class="r">Compr.</th><th>Obs.</th><th></th></tr></thead><tbody>'+faixas.map(linha).join('')+'</tbody></table>';
       return '<article class="tmf">'+topo('FACE · '+escapeHtml(String(bloco.nome).toUpperCase()),
           '<b>'+faixas.length+'</b> faixas · <span>montagem</span> <b>'+(sentido==='rtl'?'B → A':'A → B')+'</b>'+vezes,
           'Código = posição na face. Suba as telhas na ordem indicada pela montagem.')
-        +'<div class="tmf-corpo'+(longa?' longa':'')+'"><div><h5>Vista planificada</h5>'+svg+'</div><div style="min-height:0;overflow:hidden"><h5>Telhas desta face</h5><div class="tmf-lst">'+lista+'</div></div></div>'
+        +'<div class="tmf-corpo'+(longa?' longa':(nF>12?' larga':''))+'"><div><h5>Vista planificada</h5>'+svg+'</div><div style="min-height:0;overflow:hidden"><h5>Telhas desta face</h5><div class="tmf-lst'+(longa?'':(nF>12?' dupla':''))+(nF>30?' mini':'')+'"'+(longa?' style="columns:'+nCol+'"':'')+'>'+lista+'</div></div></div>'
         +'<div class="tmf-pe"><span>Medidas em mm. Confira o código escrito na telha antes de subir.</span><span>'+escapeHtml(rot)+' · útil '+n0(util)+'</span></div></article>';
     }).filter(Boolean);
     if(!folhas.length)return '';
@@ -29472,7 +29474,7 @@ if('serviceWorker' in navigator && location.protocol.startsWith('http')){
 }
 </script>
 <script>/* versão publicada (PADRAO_RM.md §3): sobe a cada publicação, junto com o CACHE do sw.js */
-const APP_VER='v245';
+const APP_VER='v246';
 </script>
 <script id="rmVersaoBloco">
 /* ===== SELO DE VERSÃO — igual em todos os sistemas (PADRAO_RM.md §3) =====

@@ -17412,9 +17412,11 @@ function pfRhidStatus(){
   const n=$('#pfRhidStatus');if(!n)return;const r=pfRhidMes(pfCompAtual());
   const q=r&&Array.isArray(r.itens)?r.itens.length:0;
   if(!q){n.textContent='Nenhum cartão importado nesta competência.';return;}
-  n.textContent=q+(q===1?' cartão importado':' cartões importados')+' · '+(r.casados||0)
+  n.innerHTML=esc(q+(q===1?' cartão importado':' cartões importados')+' · '+(r.casados||0)
     +' ligado'+(r.casados===1?'':'s')+' ao cadastro'
-    +(r.conferir?' · '+r.conferir+' a conferir':'')+' · '+(r.arquivo||'RHID');
+    +(r.conferir?' · '+r.conferir+' a conferir':'')+' · '+(r.arquivo||'RHID'))
+    +' <button type="button" class="btn-act dim" id="pfRhidExcluir" style="margin-left:8px;padding:2px 10px">Excluir importação</button>';
+  $('#pfRhidExcluir').onclick=()=>pfExcluirImportacao('rhid');
 }
 /* ===================== FECHAMENTO DA CONTABILIDADE =====================
    O pacote sai uma vez por mês, no último dia, e são dois anexos: o PDF do
@@ -18317,12 +18319,24 @@ function unimedAvisoDesl(r){
     :r.aviso==='mes'?'Desligou em '+d+': vale este mês, lembre de tirar da Unimed para o mês seguinte.'
     :'Consta como desligado e ainda está na lista da Unimed: confira.';
 }
+/* Importou no mês errado? Apaga só o que aquela importação gravou: os
+   cartões do RHID ou o arquivo da Unimed da competência aberta. */
+function pfExcluirImportacao(tipo){
+  const comp=pfCompAtual(),ramo=tipo==='rhid'?'rhid':'unimed',reg=state[ramo]&&state[ramo][comp];if(!reg)return;
+  const pp=comp.split('-'),mes=MESES[Number(pp[1])-1]+' de '+pp[0],nome=tipo==='rhid'?'o cartão-ponto do RHID':'o arquivo da Unimed';
+  const enviado=pfContabilMes(comp)?'\n\nAtenção: este mês já está marcado como enviado à contabilidade.':'';
+  if(!confirm('Excluir '+nome+' importado em '+mes+' ('+(reg.arquivo||'arquivo')+')?'+enviado+'\n\nDepois é só importar de novo no mês certo.'))return;
+  delete state[ramo][comp];persist();renderPF();
+  toast((tipo==='rhid'?'Cartão RHID':'Arquivo da Unimed')+' de '+mes+' excluído','ok');
+}
 function pfUnimedRender(){
   const box=$('#pfUnimedCorpo');if(!box)return;const comp=pfCompAtual(),u=pfUnimedMes(comp),st=$('#pfUnimedStatus');
   const ta=$('#pfUnimedSocios');if(ta&&document.activeElement!==ta)ta.value=((state.cfg&&state.cfg.unimedSocios)||[]).join('\n');
   if(!u){st.textContent='Nenhum arquivo da Unimed importado nesta competência.';box.innerHTML='';return;}
   const r=pfUnimedCalc(comp);
-  st.textContent=u.linhas.length+' beneficiários · '+(u.arquivo||'Unimed')+' · importado em '+fmtDate(String(u.importadoEm||'').slice(0,10));
+  st.innerHTML=esc(u.linhas.length+' beneficiários · '+(u.arquivo||'Unimed')+' · importado em '+fmtDate(String(u.importadoEm||'').slice(0,10)))
+    +' <button type="button" class="btn-act dim" id="pfUnimedExcluir" style="margin-left:8px;padding:2px 10px">Excluir importação</button>';
+  $('#pfUnimedExcluir').onclick=()=>pfExcluirImportacao('unimed');
   const dep=l=>l.length?l.map(d=>esc(titlePt(d.nome))+' ('+esc(unimedGrau(d.grau))+') R$ '+fmtBRL(d.mens)).join(' · '):'—';
   let h='';
   if(r.desligados.length)h+='<div class="alerta"><b>Desligados na lista da Unimed</b><br>'+r.desligados.map(x=>esc(titlePt(x.nome))+': '+esc(unimedAvisoDesl(x))).join('<br>')+'</div>';
@@ -18388,7 +18402,7 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape'){if(fecharSemPerder(
    juntos a cada publicacao, e ha uma prova automatica que falha se um subir
    sem o outro. Assim o numero na tela e o mesmo do arquivo que o aparelho
    guardou, e dizer "estou na v81" passa a significar alguma coisa. */
-const APP_VER='v283';
+const APP_VER='v284';
 (function(){var p=document.getElementById('verPill'); if(p)p.textContent=APP_VER;})();
 
 if('serviceWorker' in navigator){
