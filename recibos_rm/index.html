@@ -2926,6 +2926,16 @@ tr.sal-japago>td.conf,tr.sal-japago>td.chk{opacity:1}
 .pf-fecha-cab{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
 .pf-fecha-cab b{font-size:14px;font-weight:505}
 .pf-rel-pend{font-size:12px;color:var(--muted);font-weight:600}.pf-rel-pend.tem{color:#b8650f}
+.rhid-conf-cards{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+.rhid-conf-cards .rc-card{flex:1;min-width:110px;padding:10px 14px;border-radius:8px;text-align:center;font-size:12.5px;font-weight:700}
+.rhid-conf-cards .rc-card .rc-v{font-size:22px;font-weight:800;margin-bottom:2px}
+.rc-card.rc-ok{background:var(--rm-ativo-suave,#e4f4ea);color:var(--rm-ativo,#176334)}
+.rc-card.rc-warn{background:var(--rm-aviso-suave,#fff4d9);color:var(--rm-aviso,#8a5900)}
+.rc-card.rc-err{background:var(--rm-perigo-suave,#fdece5);color:var(--rm-perigo,#8a331c)}
+.rhid-conf-detalhe{margin-top:12px;padding:10px 14px;border-radius:8px;background:var(--rm-aviso-suave,#fff4d9);font-size:12.5px;display:none}
+.rhid-conf-detalhe.vis{display:block}
+td.rc-hl-err{color:var(--rm-perigo,#ad321d);font-weight:800}
+td.rc-hl-warn{color:var(--rm-aviso,#8a5900);font-weight:700}
 .pf-fecha-selo{font-size:12px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;
   padding:3px 9px;border-radius:999px;background:#eef0f2;color:#5c646d}
 .pf-fecha-selo.ok{background:#e4f4ea;color:#176334}
@@ -5091,6 +5101,26 @@ if(window.RM_CELULAR) document.body.classList.add('rm-campo');
     <button class="btn-act dim" data-close>Cancelar</button>
     <button class="btn-act" id="btnRecConfPular">Gerar sem adicionar</button>
     <button class="btn-act save" id="btnRecConfOk">Adicionar e gerar →</button>
+  </div>
+</div></div>
+
+<!-- MODAL CONFERÊNCIA RHID -->
+<div class="overlay" id="rhidConfModal"><div class="modal" style="max-width:960px">
+  <div class="mhead"><h2 id="rhidConfTitle">Conferência do cartão RHID</h2><button class="x" data-close>✕</button></div>
+  <div class="mbody">
+    <p class="rel-note" id="rhidConfIntro"></p>
+    <div class="rhid-conf-cards" id="rhidConfCards"></div>
+    <div class="tbl-wrap" style="max-height:44vh;overflow:auto">
+      <table class="list" style="font-size:12.5px">
+        <thead><tr><th>Funcionário</th><th class="c">Faltas</th><th class="c">Atestados</th><th class="c">Afastamentos</th><th class="c">Férias</th><th class="r">H. extra</th><th class="c">Conferir</th></tr></thead>
+        <tbody id="rhidConfBody"></tbody>
+      </table>
+    </div>
+    <div id="rhidConfDetalhe" class="rhid-conf-detalhe"></div>
+  </div>
+  <div class="mfoot">
+    <button class="btn-act dim" data-close>Cancelar importação</button>
+    <button class="btn-act save" id="btnRhidConfOk">Confirmar e importar</button>
   </div>
 </div></div>
 
@@ -17199,7 +17229,7 @@ function pfResumo(e,comp){
     /* O repouso só é perdido quando existe DIA de falta completo. Atraso ou
        saída antecipada entram nas horas de falta, mas não geram DSR. */
     if(c.s==='falta'&&c.prev>0&&c.falta>=c.prev){const k=pfSemanaChave(d);faltaSemana[k]=true;}
-    if(c.s==='pendente')z.pend++;if(c.trab>0)z.trabalhados++;});
+    if(c.s==='pendente'&&c.prev>0)z.pend++;if(c.trab>0)z.trabalhados++;});
   /* Duas faltas na mesma semana continuam tirando um repouso só. */
   Object.keys(faltaSemana).forEach(()=>{z.repouso+=PF_REPOUSO_MIN;});
   return z;
@@ -17621,10 +17651,60 @@ async function pfRhidLePdf(file){
 async function pfRhidLerArquivo(file){
   let {comp,itens,casados,semColuna}=await pfRhidLePdf(file);
   if(!comp)comp=pfCompAtual();
-  state.rhid[comp]={arquivo:file.name,importadoEm:new Date().toISOString(),casados,conferir:semColuna,itens};persist();
-  if($('#pfMes'))$('#pfMes').value=comp;renderPF();
-  const avisoAs=assidAvisoRhid(comp,itens.map(x=>x.empId));
-  toast(itens.length+' cartões RHID importados para '+comp+(semColuna?' · '+semColuna+' a conferir':'')+(avisoAs?' · '+avisoAs:''),(semColuna||avisoAs)?'err':'ok');
+  pfRhidMostrarConferencia(file,comp,itens,casados,semColuna);
+}
+function pfRhidMostrarConferencia(file,comp,itens,casados,semColuna){
+  const totF=itens.reduce((s,i)=>s+i.diasFalta,0),totA=itens.reduce((s,i)=>s+i.diasAtestado,0);
+  const totAf=itens.reduce((s,i)=>s+i.diasAfastado,0),totFe=itens.reduce((s,i)=>s+i.diasFerias,0);
+  const totEx=itens.reduce((s,i)=>s+(i.extra0Min||0)+(i.extra50Min||0)+(i.extra100Min||0)+(i.extra0NotMin||0)+(i.extra50NotMin||0)+(i.extra100NotMin||0),0);
+  const comFalta=itens.filter(i=>i.diasFalta>0),comAtest=itens.filter(i=>i.diasAtestado>0);
+  const comAfast=itens.filter(i=>i.diasAfastado>0),aConferir=itens.filter(i=>i.conferir);
+  const pp=comp.split('-'),nomeMes=MESES[Number(pp[1])-1]+' '+pp[0];
+  $('#rhidConfTitle').textContent='Conferência do cartão RHID — '+nomeMes;
+  $('#rhidConfIntro').textContent=itens.length+' cartões lidos do arquivo '+file.name
+    +(casados?' · '+casados+' casados com o cadastro':'')
+    +(semColuna?' · '+semColuna+' a conferir (colunas divergentes)':'')
+    +'. Verifique o resumo antes de confirmar.';
+  const cards=$('#rhidConfCards');
+  cards.innerHTML=
+    '<div class="rc-card'+(totF?' rc-err':' rc-ok')+'"><div class="rc-v">'+totF+'</div>dia'+(totF===1?'':'s')+' de falta</div>'
+    +'<div class="rc-card'+(totA?' rc-warn':' rc-ok')+'"><div class="rc-v">'+totA+'</div>dia'+(totA===1?'':'s')+' de atestado</div>'
+    +'<div class="rc-card'+(totAf?' rc-warn':' rc-ok')+'"><div class="rc-v">'+totAf+'</div>dia'+(totAf===1?'':'s')+' afastado'+(totAf===1?'':'s')+'</div>'
+    +'<div class="rc-card'+(totFe?' rc-warn':' rc-ok')+'"><div class="rc-v">'+totFe+'</div>dia'+(totFe===1?'':'s')+' de férias</div>'
+    +'<div class="rc-card rc-ok"><div class="rc-v">'+pfFmtMin(totEx)+'</div>hora extra total</div>';
+  const rows=itens.map(it=>{
+    const extraMin=(it.extra0Min||0)+(it.extra50Min||0)+(it.extra100Min||0)+(it.extra0NotMin||0)+(it.extra50NotMin||0)+(it.extra100NotMin||0);
+    const nome=it.empId?titlePt(it.nome):esc(it.nome)+' <small style="color:var(--rm-perigo)">(não casou)</small>';
+    return '<tr'+(it.diasFalta||it.conferir?' style="font-weight:700"':'')+'>'+
+      '<td>'+nome+'</td>'+
+      '<td class="c'+(it.diasFalta?' rc-hl-err':'')+'">'+it.diasFalta+'</td>'+
+      '<td class="c'+(it.diasAtestado?' rc-hl-warn':'')+'">'+it.diasAtestado+'</td>'+
+      '<td class="c">'+it.diasAfastado+(it.motivoAfast?' <small>'+esc(it.motivoAfast)+'</small>':'')+'</td>'+
+      '<td class="c">'+it.diasFerias+'</td>'+
+      '<td class="r">'+pfFmtMin(extraMin)+'</td>'+
+      '<td class="c">'+(it.conferir?'⚠':'✓')+'</td></tr>';
+  });
+  $('#rhidConfBody').innerHTML=rows.join('');
+  const det=$('#rhidConfDetalhe');
+  if(comFalta.length||aConferir.length){
+    let html='';
+    if(comFalta.length) html+='<b>Faltas:</b> '+comFalta.map(i=>titlePt(i.nome)+' ('+i.diasFalta+' dia'+(i.diasFalta===1?'':'s')+': '+i.datasFalta.map(x=>x.slice(8,10)+'/'+x.slice(5,7)).join(', ')+')').join(' · ')+'. ';
+    if(comAtest.length) html+='<b>Atestados:</b> '+comAtest.map(i=>titlePt(i.nome)+' ('+i.diasAtestado+' dia'+(i.diasAtestado===1?'':'s')+')').join(' · ')+'. ';
+    if(comAfast.length) html+='<b>Afastamentos:</b> '+comAfast.map(i=>titlePt(i.nome)+' ('+i.diasAfastado+' dia'+(i.diasAfastado===1?'':'s')+(i.motivoAfast?', '+i.motivoAfast:'')+')').join(' · ')+'. ';
+    if(aConferir.length) html+='<b>Conferir colunas:</b> '+aConferir.map(i=>titlePt(i.nome)).join(', ')+'.';
+    det.innerHTML=html;det.classList.add('vis');
+  } else {det.innerHTML='';det.classList.remove('vis');}
+  _rhidConfPendente={file,comp,itens,casados,semColuna};
+  $('#rhidConfModal').classList.add('open');
+}
+var _rhidConfPendente=null;
+function pfRhidConfirmar(){
+  const p=_rhidConfPendente;if(!p)return;_rhidConfPendente=null;
+  state.rhid[p.comp]={arquivo:p.file.name,importadoEm:new Date().toISOString(),casados:p.casados,conferir:p.semColuna,itens:p.itens};persist();
+  if($('#pfMes'))$('#pfMes').value=p.comp;renderPF();
+  $('#rhidConfModal').classList.remove('open');
+  const avisoAs=assidAvisoRhid(p.comp,p.itens.map(x=>x.empId));
+  toast(p.itens.length+' cartões RHID importados para '+p.comp+(p.semColuna?' · '+p.semColuna+' a conferir':'')+(avisoAs?' · '+avisoAs:''),(p.semColuna||avisoAs)?'err':'ok');
 }
 function pfImportarRhid(file){if(!file)return;pfLoadPdfJS(()=>pfRhidLerArquivo(file).catch(e=>{console.error(e);toast('Não consegui ler este cartão-ponto do RHID','err');}));}
 function pfAdiantamentoDoMes(comp){
@@ -18080,6 +18160,7 @@ function pfRelSelecionados(){return pfRelListaBase().filter(e=>PF_REL_SEL[e.id])
   $('#pfImportRhid').onclick=()=>$('#pfRhidFile').click();
   $('#pfMarcarEnviado').onclick=pfMarcarEnviado;$('#pfDesmarcarEnviado').onclick=pfDesmarcarEnviado;
   $('#pfRhidFile').onchange=ev=>{const f=ev.target.files[0];if(f)pfImportarRhid(f);ev.target.value='';};
+  $('#btnRhidConfOk').onclick=pfRhidConfirmar;
   $('#pfRelTodos').onclick=()=>{pfRelListaBase().forEach(e=>PF_REL_SEL[e.id]=true);pfRelRender();};
   $('#pfRelNenhum').onclick=()=>{pfRelListaBase().forEach(e=>PF_REL_SEL[e.id]=false);pfRelRender();};
   $('#pfRelGerar').onclick=()=>{
@@ -18117,7 +18198,7 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape'){if(fecharSemPerder(
    juntos a cada publicacao, e ha uma prova automatica que falha se um subir
    sem o outro. Assim o numero na tela e o mesmo do arquivo que o aparelho
    guardou, e dizer "estou na v81" passa a significar alguma coisa. */
-const APP_VER='v278';
+const APP_VER='v279';
 (function(){var p=document.getElementById('verPill'); if(p)p.textContent=APP_VER;})();
 
 if('serviceWorker' in navigator){
