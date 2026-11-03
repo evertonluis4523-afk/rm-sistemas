@@ -2936,6 +2936,7 @@ tr.sal-japago>td.conf,tr.sal-japago>td.chk{opacity:1}
 .rhid-conf-detalhe.vis{display:block}
 td.rc-hl-err{color:var(--rm-perigo,#ad321d);font-weight:800}
 td.rc-hl-warn{color:var(--rm-aviso,#8a5900);font-weight:700}
+td.rc-hl-ok{color:var(--rm-ativo,#176334)}
 .pf-fecha-selo{font-size:12px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;
   padding:3px 9px;border-radius:999px;background:#eef0f2;color:#5c646d}
 .pf-fecha-selo.ok{background:#e4f4ea;color:#176334}
@@ -17675,8 +17676,9 @@ function pfRhidMostrarConferencia(file,comp,itens,casados,semColuna){
   const rows=itens.map(it=>{
     const extraMin=(it.extra0Min||0)+(it.extra50Min||0)+(it.extra100Min||0)+(it.extra0NotMin||0)+(it.extra50NotMin||0)+(it.extra100NotMin||0);
     const nome=it.empId?titlePt(it.nome):esc(it.nome)+' <small style="color:var(--rm-perigo)">(não casou)</small>';
+    const ncls=it.diasFalta?'rc-hl-err':((it.diasAtestado||it.diasAfastado||it.conferir)?'rc-hl-warn':'rc-hl-ok');
     return '<tr'+(it.diasFalta||it.conferir?' style="font-weight:700"':'')+'>'+
-      '<td>'+nome+'</td>'+
+      '<td class="'+ncls+'">'+nome+'</td>'+
       '<td class="c'+(it.diasFalta?' rc-hl-err':'')+'">'+it.diasFalta+'</td>'+
       '<td class="c'+(it.diasAtestado?' rc-hl-warn':'')+'">'+it.diasAtestado+'</td>'+
       '<td class="c">'+it.diasAfastado+(it.motivoAfast?' <small>'+esc(it.motivoAfast)+'</small>':'')+'</td>'+
@@ -18198,7 +18200,7 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape'){if(fecharSemPerder(
    juntos a cada publicacao, e ha uma prova automatica que falha se um subir
    sem o outro. Assim o numero na tela e o mesmo do arquivo que o aparelho
    guardou, e dizer "estou na v81" passa a significar alguma coisa. */
-const APP_VER='v279';
+const APP_VER='v280';
 (function(){var p=document.getElementById('verPill'); if(p)p.textContent=APP_VER;})();
 
 if('serviceWorker' in navigator){
