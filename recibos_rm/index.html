@@ -4007,6 +4007,8 @@ if(window.RM_CELULAR) document.body.classList.add('rm-campo');
           <button class="btn-act dim" id="pfPrintUm">🖨️ Ficha selecionada</button>
           <button class="btn-act dim" id="pfImportRhid">⇧ Importar cartão RHID</button>
           <input type="file" id="pfRhidFile" accept="application/pdf,.pdf" hidden>
+          <button class="btn-act dim" id="pfImportUnimed">⇧ Importar Unimed</button>
+          <input type="file" id="pfUnimedFile" accept=".csv,.xlsx,.xls,text/csv" hidden>
           <button class="btn-act dim" id="pfRelatorio">📋 Resumo contabilidade</button>
           <button class="btn-act save" id="pfExcel">⭳ Excel contabilidade</button>
         </div>
@@ -4045,6 +4047,22 @@ if(window.RM_CELULAR) document.body.classList.add('rm-campo');
             <div class="f span3"><span class="lab">Data</span><input type="date" id="pfFerData"></div>
             <div class="f span6"><span class="lab">Nome do feriado</span><input id="pfFerNome" placeholder="ex.: Aniversário de Estrela"></div>
             <div class="f span3" style="align-self:flex-end"><button class="btn-act dim" id="pfFerAdd" style="width:100%">Acrescentar</button></div>
+          </div>
+        </details>
+      </div>
+
+      <!-- PLANO DE SAUDE (UNIMED): o arquivo do site da Unimed e lido aqui e o
+           valor de cada funcionario vai para a coluna Plano do Excel da
+           contabilidade. Socios e desligados ficam em blocos a parte. -->
+      <div class="addzone" id="pfUnimedBox">
+        <div class="section-lab">Plano de saúde · Unimed <span class="ln"></span></div>
+        <div class="sub" id="pfUnimedStatus">Nenhum arquivo da Unimed importado nesta competência.</div>
+        <div id="pfUnimedCorpo"></div>
+        <details class="pf-config" id="pfUnimedCfg">
+          <summary>Sócios que pagam 100% do plano (fora da lista de pagamento)</summary>
+          <div class="form-grid">
+            <div class="f span9"><span class="lab">Um por linha: nome do titular ou CPF</span><textarea id="pfUnimedSocios" rows="3" placeholder="Nome completo do sócio"></textarea></div>
+            <div class="f span3" style="align-self:flex-end"><button class="btn-act dim" id="pfUnimedSociosSalvar" style="width:100%">Salvar sócios</button></div>
           </div>
         </details>
       </div>
@@ -5611,7 +5629,7 @@ const DEFAULT_CFG={razao:RM_EMPRESA.razao,endereco:RM_EMPRESA.endereco,cidade:RM
    Instalacao nova comeca vazia e o cadastro e feito pela tela. */
 const SEED=[];
 
-let state={cfg:{...DEFAULT_CFG},employees:[],terceiros:[],clientes:[],indicacoes:[],rescisoes:[],epiMovimentos:{},planilhas:{},fichasAdm:{},entrevistas:{},historico:{},movimentos:{},assiduidade:{},bancoHoras:{},fechamentos:{},pfPontos:{},rhid:{},contabil:{},ciclos:{},gen:{tipo:"pagamento",excluded:{}}};
+let state={cfg:{...DEFAULT_CFG},employees:[],terceiros:[],clientes:[],indicacoes:[],rescisoes:[],epiMovimentos:{},planilhas:{},fichasAdm:{},entrevistas:{},historico:{},movimentos:{},assiduidade:{},bancoHoras:{},fechamentos:{},pfPontos:{},rhid:{},unimed:{},contabil:{},ciclos:{},gen:{tipo:"pagamento",excluded:{}}};
 let RCTX={tipo:"pagamento",mesIdx:0,ano:"",dataISO:"",cidade:""};
 function cliToMap(){const m={};state.clientes.forEach((c,i)=>{m[c.id]={nome:c.nome,docTipo:c.docTipo,doc:c.doc||"",valor:Number(c.valor)||0,descricao:c.descricao||"",data:c.data||"",cidade:c.cidade||"",formaPagamento:c.formaPagamento||"",
   pagamentos:Array.isArray(c.pagamentos)?c.pagamentos.map(p=>({valor:Number(p.valor)||0,descricao:p.descricao||"",data:p.data||"",forma:p.forma||""})):[],
@@ -5685,7 +5703,7 @@ function indicToMap(){const m={};state.indicacoes.forEach((x,i)=>{m[x.id]={
   obs:x.obs||"",ord:i};});return m;}
 function mapToIndic(m){return Object.keys(m||{}).map(id=>Object.assign({id},m[id])).sort((a,b)=>(a.ord||0)-(b.ord||0));}
 function seedDefault(){return SEED.map((p,i)=>({id:"e"+i,nome:p[0],docTipo:"CPF",doc:p[1],status:"ativo",funcao:"",banco:"",dtInicio:"",dtCarteira:"",salario:0,metodo:"banco",obs:"",base:0,descRM:0,acresc:0,banheiro:0,almoco:0,he:0,faltas:0,plano:0,inss:0,econ:0,valPagamento:0,valAdiantamento:0,ord:i}));}
-function applyData(v){v=v||{};state.cfg={...DEFAULT_CFG,...(v.cfg||{})};state.employees=v.employees?mapToEmps(v.employees):[];state.employees.forEach(e=>{if(!e.emprestimos)e.emprestimos=[];if(!e.historicoSalario)e.historicoSalario=[];if(!e.historicoFuncao)e.historicoFuncao=[];if(!e.fichasEpi)e.fichasEpi=[];if(!e.folhaExtra)e.folhaExtra=[];});state.terceiros=v.terceiros?mapToTerc(v.terceiros):[];state.historico=v.historico||{};state.movimentos=v.movimentos||{};state.assiduidade=v.assiduidade||{};state.bancoHoras=v.bancoHoras||{};state.fechamentos=v.fechamentos||{};state.pfPontos=v.pfPontos||{};state.rhid=v.rhid||{};state.contabil=v.contabil||{};state.ciclos=v.ciclos||{};state.planilhas=v.planilhas||{};state.fichasAdm=v.fichasAdm||{};state.entrevistas=v.entrevistas||{};state.clientes=v.clientes?mapToCli(v.clientes):[];state.indicacoes=v.indicacoes?mapToIndic(v.indicacoes):[];state.rescisoes=v.rescisoes?mapToResc(v.rescisoes):[];state.epiMovimentos=v.epiMovimentos||{};normalizarListas();}
+function applyData(v){v=v||{};state.cfg={...DEFAULT_CFG,...(v.cfg||{})};state.employees=v.employees?mapToEmps(v.employees):[];state.employees.forEach(e=>{if(!e.emprestimos)e.emprestimos=[];if(!e.historicoSalario)e.historicoSalario=[];if(!e.historicoFuncao)e.historicoFuncao=[];if(!e.fichasEpi)e.fichasEpi=[];if(!e.folhaExtra)e.folhaExtra=[];});state.terceiros=v.terceiros?mapToTerc(v.terceiros):[];state.historico=v.historico||{};state.movimentos=v.movimentos||{};state.assiduidade=v.assiduidade||{};state.bancoHoras=v.bancoHoras||{};state.fechamentos=v.fechamentos||{};state.pfPontos=v.pfPontos||{};state.rhid=v.rhid||{};state.unimed=v.unimed||{};state.contabil=v.contabil||{};state.ciclos=v.ciclos||{};state.planilhas=v.planilhas||{};state.fichasAdm=v.fichasAdm||{};state.entrevistas=v.entrevistas||{};state.clientes=v.clientes?mapToCli(v.clientes):[];state.indicacoes=v.indicacoes?mapToIndic(v.indicacoes):[];state.rescisoes=v.rescisoes?mapToResc(v.rescisoes):[];state.epiMovimentos=v.epiMovimentos||{};normalizarListas();}
 /* A NUVEM NAO GUARDA LISTA, GUARDA MAPA. Uma lista que ganha um buraco (um
    item apagado pelo caminho, uma copia antiga gravada por cima) volta como
    [a,null,c] -- ou, com buraco demais, como objeto {0:a,4:c}. O codigo conta
@@ -5906,7 +5924,7 @@ function startData(){
     }, err=>{ toast('Erro de leitura: '+rmErroPt(err),'err'); });
   }else{
     const raw=store.load();
-    if(raw && raw.employees){ state.cfg={...DEFAULT_CFG,...raw.cfg}; state.employees=raw.employees.map((e,i)=>({ord:i,...e})); state.employees.forEach(e=>{if(!e.emprestimos)e.emprestimos=[];if(!e.historicoSalario)e.historicoSalario=[];if(!e.historicoFuncao)e.historicoFuncao=[];if(!e.fichasEpi)e.fichasEpi=[];if(!e.folhaExtra)e.folhaExtra=[];}); state.terceiros=(raw.terceiros||[]).map((t,i)=>({ord:i,...t})); state.historico=raw.historico||{}; state.movimentos=raw.movimentos||{}; state.assiduidade=raw.assiduidade||{};state.bancoHoras=raw.bancoHoras||{}; state.fechamentos=raw.fechamentos||{}; state.pfPontos=raw.pfPontos||{}; state.rhid=raw.rhid||{}; state.contabil=raw.contabil||{}; state.ciclos=raw.ciclos||{}; state.planilhas=raw.planilhas||{}; state.clientes=(raw.clientes||[]).map(c=>({...c})); state.indicacoes=(raw.indicacoes||[]).map(x=>({...x})); state.rescisoes=(raw.rescisoes||[]).map(x=>({...x})); state.epiMovimentos=raw.epiMovimentos||{}; }
+    if(raw && raw.employees){ state.cfg={...DEFAULT_CFG,...raw.cfg}; state.employees=raw.employees.map((e,i)=>({ord:i,...e})); state.employees.forEach(e=>{if(!e.emprestimos)e.emprestimos=[];if(!e.historicoSalario)e.historicoSalario=[];if(!e.historicoFuncao)e.historicoFuncao=[];if(!e.fichasEpi)e.fichasEpi=[];if(!e.folhaExtra)e.folhaExtra=[];}); state.terceiros=(raw.terceiros||[]).map((t,i)=>({ord:i,...t})); state.historico=raw.historico||{}; state.movimentos=raw.movimentos||{}; state.assiduidade=raw.assiduidade||{};state.bancoHoras=raw.bancoHoras||{}; state.fechamentos=raw.fechamentos||{}; state.pfPontos=raw.pfPontos||{}; state.rhid=raw.rhid||{};state.unimed=raw.unimed||{}; state.contabil=raw.contabil||{}; state.ciclos=raw.ciclos||{}; state.planilhas=raw.planilhas||{}; state.clientes=(raw.clientes||[]).map(c=>({...c})); state.indicacoes=(raw.indicacoes||[]).map(x=>({...x})); state.rescisoes=(raw.rescisoes||[]).map(x=>({...x})); state.epiMovimentos=raw.epiMovimentos||{}; }
     else { state.cfg={...DEFAULT_CFG}; state.employees=seedDefault(); }
     /* Fora do "if(raw.employees)" de proposito: uma ficha de admissao pode
        muito bem ser a primeira coisa gravada numa instalacao nova, antes de
@@ -5923,7 +5941,7 @@ function startData(){
 function retratoDados(){
   return {employees:empsToMap(),terceiros:tercToMap(),clientes:cliToMap(),indicacoes:indicToMap(),rescisoes:rescToMap(),epiMovimentos:state.epiMovimentos,
     historico:state.historico,movimentos:state.movimentos,assiduidade:state.assiduidade,bancoHoras:state.bancoHoras,
-    fechamentos:state.fechamentos,pfPontos:state.pfPontos,rhid:state.rhid,contabil:state.contabil,ciclos:state.ciclos,
+    fechamentos:state.fechamentos,pfPontos:state.pfPontos,rhid:state.rhid,unimed:state.unimed,contabil:state.contabil,ciclos:state.ciclos,
     planilhas:state.planilhas,fichasAdm:state.fichasAdm,entrevistas:state.entrevistas,cfg:state.cfg};
 }
 // Último retrato gravado ou recebido — base de comparação pra saber o que
@@ -5939,7 +5957,7 @@ let dadosCarregados=false;
    servidor: ela e montada no retratoDados(), e lida no applyData(), e mesmo
    assim some -- fica so na memoria da aba aberta e desaparece no F5.
    Ao acrescentar uma colecao, acrescente o nome aqui tambem. */
-const RAMOS=['employees','terceiros','clientes','indicacoes','rescisoes','epiMovimentos','historico','movimentos','assiduidade','bancoHoras','fechamentos','pfPontos','rhid','contabil','ciclos','planilhas','fichasAdm','entrevistas'];
+const RAMOS=['employees','terceiros','clientes','indicacoes','rescisoes','epiMovimentos','historico','movimentos','assiduidade','bancoHoras','fechamentos','pfPontos','rhid','unimed','contabil','ciclos','planilhas','fichasAdm','entrevistas'];
 const igualJSON=(a,b)=>JSON.stringify(a===undefined?null:a)===JSON.stringify(b===undefined?null:b);
 
 /* Monta o update do Firebase só com os caminhos que mudaram.
@@ -6035,7 +6053,7 @@ function persist(){
     ultimoRetrato=JSON.parse(JSON.stringify(agora));
     publishDiretorio();
   }
-  else { store.save({employees:state.employees,terceiros:state.terceiros,clientes:state.clientes,indicacoes:state.indicacoes,rescisoes:state.rescisoes,epiMovimentos:state.epiMovimentos,historico:state.historico,movimentos:state.movimentos,assiduidade:state.assiduidade,bancoHoras:state.bancoHoras,fechamentos:state.fechamentos,pfPontos:state.pfPontos,rhid:state.rhid,contabil:state.contabil,ciclos:state.ciclos,planilhas:state.planilhas,fichasAdm:state.fichasAdm,entrevistas:state.entrevistas,cfg:state.cfg}); }
+  else { store.save({employees:state.employees,terceiros:state.terceiros,clientes:state.clientes,indicacoes:state.indicacoes,rescisoes:state.rescisoes,epiMovimentos:state.epiMovimentos,historico:state.historico,movimentos:state.movimentos,assiduidade:state.assiduidade,bancoHoras:state.bancoHoras,fechamentos:state.fechamentos,pfPontos:state.pfPontos,rhid:state.rhid,unimed:state.unimed,contabil:state.contabil,ciclos:state.ciclos,planilhas:state.planilhas,fichasAdm:state.fichasAdm,entrevistas:state.entrevistas,cfg:state.cfg}); }
 }
 // Publica só nome/função/data de início/nascimento/situação (nada de
 // salário, banco ou documento) num nó separado, pra outros sistemas
@@ -17070,7 +17088,7 @@ $('#fileImport').onchange=ev=>{const f=ev.target.files[0];if(!f)return;const r=n
     /* Indicações e fichas de admissão iam no backup e não voltavam. Backup
        antigo, de antes delas existirem, não apaga as que já estão aqui. */
     if('indicacoes' in d)state.indicacoes=Array.isArray(d.indicacoes)?d.indicacoes.map(x=>({...x})):mapToIndic(d.indicacoes||{});
-    if('fichasAdm' in d)state.fichasAdm=d.fichasAdm||{};if('entrevistas' in d)state.entrevistas=d.entrevistas||{};const tt=Array.isArray(d.terceiros)?d.terceiros:mapToTerc(d.terceiros);state.terceiros=(tt||[]).map((t,i)=>({ord:i,...t}));state.historico=d.historico||{};state.movimentos=d.movimentos||{};state.assiduidade=d.assiduidade||{};state.bancoHoras=d.bancoHoras||{};state.fechamentos=d.fechamentos||{};state.pfPontos=d.pfPontos||{};state.rhid=d.rhid||{};state.contabil=d.contabil||{};state.ciclos=d.ciclos||{};state.planilhas=d.planilhas||{};state.clientes=d.clientes?(Array.isArray(d.clientes)?d.clientes:mapToCli(d.clientes)):[];state.rescisoes=d.rescisoes?(Array.isArray(d.rescisoes)?d.rescisoes:mapToResc(d.rescisoes)):[];state.epiMovimentos=d.epiMovimentos||{};dadosCarregados=true;persist();loadCfg();renderEmps();renderTerc();renderPF();renderResc();toast('Backup restaurado','ok');}catch(e){toast('Arquivo inválido','err');}};
+    if('fichasAdm' in d)state.fichasAdm=d.fichasAdm||{};if('entrevistas' in d)state.entrevistas=d.entrevistas||{};const tt=Array.isArray(d.terceiros)?d.terceiros:mapToTerc(d.terceiros);state.terceiros=(tt||[]).map((t,i)=>({ord:i,...t}));state.historico=d.historico||{};state.movimentos=d.movimentos||{};state.assiduidade=d.assiduidade||{};state.bancoHoras=d.bancoHoras||{};state.fechamentos=d.fechamentos||{};state.pfPontos=d.pfPontos||{};state.rhid=d.rhid||{};state.unimed=d.unimed||{};state.contabil=d.contabil||{};state.ciclos=d.ciclos||{};state.planilhas=d.planilhas||{};state.clientes=d.clientes?(Array.isArray(d.clientes)?d.clientes:mapToCli(d.clientes)):[];state.rescisoes=d.rescisoes?(Array.isArray(d.rescisoes)?d.rescisoes:mapToResc(d.rescisoes)):[];state.epiMovimentos=d.epiMovimentos||{};dadosCarregados=true;persist();loadCfg();renderEmps();renderTerc();renderPF();renderResc();toast('Backup restaurado','ok');}catch(e){toast('Arquivo inválido','err');}};
   r.readAsText(f);ev.target.value='';};
 $('#btnReset').onclick=()=>{
   if(!confirm('Apagar TODOS os funcionários e configurações?'))return;
@@ -17272,7 +17290,7 @@ function pfAddFeriado(){
 function renderPF(){
   const inp=$('#pfMes'); if(!inp)return; if(!inp.value)inp.value=new Date().toISOString().slice(0,7);
   const comp=inp.value,lista=pfFuncionarios(comp),sel=$('#pfFuncionario'),antes=sel.value;
-  pfRhidStatus();renderPFFecha();
+  pfRhidStatus();renderPFFecha();pfUnimedRender();
   sel.innerHTML='<option value="">— selecione —</option>'+lista.map(e=>'<option value="'+esc(e.id)+'">'+esc(titlePt(e.nome))+' · início '+fmtDate(e.dtInicio)+'</option>').join('');
   if(lista.some(e=>e.id===antes))sel.value=antes; else if(lista.length===1)sel.value=lista[0].id;
   $('#pfQtd').textContent=lista.length; const pp=comp.split('-');
@@ -17793,6 +17811,7 @@ function pfDadosContabilidade(comp){
       afast:0,diasAfast:0,motivoAfast:'',extra50:z.extra50,extra100:z.extra100,
       extraNot:0,zeroPct:0,conferir:false,inss:0,econ:0,plano:0});
   });
+  const un=pfUnimedCalc(comp);if(un)linhas.forEach(l=>{const x=l.e&&un.porEmp.get(l.e.id);if(x)l.plano=x.descontar;});
   return linhas.sort((a,b)=>String(a.nome).localeCompare(String(b.nome),'pt-BR'));
 }
 function pfValorTotalFolha(r){
@@ -17831,6 +17850,7 @@ function pfResumoContabilHTML(listaPF,comp){
     const rs=v=>Math.abs(v)>=0.005?'<span class="pf-rs'+(v<0?' menos':'')+'">'+(v<0?'− ':'+ ')+'R$ '+fmtBRL(Math.abs(v))+'</span>':'';
     const dados=(fun||ini)?'<span class="pf-cad">'+esc(fun||'sem função')+(ini?' · início '+ini:'')+'</span>':'';
     return '<tr class="'+marca+'"><td class="nm">'+esc(titlePt(r.nome))+' <i>'+r.origem+'</i>'+obs+dados+'</td>'
+      +'<td class="v">'+((Number(r.salMensal)||Number(r.sal))?fmtBRL(Number(r.salMensal)||Number(r.sal)):'—')+'</td>'
       +'<td class="h">'+insalubTxt(r.e)+'</td>'
       +'<td class="v">'+(r.ad?fmtBRL(r.ad):'—')+'</td>'
       +'<td class="v">'+(r.sal?fmtBRL(r.sal):'—')+(r.diasSal&&r.diasSal<30?' <i>('+r.diasSal+'d)</i>':'')
@@ -17842,17 +17862,17 @@ function pfResumoContabilHTML(listaPF,comp){
       +'<td class="h">'+h(r.extra100)+rs(hora*2*(Number(r.extra100)||0)/60)+'</td>'
       +'<td class="h">'+h(r.extraNot)+rs(hora*1.8*(Number(r.extraNot)||0)/52.5)+'</td>'
       /* INSS: a contabilidade preenche -- menos de quem é isento, que já sai marcado */
-      +(r.e&&r.e.isentoINSS?'<td class="br isento">Isento</td>':'<td class="br"></td>')+'<td class="br"></td><td class="br"></td>'
+      +(r.e&&r.e.isentoINSS?'<td class="br isento">Isento</td>':'<td class="br"></td>')+'<td class="br"></td><td class="br">'+(Number(r.plano)>0?fmtBRL(r.plano):'')+'</td>'
       +'<td class="v total">'+fmtBRL(pfValorTotalFolha(r))+'</td></tr>';
   }).join('');
   const totalGeral=lista.reduce((s,r)=>s+pfValorTotalFolha(r),0);
   const aConferir=lista.filter(r=>r.conferir).length;
   return pfTimbre('Contabilidade','Resumo para a folha',esc(MESES[Number(pp[1])-1])+' de '+pp[0]+' · '+lista.length+' funcionário'+(lista.length===1?'':'s'))
-    +'<table class="pf-resumo"><thead><tr><th>Funcionário / origem · função · início da contratação</th><th>Insalub.</th><th>Adiantamento</th><th>Salário proporcional</th>'
+    +'<table class="pf-resumo"><thead><tr><th>Funcionário / origem · função · início da contratação</th><th>Salário fixo</th><th>Insalub.</th><th>Adiantamento</th><th>Salário proporcional</th>'
     +'<th>Horas falta</th><th>Horas repouso</th><th>Atestado</th><th>Extra 50%</th><th>Extra 100%</th><th>Extra noturna</th>'
     +'<th class="br">INSS</th><th class="br">Consignado</th><th class="br">Plano de saúde</th><th>Total</th></tr></thead>'
     +'<tbody>'+rows+'</tbody>'
-    +'<tfoot><tr><td class="nm">Total</td><td></td><td class="v">'+fmtBRL(t.ad)+'</td><td class="v">—</td>'
+    +'<tfoot><tr><td class="nm">Total</td><td></td><td></td><td class="v">'+fmtBRL(t.ad)+'</td><td class="v">—</td>'
     +'<td class="h">'+h(t.falta)+'</td><td class="h">'+h(t.repouso)+'</td><td class="h">'+h(t.atest)+'</td>'
     +'<td class="h">'+h(t.e50)+'</td><td class="h">'+h(t.e100)+'</td><td class="h">'+h(t.not)+'</td>'
     +'<td class="br"></td><td class="br"></td><td class="br"></td>'
@@ -17864,8 +17884,8 @@ function pfResumoContabilHTML(listaPF,comp){
     +'Repouso = um DSR (7h20) por semana em que houve falta — atestado, férias e afastamento não tiram repouso. '
     +'Embaixo de cada hora, o valor em R$: hora = salário mensal ÷ 220; falta e repouso descontam a hora; extra 50% = hora × 1,5, 100% = hora × 2, noturna = hora × 1,8 × 60/52,5. '
     +'Insalub. = percentual de insalubridade marcado no cadastro (o adicional é calculado pela contabilidade). '
-    +'INSS, consignado e plano de saúde ficam em branco: o Total é o valor <b>antes</b> desses três descontos. '
-    +'Salários de admissão ou desligamento no mês são proporcionais pelo divisor 30.'
+    +'INSS e consignado ficam em branco; o plano de saúde vem do arquivo da Unimed, quando importado. O Total é o valor <b>antes</b> do INSS e do consignado'+(lista.some(r=>Number(r.plano)>0)?', já com o plano descontado. ':', e do plano. ')
+    +'Salário fixo = o mensal do cadastro. Salários de admissão ou desligamento no mês são proporcionais pelo divisor 30.'
     +(aConferir?' <b class="alerta">Atenção: '+aConferir+' cartão(ões) com colunas que não fecharam com o total impresso pelo RHID — confira antes de enviar.</b>':'')
     +'</div>'
     +rodapeDaMarca('<div class="foot">Resumo para a folha · para a contabilidade</div>');
@@ -17989,6 +18009,14 @@ function xlNotas(ws,linha,ncols,textos){
   textos.forEach((tx,i)=>{ const r=linha+i; ws.mergeCells('A'+r+':'+ult+r); const c=ws.getCell('A'+r); c.value=tx;
     c.font={name:'Calibri',size:9,italic:true,color:{argb:XL.mute}}; c.alignment={vertical:'middle',wrapText:true}; });
 }
+
+function pfUnimedNotasExcel(comp){
+  const r=pfUnimedCalc(comp);if(!r)return [];
+  const reais=v=>'R$ '+fmtBRL(v),n=['Plano de saúde: valores vindos do arquivo da Unimed importado na aba PF (titular 50% da mensalidade; cônjuge e filhos 100%). Coparticipação e demais valores não entram.'];
+  r.socios.forEach(x=>n.push('Sócio fora da folha (100%): '+titlePt(x.nome)+' '+reais(x.total)+(x.deps.length?' — '+x.deps.map(d=>titlePt(d.nome)+' '+reais(d.mens)).join(', '):'')+'.'));
+  r.desligados.forEach(x=>n.push('ATENÇÃO desligado na Unimed: '+titlePt(x.nome)+' — '+unimedAvisoDesl(x)));
+  return n;
+}
 function pfExcel(listaSel){
   const comp=pfCompAtual(),lista=listaSel||pfFuncionarios(comp),dados=pfFiltraDados(pfDadosContabilidade(comp),listaSel);if(!dados.length){toast('Não há cartão RHID nem ponto PF nesta competência','err');return;}
   loadExcelJS(async()=>{try{
@@ -18010,22 +18038,22 @@ function pfExcel(listaSel){
        planilha via as horas e o resultado, mas não o caminho. Agora o valor
        da hora e cada parcela em R$ (desconto das faltas, extras 50%, 100% e
        noturna) têm coluna própria, e o Total é a soma delas. */
-    const COLS=['nome','origem','funcao','inicio','insalub','ad','sal','hora','falta','repouso','atest','e50','e100','not','vfalta','v50','v100','vnot','inss','consig','plano','total'];
+    const COLS=['nome','origem','funcao','inicio','fixo','insalub','ad','sal','hora','falta','repouso','atest','e50','e100','not','vfalta','v50','v100','vnot','inss','consig','plano','total'];
     const NC=COLS.length, ci=k=>COLS.indexOf(k)+1, L=k=>String.fromCharCode(64+ci(k));
-    const HORAS=['falta','repouso','atest','e50','e100','not'].map(ci), MOEDA=['ad','sal','hora','vfalta','v50','v100','vnot','inss','consig','plano','total'].map(ci), DESC=['inss','consig','plano'].map(ci), VALH=['vfalta','v50','v100','vnot'].map(ci);
+    const HORAS=['falta','repouso','atest','e50','e100','not'].map(ci), MOEDA=['fixo','ad','sal','hora','vfalta','v50','v100','vnot','inss','consig','plano','total'].map(ci), DESC=['inss','consig','plano'].map(ci), VALH=['vfalta','v50','v100','vnot'].map(ci);
     /* a coluna Função na largura do nome mais comprido (cortava "Auxiliar de prod") */
     const largFuncao=Math.min(46,Math.max(14,...dados.map(d=>String((d.e&&funcaoPadrao(d.e.funcao))||'').length+3)));
-    const LARG={nome:36,origem:9,funcao:largFuncao,inicio:12,insalub:13,ad:15,sal:15,hora:11,falta:9,repouso:9,atest:9,e50:9,e100:9,not:10,vfalta:13,v50:13,v100:13,vnot:13,inss:12,consig:13,plano:13,total:16};
+    const LARG={nome:36,origem:9,funcao:largFuncao,inicio:12,fixo:15,insalub:13,ad:15,sal:15,hora:11,falta:9,repouso:9,atest:9,e50:9,e100:9,not:10,vfalta:13,v50:13,v100:13,vnot:13,inss:12,consig:13,plano:13,total:16};
     resumo.columns=COLS.map(k=>({width:LARG[k]}));
     xlCabecalho(resumo,logo,NC,3,'RESUMO PARA A FOLHA · '+mesNome.toUpperCase(),'Competência '+comp+' · '+dados.length+' funcionário'+(dados.length===1?'':'s')+' · cartão RHID + ponto PF + adiantamentos',emitido,46);
     xlTitulos(resumo,[[ci('nome'),ci('insalub'),'FUNCIONÁRIO'],[ci('ad'),ci('hora'),'PROVENTOS'],[ci('falta'),ci('not'),'HORAS DO MÊS'],[ci('vfalta'),ci('vnot'),'VALOR DAS HORAS (R$)'],[ci('inss'),ci('plano'),'DESCONTOS · A CONTABILIDADE PREENCHE'],[ci('total'),ci('total'),'RESULTADO']],
-      ['Funcionário','Origem','Função','Início da contratação','Insalubridade','Adiantamento','Salário proporcional','Valor da hora','Falta','Repouso','Atestado','Extra 50%','Extra 100%','Extra noturna','Desconto faltas','Valor extra 50%','Valor extra 100%','Valor extra noturna','INSS','Consignado','Plano de saúde','Total']);
+      ['Funcionário','Origem','Função','Início da contratação','Salário fixo','Insalubridade','Adiantamento','Salário proporcional','Valor da hora','Falta','Repouso','Atestado','Extra 50%','Extra 100%','Extra noturna','Desconto faltas','Valor extra 50%','Valor extra 100%','Valor extra noturna','INSS','Consignado','Plano de saúde','Total']);
     const ini=7;
     dados.forEach((d,i)=>{const rr=ini+i,r=resumo.getRow(rr);r.height=21;
       const rotulo=titlePt(d.nome)+(d.diasAfast?' — '+(d.motivoAfast||'afastado')+' ('+d.diasAfast+'d)':'');
       const ins=d.e?Number(d.e.insalubridade)||0:0, dtI=d.e&&d.e.dtInicio?rmDataDe(d.e.dtInicio):null;
-      const val={nome:rotulo,origem:d.origem,funcao:(d.e&&funcaoPadrao(d.e.funcao))||'',inicio:dtI,insalub:ins>0?ins/100:null,
-        ad:d.ad,sal:d.sal,hora:(Number(d.salMensal)||Number(d.sal)||0)/220,falta:d.falta/1440,repouso:d.repouso/1440,atest:d.atest/1440,e50:d.extra50/1440,e100:d.extra100/1440,not:d.extraNot/1440,inss:null,consig:null,plano:null};
+      const val={nome:rotulo,origem:d.origem,funcao:(d.e&&funcaoPadrao(d.e.funcao))||'',inicio:dtI,fixo:(Number(d.salMensal)||Number(d.sal)||0)||null,insalub:ins>0?ins/100:null,
+        ad:d.ad,sal:d.sal,hora:(Number(d.salMensal)||Number(d.sal)||0)/220,falta:d.falta/1440,repouso:d.repouso/1440,atest:d.atest/1440,e50:d.extra50/1440,e100:d.extra100/1440,not:d.extraNot/1440,inss:null,consig:null,plano:d.plano>0?d.plano:null};
       COLS.forEach(k=>{ if(val[k]!==undefined) r.getCell(ci(k)).value=val[k]; });
       /* Fórmulas vivas: cada parcela sai do valor da hora e das horas da
          linha, e o Total soma as parcelas. Quando a contabilidade digita
@@ -18061,10 +18089,12 @@ function pfExcel(listaSel){
     for(let k=1;k<=NC;k++){const cel=tr.getCell(k);xlGrade(cel,{style:'medium',color:{argb:XL.cab}});xlFill(cel,XL.tot);
       cel.font={name:'Calibri',size:12,bold:true,color:{argb:XL.ink}};cel.alignment={vertical:'middle',horizontal:k===1?'left':(HORAS.includes(k)?'center':'right'),indent:k===1?1:0};}
     xlNotas(resumo,rt+2,NC,['Origem: CLT = cartão RHID · PF = controle de ponto manual (destacado em laranja). INSS "Isento": a RM não desconta INSS desse funcionário.',
+      'Salário fixo: o salário mensal do cadastro, sem proporcional; o valor do mês (admissão ou desligamento) está em Salário proporcional.',
       'Insalubridade: percentual marcado no cadastro de cada funcionário — o adicional é calculado pela contabilidade.',
       'Valor da hora = salário mensal ÷ 220. Desconto faltas = hora × (falta + repouso). Extra 50% = hora × 1,5; extra 100% = hora × 2; noturna = hora × 1,8 × 60/52,5.',
       'O Total soma: salário proporcional − adiantamento − desconto faltas + extras − INSS − consignado − plano de saúde.',
       'Horas em horas:minutos. INSS, Consignado e Plano de saúde (em amarelo) são preenchidos pela contabilidade — o Total se refaz sozinho.',
+      ...pfUnimedNotasExcel(comp),
       'Cada funcionário PF tem uma aba com o ponto dia a dia.']);
     xlImpressao(resumo,'Resumo para a folha · '+comp);
 
@@ -18159,9 +18189,122 @@ function pfRelAbrir(modo){
   pfRelRender();$('#pfRelModal').classList.add('open');
 }
 function pfRelSelecionados(){return pfRelListaBase().filter(e=>PF_REL_SEL[e.id]);}
+
+/* ===================== PLANO DE SAUDE (UNIMED) =====================
+   Regra: o funcionario paga 50% da mensalidade do proprio plano e 100% da do
+   conjuge, companheiro, filhos e enteados. Os socios (lista nas
+   configuracoes do painel) pagam 100% de tudo e ficam fora da folha.
+   Coparticipacao, valor operacional, inscricao e reajuste NAO entram no
+   desconto: aparecem so como informacao. */
+const UNI_R2=v=>Math.round((Number(v)||0)*100+1e-9)/100;
+function unimedCsvMatriz(buf){
+  let t;try{t=new TextDecoder('utf-8',{fatal:true}).decode(buf);}catch(e){t=new TextDecoder('windows-1252').decode(buf);}
+  t=t.replace(/^﻿/,'');const l=t.split(/\r?\n/).filter(x=>x.trim());
+  const sep=(l[0]||'').split(';').length>=(l[0]||'').split('\t').length?';':'\t';
+  return l.map(x=>x.split(sep).map(c=>c.trim()));
+}
+function unimedLinhas(m){
+  const hi=m.findIndex(r=>r&&r.some(c=>normNome(c)==='NOME BENEFICIARIO'));if(hi<0)return null;
+  const col={};m[hi].forEach((c,i)=>{const n=normNome(c);
+    if(n==='NOME BENEFICIARIO')col.nome=i;else if(n==='CPF')col.cpf=i;else if(n==='RESPONSAVEL')col.resp=i;
+    else if(n==='GRAU PARENTESCO')col.grau=i;else if(n==='VL MENSALIDADE')col.mens=i;
+    else if(n==='VL COPARTICIPACAO')col.copart=i;else if(n==='VL TOTAL')col.total=i;});
+  if(col.nome==null||col.mens==null)return null;
+  const out=[];
+  m.slice(hi+1).forEach(r=>{const nome=String(r[col.nome]==null?'':r[col.nome]).trim();if(!nome)return;
+    const cpf=String(r[col.cpf]==null?'':r[col.cpf]).replace(/\D/g,'');
+    out.push({nome,cpf:cpf?cpf.padStart(11,'0'):'',resp:String(r[col.resp]==null?'':r[col.resp]).trim()||nome,
+      grau:normNome(r[col.grau]),mens:parseValor(r[col.mens]),copart:col.copart!=null?parseValor(r[col.copart]):0,
+      total:col.total!=null?parseValor(r[col.total]):0});});
+  return out.length?out:null;
+}
+function unimedCalcula(linhas,comp,empregados,socios){
+  const dig=x=>String(x||'').replace(/\D/g,''),cpfN=x=>{const d=dig(x);return d?d.padStart(11,'0'):'';};
+  const sNom=new Set(),sCpf=new Set();(socios||[]).forEach(x=>{const t=String(x||'').trim();if(!t)return;
+    if(/^[\d.\-\s]+$/.test(t))sCpf.add(cpfN(t));else sNom.add(normNome(t));});
+  const grupos=new Map();
+  (linhas||[]).forEach(l=>{const k=normNome(l.resp);if(!grupos.has(k))grupos.set(k,{resp:l.resp,titular:null,deps:[]});
+    const g=grupos.get(k);if(l.grau==='TITULAR')g.titular=l;else g.deps.push(l);});
+  const ini=comp+'-01',pp=comp.split('-'),ult=comp+'-'+String(new Date(Number(pp[0]),Number(pp[1]),0).getDate()).padStart(2,'0');
+  const res={funcionarios:[],socios:[],desligados:[],semCadastro:[],porEmp:new Map()};
+  grupos.forEach(g=>{
+    const t=g.titular,nomeT=t?t.nome:g.resp,mensT=t?t.mens:0,membros=(t?[t]:[]).concat(g.deps);
+    const detalhe=g.deps.map(d=>({nome:d.nome,grau:d.grau,mens:d.mens,copart:d.copart}));
+    const copart=UNI_R2(membros.reduce((x,m)=>x+(m.copart||0),0));
+    const ehSocio=sNom.has(normNome(nomeT))||(t&&t.cpf&&sCpf.has(t.cpf));
+    if(ehSocio){res.socios.push({nome:nomeT,titularMens:mensT,deps:detalhe,total:UNI_R2(membros.reduce((x,m)=>x+m.mens,0)),copart});return;}
+    const e=(empregados||[]).find(x=>t&&t.cpf&&cpfN(x.doc)===t.cpf)||(empregados||[]).find(x=>normNome(x.nome)===normNome(nomeT));
+    const titularPaga=UNI_R2(mensT*0.5),depsTotal=UNI_R2(g.deps.reduce((x,d)=>x+d.mens,0));
+    const r={emp:e||null,nome:nomeT,titularMens:mensT,titularPaga,deps:detalhe,depsTotal,descontar:UNI_R2(titularPaga+depsTotal),copart};
+    if(!e){res.semCadastro.push(r);return;}
+    res.porEmp.set(e.id,r);
+    const st=e.status||'ativo',dt=e.dtDesligamento||'';
+    if(st==='desligado'||st==='demissao'||(dt&&dt<=ult)){
+      r.aviso=!dt?'semdata':(dt<ini?'antes':'mes');r.dtDesligamento=dt;res.desligados.push(r);
+    }else res.funcionarios.push(r);
+  });
+  const ord=(a,b)=>String(a.nome).localeCompare(String(b.nome),'pt-BR');
+  ['funcionarios','socios','desligados','semCadastro'].forEach(k=>res[k].sort(ord));
+  res.total=UNI_R2(res.funcionarios.reduce((x,r)=>x+r.descontar,0));
+  res.totalSocios=UNI_R2(res.socios.reduce((x,r)=>x+r.total,0));
+  return res;
+}
+function pfUnimedMes(comp){return (state.unimed&&state.unimed[comp])||null;}
+function pfUnimedCalc(comp){const u=pfUnimedMes(comp);if(!u||!Array.isArray(u.linhas))return null;
+  return unimedCalcula(u.linhas,comp,state.employees,(state.cfg&&state.cfg.unimedSocios)||[]);}
+function unimedImportar(file){
+  const nome=file.name||'',comp=pfCompAtual();
+  const fim=matriz=>{const linhas=unimedLinhas(matriz);
+    if(!linhas){toast('Não achei as colunas da Unimed (Nome beneficiário e Vl.mensalidade) neste arquivo','err');return;}
+    state.unimed=state.unimed||{};state.unimed[comp]={arquivo:nome,importadoEm:new Date().toISOString(),linhas};persist();renderPF();
+    const r=pfUnimedCalc(comp),av=r.desligados.length,sc=r.semCadastro.length;
+    toast(linhas.length+' beneficiários lidos'+(av?' · '+av+' desligado'+(av===1?'':'s')+' ainda no plano':'')+(sc?' · '+sc+' sem cadastro':''),av||sc?'err':'ok');};
+  const rd=new FileReader();
+  if(/\.csv$/i.test(nome)||/text\/csv/.test(file.type||'')){
+    rd.onload=()=>{try{fim(unimedCsvMatriz(rd.result));}catch(err){console.error(err);toast('Não consegui ler o arquivo da Unimed','err');}};rd.readAsArrayBuffer(file);
+  }else loadSheetJS(()=>{rd.onload=()=>{try{const wb=XLSX.read(new Uint8Array(rd.result),{type:'array'});
+    const nm=wb.SheetNames.find(n=>XLSX.utils.sheet_to_json(wb.Sheets[n],{header:1}).some(r=>r&&r.some(c=>normNome(c)==='NOME BENEFICIARIO')))||wb.SheetNames[0];
+    fim(XLSX.utils.sheet_to_json(wb.Sheets[nm],{header:1,raw:true,defval:''}));}catch(err){console.error(err);toast('Não consegui ler o arquivo da Unimed','err');}};rd.readAsArrayBuffer(file);});
+}
+const UNI_GRAU={'CONJUGE':'cônjuge','COMPANHEIRO':'companheiro(a)','FILHO ENTEADO':'filho(a)/enteado(a)','FILHO':'filho(a)','ENTEADO':'enteado(a)'};
+function unimedGrau(g){return UNI_GRAU[g]||String(g||'').toLowerCase();}
+function unimedAvisoDesl(r){
+  const d=r.dtDesligamento?fmtDate(r.dtDesligamento):'';
+  return r.aviso==='antes'?'Desligado em '+d+' e ainda está no plano da Unimed: tirar da Unimed.'
+    :r.aviso==='mes'?'Desligou em '+d+': vale este mês, lembre de tirar da Unimed para o mês seguinte.'
+    :'Consta como desligado e ainda está na lista da Unimed: confira.';
+}
+function pfUnimedRender(){
+  const box=$('#pfUnimedCorpo');if(!box)return;const comp=pfCompAtual(),u=pfUnimedMes(comp),st=$('#pfUnimedStatus');
+  const ta=$('#pfUnimedSocios');if(ta&&document.activeElement!==ta)ta.value=((state.cfg&&state.cfg.unimedSocios)||[]).join('\n');
+  if(!u){st.textContent='Nenhum arquivo da Unimed importado nesta competência.';box.innerHTML='';return;}
+  const r=pfUnimedCalc(comp);
+  st.textContent=u.linhas.length+' beneficiários · '+(u.arquivo||'Unimed')+' · importado em '+fmtDate(String(u.importadoEm||'').slice(0,10));
+  const dep=l=>l.length?l.map(d=>esc(titlePt(d.nome))+' ('+esc(unimedGrau(d.grau))+') R$ '+fmtBRL(d.mens)).join(' · '):'—';
+  let h='';
+  if(r.desligados.length)h+='<div class="alerta"><b>Desligados na lista da Unimed</b><br>'+r.desligados.map(x=>esc(titlePt(x.nome))+': '+esc(unimedAvisoDesl(x))).join('<br>')+'</div>';
+  if(r.semCadastro.length)h+='<div class="alerta"><b>Sem correspondência no cadastro</b> (confira nome e CPF): '+r.semCadastro.map(x=>esc(titlePt(x.nome))).join(' · ')+'</div>';
+  h+='<div class="tbl-wrap"><table class="list"><thead><tr><th>Funcionário</th><th class="r">Titular (50%)</th><th>Dependentes (100%)</th><th class="r">Descontar</th></tr></thead><tbody>'
+    +(r.funcionarios.length?r.funcionarios.map(x=>'<tr><td>'+esc(titlePt(x.nome))+'</td><td class="r">'+fmtBRL(x.titularPaga)+'</td><td>'+dep(x.deps)+'</td><td class="r"><b>'+fmtBRL(x.descontar)+'</b></td></tr>').join('')
+      :'<tr><td colspan="4">Nenhum funcionário ativo na lista.</td></tr>')
+    +'</tbody><tfoot><tr><td colspan="3"><b>Total dos funcionários</b></td><td class="r"><b>'+fmtBRL(r.total)+'</b></td></tr></tfoot></table></div>';
+  h+='<div class="section-lab" style="margin-top:14px">Sócios · 100% do plano (fora da lista de pagamento) <span class="ln"></span></div>';
+  h+=r.socios.length?'<div class="tbl-wrap"><table class="list"><thead><tr><th>Sócio</th><th>Titular e vinculados</th><th class="r">Total</th></tr></thead><tbody>'
+    +r.socios.map(x=>'<tr><td>'+esc(titlePt(x.nome))+'</td><td>'+esc(titlePt(x.nome))+' (titular) R$ '+fmtBRL(x.titularMens)+(x.deps.length?' · '+dep(x.deps):'')+'</td><td class="r"><b>'+fmtBRL(x.total)+'</b></td></tr>').join('')
+    +'</tbody><tfoot><tr><td colspan="2"><b>Total dos sócios</b></td><td class="r"><b>'+fmtBRL(r.totalSocios)+'</b></td></tr></tfoot></table></div>'
+    :'<div class="sub">Nenhum sócio identificado. Informe os nomes em “Sócios que pagam 100% do plano”.</div>';
+  h+='<div class="section-lab" style="margin-top:14px">Desligados · ainda no plano <span class="ln"></span></div>';
+  h+=r.desligados.length?'<div class="tbl-wrap"><table class="list"><thead><tr><th>Nome</th><th>Desligamento</th><th class="r">Plano</th></tr></thead><tbody>'
+    +r.desligados.map(x=>'<tr><td>'+esc(titlePt(x.nome))+'</td><td>'+(x.dtDesligamento?fmtDate(x.dtDesligamento):'sem data')+'</td><td class="r">'+fmtBRL(x.descontar)+'</td></tr>').join('')+'</tbody></table></div>'
+    :'<div class="sub">Nenhum desligado na lista da Unimed.</div>';
+  box.innerHTML=h;
+}
 (function iniciarPF(){
   const mes=$('#pfMes'),sel=$('#pfFuncionario');if(!mes||!sel)return;mes.value=new Date().toISOString().slice(0,7);mes.onchange=renderPF;sel.onchange=renderPF;$('#pfPrintTodos').onclick=()=>pfImprimir(true);$('#pfPrintUm').onclick=()=>pfImprimir(false);$('#pfRelatorio').onclick=()=>pfRelAbrir('relatorio');$('#pfExcel').onclick=()=>pfRelAbrir('excel');$('#pfPadrao').onclick=()=>pfRelAbrir('padrao');$('#pfFechar').onclick=()=>pfRelAbrir('fechar');$('#pfCfgSalvar').onclick=pfSalvarCfg;
   $('#pfImportRhid').onclick=()=>$('#pfRhidFile').click();
+  $('#pfImportUnimed').onclick=()=>$('#pfUnimedFile').click();
+  $('#pfUnimedFile').onchange=ev=>{const f=ev.target.files[0];if(f)unimedImportar(f);ev.target.value='';};
+  $('#pfUnimedSociosSalvar').onclick=()=>{state.cfg.unimedSocios=$('#pfUnimedSocios').value.split(/\r?\n/).map(x=>x.trim()).filter(Boolean);persist();renderPF();toast('Sócios salvos','ok');};
   $('#pfMarcarEnviado').onclick=pfMarcarEnviado;$('#pfDesmarcarEnviado').onclick=pfDesmarcarEnviado;
   $('#pfRhidFile').onchange=ev=>{const f=ev.target.files[0];if(f)pfImportarRhid(f);ev.target.value='';};
   $('#btnRhidConfOk').onclick=pfRhidConfirmar;
@@ -18202,7 +18345,7 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape'){if(fecharSemPerder(
    juntos a cada publicacao, e ha uma prova automatica que falha se um subir
    sem o outro. Assim o numero na tela e o mesmo do arquivo que o aparelho
    guardou, e dizer "estou na v81" passa a significar alguma coisa. */
-const APP_VER='v281';
+const APP_VER='v282';
 (function(){var p=document.getElementById('verPill'); if(p)p.textContent=APP_VER;})();
 
 if('serviceWorker' in navigator){
