@@ -12046,9 +12046,10 @@ function assidFonteHTML(comp,nomeMes){
   const rh=pfRhidMes(comp),nPF=pfFuncionarios(comp).filter(e=>e.status==='ativo'&&!isOculto(e)).length;
   const pf=nPF?'ponto PF de '+nPF+(nPF===1?' pessoa':' pessoas'):'';
   const ir='<button type="button" class="btn-act dim" id="asIrPF">Abrir PF · Ponto</button>';
+  const att='<button type="button" class="btn-act dim" id="asAtualizar" title="Recarregar os dados do cartão RHID importado na aba PF">↻ Atualizar ponto</button>';
   if(!rh)return '<div class="as-fonte aviso"><span>Ainda não há cartão RHID de <b>'+esc(nomeMes)+'</b>: importe o PDF na aba PF · Ponto para ver faltas, atrasos e atestados de quem tem carteira.'+(pf?' Já lido: '+pf+'.':'')+'</span>'+ir+'</div>';
   const quando=rh.importadoEm?', importado em '+fmtDate(rmDiaISO(rh.importadoEm)):'';
-  return '<div class="as-fonte"><span>Ponto de <b>'+esc(nomeMes)+'</b>: cartão RHID <b>'+esc(rh.arquivo||'RHID')+'</b>'+quando+(pf?' · '+pf:'')+'. Os mesmos números do Excel da contabilidade.</span>'+ir+'</div>';
+  return '<div class="as-fonte"><span>Ponto de <b>'+esc(nomeMes)+'</b>: cartão RHID <b>'+esc(rh.arquivo||'RHID')+'</b>'+quando+(pf?' · '+pf:'')+'. Os mesmos números do Excel da contabilidade.</span>'+att+ir+'</div>';
 }
 function renderAssid(){
   const ms=$('#asMes');if(!ms.options.length)MESES.forEach((m,i)=>{const o=el('option');o.value=i;o.textContent=m.charAt(0).toUpperCase()+m.slice(1);ms.appendChild(o);});
@@ -12058,7 +12059,8 @@ function renderAssid(){
   const comp=asKey(),nomeMes=MESES[parseInt(ms.value,10)]+'/'+$('#asAno').value,ponto=assidPontoMes(comp);
   const fonte=$('#asFonte');
   if(fonte){fonte.innerHTML=assidFonteHTML(comp,nomeMes);
-    const ir=$('#asIrPF');if(ir)ir.onclick=()=>{const pm=$('#pfMes');if(pm)pm.value=comp;const bt=document.querySelector('.vtab[data-v="pf"]');if(bt)bt.click();};}
+    const ir=$('#asIrPF');if(ir)ir.onclick=()=>{const pm=$('#pfMes');if(pm)pm.value=comp;const bt=document.querySelector('.vtab[data-v="pf"]');if(bt)bt.click();};
+    const att=$('#asAtualizar');if(att)att.onclick=()=>{renderAssid();toast('Ponto atualizado com os dados mais recentes','ok');};}
   const regra=$('#asRegra');
   if(regra){
     const sem=assidSemTempoLista(rec,comp),semAdm=assidSemAdmissao(rec,comp);
@@ -18200,7 +18202,7 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape'){if(fecharSemPerder(
    juntos a cada publicacao, e ha uma prova automatica que falha se um subir
    sem o outro. Assim o numero na tela e o mesmo do arquivo que o aparelho
    guardou, e dizer "estou na v81" passa a significar alguma coisa. */
-const APP_VER='v280';
+const APP_VER='v281';
 (function(){var p=document.getElementById('verPill'); if(p)p.textContent=APP_VER;})();
 
 if('serviceWorker' in navigator){
