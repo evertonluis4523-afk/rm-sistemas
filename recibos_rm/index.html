@@ -2905,6 +2905,7 @@ tr.sal-japago>td.conf,tr.sal-japago>td.chk{opacity:1}
 .pf-folha-resumo .pf-resumo th{font-size:7.4px;padding:5px 2px;font-weight:600}
 .pf-folha-resumo .pf-resumo td{padding:4px 2px}
 .pf-resumo td.total{font-weight:800;background:#eef7f0;color:#176334}
+.pf-un{margin-top:10px;break-inside:avoid}.pf-un-t{font-size:8.5px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;margin:4px 0}
 .pf-resumo tr.origem-pf td{background:#fff1e8}
 .pf-resumo tr.origem-pf td.total{background:#fde3d3;color:#8a331c}
 .pf-resumo tr.conferir td.nm{box-shadow:inset 3px 0 0 #d9822b}
@@ -17877,6 +17878,7 @@ function pfResumoContabilHTML(listaPF,comp){
     +'<td class="h">'+h(t.e50)+'</td><td class="h">'+h(t.e100)+'</td><td class="h">'+h(t.not)+'</td>'
     +'<td class="br"></td><td class="br"></td><td class="br"></td>'
     +'<td class="v total">'+fmtBRL(totalGeral)+'</td></tr></tfoot></table>'
+    +pfUnimedBlocoHTML(comp)
     +'<div class="pf-rnota">PF = período sem carteira; CLT = período com carteira, lido do cartão RHID; PF/CLT reúne os dois na mesma linha. '
     +'Extra 50% soma as colunas 50%D e 0%D do cartão, e a noturna soma 50%N, 100%N e 0%N: não há banco de horas, toda hora feita é paga. '
     +(t.zeroPct?'Neste mês o relógio classificou '+h(t.zeroPct)+' na faixa de 0% — estão pagas como 50%. ':'')
@@ -18010,12 +18012,52 @@ function xlNotas(ws,linha,ncols,textos){
     c.font={name:'Calibri',size:9,italic:true,color:{argb:XL.mute}}; c.alignment={vertical:'middle',wrapText:true}; });
 }
 
+function pfUnimedBlocos(comp){
+  const r=pfUnimedCalc(comp);if(!r)return null;
+  const grau=d=>titlePt(d.nome)+' ('+unimedGrau(d.grau)+') R$ '+fmtBRL(d.mens);
+  return {
+    socios:r.socios.map(x=>({nome:titlePt(x.nome),total:x.total,detalhe:[titlePt(x.nome)+' (titular) R$ '+fmtBRL(x.titularMens)].concat(x.deps.map(grau)).join(' · ')})),
+    totalSocios:r.totalSocios,
+    desligados:r.desligados.map(x=>({nome:titlePt(x.nome),data:x.dtDesligamento?fmtDate(x.dtDesligamento):'sem data',plano:x.descontar,aviso:unimedAvisoDesl(x)}))
+  };
+}
+function pfUnimedBlocoHTML(comp){
+  const b=pfUnimedBlocos(comp);if(!b)return '';
+  let h='<div class="pf-un"><div class="pf-un-t">Plano de saúde · Unimed — sócios e vinculados (100%, fora da folha)</div>';
+  h+=b.socios.length?'<table class="pf-resumo"><thead><tr><th>Sócio</th><th>Titular e vinculados</th><th>Total</th></tr></thead><tbody>'
+    +b.socios.map(x=>'<tr><td class="nm">'+esc(x.nome)+'</td><td style="text-align:left">'+esc(x.detalhe)+'</td><td class="v">'+fmtBRL(x.total)+'</td></tr>').join('')
+    +'</tbody><tfoot><tr><td class="nm" colspan="2">Total dos sócios</td><td class="v">'+fmtBRL(b.totalSocios)+'</td></tr></tfoot></table>'
+    :'<div class="pf-rnota">Nenhum sócio informado para o plano.</div>';
+  h+='<div class="pf-un-t" style="margin-top:8px">Desligados que ainda estão com a Unimed ativa</div>';
+  h+=b.desligados.length?'<table class="pf-resumo"><thead><tr><th>Nome</th><th>Desligamento</th><th>Aviso</th><th>Plano</th></tr></thead><tbody>'
+    +b.desligados.map(x=>'<tr><td class="nm">'+esc(x.nome)+'</td><td>'+esc(x.data)+'</td><td style="text-align:left">'+esc(x.aviso)+'</td><td class="v">'+fmtBRL(x.plano)+'</td></tr>').join('')+'</tbody></table>'
+    :'<div class="pf-rnota">Nenhum desligado na lista da Unimed.</div>';
+  return h+'</div>';
+}
+/* Blocos do Excel logo abaixo do total: sócios (com os vinculados) e os
+   desligados que ainda estão na Unimed. Devolve a próxima linha livre. */
+function pfUnimedExcelBlocos(ws,linha,nc,comp,fonte){
+  const b=pfUnimedBlocos(comp);if(!b)return linha;
+  let r=linha;
+  const titulo=tx=>{ws.mergeCells(r,1,r,13);const c=ws.getCell(r,1);c.value=tx;c.font={name:'Calibri',size:11.5,bold:true,color:{argb:'FFFFFFFF'}};xlFill(c,XL.cab);c.alignment={vertical:'middle',indent:1};ws.getRow(r).height=22;r++;};
+  const cab=(cols)=>{cols.forEach(([c1,c2,tx])=>{if(c2>c1)ws.mergeCells(r,c1,r,c2);const c=ws.getCell(r,c1);c.value=tx;c.font={name:'Calibri',size:10.5,bold:true,color:{argb:XL.ink}};xlFill(c,XL.grupo);c.alignment={vertical:'middle',horizontal:'center'};for(let k=c1;k<=c2;k++)xlGrade(ws.getCell(r,k));});r++;};
+  const lin=(cols,altura)=>{cols.forEach(([c1,c2,v,tipo])=>{if(c2>c1)ws.mergeCells(r,c1,r,c2);const c=ws.getCell(r,c1);c.value=v;c.font=fonte;
+      c.alignment={vertical:'middle',wrapText:true,horizontal:tipo==='m'?'right':(tipo==='c'?'center':'left'),indent:tipo==='m'||tipo==='c'?0:1};
+      if(tipo==='m')c.numFmt=XL_MOEDA;for(let k=c1;k<=c2;k++)xlGrade(ws.getCell(r,k));});ws.getRow(r).height=altura||21;r++;};
+  titulo('PLANO DE SAÚDE · UNIMED — SÓCIOS E VINCULADOS (100%, FORA DA FOLHA)');
+  if(b.socios.length){cab([[1,1,'Sócio'],[2,11,'Titular e vinculados'],[12,13,'Total']]);
+    b.socios.forEach(x=>lin([[1,1,x.nome],[2,11,x.detalhe],[12,13,x.total,'m']],x.detalhe.length>110?34:21));
+    lin([[1,11,'Total dos sócios'],[12,13,b.totalSocios,'m']]);}
+  else lin([[1,13,'Nenhum sócio informado para o plano.']]);
+  r++;
+  titulo('DESLIGADOS QUE AINDA ESTÃO COM A UNIMED ATIVA');
+  if(b.desligados.length){cab([[1,1,'Nome'],[2,4,'Desligamento'],[5,11,'Aviso'],[12,13,'Plano']]);
+    b.desligados.forEach(x=>lin([[1,1,x.nome],[2,4,x.data,'c'],[5,11,x.aviso],[12,13,x.plano,'m']],34));}
+  else lin([[1,13,'Nenhum desligado na lista da Unimed.']]);
+  return r+1;
+}
 function pfUnimedNotasExcel(comp){
-  const r=pfUnimedCalc(comp);if(!r)return [];
-  const reais=v=>'R$ '+fmtBRL(v),n=['Plano de saúde: valores vindos do arquivo da Unimed importado na aba PF (titular 50% da mensalidade; cônjuge e filhos 100%). Coparticipação e demais valores não entram.'];
-  r.socios.forEach(x=>n.push('Sócio fora da folha (100%): '+titlePt(x.nome)+' '+reais(x.total)+(x.deps.length?' — '+x.deps.map(d=>titlePt(d.nome)+' '+reais(d.mens)).join(', '):'')+'.'));
-  r.desligados.forEach(x=>n.push('ATENÇÃO desligado na Unimed: '+titlePt(x.nome)+' — '+unimedAvisoDesl(x)));
-  return n;
+  return pfUnimedMes(comp)?['Plano de saúde: valores vindos do arquivo da Unimed importado na aba PF (titular 50% da mensalidade; cônjuge e filhos 100%). Coparticipação e demais valores não entram. Sócios e desligados estão nos quadros acima.']:[];
 }
 function pfExcel(listaSel){
   const comp=pfCompAtual(),lista=listaSel||pfFuncionarios(comp),dados=pfFiltraDados(pfDadosContabilidade(comp),listaSel);if(!dados.length){toast('Não há cartão RHID nem ponto PF nesta competência','err');return;}
@@ -18088,7 +18130,8 @@ function pfExcel(listaSel){
       const Lk=String.fromCharCode(64+k);tr.getCell(k).value={formula:'SUM('+Lk+ini+':'+Lk+fim+')'};tr.getCell(k).numFmt=HORAS.includes(k)?XL_HORA:XL_MOEDA;}
     for(let k=1;k<=NC;k++){const cel=tr.getCell(k);xlGrade(cel,{style:'medium',color:{argb:XL.cab}});xlFill(cel,XL.tot);
       cel.font={name:'Calibri',size:12,bold:true,color:{argb:XL.ink}};cel.alignment={vertical:'middle',horizontal:k===1?'left':(HORAS.includes(k)?'center':'right'),indent:k===1?1:0};}
-    xlNotas(resumo,rt+2,NC,['Origem: CLT = cartão RHID · PF = controle de ponto manual (destacado em laranja). INSS "Isento": a RM não desconta INSS desse funcionário.',
+    const proxLinha=pfUnimedExcelBlocos(resumo,rt+2,NC,comp,fonte);
+    xlNotas(resumo,proxLinha,NC,['Origem: CLT = cartão RHID · PF = controle de ponto manual (destacado em laranja). INSS "Isento": a RM não desconta INSS desse funcionário.',
       'Salário fixo: o salário mensal do cadastro, sem proporcional; o valor do mês (admissão ou desligamento) está em Salário proporcional.',
       'Insalubridade: percentual marcado no cadastro de cada funcionário — o adicional é calculado pela contabilidade.',
       'Valor da hora = salário mensal ÷ 220. Desconto faltas = hora × (falta + repouso). Extra 50% = hora × 1,5; extra 100% = hora × 2; noturna = hora × 1,8 × 60/52,5.',
@@ -18345,7 +18388,7 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape'){if(fecharSemPerder(
    juntos a cada publicacao, e ha uma prova automatica que falha se um subir
    sem o outro. Assim o numero na tela e o mesmo do arquivo que o aparelho
    guardou, e dizer "estou na v81" passa a significar alguma coisa. */
-const APP_VER='v282';
+const APP_VER='v283';
 (function(){var p=document.getElementById('verPill'); if(p)p.textContent=APP_VER;})();
 
 if('serviceWorker' in navigator){
