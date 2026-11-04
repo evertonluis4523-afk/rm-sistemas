@@ -17906,11 +17906,12 @@ function pfAbrirRelatorio(listaSel){
   const comp=pfCompAtual(),lista=listaSel||pfFuncionarios(comp),dados=pfDadosContabilidade(comp);
   if(!dados.length){toast('Não há cartão RHID nem ponto PF nesta competência','err');return;}
   const sc=$('#printScroll');sc.innerHTML='';
-  /* O documento é a junção: primeiro a folha detalhada de cada funcionário do
-     ponto PF, depois o resumo por nome. Quem só tem cartão RHID não gera folha
-     PF -- o detalhe dele é o próprio cartão, que vai anexado. */
-  lista.forEach(e=>{const f=el('div','folha pf-relatorio');f.innerHTML=pfRelatorioHTML(e,comp);sc.appendChild(f);});
+  /* O documento é a junção: primeiro o resumo para a folha (o que a
+     contabilidade lança), depois o ponto detalhado de cada funcionário PF.
+     Quem só tem cartão RHID não gera folha PF -- o detalhe dele é o próprio
+     cartão, que vai anexado. */
   const fr=el('div','folha pf-relatorio pf-folha-resumo');fr.innerHTML=pfResumoContabilHTML(lista,comp);sc.appendChild(fr);
+  lista.forEach(e=>{const f=el('div','folha pf-relatorio');f.innerHTML=pfRelatorioHTML(e,comp);sc.appendChild(f);});
   numerarFolhas(sc);
   /* Este texto vira o NOME DO ARQUIVO em nomePDFAtual(), e este PDF é anexado
      no e-mail da contabilidade junto com o Excel. Por isso ele é curto e casa
@@ -18410,7 +18411,7 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape'){if(fecharSemPerder(
    juntos a cada publicacao, e ha uma prova automatica que falha se um subir
    sem o outro. Assim o numero na tela e o mesmo do arquivo que o aparelho
    guardou, e dizer "estou na v81" passa a significar alguma coisa. */
-const APP_VER='v285';
+const APP_VER='v286';
 (function(){var p=document.getElementById('verPill'); if(p)p.textContent=APP_VER;})();
 
 if('serviceWorker' in navigator){

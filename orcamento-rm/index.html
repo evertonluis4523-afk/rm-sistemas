@@ -4745,7 +4745,7 @@ body[data-theme="escuro"] .cob-t input[type=date]{color-scheme:dark}
   </div>
   <div class="mbody">
     <div class="saved-tools">
-      <input type="text" id="savedSearch" placeholder="Buscar por nome, cliente, obra ou nº…" oninput="renderSaved()">
+      <input type="text" id="savedSearch" placeholder="Buscar por cliente, obra/referência ou nº…" oninput="renderSaved()">
       <select id="savedFilter" onchange="renderSaved()">
         <option value="">Todos os status</option>
         <option value="aberto">Aberto</option>
@@ -9059,7 +9059,11 @@ function renderSaved(){
   const fst=((document.getElementById('savedFilter')||{}).value||'');
   const list=all.filter(e=>{
     if(fst&&(e.status||'aberto')!==fst)return false;
-    if(q&&![e.nome,e.cliente,e.obra,e.numero].some(v=>semAcento(v||'').toLowerCase().includes(q)))return false;
+    /* Cada palavra pode estar em qualquer campo: "silva galpao" acha o
+       galpão (obra/referência) do cliente Silva. Antes o texto inteiro
+       tinha de caber num campo só. */
+    if(q){const qd=e.quote||{},alvo=semAcento([e.nome,e.cliente,qd.cliente,e.obra,qd.obra,e.numero].filter(Boolean).join(' ')).toLowerCase();
+      if(!q.split(/\s+/).every(w=>alvo.includes(w)))return false;}
     return true;
   });
   if(!list.length){host.innerHTML='<p class="note">Nada encontrado com esse filtro — confira a busca ou o status.</p>';SAVED_SEL=null;renderSalvoPrevia();return;}
@@ -10130,7 +10134,7 @@ function applyImport(){
    publicacao, e ha uma prova automatica que falha se um subir sem o outro.
    Assim o numero na tela e' o mesmo do arquivo que o aparelho guardou, e
    dizer "estou na v15" passa a significar alguma coisa. */
-const APP_VER='v136';
+const APP_VER='v137';
 (function(){ try{ const p=document.getElementById('verPill'); if(p)p.textContent=APP_VER; }catch(e){} })();
 /* Versao nova assumiu com a pagina aberta: avisa, em vez de recarregar por
    conta propria e jogar fora um orcamento pela metade. */
