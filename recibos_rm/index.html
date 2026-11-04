@@ -17889,17 +17889,9 @@ function pfResumoContabilHTML(listaPF,comp){
     +'<td class="br"></td><td class="br"></td><td class="br"></td>'
     +'<td class="v total">'+fmtBRL(totalGeral)+'</td></tr></tfoot></table>'
     +pfUnimedBlocoHTML(comp)
-    +'<div class="pf-rnota">PF = período sem carteira; CLT = período com carteira, lido do cartão RHID; PF/CLT reúne os dois na mesma linha. '
-    +'Extra 50% soma as colunas 50%D e 0%D do cartão, e a noturna soma 50%N, 100%N e 0%N: não há banco de horas, toda hora feita é paga. '
-    +(t.zeroPct?'Neste mês o relógio classificou '+h(t.zeroPct)+' na faixa de 0% — estão pagas como 50%. ':'')
-    +'Extra 100% vem da coluna 100%D, que vale o dobro e por isso é contada à parte. '
-    +'Repouso = um DSR (7h20) por semana em que houve falta — atestado, férias e afastamento não tiram repouso. '
-    +'Embaixo de cada hora, o valor em R$: hora = salário mensal ÷ 220; falta e repouso descontam a hora; extra 50% = hora × 1,5, 100% = hora × 2, noturna = hora × 1,8 × 60/52,5. '
-    +'Insalub. = percentual de insalubridade marcado no cadastro (o adicional é calculado pela contabilidade). '
-    +'INSS e consignado ficam em branco; o plano de saúde vem do arquivo da Unimed, quando importado. O Total é o valor <b>antes</b> do INSS e do consignado'+(lista.some(r=>Number(r.plano)>0)?', já com o plano descontado. ':', e do plano. ')
-    +'Salário fixo = o mensal do cadastro. Salários de admissão ou desligamento no mês são proporcionais pelo divisor 30.'
-    +(aConferir?' <b class="alerta">Atenção: '+aConferir+' cartão(ões) com colunas que não fecharam com o total impresso pelo RHID — confira antes de enviar.</b>':'')
-    +'</div>'
+    /* Sem o bloco de explicações embaixo da tabela: a contabilidade não
+       precisa dele. Fica só o aviso de cartão que não fechou, quando houver. */
+    +(aConferir?'<div class="pf-rnota"><b class="alerta">Atenção: '+aConferir+' cartão(ões) com colunas que não fecharam com o total impresso pelo RHID — confira antes de enviar.</b></div>':'')
     +rodapeDaMarca('<div class="foot">Resumo para a folha · para a contabilidade</div>');
 }
 function pfAbrirRelatorio(listaSel){
@@ -18411,7 +18403,7 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape'){if(fecharSemPerder(
    juntos a cada publicacao, e ha uma prova automatica que falha se um subir
    sem o outro. Assim o numero na tela e o mesmo do arquivo que o aparelho
    guardou, e dizer "estou na v81" passa a significar alguma coisa. */
-const APP_VER='v286';
+const APP_VER='v287';
 (function(){var p=document.getElementById('verPill'); if(p)p.textContent=APP_VER;})();
 
 if('serviceWorker' in navigator){
