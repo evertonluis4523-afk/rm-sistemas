@@ -8987,6 +8987,10 @@ function atualizaSalvo(atual){
   congelaPrecos();
   const TS=totalDoSalvo(); const totalStr=TS.str;
   atual.cliente=S.cliente; atual.obra=S.obra; atual.numero=S.numero;
+  /* O nome da lista sai de cliente e obra: corrigir um deles e salvar tem de
+     corrigir o nome também (ficava o digitado errado da primeira vez). A
+     marca de revisão (" · R1") continua. */
+  { const rev=/\s*·\s*R\d+\s*$/i.exec(String(atual.nome||'')); atual.nome=nomeAutoOrc()+(rev?rev[0]:''); }
   atual.salvoEm=new Date().toLocaleString('pt-BR'); atual.total=totalStr;
   /* Em milissegundos, e não só o texto em português: é este número que
      decide, na mesclagem, qual das duas cópias do MESMO orçamento é a
@@ -10134,7 +10138,7 @@ function applyImport(){
    publicacao, e ha uma prova automatica que falha se um subir sem o outro.
    Assim o numero na tela e' o mesmo do arquivo que o aparelho guardou, e
    dizer "estou na v15" passa a significar alguma coisa. */
-const APP_VER='v137';
+const APP_VER='v138';
 (function(){ try{ const p=document.getElementById('verPill'); if(p)p.textContent=APP_VER; }catch(e){} })();
 /* Versao nova assumiu com a pagina aberta: avisa, em vez de recarregar por
    conta propria e jogar fora um orcamento pela metade. */
