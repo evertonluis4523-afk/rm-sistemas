@@ -11782,6 +11782,7 @@ function gerarSalario(tipo){
      assinado */
   const itens=list.map((e,ix)=>{
     const it={id:e.id,nome:e.nome,doc:e.doc||'',valor:(tipo==='adiantamento'?e.valAdiantamento:e.valPagamento)||0,metodo:e.metodo||'banco',salario:salarioNaCompetencia(e,comp.ano,comp.mesIdx)||Number(e.salario)||0,numero:ix+1};
+    if(tipo==='adiantamento')it.adiantBase=Number(e.adiantBase)||0;
     if(tipo==='pagamento'){
       Object.assign(it,{base:Number(e.base)||0,descRM:Number(e.descRM)||0,acresc:Number(e.acresc)||0,banheiro:Number(e.banheiro)||0,almoco:Number(e.almoco)||0,
         he:Number(e.he)||0,faltas:Number(e.faltas)||0,plano:Number(e.plano)||0,inss:Number(e.inss)||0,econ:Number(e.econ)||0,
@@ -17736,7 +17737,14 @@ function pfAdiantamentoDoMes(comp){
   const p=String(comp||'').split('-'),key=p[0]+'-'+p[1]+'-adiantamento';
   const hist=state.historico&&state.historico[key];
   const porId={},porDoc={},porNome={},soDig=v=>String(v||'').replace(/\D/g,'');
-  if(hist)(hist.itens||[]).forEach(it=>{const v=Number(it.valor)||0;
+  /* Para a contabilidade vale o adiantamento BRUTO (a base gerada), sem o
+     que é interno da RM: desconto, acréscimo e parcela de empréstimo. O valor
+     do histórico é o líquido pago. A base vem do histórico (gerações novas)
+     ou do ciclo da folha daquele mês (gerações antigas). */
+  const bruto=it=>{const b=Number(it.adiantBase)||0;if(b>0)return b;
+    const e=it.id&&state.employees.find(x=>x.id===it.id),ci=e&&rsCicloItem(e,p[0]+'-'+p[1]+'-adiantamento'),cb=ci?Number(ci.adiantBase)||0:0;
+    return cb>0?cb:(Number(it.valor)||0);};
+  if(hist)(hist.itens||[]).forEach(it=>{const v=bruto(it);
     if(it.id)porId[it.id]=(porId[it.id]||0)+v;
     const d=soDig(it.doc);if(d)porDoc[d]=(porDoc[d]||0)+v;
     const k=normName(it.nome);if(k)porNome[k]=(porNome[k]||0)+v;});
@@ -18402,7 +18410,7 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape'){if(fecharSemPerder(
    juntos a cada publicacao, e ha uma prova automatica que falha se um subir
    sem o outro. Assim o numero na tela e o mesmo do arquivo que o aparelho
    guardou, e dizer "estou na v81" passa a significar alguma coisa. */
-const APP_VER='v284';
+const APP_VER='v285';
 (function(){var p=document.getElementById('verPill'); if(p)p.textContent=APP_VER;})();
 
 if('serviceWorker' in navigator){
