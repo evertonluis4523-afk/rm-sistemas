@@ -2905,6 +2905,7 @@ tr.sal-japago>td.conf,tr.sal-japago>td.chk{opacity:1}
 .pf-folha-resumo .pf-resumo th{font-size:7.4px;padding:5px 2px;font-weight:600}
 .pf-folha-resumo .pf-resumo td{padding:4px 2px}
 .pf-resumo td.total{font-weight:800;background:#eef7f0;color:#176334}
+.pf-etapas{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 14px}.pf-etapas .et{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:999px;border:1px solid var(--line,#e2e4e8);font-size:12.5px;color:var(--muted)}.pf-etapas .et.ok{color:var(--ok,#176334);border-color:currentColor;font-weight:700}.pf-etapas .et b{font-size:13px}
 .pf-un{margin-top:10px;break-inside:avoid}.pf-un-t{font-size:8.5px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;margin:4px 0}
 .pf-resumo tr.origem-pf td{background:#fff1e8}
 .pf-resumo tr.origem-pf td.total{background:#fde3d3;color:#8a331c}
@@ -3866,7 +3867,7 @@ if(window.RM_CELULAR) document.body.classList.add('rm-campo');
     <div class="viewtabs" id="abasMain">
       <button class="vtab on" data-v="func">Funcionários</button>
       <button class="vtab" data-v="aniv">Aniversariantes<span class="vtab-sel" id="anivSelo"></span></button>
-      <button class="vtab" data-v="pf">PF · Ponto</button>
+      <button class="vtab" data-v="pf">Fechamento do mês</button>
       <button class="vtab" data-v="resc">Recibos Rescisão</button>
       <button class="vtab" data-v="rescdoc">Documentos Rescisão</button>
       <button class="vtab" data-v="extra">13º e Férias</button>
@@ -4000,8 +4001,8 @@ if(window.RM_CELULAR) document.body.classList.add('rm-campo');
     <div class="view" id="v-pf">
       <div class="pf-hero">
         <div>
-          <h2>Controle de ponto · funcionários PF</h2>
-          <p>Gera a ficha mensal, bloqueia automaticamente os dias anteriores ao início e organiza a digitação do ponto para o relatório da contabilidade. Sábados e domingos continuam disponíveis, com destaque visual.</p>
+          <h2>Fechamento do mês · contabilidade</h2>
+          <p>Junta o cartão RHID de quem tem carteira, o ponto de quem é PF e o plano de saúde da Unimed, e gera o pacote da contabilidade (PDF + Excel), com pré-visualização antes de salvar.</p>
         </div>
         <div class="pf-actions">
           <button class="btn-act dim" id="pfPrintTodos">🖨️ Fichas em branco</button>
@@ -4010,10 +4011,12 @@ if(window.RM_CELULAR) document.body.classList.add('rm-campo');
           <input type="file" id="pfRhidFile" accept="application/pdf,.pdf" hidden>
           <button class="btn-act dim" id="pfImportUnimed">⇧ Importar Unimed</button>
           <input type="file" id="pfUnimedFile" accept=".csv,.xlsx,.xls,text/csv" hidden>
-          <button class="btn-act dim" id="pfRelatorio">📋 Resumo contabilidade</button>
-          <button class="btn-act save" id="pfExcel">⭳ Excel contabilidade</button>
+          <button class="btn-act dim" id="pfExcel" title="Baixa só a planilha, sem o PDF">⭳ Só o Excel</button>
+          <button class="btn-act save" id="pfRelatorio" title="Abre a pré-visualização do relatório; de lá, salva o PDF e o Excel juntos">📦 Pacote da contabilidade</button>
         </div>
       </div>
+      <!-- etapas do mes: o que ja foi feito antes de mandar o pacote -->
+      <div class="pf-etapas" id="pfEtapas"></div>
 
       <div class="addzone pf-filters">
         <div class="section-lab">Competência e funcionário <span class="ln"></span></div>
@@ -5503,7 +5506,7 @@ if(window.RM_CELULAR) document.body.classList.add('rm-campo');
   <div class="print-bar"><span class="ttl">Pré-visualização</span><span class="info" id="printInfo"></span><div class="spacer"></div>
     <button class="btn ghost so-ficha" id="admLancarBar" hidden title="Cria ou atualiza o funcionário na aba Funcionários com o que está nesta ficha">👤 Lançar no cadastro</button>
     <button class="btn ghost" id="printClose">Fechar</button>
-    <button class="btn primary" id="printNow" title="No programa, abre o PDF nítido (vetorial) para imprimir ou salvar">🖨️ Imprimir / PDF</button></div>
+    <button class="btn ghost" id="pfPacoteSalvar" hidden title="Baixa o Excel e salva o PDF deste relatório, com o mesmo nome">💾 Salvar pacote (PDF + Excel)</button><button class="btn primary" id="printNow" title="No programa, abre o PDF nítido (vetorial) para imprimir ou salvar">🖨️ Imprimir / PDF</button></div>
   <div class="print-scroll" id="printScroll"></div>
 </div>
 
@@ -7856,7 +7859,7 @@ function avisarSemDescricao(list){
   const nomes=faltam.slice(0,3).map(e=>titlePt(e.nome).split(' ')[0]).join(', ');
   toast(faltam.length+' recibo(s) em que as linhas não somam o líquido ('+nomes+(faltam.length>3?'…':'')+'). Confira a importação da planilha — o recibo sai assim mesmo.','err');
 }
-$('#printClose').onclick=()=>$('#printOv').classList.remove('open');
+$('#printClose').onclick=()=>{$('#printOv').classList.remove('open');if(typeof pfPacoteBarra==='function')pfPacoteBarra(false);};
 /* Um botao so': "Imprimir / PDF". No programa instalado (ou dentro da
    Central) o window.print vai pela ponte e abre o PDF vetorial no leitor,
    de onde se imprime ou salva; no navegador abre a janela de impressao, que
@@ -12065,9 +12068,9 @@ function assidPontoHTML(p,nomeMes){
 function assidFonteHTML(comp,nomeMes){
   const rh=pfRhidMes(comp),nPF=pfFuncionarios(comp).filter(e=>e.status==='ativo'&&!isOculto(e)).length;
   const pf=nPF?'ponto PF de '+nPF+(nPF===1?' pessoa':' pessoas'):'';
-  const ir='<button type="button" class="btn-act dim" id="asIrPF">Abrir PF · Ponto</button>';
-  const att='<button type="button" class="btn-act dim" id="asAtualizar" title="Recarregar os dados do cartão RHID importado na aba PF">↻ Atualizar ponto</button>';
-  if(!rh)return '<div class="as-fonte aviso"><span>Ainda não há cartão RHID de <b>'+esc(nomeMes)+'</b>: importe o PDF na aba PF · Ponto para ver faltas, atrasos e atestados de quem tem carteira.'+(pf?' Já lido: '+pf+'.':'')+'</span>'+ir+'</div>';
+  const ir='<button type="button" class="btn-act dim" id="asIrPF">Abrir Fechamento do mês</button>';
+  const att='<button type="button" class="btn-act dim" id="asAtualizar" title="Recarregar os dados do cartão RHID importado no Fechamento do mês">↻ Atualizar ponto</button>';
+  if(!rh)return '<div class="as-fonte aviso"><span>Ainda não há cartão RHID de <b>'+esc(nomeMes)+'</b>: importe o PDF no Fechamento do mês para ver faltas, atrasos e atestados de quem tem carteira.'+(pf?' Já lido: '+pf+'.':'')+'</span>'+ir+'</div>';
   const quando=rh.importadoEm?', importado em '+fmtDate(rmDiaISO(rh.importadoEm)):'';
   return '<div class="as-fonte"><span>Ponto de <b>'+esc(nomeMes)+'</b>: cartão RHID <b>'+esc(rh.arquivo||'RHID')+'</b>'+quando+(pf?' · '+pf:'')+'. Os mesmos números do Excel da contabilidade.</span>'+att+ir+'</div>';
 }
@@ -17292,7 +17295,7 @@ function pfAddFeriado(){
 function renderPF(){
   const inp=$('#pfMes'); if(!inp)return; if(!inp.value)inp.value=new Date().toISOString().slice(0,7);
   const comp=inp.value,lista=pfFuncionarios(comp),sel=$('#pfFuncionario'),antes=sel.value;
-  pfRhidStatus();renderPFFecha();pfUnimedRender();
+  pfRhidStatus();renderPFFecha();pfUnimedRender();pfEtapasRender();
   sel.innerHTML='<option value="">— selecione —</option>'+lista.map(e=>'<option value="'+esc(e.id)+'">'+esc(titlePt(e.nome))+' · início '+fmtDate(e.dtInicio)+'</option>').join('');
   if(lista.some(e=>e.id===antes))sel.value=antes; else if(lista.length===1)sel.value=lista[0].id;
   $('#pfQtd').textContent=lista.length; const pp=comp.split('-');
@@ -17911,7 +17914,19 @@ function pfAbrirRelatorio(listaSel){
      ficam lado a lado e se reconhecem. A contagem não faz falta aqui — ela
      está impressa no cabeçalho da própria folha de resumo. */
   infoImpressao('Contabilidade '+comp,'Contabilidade '+comp);
+  /* o pacote: desta pré-visualização sai o PDF e, junto, o Excel dos mesmos funcionários */
+  PF_PACOTE=listaSel||null;pfPacoteBarra(true);
   $('#printOv').classList.add('open');
+}
+let PF_PACOTE=null;
+/* com o pacote na tela, ele é o botão principal; nas outras pré-visualizações some */
+function pfPacoteBarra(on){const pk=$('#pfPacoteSalvar'),pn=$('#printNow');if(!pk||!pn)return;
+  pk.hidden=!on;pk.classList.toggle('primary',on);pk.classList.toggle('ghost',!on);pn.classList.toggle('primary',!on);pn.classList.toggle('ghost',on);}
+function pfSalvarPacote(){
+  if(!document.querySelector('#printScroll .pf-folha-resumo'))return;
+  pfExcel(PF_PACOTE||undefined);
+  toast('Excel baixado; agora salve o PDF com o mesmo nome','ok');
+  setTimeout(()=>window.print(),700);
 }
 function pfPreencherDia(iso){
   const e=pfEmpAtual(),comp=pfCompAtual();if(!e){toast('Selecione um funcionário','err');return;}
@@ -18060,7 +18075,7 @@ function pfUnimedExcelBlocos(ws,linha,nc,comp,fonte){
   return r+1;
 }
 function pfUnimedNotasExcel(comp){
-  return pfUnimedMes(comp)?['Plano de saúde: valores vindos do arquivo da Unimed importado na aba PF (titular 50% da mensalidade; cônjuge e filhos 100%). Coparticipação e demais valores não entram. Sócios e desligados estão nos quadros acima.']:[];
+  return pfUnimedMes(comp)?['Plano de saúde: valores vindos do arquivo da Unimed importado no Fechamento do mês (titular 50% da mensalidade; cônjuge e filhos 100%). Coparticipação e demais valores não entram. Sócios e desligados estão nos quadros acima.']:[];
 }
 function pfExcel(listaSel){
   const comp=pfCompAtual(),lista=listaSel||pfFuncionarios(comp),dados=pfFiltraDados(pfDadosContabilidade(comp),listaSel);if(!dados.length){toast('Não há cartão RHID nem ponto PF nesta competência','err');return;}
@@ -18223,7 +18238,7 @@ function pfRelConta(){
   $('#pfRelGerar').disabled=!n;
 }
 const PF_REL_TITULOS={excel:['Selecionar funcionários — Excel contabilidade','Gerar'],
-  relatorio:['Selecionar funcionários — Resumo contabilidade','Gerar'],
+  relatorio:['Pacote da contabilidade — selecionar funcionários','Pré-visualizar'],
   fechar:['Fechar mês — selecionar funcionários','Fechar mês'],
   padrao:['Horário padrão — selecionar funcionários','Aplicar']};
 function pfRelAbrir(modo){
@@ -18330,6 +18345,17 @@ function pfExcluirImportacao(tipo){
   delete state[ramo][comp];persist();renderPF();
   toast((tipo==='rhid'?'Cartão RHID':'Arquivo da Unimed')+' de '+mes+' excluído','ok');
 }
+/* ETAPAS DO FECHAMENTO: o que já foi feito no mês aberto, antes de mandar o
+   pacote. Ponto PF conta como pronto quando não há dia pendente. */
+function pfEtapasRender(){
+  const box=$('#pfEtapas');if(!box)return;const comp=pfCompAtual();
+  const rh=pfRhidMes(comp),nPF=pfFuncionarios(comp).length,pend=nPF?pfPendentesGeral(comp).length:0,un=pfUnimedMes(comp),env=pfContabilMes(comp);
+  const et=(ok,tx)=>'<span class="et'+(ok?' ok':'')+'"><b>'+(ok?'✓':'○')+'</b>'+tx+'</span>';
+  box.innerHTML=et(!!(rh&&rh.itens&&rh.itens.length),'Cartão RHID')
+    +et(nPF>0&&!pend,nPF?('Ponto PF'+(pend?' · '+pend+' com pendência':' fechado')):'Ponto PF · ninguém PF no mês')
+    +et(!!un,'Unimed')
+    +et(!!env,env?'Enviado em '+fmtDate(String(env.enviadoEm||'').slice(0,10)):'Enviado à contabilidade');
+}
 function pfUnimedRender(){
   const box=$('#pfUnimedCorpo');if(!box)return;const comp=pfCompAtual(),u=pfUnimedMes(comp),st=$('#pfUnimedStatus');
   const ta=$('#pfUnimedSocios');if(ta&&document.activeElement!==ta)ta.value=((state.cfg&&state.cfg.unimedSocios)||[]).join('\n');
@@ -18360,6 +18386,7 @@ function pfUnimedRender(){
 (function iniciarPF(){
   const mes=$('#pfMes'),sel=$('#pfFuncionario');if(!mes||!sel)return;mes.value=new Date().toISOString().slice(0,7);mes.onchange=renderPF;sel.onchange=renderPF;$('#pfPrintTodos').onclick=()=>pfImprimir(true);$('#pfPrintUm').onclick=()=>pfImprimir(false);$('#pfRelatorio').onclick=()=>pfRelAbrir('relatorio');$('#pfExcel').onclick=()=>pfRelAbrir('excel');$('#pfPadrao').onclick=()=>pfRelAbrir('padrao');$('#pfFechar').onclick=()=>pfRelAbrir('fechar');$('#pfCfgSalvar').onclick=pfSalvarCfg;
   $('#pfImportRhid').onclick=()=>$('#pfRhidFile').click();
+  $('#pfPacoteSalvar').onclick=pfSalvarPacote;
   $('#pfImportUnimed').onclick=()=>$('#pfUnimedFile').click();
   $('#pfUnimedFile').onchange=ev=>{const f=ev.target.files[0];if(f)unimedImportar(f);ev.target.value='';};
   $('#pfUnimedSociosSalvar').onclick=()=>{state.cfg.unimedSocios=$('#pfUnimedSocios').value.split(/\r?\n/).map(x=>x.trim()).filter(Boolean);persist();renderPF();toast('Sócios salvos','ok');};
@@ -18403,7 +18430,7 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape'){if(fecharSemPerder(
    juntos a cada publicacao, e ha uma prova automatica que falha se um subir
    sem o outro. Assim o numero na tela e o mesmo do arquivo que o aparelho
    guardou, e dizer "estou na v81" passa a significar alguma coisa. */
-const APP_VER='v287';
+const APP_VER='v288';
 (function(){var p=document.getElementById('verPill'); if(p)p.textContent=APP_VER;})();
 
 if('serviceWorker' in navigator){
