@@ -5655,7 +5655,8 @@ function detLeituraLinhas(){
     /* perfil simples (só a linha, sem interna): não tem detalhamento, mas a
        ficha o mede pela linha -- não é peça perdida */
     const cs=CL[g.cl];
-    if(cs&&cs.simples&&cs.linkedFicha>=0){lin.set(i,{est:'ign',fi:cs.linkedFicha,mot:'perfil simples (medido pela ficha)'});return;}
+    if(cs&&cs.excluida){lin.set(i,{est:'ign',fi:null,mot:'estrutura excluída da leitura'});return;}
+    if(cs&&cs.linkedFicha>=0&&FICHAS[cs.linkedFicha]&&!(FICHAS[cs.linkedFicha].intMM>0)){lin.set(i,{est:'ign',fi:cs.linkedFicha,simples:true,cls:'banzo',mot:'perfil simples (medido pela ficha)'});return;}
     lin.set(i,{est:'fora',fi:null,mot:'sem estrutura'});
   });
   return {lin,avisos,sec};
@@ -5741,12 +5742,14 @@ function renderConferir(){
   const {lin,avisos,sec}=L;
   const corFicha={},letraFicha={};
   sec.forEach(s=>{if(s.fichaIdx>=0&&corFicha[s.fichaIdx]==null){corFicha[s.fichaIdx]=CONF_CORES[Object.keys(corFicha).length%CONF_CORES.length];letraFicha[s.fichaIdx]=detLetraIdent(s);}});
+  let soL=[];try{soL=(detSecoesCache()||{}).soLinha||[];}catch(_){}
+  soL.forEach(x=>{if(x.fichaIdx>=0&&corFicha[x.fichaIdx]==null){corFicha[x.fichaIdx]=CONF_CORES[Object.keys(corFicha).length%CONF_CORES.length];letraFicha[x.fichaIdx]=detLetraExibida(x.letra);}});
   let qset=new Set();try{quadrosDoDesenho().forEach(q=>(q.idxs||[]).forEach(i=>qset.add(i)));}catch(_){}
   /* grupo de desenho de cada linha */
   const grupo={},porFicha={},soltas=[],ignFora=[];
   SEG.forEach((g,i)=>{const v=lin.get(i);
     if(!v){if(qset.has(i))grupo[i]='quadro';return;}
-    if(v.est==='peca'){grupo[i]='f'+v.fi+(v.cls==='banzo'?'b':'i');(porFicha[v.fi]=porFicha[v.fi]||{p:[],o:[]}).p.push(i);return;}
+    if(v.est==='peca'||(v.simples&&corFicha[v.fi]!=null)){grupo[i]='f'+v.fi+(v.cls==='interno'?'i':'b');(porFicha[v.fi]=porFicha[v.fi]||{p:[],o:[]}).p.push(i);return;}
     if(v.est==='fora'){grupo[i]='solta';soltas.push(i);return;}
     grupo[i]=v.est==='aviso'?'aviso':'ign';
     if(v.fi!=null&&corFicha[v.fi]!=null)(porFicha[v.fi]=porFicha[v.fi]||{p:[],o:[]}).o.push(i);
@@ -5777,8 +5780,8 @@ function renderConferir(){
   const n0=v=>Math.round(v).toLocaleString('pt-BR');
   const xy=p=>'X '+n0(p.x)+' · Y '+n0(p.y);
   const ordem=Object.keys(corFicha).sort((a,b)=>String(letraFicha[a]).localeCompare(String(letraFicha[b]),'pt-BR',{numeric:true}));
-  const simplesF=FICHAS.filter(f=>fichaRole(f)&&CL[f.cluster]&&CL[f.cluster].simples);
-  const nSolta=soltas.length,semEst=FICHAS.filter((f,fi)=>fichaRole(f)&&corFicha[fi]==null&&!simplesF.includes(f)).length;
+  const simplesF=FICHAS.filter(f=>fichaRole(f)&&CL[f.cluster]&&f.banzoMM>0&&!(f.intMM>0));
+  const nSolta=soltas.length,semEst=FICHAS.filter((f,fi)=>fichaRole(f)&&corFicha[fi]==null&&!simplesF.includes(f)&&f.linkStatus!=='excluida').length;
   const chip=fi=>'<span class="conf-chip" style="background:'+corFicha[fi]+'">'+escapeHtml(letraFicha[fi])+'</span>';
   /* "ignorado: 120 polilinha (suporte...) · 1 duplicada" */
   const resumoIgn=idxs=>{const c={};idxs.forEach(i=>{const v=lin.get(i);if(v&&v.est==='ign')c[v.mot]=(c[v.mot]||0)+1;});
@@ -5810,7 +5813,9 @@ function renderConferir(){
         '<div class="conf-cab">'+chip(fi)+'<b>'+escapeHtml(f.nome)+'</b><span class="conf-qtd">'+f.qty+'×</span>'+
         (av.length?'<span class="conf-nav'+(av.some(a=>a.grav==='erro')?' erro':'')+'">'+av.length+' aviso(s)</span>':'')+
         '<span class="conf-med">vão '+m2(bbP.w)+' m · altura '+m2(bbP.h)+' m · '+nB+' de banzo · '+nI+' internas</span>'+
+        '<button type="button" class="conf-ir" data-excl="'+fi+'" title="Tirar esta estrutura da leitura: sai da compra, do detalhamento e do orçamento (dá para voltar)">✕ excluir</button>'+
         '<button type="button" class="conf-ir" data-conf-f="'+fi+'" title="Ir para a ficha">ficha ›</button></div>'+
+        (simplesF.includes(f)?'<div class="conf-notas">Perfil simples: só a linha, sem interna — os '+Math.min(2,(f.profiles||[]).length)+' perfis da ficha pela mesma linha ('+m2(bbP.w)+' m de vão).</div>':'')+
         '<svg class="conf-est" viewBox="0 0 '+Wv+' '+H+'" style="aspect-ratio:'+Wv+'/'+H+'" preserveAspectRatio="xMidYMid meet" role="img" aria-label="'+escapeHtml(f.nome)+'">'+d.o+'</svg>'+
         (av.length?'<ol class="conf-lista">'+av.slice(0,MAXL).map(a=>'<li class="'+a.grav+'"><span class="conf-n">'+a.num+'</span>'+escapeHtml(a.txt)+' <span class="conf-xy">'+xy(a.p)+'</span></li>').join('')+
           (av.length>MAXL?'<li class="mais">e mais '+(av.length-MAXL)+' — todos marcados no desenho</li>':'')+'</ol>':'')+
@@ -5855,7 +5860,11 @@ function renderConferir(){
       '<button type="button" class="btn ghost conf-enq" data-conf-enq title="Ver o desenho inteiro de novo">⤢ Enquadrar</button>'+
       '<div class="conf-dica">roda do mouse aproxima · arraste para mover</div></div>';
   }
-  const leg=ordem.map(fi=>{const f=FICHAS[fi];return '<button type="button" data-conf-f="'+fi+'"><i style="background:'+corFicha[fi]+'"></i><b>'+escapeHtml(letraFicha[fi])+'</b> '+escapeHtml(f.nome)+' · '+f.qty+'×</button>';}).join('');
+  const leg=ordem.map(fi=>{const f=FICHAS[fi];return '<span class="conf-leg-it"><button type="button" data-conf-f="'+fi+'"><i style="background:'+corFicha[fi]+'"></i><b>'+escapeHtml(letraFicha[fi])+'</b> '+escapeHtml(f.nome)+' · '+f.qty+'×</button>'+
+    '<button type="button" class="conf-leg-x" data-excl="'+fi+'" title="Excluir esta estrutura da leitura" aria-label="Excluir '+escapeHtml(f.nome)+' da leitura">✕</button></span>';}).join('');
+  const excl=FICHAS.map((f,fi)=>({f,fi})).filter(x=>x.f.linkStatus==='excluida');
+  const exclHtml=excl.length?'<div class="conf-excl">Excluída(s) da leitura — fora da compra, do detalhamento e do orçamento: '+
+    excl.map(x=>'<span><b>'+escapeHtml(x.f.nome)+'</b> <button type="button" class="btn ghost" data-excl="'+x.fi+'">↺ voltar</button></span>').join(' ')+'</div>':'';
   const ignG=resumoIgn(ignFora);
   const QA=quadrosAutomaticos(),nCorr=BANZO_CORRIGIDO.length;
   let qaHtml='';
@@ -5870,13 +5879,14 @@ function renderConferir(){
       '<span class="conf-qa-bts">'+(QA.length&&!QA_OK?'<button type="button" class="btn primary" data-qa-ok>Conferi os quadros</button>':'')+
       '<button type="button" class="btn ghost" data-qa-dxf title="O desenho no padrão RM: quadros verdes, cores corrigidas e as fichas">⭳ DXF padronizado</button></span></div>';
   }
-  el.innerHTML=qaHtml+'<div class="conf-topo"><div class="conf-res">'+sec.length+' estrutura(s) detalhada(s)'+
+  el.innerHTML=qaHtml+exclHtml+'<div class="conf-topo"><div class="conf-res">'+sec.length+' estrutura(s) detalhada(s)'+
       (nAvisos?' · <b style="color:var(--warn)">'+nAvisos+' aviso(s) marcados no desenho</b>':' · nenhum aviso')+
       (nSolta?' · <b style="color:#e5484d">'+nSolta+' linha(s) de peça fora de estrutura</b>':' · nenhuma linha fora das estruturas')+
       (semEst?' · <b style="color:var(--warn)">'+semEst+' ficha(s) sem estrutura</b>':'')+
       (ignG?' · <span title="Não é peça: ignorado de propósito">ignorado fora das estruturas: '+escapeHtml(ignG)+'</span>':'')+'</div>'+
     '<div class="conf-modo" role="group" aria-label="Como mostrar"><button type="button" data-conf-modo="est" class="'+(CONF_MODO!=='tudo'?'on':'')+'">Por estrutura</button><button type="button" data-conf-modo="tudo" class="'+(CONF_MODO==='tudo'?'on':'')+'">Desenho inteiro</button></div></div>'+
     corpo+(CONF_MODO==='tudo'?'<div class="conf-leg">'+leg+'</div>':'');
+  el.querySelectorAll('[data-excl]').forEach(b=>b.addEventListener('click',e=>{e.stopPropagation();alternaExclusao(+b.dataset.excl);}));
   const qaOk=el.querySelector('[data-qa-ok]');if(qaOk)qaOk.addEventListener('click',()=>{QA_OK=true;renderConferir();});
   const qaDxf=el.querySelector('[data-qa-dxf]');if(qaDxf)qaDxf.addEventListener('click',baixarDxfPadronizado);
   el.querySelectorAll('[data-conf-modo]').forEach(b=>b.addEventListener('click',()=>{CONF_MODO=b.dataset.confModo;try{localStorage.setItem('leitor_conf_modo',CONF_MODO);}catch(_){}renderConferir();}));
@@ -6010,6 +6020,26 @@ const VINC_MIN=82, VINC_MARGEM=5, VINC_CERTO=110, VINC_SEM=72;
    ninguem: aqui ela vira porcentagem do ponto em que o sistema para de ter
    duvida, e o numero passa a concordar com o rotulo. */
 function vincPct(score){return Math.max(0,Math.min(100,Math.round(score/VINC_CERTO*100)));}
+/* ---- ESTRUTURA EXCLUÍDA DA LEITURA ----
+   Um quadro (com a ficha dele) que não é para esta compra -- uma vista
+   repetida, uma tesoura de outra etapa -- sai da lista, do detalhamento e do
+   orçamento com um clique, e volta com outro. A chave é o nome da ficha e
+   o ponto do texto dela, que não mudam quando o desenho é relido. */
+const EXCL=new Set();
+function fichaChave(f){return f.nome+'|'+Math.round(f.tx.x)+'|'+Math.round(f.tx.y);}
+function aplicaExclusoes(){
+  FICHAS.forEach(f=>{
+    if(!f.tx||!EXCL.has(fichaChave(f)))return;
+    const c=CL[f.cluster];
+    if(c){c.role='ignorar';c.roleManual=true;c.excluida=true;c.linkedFicha=-1;}
+    f.cluster=-1;f.banzoMM=0;f.intMM=0;f.intLens=[];f.banzoLens=[];f.linkStatus='excluida';f.linkScore=0;
+  });
+}
+function alternaExclusao(fi){
+  const f=FICHAS[fi];if(!f||!f.tx)return;
+  const k=fichaChave(f);if(EXCL.has(k))EXCL.delete(k);else EXCL.add(k);
+  cluster();renderAll();
+}
 function autoLinkFichas(){
   FICHAS.forEach(f=>{f.cluster=-1;f.banzoMM=0;f.intMM=0;f.intLens=[];f.banzoLens=[];
     f.linkStatus=fichaRole(f)?'nao-medida':'dispensada';f.linkScore=0;});
@@ -6078,6 +6108,7 @@ function autoLinkFichas(){
   for(const c of CL){if((c.role==='tesoura'||c.role==='pilar')&&!linked.has(c.id)&&!c.structural)c.role='ignorar';}
   // perfil simples que nenhuma ficha escolheu: era só uma linha amarela
   for(const c of CL){if(c.simples&&!linked.has(c.id)){c.role='ignorar';c.structural=false;}}
+  aplicaExclusoes();
 }
 /* A ficha pode ser medida à mão: quem digita os dois comprimentos não precisa
    de vínculo com o desenho, e não deve ser bloqueado por causa dele. */
@@ -6090,7 +6121,8 @@ function autoLinkFichas(){
    reconhece (sem ficha, sem banzo) continua com o número interno. */
 function letrasDaFicha(fi){
   let det=null;try{det=detSecoesCache();}catch(_){}
-  return ((det&&det.secoes)||[]).filter(s=>s.fichaIdx===fi).map(s=>detLetraIdent(s));
+  return ((det&&det.secoes)||[]).filter(s=>s.fichaIdx===fi).map(s=>detLetraIdent(s))
+    .concat(((det&&det.soLinha)||[]).filter(x=>x.fichaIdx===fi).map(x=>detLetraExibida(x.letra)));
 }
 function rotuloCluster(ci){
   const fi=FICHAS.findIndex(f=>f.cluster===ci);
@@ -6115,7 +6147,7 @@ function fichaTemMedidaManual(f){
   return num(cm[0])>0;
 }
 function fichasNaoMedidas(){
-  return FICHAS.filter(f=>fichaRole(f)&&f.cluster<0&&!fichaTemMedidaManual(f));
+  return FICHAS.filter(f=>fichaRole(f)&&f.cluster<0&&f.linkStatus!=='excluida'&&!fichaTemMedidaManual(f));
 }
 
 /* ===================== SPLIT BANZO×INTERNO (ângulo) ===================== */
@@ -6460,9 +6492,9 @@ function renderFichas(){
        precisa gritar: antes ela herdava calada o comprimento de outra. */
     const mede=!!fichaRole(f), okCluster=f.cluster>=0;
     const manualMed=!okCluster&&fichaTemMedidaManual(f), okMed=okCluster||manualMed;
-    const stCor=!mede?'var(--muted)':(!okMed?'var(--red)':(f.linkStatus==='conferir'?'var(--warn)':'var(--ok)'));
+    const stCor=(!mede||f.linkStatus==='excluida')?'var(--muted)':(!okMed?'var(--red)':(f.linkStatus==='conferir'?'var(--warn)':'var(--ok)'));
     // (quadro e manual caem no verde: os dois vêm de uma declaração, não de um palpite)
-    const stTxt=!mede?'':(!okMed?(f.linkStatus==='fora-quadro'?'FORA DO QUADRO':'NÃO MEDIDA'):(manualMed?'COMPRIMENTO MANUAL'
+    const stTxt=!mede?'':f.linkStatus==='excluida'?'EXCLUÍDA DA LEITURA':(!okMed?(f.linkStatus==='fora-quadro'?'FORA DO QUADRO':'NÃO MEDIDA'):(manualMed?'COMPRIMENTO MANUAL'
       :(f.linkStatus==='manual'?'VÍNCULO MANUAL'
        :(f.linkStatus==='quadro'?'QUADRO DO DESENHO'
         :(f.linkStatus==='conferir'?'CONFERIR VÍNCULO':'MEDIDA AUTOMÁTICA')))));
@@ -6847,6 +6879,7 @@ function compute(){
   const MEDIDO_DESENHO=medidoNoDesenho();
   for(let fIdx=0;fIdx<FICHAS.length;fIdx++){
     const f=FICHAS[fIdx];
+    if(f.linkStatus==='excluida')continue;   // tirada da leitura
     const dup=f.duplas||[];const lam=f.lam||[];const mat=f.mat||[];const esp=f.esp||[];const fora=f.fora||[];
     const mult=i=>(dup[i]?2:1);
     const isTerca=/terç[ao]|terca|tca\b|t\.c\.a\.|terça\s*simples/i.test(f.nome);
@@ -7203,7 +7236,7 @@ async function handle(file,aba){
     /* os ids de grupo sao refeitos aqui; um vinculo manual antigo apontaria
        para outro desenho */
     for(const k in FORCE)delete FORCE[k];
-    QA_OK=false;
+    QA_OK=false;EXCL.clear();
     parseFichas();fitVB();cluster();
     /* O arquivo pertence a ABA em que foi aberto. Guardar aqui e' o que
        permite trocar de aba sem perder o desenho do outro lado. */
@@ -8832,7 +8865,7 @@ function detCalcularSecoes(){
      unidades, receber a quantidade da TRELICA 02, de 50 -- erro de 12x na
      compra, sem nenhum aviso. Estrutura sem ficha propria fica de fora e e
      relatada em semFicha; herdar a ficha anterior era o mesmo erro calado. */
-  const secoes=[],semFicha=[];let totGeral=0,pecasGeral=0;
+  const secoes=[],semFicha=[],soLinha=[];let totGeral=0,pecasGeral=0;
   estruturas.forEach((ms,gi)=>{
     const letra0=String.fromCharCode(65+gi);
     const votos={};
@@ -8863,7 +8896,9 @@ function detCalcularSecoes(){
     const emPe=detEmPe(ms);
     const duplicadas=ms.reduce((n,m)=>n+(m.dups||0),0);
     const r=detalharTrelica(ms.map(m=>emPe?{cls:m.cls,src:m.src,dupSrc:m.dupSrc,a:detGira(m.a),b:detGira(m.b)}:{cls:m.cls,src:m.src,dupSrc:m.dupSrc,a:{...m.a},b:{...m.b}}),aba,esp,dInt.alma||0,espInt);
-    if(!r.pecas.length)return;
+    /* sem peça interna (perfil simples, só a linha): não há o que detalhar,
+       mas a estrutura existe e guarda a sua letra -- a tela a mostra */
+    if(!r.pecas.length){soLinha.push({letra:letra0,fichaIdx:FICHAS.indexOf(fic),cluster:cid});return;}
     const banzosResumo=detResumoBanzos(r.banzos,qtdEstrut,r.internos);
     const xs=[];r.banzos.forEach(b=>{xs.push(b.a.x,b.b.x);});
     const eixo=(Math.min(...xs)+Math.max(...xs))/2;
@@ -9057,7 +9092,7 @@ function detCalcularSecoes(){
   const comEsb=secoes.filter(s=>s.esbeltez>0);
   const bloqueia=comEsb.length>0&&comEsb.every(s=>s.escalaSuspeita);
   secoes.forEach(s=>{s.escalaBloqueia=bloqueia&&!!s.escalaSuspeita;});
-  return detSemVistasDuplicadas({secoes,totGeral,pecasGeral,semFicha,
+  return detSemVistasDuplicadas({secoes,totGeral,pecasGeral,semFicha,soLinha,
     erro:secoes.length?'':(semFicha.length
       ?'Achei '+semFicha.length+' estrutura(s) no desenho, mas nenhuma delas está vinculada a uma ficha. Selecione a estrutura no desenho e use "usar estrutura selecionada" na ficha correspondente.'
       :'Não foi possível gerar peças internas a partir do esqueleto.')});
@@ -15991,6 +16026,7 @@ function cuCompraBasePorFuncao(barra,det){
   const med=medidoNoDesenho();
   for(let fIdx=0;fIdx<FICHAS.length;fIdx++){
     const f=FICHAS[fIdx];
+    if(f.linkStatus==='excluida')continue;
     if(/terç[ao]|terca|tca\b|t\.c\.a\.|terça\s*simples/i.test(f.nome))continue;
     const dup=f.duplas||[], mat=f.mat||[], cm=f.compManual||[], fora=f.fora||[];
     const mult=i=>dup[i]?2:1, mm=med[fIdx];
@@ -19015,6 +19051,8 @@ window.__leitorTeste={
   estado:()=>({SEG,TXT,FICHAS,CL,COTAS,unitF,CAD_META,LASTROWS,LASTPESO}),
   banzoCorrigido:()=>BANZO_CORRIGIDO.map(b=>({x:b.p.x,y:b.p.y,cor:b.cor})),
   quadrosAuto:()=>quadrosAutomaticos(),
+  letras:fi=>letrasDaFicha(fi),
+  excluir:fi=>alternaExclusao(fi),
   dxfPadronizado:()=>dxfPadronizado(),
   conferir:modo=>{CONF_MODO=modo||CONF_MODO;renderConferir();},
   secoes:()=>{try{return detCalcularSecoes();}catch(e){return {erro:e.message};}},
@@ -25891,6 +25929,11 @@ render();
 #tlov table.cob-topo select{padding:4px 7px;font-size:12.5px;border:1px solid var(--line);border-radius:7px;background:var(--surface);color:var(--ink)}
 #pane-det .conf-card .bd{padding:10px}
 #pane-det .conf-qa{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;font-size:12.5px;line-height:1.45;padding:9px 12px;margin:0 0 8px;border:1px solid var(--warn);border-radius:9px;background:color-mix(in srgb,var(--warn) 8%,transparent)}
+#pane-det .conf-excl{display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px;font-size:12.5px;padding:8px 12px;margin:0 0 8px;border:1px dashed var(--line);border-radius:9px;color:var(--muted)}
+#pane-det .conf-excl .btn{padding:3px 9px;font-size:12px}
+#pane-det .conf-leg-it{display:inline-flex;align-items:center;gap:0}
+#pane-det .conf-leg .conf-leg-x{border:0;background:none;color:var(--muted);cursor:pointer;padding:2px 6px;font-size:12px}
+#pane-det .conf-leg .conf-leg-x:hover{color:var(--red)}
 #pane-det .conf-qa.ok{border-color:var(--ok);background:color-mix(in srgb,var(--ok) 7%,transparent)}
 #pane-det .conf-qa .conf-qa-bts{display:inline-flex;gap:6px;margin-left:auto}
 #pane-det .conf-topo{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin:0 0 8px}
@@ -29690,7 +29733,7 @@ if('serviceWorker' in navigator && location.protocol.startsWith('http')){
 }
 </script>
 <script>/* versão publicada (PADRAO_RM.md §3): sobe a cada publicação, junto com o CACHE do sw.js */
-const APP_VER='v249';
+const APP_VER='v250';
 </script>
 <script id="rmVersaoBloco">
 /* ===== SELO DE VERSÃO — igual em todos os sistemas (PADRAO_RM.md §3) =====
