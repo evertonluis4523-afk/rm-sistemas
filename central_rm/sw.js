@@ -12,7 +12,7 @@
      ASSETS (ex.: o jsPDF da Telha, guardado para funcionar sem internet).
    Medido: com este arquivo a versão publicada aparece na próxima abertura;
    com o anterior, e sem service worker nenhum, voltava a versão velha. */
-const CACHE = 'rm-central-v145';
+const CACHE = 'rm-central-v146';
 const ASSETS = ['./', './index.html', './manifest.json', './icon-192.png', './icon-512.png',
   /* o Firebase também: sem ele a Central nem montava a tela sem internet */
   'https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js',
@@ -44,8 +44,14 @@ self.addEventListener('fetch', e => {
       const cp = res.clone();
       caches.open(CACHE).then(c => c.put(proprio ? url.origin + url.pathname : req, cp)).catch(() => {});
     }
+    /* O Cloudflare troca "medicao.html" por "medicao" (um desvio). Página
+       que chega por desvio o navegador recusa como resposta da navegação --
+       a tela ficava branca --: ele vai ao endereço final, e a cópia do cache
+       sai sem a marca do desvio. */
+    if (res && res.redirected && ehPagina(req)) return Response.redirect(res.url, 302);
     return res;
   }).catch(() => caches.match(req, { ignoreSearch: true })
     .then(m => m || (ehPagina(req) ? caches.match(PAGINA) : undefined))
+    .then(m => m && m.redirected ? new Response(m.body, { status: m.status, statusText: m.statusText, headers: m.headers }) : m)
     .then(m => m || Response.error())));
 });
