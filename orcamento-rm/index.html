@@ -4439,10 +4439,10 @@ body[data-theme="escuro"] .cob-t input[type=date]{color-scheme:dark}
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
         <input id="dbPerfilSearch" placeholder="Filtrar perfis…" oninput="renderDBPerfis()">
       </div>
-      <table class="dbtbl">
-        <thead><tr><th>Grupo</th><th>Tipo</th><th>Espess.</th><th>Dimensões</th><th class="r">Larg.</th><th class="r">Compr.</th><th class="r">Peso (kg)</th><th class="r">R$/kg★</th><th>Produção</th><th></th></tr></thead>
+      <div class="db-tw"><table class="dbtbl">
+        <thead id="dbPerfilHead"></thead>
         <tbody id="dbPerfilBody"></tbody>
-      </table>
+      </table></div>
       <div class="row-form">
         <div class="f" style="grid-column:span 3"><span class="lab">Grupo</span>
           <select class="din" id="np_grupo">
@@ -6007,6 +6007,8 @@ function escapeAttr(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace
 function precoKg(esp){const f=fornAtivo();return (f&&f.precos&&f.precos[esp]!=null)?f.precos[esp]:null;}
 // R$/kg de um PERFIL: se for especial com preço próprio, usa ele; senão usa o preço da espessura.
 function precoKgPerfil(p){
+  const fa=fornAtivo(),pf=fa&&fa.rkgPerfil&&Number(fa.rkgPerfil[p.id]);
+  if(pf>0)return pf;
   if(p&&p.especial&&p.rkgProprio!=null&&parseNumLoose(p.rkgProprio)>0)return parseNumLoose(p.rkgProprio);
   return precoKg(p.esp);
 }
@@ -7810,7 +7812,7 @@ function areaRef(area){if(area.indexOf('cat:')===0){const c=catById(area.slice(4
 function fornTemArea(f,area){
   if(!f)return false;
   const ref=cpNorm(f.nome)===cpNorm(cpRefNome()),v=f.vende||{},algum=o=>Object.values(o||{}).some(x=>Number(x)>0);
-  if(area==='kg')return ref||!!v.kg||algum(f.precos)||f.id===S.fornecedorAtivo;
+  if(area==='kg')return ref||!!v.kg||algum(f.precos)||algum(f.rkgPerfil)||f.id===S.fornecedorAtivo;
   if(area==='telhas')return ref||!!v.telhas||algum(f.telhas);
   if(area==='chapas')return ref||!!v.chapas||algum(f.matPrecos);
   if(area.indexOf('cat:')===0){const c=catById(area.slice(4));return !!c&&!catSemFornecedor(c)&&catFornCols(c).some(n=>cpNorm(n)===cpNorm(f.nome));}
@@ -7843,7 +7845,7 @@ function dbPop(anc,html){
 function dbPopFora(e){const p=document.getElementById('dbPop');if(p&&!p.contains(e.target))dbPopFecha();}
 function dbPopFecha(){const p=document.getElementById('dbPop');if(p)p.remove();document.removeEventListener('mousedown',dbPopFora);}
 function dbRender(area){
-  if(area==='kg')renderForn();else if(area==='telhas')renderDBTelhas();else if(area==='chapas')renderChapasKg();else renderCatTabs();
+  if(area==='kg'){renderForn();renderDBPerfis();}else if(area==='telhas')renderDBTelhas();else if(area==='chapas')renderChapasKg();else renderCatTabs();
   renderFornCad();renderDbNav();
 }
 document.addEventListener('click',e=>{
@@ -7905,9 +7907,9 @@ function fornTiraDaArea(area,nome){
   if(area.indexOf('cat:')===0){const c=catById(area.slice(4));if(!c)return;const i=catFornCols(c).findIndex(n=>cpNorm(n)===cpNorm(nome));if(i>0)removeCatFornCol(c.id,i);renderFornCad();renderDbNav();return;}
   const f=cpForn(nome);if(!f)return;
   if(area==='kg'&&f.id===S.fornecedorAtivo){alert(nome+' é o fornecedor dos perfis no orçamento. Escolha outro lá antes de tirá-lo daqui.');return;}
-  const campo={kg:'precos',telhas:'telhas',chapas:'matPrecos'}[area],n=Object.values(f[campo]||{}).filter(v=>Number(v)>0).length;
+  const campo={kg:'precos',telhas:'telhas',chapas:'matPrecos'}[area],n=Object.values(f[campo]||{}).filter(v=>Number(v)>0).length+(area==='kg'?Object.values(f.rkgPerfil||{}).filter(v=>Number(v)>0).length:0);
   if(!confirm('Tirar '+nome+' de '+AREA_NOME[area]+'?'+(n?'\n\nOs '+n+' preço(s) dele aqui são apagados.':'')))return;
-  if(area==='kg')Object.keys(f.precos||{}).forEach(e=>{f.precos[e]=null;});else delete f[campo];
+  if(area==='kg'){Object.keys(f.precos||{}).forEach(e=>{f.precos[e]=null;});delete f.rkgPerfil;}else delete f[campo];
   f.vende=f.vende||{};f.vende[area]=false;
   save();dbRender(area);recompute();renderLines();toast(nome+' saiu de '+AREA_NOME[area]);
 }
@@ -7936,7 +7938,7 @@ function fornAreas(){
 }
 function fornNumPrecos(f){
   const ref=cpNorm(f.nome)===cpNorm(cpRefNome()),pos=o=>Object.values(o||{}).filter(v=>Number(v)>0).length;
-  let n=pos(f.precos)+pos(f.catPrecos)+(ref?S.telhas.filter(t=>Number(t.preco)>0).length:pos(f.telhas))+(ref?(S.materiaisKg||[]).filter(m=>Number(m.rkg)>0).length:pos(f.matPrecos));
+  let n=pos(f.precos)+pos(f.rkgPerfil)+pos(f.catPrecos)+(ref?S.telhas.filter(t=>Number(t.preco)>0).length:pos(f.telhas))+(ref?(S.materiaisKg||[]).filter(m=>Number(m.rkg)>0).length:pos(f.matPrecos));
   (S.categorias||[]).forEach(c=>{if(cpNorm(catFornBase(c))===cpNorm(f.nome))n+=c.items.filter(it=>Number(it.valor)>0).length;});
   return n;
 }
@@ -7983,7 +7985,7 @@ function fornSalvar(){
     if(on&&!tem){if(a.indexOf('cat:')===0){const c=catById(a.slice(4));c.fornCols=c.fornCols||[];if(!c.fornCols.some(x=>cpNorm(x)===cpNorm(f.nome)))c.fornCols.push(f.nome);}else{f.vende=f.vende||{};f.vende[a]=true;}if(!primeira)primeira=a;}
     if(!on&&tem)fornTiraDaArea(a,f.nome);
   });
-  FORN_DLG=null;save();renderCatTabs();renderForn();renderDBTelhas();renderChapasKg();renderFornCad();renderDbNav();renderSupSelect();
+  FORN_DLG=null;save();renderCatTabs();renderForn();renderDBPerfis();renderDBTelhas();renderChapasKg();renderFornCad();renderDbNav();renderSupSelect();
   if(!id&&primeira){showTab(primeira);toast(f.nome+' cadastrado: digite os preços na coluna dele');}else toast(id?'Fornecedor atualizado':f.nome+' cadastrado');
 }
 function fornExcluir(id){
@@ -7997,7 +7999,7 @@ function fornExcluir(id){
   S.fornecedores=S.fornecedores.filter(x=>x.id!==id);
   (S.categorias||[]).forEach(c=>{if(c.fornCols)c.fornCols=c.fornCols.filter(x=>cpNorm(x)!==cpNorm(f.nome));});
   if(S.fornecedorAtivo===id)S.fornecedorAtivo=S.fornecedores[0].id;
-  save();renderCatTabs();renderForn();renderDBTelhas();renderChapasKg();renderFornCad();renderDbNav();renderSupSelect();recompute();renderLines();toast('Fornecedor excluído');
+  save();renderCatTabs();renderForn();renderDBPerfis();renderDBTelhas();renderChapasKg();renderFornCad();renderDbNav();renderSupSelect();recompute();renderLines();toast('Fornecedor excluído');
 }
 
 /* ---------- o menu lateral ---------- */
@@ -8048,7 +8050,19 @@ function renderDBPerfis(){
   document.getElementById('perfilCount').textContent=S.perfis.length;
   let list=S.perfis;
   if(q){const nq=normalize(q);list=S.perfis.filter(p=>normalize(`${p.tipo} ${p.esp} ${p.dims} ${p.grupo}`).includes(nq)||normalize(`${p.tipo} ${p.esp} ${p.dims} ${p.grupo}`).split(' ').some(tk=>nq.split(' ').includes(tk)));}
-  const body=document.getElementById('dbPerfilBody');
+  const body=document.getElementById('dbPerfilBody'),head=document.getElementById('dbPerfilHead');
+  /* R$/kg do perfil por fornecedor (perfil especial). A referência guarda o
+     dela no próprio perfil (rkgProprio); os demais em f.rkgPerfil[id]. Vazio
+     = preço da espessura daquele fornecedor, que aparece apagado no campo. */
+  const cols=fornCols('kg'),ref=cpRefNome();
+  if(head)head.innerHTML='<tr><th>Grupo</th><th>Tipo</th><th>Espess.</th><th>Dimensões</th><th class="r">Larg.</th><th class="r">Compr.</th><th class="r">Peso (kg)</th>'
+    +cols.map((n,i)=>fornTh('kg',n,i).replace('<b>','<b>R$/kg ')).join('')+'<th class="db-nova"><button type="button" class="db-novab" onclick="fornAdd(\'kg\',this)">＋ Fornecedor</button></th><th>Produção</th><th></th></tr>';
+  const celPerfil=p=>{
+    const vs=cols.map(n=>{const f=cpForn(n);if(!f)return 0;if(cpNorm(n)===cpNorm(ref))return p.especial&&Number(p.rkgProprio)>0?Number(p.rkgProprio):0;return Number(f.rkgPerfil&&f.rkgPerfil[p.id])||0;});
+    const ef=cols.map((n,i)=>vs[i]||Number(cpRateCadastro(p,n))||0),mn=menorDe(ef);
+    return cols.map((n,i)=>{const f=cpForn(n),r=cpNorm(n)===cpNorm(ref),pe=f&&Number(f.precos&&f.precos[p.esp])>0?String(f.precos[p.esp]).replace('.',','):'—';
+      return '<td class="r'+(ef[i]>0&&ef[i]===mn?' cat-menor':'')+'"><input class="din mono r sm" style="width:58px;'+(vs[i]>0?'border-color:var(--red);color:var(--red);font-weight:700':'')+'" value="'+(vs[i]>0?String(vs[i]).replace('.',','):'')+'" placeholder="'+pe+'" title="R$/kg de '+escapeAttr(n)+' para este perfil. Vazio = preço da espessura ('+pe+')." onchange="'+(r?'setRkgProprio(\''+p.id+'\',this.value)':'setRkgPerfilForn(\''+p.id+'\',\''+(f?f.id:'')+'\',this.value)')+'"></td>';}).join('')+'<td></td>';
+  };
   body.innerHTML=list.map(p=>`<tr>
     <td style="font-size:11px;color:var(--muted);font-weight:600">${p.grupo}</td>
     <td><span class="tag ${p.tipo==='UE'?'ue':'u'}">${p.tipo}</span></td>
@@ -8057,13 +8071,13 @@ function renderDBPerfis(){
     <td class="r"><input class="din mono r sm" style="width:56px" value="${p.slitter!=null?p.slitter:''}" onchange="editPerfil('${p.id}','slitter',parseNumLoose(this.value))"></td>
     <td class="r"><input class="din mono r sm" style="width:62px" value="${p.comp}" onchange="editPerfil('${p.id}','comp',parseInt(this.value)||0)"></td>
     <td class="r mono" style="color:var(--muted)">${num(pesoBarra(p),2)}</td>
-    <td class="r"><input class="din mono r sm" style="width:58px;${p.especial?'border-color:var(--red);color:var(--red);font-weight:700':''}" value="${p.especial&&p.rkgProprio!=null?p.rkgProprio:''}" placeholder="—" title="R$/kg próprio (perfil especial). Vazio = usa o preço da espessura." onchange="setRkgProprio('${p.id}',this.value)"></td>
+    ${celPerfil(p)}
     <td><select class="din sm" style="font-size:11px;padding:2px 4px" title="Onde a Perfitec produz este perfil. Peça curta demais para a perfiladeira cai em corte e dobra de qualquer forma." onchange="setProducao('${p.id}',this.value)">
       <option value="perfiladeira"${p.producao!=='cortedobra'?' selected':''}>Perfiladeira</option>
       <option value="cortedobra"${p.producao==='cortedobra'?' selected':''}>Corte e dobra</option>
     </select></td>
     <td class="r"><button class="delx" onclick="delPerfil('${p.id}')">${trash()}</button></td>
-  </tr>`).join('')|| '<tr><td colspan="10" style="text-align:center;color:var(--muted);padding:16px">Nenhum perfil.</td></tr>';
+  </tr>`).join('')|| '<tr><td colspan="99" style="text-align:center;color:var(--muted);padding:16px">Nenhum perfil.</td></tr>';
 }
 function editPerfil(id,f,v){const p=perfilById(id);if(!p)return;p[f]=v;save();recompute();renderLines();renderDBPerfis();}
 /* Onde a Perfitec produz o perfil. A perfiladeira faz a peça pelo mesmo preço
@@ -8085,6 +8099,13 @@ function setRkgProprio(id,valor){
   else{delete p.especial;delete p.rkgProprio;}
   save();recompute();renderLines();renderDBPerfis();
   toast(v>0?'Perfil marcado como especial':'Perfil voltou ao preço da espessura');
+}
+function setRkgPerfilForn(pid,fid,valor){
+  const p=perfilById(pid),f=(S.fornecedores||[]).find(x=>x.id===fid);if(!p||!f)return;
+  const v=parseNumLoose(valor);f.rkgPerfil=f.rkgPerfil||{};
+  if(v>0)f.rkgPerfil[pid]=v;else delete f.rkgPerfil[pid];
+  marcaAtual(f.nome,'kg');save();recompute();renderLines();renderDBPerfis();
+  toast(v>0?'R$/kg de '+f.nome+' para este perfil':'Perfil volta ao preço da espessura de '+f.nome);
 }
 function setDens(v){S.densidade=parseNumLoose(v)||8000;save();recompute();renderLines();renderDBPerfis();toast('Densidade atualizada');}
 function delPerfil(id){const p=perfilById(id);if(!confirm('Excluir perfil "'+desc(p)+'"?'))return;S.perfis=S.perfis.filter(x=>x.id!==id);save();renderDBPerfis();renderLines();toast('Perfil excluído');}
@@ -10138,7 +10159,7 @@ function applyImport(){
    publicacao, e ha uma prova automatica que falha se um subir sem o outro.
    Assim o numero na tela e' o mesmo do arquivo que o aparelho guardou, e
    dizer "estou na v15" passa a significar alguma coisa. */
-const APP_VER='v139';
+const APP_VER='v140';
 (function(){ try{ const p=document.getElementById('verPill'); if(p)p.textContent=APP_VER; }catch(e){} })();
 /* Versao nova assumiu com a pagina aberta: avisa, em vez de recarregar por
    conta propria e jogar fora um orcamento pela metade. */
@@ -13027,6 +13048,9 @@ function cpForn(nome){ return (S.fornecedores||[]).find(x=>cpNorm(x.nome)===cpNo
 function cpRateCadastro(p,nome){
  const f=cpForn(nome); if(!f) return null;
  const porEsp=Number(f.precos&&f.precos[p.esp])>0?Number(f.precos[p.esp]):null;
+ /* o preço que o fornecedor deu para ESTE perfil vence o da espessura */
+ const pr=f.rkgPerfil&&f.rkgPerfil[p.id];
+ if(Number(pr)>0) return Number(pr);
  if(!p.especial) return porEsp;
  /* Perfil fora do padrão.
     O rkgProprio escrito no perfil é o preço da REFERÊNCIA -- foi cadastrado
@@ -13035,8 +13059,6 @@ function cpRateCadastro(p,nome){
     Para os demais vale a regra que o Everton descreveu: fora do padrão cobra
     pela mesma base do padrão (largura útil do perfil + R$/kg), a menos que o
     fornecedor tenha um preço próprio cadastrado para aquele perfil. */
- const pr=f.rkgPerfil&&f.rkgPerfil[p.id];
- if(Number(pr)>0) return Number(pr);
  if(cpNorm(nome)===cpNorm(cpRefNome())) return Number(p.rkgProprio)>0?Number(p.rkgProprio):porEsp;
  return porEsp;
 }
