@@ -20,7 +20,7 @@
   "versao": "v45"
  },
  "central_rm": {
-  "commit": "9342893",
+  "commit": "cc7f593",
   "versao": "v146"
  },
  "controle_cheques": {
@@ -36,8 +36,8 @@
   "versao": "v105"
  },
  "leitor_dwg": {
-  "commit": "1955146",
-  "versao": "v248"
+  "commit": "78a2e2e",
+  "versao": "v249"
  },
  "orcamento-rm": {
   "commit": "e139ddc",

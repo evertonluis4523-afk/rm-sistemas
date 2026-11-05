@@ -4292,7 +4292,7 @@ function textOf(e){const t=(e.type||'').toUpperCase();
   return null;}
 function textsDeep(e,out){
   const direct=textOf(e);
-  if(direct!=null&&(''+direct).trim()){const pos=P(e.insertionPoint||e.position||e.startPoint||(e.text&&e.text.startPoint)||e.basePoint||e.location||e.attachmentPoint||e.insertPoint)||{x:0,y:0};out.push({s:(''+direct).trim(),x:pos.x,y:pos.y});}
+  if(direct!=null&&(''+direct).trim()){const pos=P(e.insertionPoint||e.position||e.startPoint||(e.text&&e.text.startPoint)||e.basePoint||e.location||e.attachmentPoint||e.insertPoint)||{x:0,y:0};out.push({s:(''+direct).trim(),x:pos.x,y:pos.y,h:Number(e.textHeight||e.height)||0});}
   const attrs=e.attributes||e.attribs||e.attrib||e.atts;
   if(Array.isArray(attrs))for(const a of attrs){const v=textOf(Object.assign({type:'ATTRIB'},a));if(v!=null&&(''+v).trim()){const pos=P(a.position||a.insertionPoint||(a.text&&a.text.startPoint)||e.insertionPoint||e.position)||{x:0,y:0};out.push({s:(''+v).trim(),x:pos.x,y:pos.y});}}
   const kids=e.entities||e.children;
@@ -4792,7 +4792,7 @@ function readDxfAscii(buf){
         if(!tx.trim())continue;
         const q=pt(r,10,20);
         if(t==='ATTRIB'&&ins)att.push({tag:((r.v[2]||[''])[0]||'').trim(),s:tx.trim(),x:q.x,y:q.y,estilo:est});
-        else TXT.push({s:tx.trim(),x:q.x,y:q.y,estilo:est});
+        else TXT.push({s:tx.trim(),x:q.x,y:q.y,estilo:est,h:num((r.v[40]||['0'])[0])||0});
       }else if(t==='DIMENSION'&&!ctx){
         /* 13/23 e 14/24: os dois pontos medidos; 42: a medida; 1: texto forcado */
         const c=cotaDaEntidade({subDefinitionPoint1:pt(r,13,23),subDefinitionPoint2:pt(r,14,24),
@@ -5220,7 +5220,7 @@ function parseFichas(){
       FICHAS_IGNORADAS.push({nome:f.nome,x:t.x,y:t.y,texto:t.s});
       continue;
     }
-    FICHAS.push({nome:f.nome,profiles:f.profiles,duplas:f.duplas,cants:f.cants,lam:[],mat:[],esp:[],qty:f.qty,comp:f.comp,tabela:f.tabela||[],cluster:-1,banzoMM:0,intMM:0,tx:{x:t.x,y:t.y}});
+    FICHAS.push({nome:f.nome,profiles:f.profiles,duplas:f.duplas,cants:f.cants,lam:[],mat:[],esp:[],qty:f.qty,comp:f.comp,tabela:f.tabela||[],cluster:-1,banzoMM:0,intMM:0,tx:{x:t.x,y:t.y},txH:t.h||0,txLinhas:String(t.s||'').split(/\\P|\^J|\n/).map(x=>x.replace(/\\[A-Za-z][^;\\]*;/g,'').trim()).filter(Boolean)});
   }
   ligaLaminadosPolegada();
 }
@@ -5327,9 +5327,10 @@ function pontoNoQuadro(p,q){return p&&q&&p.x>=q.mnx&&p.x<=q.mxx&&p.y>=q.mny&&p.y
    O casamento é feito por uma grade nos extremos das linhas. Comparar todos
    os pares seria O(n²) -- 9.364 segmentos dariam 44 milhões de testes a cada
    toque no controle de sensibilidade. */
-function componentesEstruturais(jaUsados){
+function componentesEstruturais(jaUsados,opt){
+  opt=opt||{};
   const ids=[];SEG.forEach((s,i)=>{if(detClasse(s.cor,s.layer)&&!(jaUsados&&jaUsados.has(i)))ids.push(i);});
-  if(ids.length<4)return [];
+  if(ids.length<(opt.simples?1:4))return [];
   const pai={};ids.forEach(i=>pai[i]=i);
   const raiz=i=>{while(pai[i]!==i){pai[i]=pai[pai[i]];i=pai[i];}return i;};
   const une=(a,b)=>{a=raiz(a);b=raiz(b);if(a!==b)pai[b]=a;};
@@ -5358,14 +5359,68 @@ function componentesEstruturais(jaUsados){
   const g={};ids.forEach(i=>{const r=raiz(i);(g[r]=g[r]||[]).push(i);});
   /* só é estrutura o que tem as duas famílias: duas linhas de banzo e pelo
      menos um interno. Uma cota amarela solta não vira tesoura. */
-  return Object.values(g).filter(x=>{
-    let bz=0,it=0;
-    x.forEach(i=>{const k=detClasse(SEG[i].cor,SEG[i].layer);if(k==='banzo')bz++;else if(k==='interno')it++;});
-    return bz>=2&&it>=1&&x.length>=4;
+  const out=[];
+  Object.values(g).forEach(x=>{
+    let bz=0,it=0,maior=0;
+    x.forEach(i=>{const k=detClasse(SEG[i].cor,SEG[i].layer);if(k==='banzo'){bz++;maior=Math.max(maior,dist(SEG[i].a,SEG[i].b)*(unitF||10));}else if(k==='interno')it++;});
+    if(bz>=2&&it>=1&&x.length>=4){out.push(x);return;}
+    /* TESOURA DE PERFIL SIMPLES (sem quadro no desenho): só banzo, nenhuma
+       interna -- o perfil onde a telha vai presa, sem diagonal. Entra como
+       candidata de UM MEMBRO, e só fica se alguma ficha a escolher; a que
+       sobra sem ficha volta a ser ignorada (uma cota amarela solta não vira
+       tesoura). Pelo menos 1 m de linha, para não pegar risco de detalhe. */
+    if(opt.simples&&bz>=1&&it===0&&maior>=1000){x.simples=true;out.push(x);}
+  });
+  return out;
+}
+/* ---- BANZO PELA POSIÇÃO ----
+   A peça de cima da caixinha da ponta menor da tesoura é BANZO (confirmado
+   pelo Everton), mas a arquiteta quase sempre a deixa vermelha -- e até os
+   desenhos de referência do leitor vieram assim.
+   O leitor separa banzo de interno pela cor, então esse pedaço caía fora do
+   banzo ("acima/abaixo do banzo, ignorado") e a peça sumia da compra.
+   Regra: na tesoura deitada, uma linha VERMELHA quase horizontal que é a
+   borda de cima ou de baixo da estrutura -- nada da estrutura passa acima
+   (ou abaixo) dela -- e que encosta numa ponta de banzo (até 10 cm) é banzo.
+   Ela passa a amarelo aqui (e assim sai no DXF padronizado) e fica marcada
+   para conferir. Pilar (estrutura em pé) não entra. */
+let BANZO_CORRIGIDO=[];
+function banzoPelaPosicao(){
+  BANZO_CORRIGIDO=[];
+  const comps=componentesEstruturais(null);
+  const tolJ=Math.max(0.2,100/(unitF||10)), tolY=Math.max(0.05,5/(unitF||10));
+  comps.forEach(ids=>{
+    const bb=bbox(ids);if(bb.h>bb.w*1.3)return;
+    const bz=ids.filter(i=>detClasse(SEG[i].cor,SEG[i].layer)==='banzo');
+    const pontas=[];bz.forEach(j=>pontas.push(SEG[j].a,SEG[j].b));
+    const muda=[];
+    ids.forEach(i=>{
+      const sg=SEG[i];if(detClasse(sg.cor,sg.layer)!=='interno')return;
+      const dx=sg.b.x-sg.a.x,dy=sg.b.y-sg.a.y;
+      /* pelo menos 10 cm: o tampo da caixinha tem 20 a 30; o que fica abaixo
+         disso é ligação de canto, não peça de banzo */
+      if(Math.hypot(dx,dy)*(unitF||10)<100||Math.abs(dy)>Math.abs(dx)*0.36)return;   // até ~20°
+      const xm=(sg.a.x+sg.b.x)/2,ym=(sg.a.y+sg.b.y)/2;
+      let acima=false,abaixo=false;
+      for(const j of ids){if(j===i)continue;const g=SEG[j];
+        const x0=Math.min(g.a.x,g.b.x),x1=Math.max(g.a.x,g.b.x);
+        if(x1-x0<1e-9||xm<x0||xm>x1)continue;
+        const y=g.a.y+(g.b.y-g.a.y)*(xm-g.a.x)/(g.b.x-g.a.x);
+        if(y>ym+tolY)acima=true;else if(y<ym-tolY)abaixo=true;
+        if(acima&&abaixo)return;}
+      if(!acima&&!abaixo)return;
+      if(!pontas.some(p=>[sg.a,sg.b].some(q=>Math.hypot(p.x-q.x,p.y-q.y)<=tolJ)))return;
+      muda.push(i);
+    });
+    muda.forEach(i=>{const sg=SEG[i];
+      BANZO_CORRIGIDO.push({i,cor:sg.cor,layer:sg.layer,p:{x:(sg.a.x+sg.b.x)/2,y:(sg.a.y+sg.b.y)/2}});
+      sg.cor=2;sg.corrigida=true;
+      if(detClasse(sg.cor,sg.layer)!=='banzo')sg.layer='RM-BANZO-CORRIGIDO';});
   });
 }
 function cluster(){
   const n=SEG.length;if(!n){CL=[];return;}
+  try{banzoPelaPosicao();}catch(e){console.warn('banzo pela posição:',e);}
   const all=bbox([...Array(n).keys()]);
   const cell=Math.max(all.w,all.h)*CELL||1;
   const cols=Math.max(1,Math.ceil(all.w/cell)+1),rows=Math.max(1,Math.ceil(all.h/cell)+1);
@@ -5398,7 +5453,7 @@ function cluster(){
      avulso deixam de virar tesoura por engano, e o desenhista passa a ter
      controle total sobre o que entra na conta. Sem quadro nenhum, a dedução
      antiga continua valendo inteira. */
-  if(!quadros.length)componentesEstruturais(consumidos).forEach(x=>estrComps.push(x));
+  if(!quadros.length)componentesEstruturais(consumidos,{simples:true}).forEach(x=>estrComps.push(x));
   const usadosEstr=new Set([].concat.apply([],estrComps));
   // marca células ocupadas pelos demais segmentos (amostrando ao longo dele)
   const cellSegs=new Map();
@@ -5416,7 +5471,7 @@ function cluster(){
   }
   const totArea=(all.w*all.h)||1;
   CL=[];let id=0;
-  const todos=[...estrComps.map((idxs,k)=>({idxs,structural:true,quadro:quadroDe[k]||null})),
+  const todos=[...estrComps.map((idxs,k)=>({idxs,structural:true,simples:!!idxs.simples,quadro:quadroDe[k]||null})),
                ...comps.map(idxs=>({idxs,structural:false,quadro:null}))];
   for(const item of todos){
     const idxs=item.idxs;
@@ -5434,7 +5489,7 @@ function cluster(){
     else if(/treli[çc]/i.test(layer)){role=(bb.h>bb.w*1.3)?'pilar':'tesoura';}
     else if(idxs.length<=10&&aspect<6&&areaFrac>0.02)role='telha';
     else if(aspect>=4&&idxs.length>=8){role=(bb.h>bb.w*1.3)?'pilar':'tesoura';}
-    CL.push({idxs,bb,len,layer,aspect,role,id,structural:!!item.structural,
+    CL.push({idxs,bb,len,layer,aspect,role,id,structural:!!item.structural,simples:!!item.simples,
              quadro:item.quadro||null,roleManual:false,linkedFicha:-1});id++;
   }
   CL.sort((a,b)=>b.len-a.len);CL.forEach((c,i)=>c.id=i);
@@ -5597,9 +5652,86 @@ function detLeituraLinhas(){
     if(dist(g.a,g.b)*fator<=0.5){lin.set(i,{est:'ign',fi,mot:'traço minúsculo'});return;}
     if(fi!=null){lin.set(i,{est:'aviso',fi,mot:'não usada'});
       aviso(fi,{grav:'erro',p:m,txt:'linha de peça que o detalhamento não usou — fora da conta'});return;}
+    /* perfil simples (só a linha, sem interna): não tem detalhamento, mas a
+       ficha o mede pela linha -- não é peça perdida */
+    const cs=CL[g.cl];
+    if(cs&&cs.simples&&cs.linkedFicha>=0){lin.set(i,{est:'ign',fi:cs.linkedFicha,mot:'perfil simples (medido pela ficha)'});return;}
     lin.set(i,{est:'fora',fi:null,mot:'sem estrutura'});
   });
   return {lin,avisos,sec};
+}
+/* ---- QUADROS AUTOMÁTICOS ----
+   O desenho da arquiteta (a produção, depois do projeto aprovado) chega sem
+   o quadro verde em volta de cada tesoura. O leitor já acha a estrutura pela
+   ficha escrita ao lado; aqui ele DESENHA o quadro que faltou -- a caixa da
+   estrutura somada à caixa do texto da ficha, com folga -- para conferir na
+   tela ("Desenho inteiro") e para sair no DXF padronizado. Não muda conta
+   nenhuma: é o retrato do vínculo que o leitor fez. Com quadro no desenho,
+   não há o que sugerir. */
+let QA_OK=false;
+function quadrosAutomaticos(){
+  if(!SEG.length||!CL.length||CL.some(c=>c.quadro))return [];
+  const out=[];
+  FICHAS.forEach((f,fi)=>{
+    const c=CL[f.cluster];if(!c||!fichaRole(f)||!f.tx)return;
+    const bb=bbox(c.idxs),tam=Math.max(bb.w,bb.h);
+    const h=f.txH>0?f.txH:Math.max(tam*0.012,50/(unitF||10));
+    const linhas=(f.txLinhas&&f.txLinhas.length)?f.txLinhas:[f.nome];
+    const larg=Math.max(...linhas.map(l=>l.length))*h*0.62,alt=linhas.length*h*1.7;
+    const m=Math.max(tam*0.03,150/(unitF||10));
+    out.push({fi,cl:c.id,nome:f.nome,
+      mnx:Math.min(bb.mnx,f.tx.x)-m,mxx:Math.max(bb.mxx,f.tx.x+larg)+m,
+      mny:Math.min(bb.mny,f.tx.y-alt)-m,mxy:Math.max(bb.mxy,f.tx.y+h)+m});
+  });
+  // dois quadros que se cruzam: o vínculo de um deles precisa de conferência
+  out.forEach(q=>{q.cruza=out.some(o=>o!==q&&o.mnx<q.mxx&&o.mxx>q.mnx&&o.mny<q.mxy&&o.mxy>q.mny);});
+  return out;
+}
+/* ---- DXF PADRONIZADO ----
+   O desenho como o leitor o entendeu, no padrão RM: as linhas com a cor
+   corrigida (o pedaço de banzo que veio vermelho sai amarelo), o quadro verde
+   em volta de cada estrutura (camada RM-QUADRO) e os textos. Reaberto aqui,
+   cada ficha cai dentro do seu quadro. Cotas e hachuras não vão: são do
+   desenho de origem. */
+function dxfPadronizado(){
+  if(!SEG.length)return null;
+  const QA=quadrosAutomaticos();
+  const semAc=t=>String(t).normalize('NFD').replace(/[̀-ͯ]/g,'');
+  const nomeLay=l=>semAc(l||'0').replace(/[^A-Za-z0-9 _.-]/g,'_')||'0';
+  const r4=v=>Number(v).toFixed(4);
+  const lays={'0':'7','RM-QUADRO':'3','RM-TEXTO-FICHA':'7'};
+  let ent='',mnx=Infinity,mny=Infinity,mxx=-Infinity,mxy=-Infinity;
+  const caixa=p=>{mnx=Math.min(mnx,p.x);mny=Math.min(mny,p.y);mxx=Math.max(mxx,p.x);mxy=Math.max(mxy,p.y);};
+  SEG.forEach(g=>{const lay=nomeLay(g.layer),cor=String(g.cor>0&&g.cor<256?g.cor:7);
+    if(lays[lay]==null)lays[lay]=cor;
+    ent+=dxfN(0,'LINE')+dxfN(8,lay)+dxfN(62,cor)+dxfN(10,r4(g.a.x))+dxfN(20,r4(g.a.y))+dxfN(30,'0.0')+
+         dxfN(11,r4(g.b.x))+dxfN(21,r4(g.b.y))+dxfN(31,'0.0');
+    caixa(g.a);caixa(g.b);});
+  QA.forEach(q=>{const P=[{x:q.mnx,y:q.mny},{x:q.mxx,y:q.mny},{x:q.mxx,y:q.mxy},{x:q.mnx,y:q.mxy}];
+    P.forEach((a,k)=>{ent+=dxfLinha('RM-QUADRO',a,P[(k+1)%4]);caixa(a);});});
+  const hPad=Math.max(1,Math.max(mxx-mnx,mxy-mny)*0.004);
+  (TXT||[]).forEach(t=>{
+    const linhas=String(t.s||'').split(/\\P|\^J|\n/).map(x=>semAc(x.replace(/\\[A-Za-z][^;\\]*;/g,'')).replace(/[{}]/g,'').trim()).filter(Boolean);
+    const h=t.h>0?t.h:hPad;
+    linhas.forEach((l,k)=>{const y=t.y-h-k*h*1.6;
+      ent+=dxfN(0,'TEXT')+dxfN(8,'RM-TEXTO-FICHA')+dxfN(10,r4(t.x))+dxfN(20,r4(y))+dxfN(30,'0.0')+
+           dxfN(40,h.toFixed(3))+dxfN(1,l)+dxfN(50,'0')+dxfN(7,'STANDARD');
+      caixa({x:t.x,y});});
+  });
+  if(!(mnx<=mxx)){mnx=mny=0;mxx=mxy=100;}
+  const unid=unitF===1?4:unitF===1000?6:5;
+  return rmDxf2000(ent,{minx:mnx.toFixed(3),miny:mny.toFixed(3),maxx:mxx.toFixed(3),maxy:mxy.toFixed(3)},
+    Object.keys(lays).map(k=>[k,lays[k]]),detEstiloDoDesenho(),unid);
+}
+function baixarDxfPadronizado(){
+  let txt;
+  try{txt=dxfPadronizado();}catch(e){console.error('DXF padronizado:',e);alert('Não consegui montar o DXF padronizado.\n\n'+rmErroPt(e));return;}
+  if(!txt)return;
+  const orig=((ABA.arq[ABA.atual]||{}).nome||obraAtual()||'desenho').replace(/\.(dwg|dxf)$/i,'');
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([txt],{type:'application/dxf'}));
+  a.download=nomeArquivoSeguro('PADRONIZADO '+orig,90)+'.dxf';document.body.appendChild(a);a.click();
+  setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},2000);
 }
 function renderConferir(){
   const el=document.getElementById('conferir');if(!el)return;
@@ -5645,7 +5777,8 @@ function renderConferir(){
   const n0=v=>Math.round(v).toLocaleString('pt-BR');
   const xy=p=>'X '+n0(p.x)+' · Y '+n0(p.y);
   const ordem=Object.keys(corFicha).sort((a,b)=>String(letraFicha[a]).localeCompare(String(letraFicha[b]),'pt-BR',{numeric:true}));
-  const nSolta=soltas.length,semEst=FICHAS.filter((f,fi)=>fichaRole(f)&&corFicha[fi]==null).length;
+  const simplesF=FICHAS.filter(f=>fichaRole(f)&&CL[f.cluster]&&CL[f.cluster].simples);
+  const nSolta=soltas.length,semEst=FICHAS.filter((f,fi)=>fichaRole(f)&&corFicha[fi]==null&&!simplesF.includes(f)).length;
   const chip=fi=>'<span class="conf-chip" style="background:'+corFicha[fi]+'">'+escapeHtml(letraFicha[fi])+'</span>';
   /* "ignorado: 120 polilinha (suporte...) · 1 duplicada" */
   const resumoIgn=idxs=>{const c={};idxs.forEach(i=>{const v=lin.get(i);if(v&&v.est==='ign')c[v.mot]=(c[v.mot]||0)+1;});
@@ -5700,23 +5833,52 @@ function renderConferir(){
     const marcas=[];ordem.forEach(fi=>(avisos[fi]||[]).forEach(a=>marcas.push(a)));
     const d=desenha(todos,W,H,24,null,marcas);
     let o=d.o;
+    /* quadros automáticos primeiro: a vista abre neles, e letra e círculo
+       precisam do tamanho de tela, não do tamanho do desenho inteiro */
+    const QAt=quadrosAutomaticos();let vbIni=null,qaRet='';
+    QAt.forEach(q=>{const x0=+d.X(q.mnx),x1=+d.X(q.mxx),y0=+d.Y(q.mxy),y1=+d.Y(q.mny);
+      qaRet+='<rect class="conf-qa-rect" x="'+x0.toFixed(1)+'" y="'+y0.toFixed(1)+'" width="'+(x1-x0).toFixed(1)+'" height="'+(y1-y0).toFixed(1)+'" fill="none" stroke="'+(q.cruza?'#bf8700':'#2f9e44')+'" stroke-width="1.6" stroke-dasharray="8 4" vector-effect="non-scaling-stroke"/>';
+      vbIni=vbIni?[Math.min(vbIni[0],x0),Math.min(vbIni[1],y0),Math.max(vbIni[2],x1),Math.max(vbIni[3],y1)]:[x0,y0,x1,y1];});
+    let vbAbre='0 0 '+W+' '+H,zk=1;
+    if(vbIni){const pw=(vbIni[2]-vbIni[0])*0.06+4,ph=(vbIni[3]-vbIni[1])*0.06+4;
+      let w=vbIni[2]-vbIni[0]+2*pw,h=vbIni[3]-vbIni[1]+2*ph;const cx=(vbIni[0]+vbIni[2])/2,cy=(vbIni[1]+vbIni[3])/2;
+      if(w/h<W/H)w=h*W/H;else h=w*H/W;zk=Math.min(1,w/W);vbAbre=[cx-w/2,cy-h/2,w,h].map(v=>v.toFixed(2)).join(' ');}
+    o+=qaRet;
     ordem.forEach(fi=>{const f=FICHAS[fi],c=CL[f&&f.cluster];if(!c||!c.bb)return;const x=+d.X(c.bb.mnx),y=+d.Y(c.bb.mxy);
-      o+='<g><rect x="'+(x-2)+'" y="'+(y-20)+'" width="'+(18+String(letraFicha[fi]).length*9)+'" height="18" rx="4" fill="'+corFicha[fi]+'"/>'+
-        '<text x="'+(x+5)+'" y="'+(y-6)+'" font-size="12" font-weight="800" fill="#fff">'+escapeHtml(letraFicha[fi])+'</text></g>';});
-    soltas.forEach(i=>{const g=SEG[i];o+='<circle class="conf-marca-fora" cx="'+((+d.X(g.a.x)+ +d.X(g.b.x))/2).toFixed(1)+'" cy="'+((+d.Y(g.a.y)+ +d.Y(g.b.y))/2).toFixed(1)+'" r="16" fill="none" stroke="#e5484d" stroke-width="2" vector-effect="non-scaling-stroke"/>';});
-    corpo+='<div class="conf-tudo"><svg viewBox="0 0 '+W+' '+H+'" data-vb0="0 0 '+W+' '+H+'" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Desenho lido">'+o+'</svg>'+
+      o+='<g><rect x="'+(x-2*zk)+'" y="'+(y-20*zk)+'" width="'+((18+String(letraFicha[fi]).length*9)*zk)+'" height="'+(18*zk)+'" rx="'+(4*zk)+'" fill="'+corFicha[fi]+'"/>'+
+        '<text x="'+(x+5*zk)+'" y="'+(y-6*zk)+'" font-size="'+(12*zk)+'" font-weight="800" fill="#fff">'+escapeHtml(letraFicha[fi])+'</text></g>';});
+    /* centenas de linhas soltas são uma vista ou uma planta inteira em
+       vermelho: um círculo em cada uma só esconde o desenho */
+    if(soltas.length<=200)soltas.forEach(i=>{const g=SEG[i];o+='<circle class="conf-marca-fora" cx="'+((+d.X(g.a.x)+ +d.X(g.b.x))/2).toFixed(1)+'" cy="'+((+d.Y(g.a.y)+ +d.Y(g.b.y))/2).toFixed(1)+'" r="'+(16*zk)+'" fill="none" stroke="#e5484d" stroke-width="2" vector-effect="non-scaling-stroke"/>';});
+    BANZO_CORRIGIDO.forEach(b=>{o+='<circle class="conf-banzo-corr" cx="'+d.X(b.p.x)+'" cy="'+d.Y(b.p.y)+'" r="'+(12*zk)+'" fill="none" stroke="#f08c00" stroke-width="2.4" vector-effect="non-scaling-stroke"/>';});
+    corpo+='<div class="conf-tudo"><svg viewBox="'+vbAbre+'" data-vb0="0 0 '+W+' '+H+'" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Desenho lido">'+o+'</svg>'+
       '<button type="button" class="btn ghost conf-enq" data-conf-enq title="Ver o desenho inteiro de novo">⤢ Enquadrar</button>'+
       '<div class="conf-dica">roda do mouse aproxima · arraste para mover</div></div>';
   }
   const leg=ordem.map(fi=>{const f=FICHAS[fi];return '<button type="button" data-conf-f="'+fi+'"><i style="background:'+corFicha[fi]+'"></i><b>'+escapeHtml(letraFicha[fi])+'</b> '+escapeHtml(f.nome)+' · '+f.qty+'×</button>';}).join('');
   const ignG=resumoIgn(ignFora);
-  el.innerHTML='<div class="conf-topo"><div class="conf-res">'+sec.length+' estrutura(s) detalhada(s)'+
+  const QA=quadrosAutomaticos(),nCorr=BANZO_CORRIGIDO.length;
+  let qaHtml='';
+  if(QA.length||nCorr||simplesF.length){
+    const cruz=QA.filter(q=>q.cruza).length;
+    qaHtml='<div class="conf-qa'+(QA_OK||!QA.length?' ok':'')+'">'+
+      (QA.length?(QA_OK?'<b>✓ Quadros automáticos conferidos</b> ('+QA.length+').':
+        '<b>Este desenho veio sem os quadros verdes.</b> O leitor cercou sozinho '+QA.length+' estrutura(s), cada uma com a sua ficha — confira em <b>Desenho inteiro</b> (quadro verde tracejado). '+
+        'Quadro errado? Troque a estrutura na ficha.'+(cruz?' <b style="color:var(--warn)">'+cruz+' quadro(s) se cruzam — confira esses.</b>':'')):'')+
+      (simplesF.length?' '+simplesF.map(f=>'<b>'+escapeHtml(f.nome)+'</b>: perfil simples, '+(f.banzoMM/1000).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})+' m de linha — os '+Math.min(2,(f.profiles||[]).length)+' perfis pela mesma linha ('+f.qty+'×).').join(' '):'')+
+      (nCorr?' <b style="color:var(--warn)">'+nCorr+' pedaço(s) de banzo vieram com a cor de interno</b> (vermelho na borda da tesoura) e foram lidos como banzo — marcados em laranja no Desenho inteiro.':'')+
+      '<span class="conf-qa-bts">'+(QA.length&&!QA_OK?'<button type="button" class="btn primary" data-qa-ok>Conferi os quadros</button>':'')+
+      '<button type="button" class="btn ghost" data-qa-dxf title="O desenho no padrão RM: quadros verdes, cores corrigidas e as fichas">⭳ DXF padronizado</button></span></div>';
+  }
+  el.innerHTML=qaHtml+'<div class="conf-topo"><div class="conf-res">'+sec.length+' estrutura(s) detalhada(s)'+
       (nAvisos?' · <b style="color:var(--warn)">'+nAvisos+' aviso(s) marcados no desenho</b>':' · nenhum aviso')+
       (nSolta?' · <b style="color:#e5484d">'+nSolta+' linha(s) de peça fora de estrutura</b>':' · nenhuma linha fora das estruturas')+
       (semEst?' · <b style="color:var(--warn)">'+semEst+' ficha(s) sem estrutura</b>':'')+
       (ignG?' · <span title="Não é peça: ignorado de propósito">ignorado fora das estruturas: '+escapeHtml(ignG)+'</span>':'')+'</div>'+
     '<div class="conf-modo" role="group" aria-label="Como mostrar"><button type="button" data-conf-modo="est" class="'+(CONF_MODO!=='tudo'?'on':'')+'">Por estrutura</button><button type="button" data-conf-modo="tudo" class="'+(CONF_MODO==='tudo'?'on':'')+'">Desenho inteiro</button></div></div>'+
     corpo+(CONF_MODO==='tudo'?'<div class="conf-leg">'+leg+'</div>':'');
+  const qaOk=el.querySelector('[data-qa-ok]');if(qaOk)qaOk.addEventListener('click',()=>{QA_OK=true;renderConferir();});
+  const qaDxf=el.querySelector('[data-qa-dxf]');if(qaDxf)qaDxf.addEventListener('click',baixarDxfPadronizado);
   el.querySelectorAll('[data-conf-modo]').forEach(b=>b.addEventListener('click',()=>{CONF_MODO=b.dataset.confModo;try{localStorage.setItem('leitor_conf_modo',CONF_MODO);}catch(_){}renderConferir();}));
   el.querySelectorAll('[data-conf-f]').forEach(b=>b.addEventListener('click',()=>{
     const c=elFichas.children[+b.dataset.confF];if(c){c.scrollIntoView({behavior:'smooth',block:'center'});c.style.outline='2px solid var(--rm-laranja)';setTimeout(()=>c.style.outline='',1600);}}));
@@ -5791,6 +5953,12 @@ function pontuarVinculo(f,c,role,diag){
   const orienta=role==='pilar'?c.bb.h>c.bb.w*1.25:c.bb.w>c.bb.h*1.25;
   if(c.roleManual&&(c.role==='ignorar'||c.role==='telha'))return -500;
   if(c.role!==role&&!a.colorida&&!orienta)return -500;
+  /* TRAVA: grupo sem banzo e interno separados e grande demais para ser uma
+     tesoura -- as vistas 3D e a planta, em vermelho, viram um grupo só de
+     milhares de linhas. A TESOURA 03 de uma obra foi ligada a ele e a compra
+     saiu com 2.001 barras (5 km de perfil). Melhor ficar sem medida, em
+     vermelho, que medir isso. */
+  if(!c.structural&&!a.colorida&&(c.idxs.length>400||c.len*(unitF||10)>500000))return -500;
   let s=0;
   s+=c.role===role?30:(c.role==='ignorar'?8:-35);
   if(a.colorida)s+=42;
@@ -5800,6 +5968,10 @@ function pontuarVinculo(f,c,role,diag){
   const escala=Math.max(c.bb.w,c.bb.h,diag*0.015,1);
   s+=45-Math.min(100,distanciaFichaCluster(f,c)/escala*28);
   if(f.tx.x>=c.bb.mnx&&f.tx.x<=c.bb.mxx&&f.tx.y>=c.bb.mny&&f.tx.y<=c.bb.mxy)s+=10;
+  /* perfil simples: uma linha só pesa pouco em tudo acima. Vale a vizinhança:
+     é dele a ficha que está mais perto dele, desde que ele seja também o
+     candidato mais perto dela (ver autoLinkFichas). */
+  if(c.simples)s+=c.fichaPerto===f?30:-30;
   return s;
 }
 /* Atribuição ótima (algoritmo húngaro, O(n²m)). Resolvendo uma ficha de cada
@@ -5873,6 +6045,14 @@ function autoLinkFichas(){
   const cols=CL.filter(c=>!reservados.has(c.id));
   if(!temQuadro&&linhas.length&&cols.length){
     const all=bbox([...Array(SEG.length).keys()]),diag=Math.hypot(all.w,all.h)||1;
+    /* perfil simples: a ficha mais perto dele, se ele for também o candidato
+       (estrutura ou perfil simples) mais perto dela */
+    const cand=cols.filter(c=>c.structural);
+    cols.forEach(c=>{c.fichaPerto=null;if(!c.simples)return;
+      let fm=null,dm=Infinity;linhas.forEach(x=>{const d=distanciaFichaCluster(x.f,c);if(d<dm){dm=d;fm=x.f;}});
+      if(!fm)return;
+      const maisPerto=cand.reduce((a,o)=>{const d=distanciaFichaCluster(fm,o);return d<a.d?{c:o,d}:a;},{c:null,d:Infinity}).c;
+      if(maisPerto===c)c.fichaPerto=fm;});
     const scores=linhas.map(x=>cols.map(c=>pontuarVinculo(x.f,c,x.role,diag)));
     /* colunas-fantasma: uma ficha pode legitimamente ficar sem estrutura
        (vista 2D que não foi desenhada), e forçar par com o resto seria pior */
@@ -5896,6 +6076,8 @@ function autoLinkFichas(){
   // tesoura/pilar não vinculado (vista 2D, cópias) vira "ignorar"
   const linked=new Set(FICHAS.filter(f=>f.cluster>=0).map(f=>f.cluster));
   for(const c of CL){if((c.role==='tesoura'||c.role==='pilar')&&!linked.has(c.id)&&!c.structural)c.role='ignorar';}
+  // perfil simples que nenhuma ficha escolheu: era só uma linha amarela
+  for(const c of CL){if(c.simples&&!linked.has(c.id)){c.role='ignorar';c.structural=false;}}
 }
 /* A ficha pode ser medida à mão: quem digita os dois comprimentos não precisa
    de vínculo com o desenho, e não deve ser bloqueado por causa dele. */
@@ -5952,6 +6134,15 @@ function splitBanzo(f){
   const marcados=c.idxs.map(i=>({i,cls:detClasse(SEG[i].cor,SEG[i].layer)})).filter(x=>x.cls);
   const nB=marcados.filter(x=>x.cls==='banzo').length;
   const nI=marcados.filter(x=>x.cls==='interno').length;
+  /* perfil simples (com ou sem quadro): tudo o que tem cor é banzo; não há
+     interno a adivinhar pela geometria (o método 1 abaixo chamaria o gancho
+     da ponta de interno, e o segundo perfil da ficha perdia a linha) */
+  if(nB>=1&&nI===0){
+    let banzo=0;const banzoLens=[];
+    marcados.forEach(x=>{const sg=SEG[x.i],L=dist(sg.a,sg.b)*unitF;sg.cat=1;banzo+=L;banzoLens.push(L);});
+    f.banzoMM=banzo;f.intMM=0;f.intLens=[];f.banzoLens=banzoLens;
+    return;
+  }
   if(nB>=2&&nI>=1){
     let banzo=0,intr=0;const intLens=[],banzoLens=[];
     marcados.forEach(x=>{
@@ -6691,6 +6882,17 @@ function compute(){
     if(f.profiles.length>=1&&compBanzo){const p=add(f.profiles[0],lam[0],mat[0],esp[0],fora[0]);if(p){p.terca=false;
       if(bzPcs&&bzPcs.length){p.porEncaixe=true;bzPcs.forEach(pc=>p.pieces.push({len:pc.len,qty:pc.qty*f.qty*mult(0)}));}
       else p.contMM+=compBanzo*f.qty*mult(0);}}
+    /* TESOURA DE PERFIL SIMPLES: dois perfis na ficha e, no desenho, só a
+       linha (sem diagonal nem montante) -- o perfil onde a telha vai presa.
+       Os dois perfis vão juntos ao longo da mesma linha, então o segundo leva
+       a MESMA conta do primeiro: comprimento da linha ÷ barra × quantidade.
+       Comprimento digitado no segundo perfil continua mandando. */
+    if(f.profiles.length>=2&&compBanzo>0&&!(compInt>0)&&!(cmArr[1]!=null&&cmArr[1]!=='')){
+      const p=add(f.profiles[1],lam[1],mat[1],esp[1],fora[1]);
+      if(p){p.terca=false;
+        if(bzPcs&&bzPcs.length){p.porEncaixe=true;bzPcs.forEach(pc=>p.pieces.push({len:pc.len,qty:pc.qty*f.qty*mult(1)}));}
+        else p.contMM+=compBanzo*f.qty*mult(1);}
+    }
     /* ---- internos: barras contadas por encaixe, nao por divisao ----
        A conta antiga somava os metros dos internos, punha a quebra e dividia
        pela barra. Isso supoe que o aco enche a barra ate o fim, e ele nao
@@ -7001,6 +7203,7 @@ async function handle(file,aba){
     /* os ids de grupo sao refeitos aqui; um vinculo manual antigo apontaria
        para outro desenho */
     for(const k in FORCE)delete FORCE[k];
+    QA_OK=false;
     parseFichas();fitVB();cluster();
     /* O arquivo pertence a ABA em que foi aberto. Guardar aqui e' o que
        permite trocar de aba sem perder o desenho do outro lado. */
@@ -18810,6 +19013,10 @@ document.getElementById('detComp').addEventListener('click',e=>{
    (exceto chapasCfg, que poe precos ficticios na memoria para o teste). */
 window.__leitorTeste={
   estado:()=>({SEG,TXT,FICHAS,CL,COTAS,unitF,CAD_META,LASTROWS,LASTPESO}),
+  banzoCorrigido:()=>BANZO_CORRIGIDO.map(b=>({x:b.p.x,y:b.p.y,cor:b.cor})),
+  quadrosAuto:()=>quadrosAutomaticos(),
+  dxfPadronizado:()=>dxfPadronizado(),
+  conferir:modo=>{CONF_MODO=modo||CONF_MODO;renderConferir();},
   secoes:()=>{try{return detCalcularSecoes();}catch(e){return {erro:e.message};}},
   cotaTerca:()=>{try{return (detCalcularSecoes().secoes||[]).map(s=>(detCotaTerca(s)||[]).map(q=>({x:q.x,y:q.y,xDwg:q.x0})));}catch(e){return {erro:e.message};}},
   marcasVerticais:()=>{try{return (detCalcularSecoes().secoes||[]).map(s=>{const m=detMarcasVerticais(s);
@@ -25683,6 +25890,9 @@ render();
 #tlov table.cob-topo .n{text-align:right;font-family:var(--mono);white-space:nowrap}
 #tlov table.cob-topo select{padding:4px 7px;font-size:12.5px;border:1px solid var(--line);border-radius:7px;background:var(--surface);color:var(--ink)}
 #pane-det .conf-card .bd{padding:10px}
+#pane-det .conf-qa{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;font-size:12.5px;line-height:1.45;padding:9px 12px;margin:0 0 8px;border:1px solid var(--warn);border-radius:9px;background:color-mix(in srgb,var(--warn) 8%,transparent)}
+#pane-det .conf-qa.ok{border-color:var(--ok);background:color-mix(in srgb,var(--ok) 7%,transparent)}
+#pane-det .conf-qa .conf-qa-bts{display:inline-flex;gap:6px;margin-left:auto}
 #pane-det .conf-topo{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin:0 0 8px}
 #pane-det .conf-topo .conf-res{margin:0}
 #pane-det .conf-modo{display:inline-flex;border:1px solid var(--line);border-radius:9px;overflow:hidden}
@@ -29480,7 +29690,7 @@ if('serviceWorker' in navigator && location.protocol.startsWith('http')){
 }
 </script>
 <script>/* versão publicada (PADRAO_RM.md §3): sobe a cada publicação, junto com o CACHE do sw.js */
-const APP_VER='v248';
+const APP_VER='v249';
 </script>
 <script id="rmVersaoBloco">
 /* ===== SELO DE VERSÃO — igual em todos os sistemas (PADRAO_RM.md §3) =====
