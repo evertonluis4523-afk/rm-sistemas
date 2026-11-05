@@ -6759,15 +6759,17 @@ function compute(){
   if(!list.length){elResult.innerHTML=avisoLongas+avisoMed+'<span class="muted">Vincule ao menos uma tesoura/pilar a um grupo do desenho, ou confira as fichas.</span>';}
   else{
     const temPreco=PRECOS.ok&&(Object.keys(PRECOS.rkg).length>0||PRECOS.laminados.length>0);
-    rows='<table><thead><tr><th>Perfil</th><th class="n">Barras / peças</th><th class="n">Metros</th><th class="n">kg/m</th><th class="n">Peso</th>'+(temPreco?'<th class="n">Unitário</th><th class="n">Custo</th>':'')+'</tr></thead><tbody>';
+    const qPct=Math.round(quebra*100*10)/10;
+    rows='<table><thead><tr><th>Perfil</th><th class="n">Barras / peças<div style="font-weight:400;text-transform:none;letter-spacing:0;font-size:10px" class="muted">com encaixe</div></th><th class="n" title="Sem encaixar as peças: metros das peças + '+qPct+'% de quebra (Ajustes), divididos pela barra">Sem encaixe<div style="font-weight:400;text-transform:none;letter-spacing:0;font-size:10px" class="muted">+'+String(qPct).replace('.',',')+'% de quebra</div></th><th class="n">Metros</th><th class="n">kg/m</th><th class="n">Peso</th>'+(temPreco?'<th class="n">Unitário</th><th class="n">Custo</th>':'')+'</tr></thead><tbody>';
     LASTROWS=[];
     list.forEach((p,pi)=>{
-      let bars=0,metros=0;
+      let bars=0,metros=0,semEnc=0;
       const lamBarra=p.lam?Math.max(1,p.lam.comp||6000):barra; // comprimento da barra do laminado, se houver
       if(p.contMM){const tot=p.contMM*fator;metros+=tot/1000;
         // Banzo / comprimento contínuo: divisão simples (total ÷ barra, arredonda pra cima).
         // A quebra já está aplicada em 'fator'. Emenda de barras é normal no banzo.
         bars+=Math.ceil(tot/lamBarra);
+        semEnc+=Math.ceil(tot/lamBarra);
       }
       if(p.pieces.length){
         const allPcs=[];let mmReal=0;
@@ -6775,13 +6777,17 @@ function compute(){
         if(p.terca){
           /* Terca: cada peca e' uma barra do tamanho dela, encomendada assim.
              Sem plano de corte, sem sobra e sem limite de comprimento. */
-          bars+=allPcs.reduce((a,x)=>a+x.qty,0); metros+=mmReal;
+          bars+=allPcs.reduce((a,x)=>a+x.qty,0); metros+=mmReal; semEnc=null;
         }else{
           const nb=ffdCutBars(allPcs,lamBarra);
           /* exato + reserva: o que ele leva do fornecedor */
           const seg=p.porEncaixe?segurancaBarras():0;
           p.barrasExatas=nb; p.barrasSeguranca=seg;
           bars+=nb+seg;
+          /* "Sem encaixe": a conta de quem não encaixa as peças -- metros
+             das peças + a quebra de Ajustes, divididos pela barra. Fica ao
+             lado para comparar; o custo segue pelo encaixe. */
+          if(semEnc!=null)semEnc+=Math.ceil(mmReal*1000*fator/lamBarra);
           /* O que se compra e' barra inteira, e o peso e o custo tem de sair
              dela -- nao do aco que entra nas pecas. A sobra existe, e paga.
              (Quanto entra de fato nas pecas esta no relatorio de corte.) */
@@ -6809,12 +6815,12 @@ function compute(){
         (p.porEncaixe?(' <span class="pill" style="color:var(--ok)" title="Barras contadas encaixando as peças do detalhamento na barra (mesmo cálculo do plano de corte). Não leva quebra: a sobra aqui é medida, não estimada.">barras por encaixe</span>'+
           (p.barrasSeguranca?(' <span class="pill" style="color:var(--warn)" title="'+p.barrasExatas+' barras é o que o plano de corte precisa, exato. Estas '+p.barrasSeguranca+' são a reserva para erro de corte, ajustável em Ajustes.">'+p.barrasExatas+' + '+p.barrasSeguranca+' de segurança</span>'):'')):'');
       const nomeMostra=p.name+selo;
-      LASTROWS.push({name:p.name,lam:p.lam?p.lam.desc:'',mat:p.mat||'',bars,metros,kgm:p.kgm,peso,unit,unitTxt,custo,fora:p.fora||null,
+      LASTROWS.push({name:p.name,lam:p.lam?p.lam.desc:'',mat:p.mat||'',bars,metros,kgm:p.kgm,peso,unit,unitTxt,custo,fora:p.fora||null,semEncaixe:semEnc,
         barraMM:lamBarra,terca:!!p.terca,pecas:p.terca?p.pieces.map(pc=>({len:pc.len,qty:pc.qty})):null});
-      rows+='<tr><td>'+nomeMostra+'</td><td class="n">'+bars+'</td><td class="n">'+metros.toLocaleString('pt-BR',{minimumFractionDigits:1,maximumFractionDigits:1})+'</td><td class="n">'+(p.lam?'<span class="muted">—</span>':p.fora?('<span class="mono">'+p.kgm.toLocaleString('pt-BR',{minimumFractionDigits:3,maximumFractionDigits:3})+'</span> <span title="Calculado pelo slitter" style="font-size:10px;color:var(--blue)">⚙ slitter</span>'):('<input data-kgm="'+pi+'" value="'+String(p.kgm).replace('.',',')+'" style="'+(p.kgmSource==='estimado'?'border-color:var(--warn);background:#fffbf0':'border-color:var(--ok);background:#f0fbf5')+'"> <span title="'+(p.kgmSource==='catalogo'?'Valor de catálogo':'Estimado — confira!')+'" style="font-size:10px;color:'+(p.kgmSource==='estimado'?'var(--warn)':'var(--ok)')+'">'+(p.kgmSource==='estimado'?'⚠ est.':'✓ cat.')+'</span>'))+'</td><td class="n">'+(p.lam?'<span class="muted">—</span>':Math.round(peso)+' kg')+'</td>'+
+      rows+='<tr><td>'+nomeMostra+'</td><td class="n">'+bars+'</td><td class="n" data-sem-encaixe>'+(semEnc==null?'<span class="muted">—</span>':semEnc)+'</td><td class="n">'+metros.toLocaleString('pt-BR',{minimumFractionDigits:1,maximumFractionDigits:1})+'</td><td class="n">'+(p.lam?'<span class="muted">—</span>':p.fora?('<span class="mono">'+p.kgm.toLocaleString('pt-BR',{minimumFractionDigits:3,maximumFractionDigits:3})+'</span> <span title="Calculado pelo slitter" style="font-size:10px;color:var(--blue)">⚙ slitter</span>'):('<input data-kgm="'+pi+'" value="'+String(p.kgm).replace('.',',')+'" style="'+(p.kgmSource==='estimado'?'border-color:var(--warn);background:#fffbf0':'border-color:var(--ok);background:#f0fbf5')+'"> <span title="'+(p.kgmSource==='catalogo'?'Valor de catálogo':'Estimado — confira!')+'" style="font-size:10px;color:'+(p.kgmSource==='estimado'?'var(--warn)':'var(--ok)')+'">'+(p.kgmSource==='estimado'?'⚠ est.':'✓ cat.')+'</span>'))+'</td><td class="n">'+(p.lam?'<span class="muted">—</span>':Math.round(peso)+' kg')+'</td>'+
         (temPreco?('<td class="n" style="font-size:11px">'+unitTxt+'</td><td class="n">'+(custo?'R$ '+custo.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}):'—')+'</td>'):'')+'</tr>';
     });
-    rows+='</tbody></table><div class="hint">Barras de '+(barra/1000)+' m (perfis) — laminados usam a barra do catálogo. Terça é encomendada no comprimento de cada peça: a coluna traz o número de peças, não de barras. <b>Barras por encaixe</b>: com o detalhamento pronto, as barras do banzo e do interno são contadas encaixando peça por peça na barra (o banzo pelo plano de emenda), e não dividindo metros — essas linhas não levam quebra, porque a sobra ali é medida e já está no número; os metros são os das barras compradas, sobra inclusa. Carbono: peso × R$/kg da '+(PRECOS.fornecedor||'Perfitec')+' (por espessura). Galvanizado: peso × R$ '+rkgGalv.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})+'/kg (editável em Ajustes). Laminados: nº de barras × R$/barra. Cantoneira dupla conta ×2.'+(!temPreco?' <b style="color:var(--warn)">Abra o Orçamento RM uma vez neste navegador para sincronizar os preços.</b>':'')+'</div>';
+    rows+='</tbody></table><div class="hint">Barras de '+(barra/1000)+' m (perfis) — laminados usam a barra do catálogo. Terça é encomendada no comprimento de cada peça: a coluna traz o número de peças, não de barras. <b>Barras por encaixe</b>: com o detalhamento pronto, as barras do banzo e do interno são contadas encaixando peça por peça na barra (o banzo pelo plano de emenda), e não dividindo metros — essas linhas não levam quebra, porque a sobra ali é medida e já está no número; os metros são os das barras compradas, sobra inclusa. <b>Sem encaixe</b>: a conta sem encaixar as peças — metros das peças + '+String(Math.round(quebra*1000)/10).replace('.',',')+'% de quebra (Ajustes), divididos pela barra; fica ao lado para comparar, o peso e o custo seguem a coluna com encaixe. Carbono: peso × R$/kg da '+(PRECOS.fornecedor||'Perfitec')+' (por espessura). Galvanizado: peso × R$ '+rkgGalv.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})+'/kg (editável em Ajustes). Laminados: nº de barras × R$/barra. Cantoneira dupla conta ×2.'+(!temPreco?' <b style="color:var(--warn)">Abra o Orçamento RM uma vez neste navegador para sincronizar os preços.</b>':'')+'</div>';
     elResult.innerHTML=avisoLongas+avisoMed+rows;
     elResult.querySelectorAll('input[data-kgm]').forEach(inp=>inp.addEventListener('change',()=>{KGM[list[+inp.dataset.kgm].name]=num(inp.value)||0;compute();save();atualizarRelatorioCorteAberto();}));
   }
@@ -29474,7 +29480,7 @@ if('serviceWorker' in navigator && location.protocol.startsWith('http')){
 }
 </script>
 <script>/* versão publicada (PADRAO_RM.md §3): sobe a cada publicação, junto com o CACHE do sw.js */
-const APP_VER='v247';
+const APP_VER='v248';
 </script>
 <script id="rmVersaoBloco">
 /* ===== SELO DE VERSÃO — igual em todos os sistemas (PADRAO_RM.md §3) =====
