@@ -25958,11 +25958,6 @@ render();
   color:var(--muted);line-height:1.55;font-weight:530}
 #cob3ov .cob3leg span{display:flex;align-items:center;gap:7px;margin:5px 0}
 #cob3ov .cob3leg i{width:11px;height:11px;border-radius:2px;background:#F24619;flex:0 0 auto}
-#printArea .cob-pedido .cob-forn{margin:10px 0;padding:8px 11px;background:#f4f5f6;border-left:3px solid #D53309;
-  font-size:12px;color:#4e5660;font-weight:560}
-#printArea .cob-pedido .cob-forn b{color:#1d2127}
-#printArea .cob-pedido .cob-diag{margin:10px 0;border:1px solid #e2e4e6;border-radius:8px;padding:7px;background:#fff}
-#printArea .cob-pedido .cob-diag svg{display:block;width:100%;height:105px}
 #printArea .cob-pedido .cob-tab{width:100%;border-collapse:collapse;margin-top:10px}
 #printArea .cob-pedido .cob-tab th{font-size:11px;letter-spacing:.08em;text-transform:uppercase;
   color:#6c7480;background:#f5f6f7;padding:5px 7px;border:0;border-bottom:1px solid #dadee3}
@@ -27157,7 +27152,7 @@ render();
         projecao:proj,
         montagem:g.medida3d?(g.sentido==='rtl'?'B → A':'A → B'):'',
         notas,
-        obs:(g.diagonal?'recorte diagonal · comprada pela ponta mais comprida dentro do contorno':'peça reta')+
+        obs:(g.diagonal?'ponta em ângulo (cortar na obra) · comprada pela ponta mais comprida dentro do contorno':'peça reta')+
         ' · projeção em planta '+proj+(g.foraCumeeira?' · início na borda após o fim da cumeeira':'')+
         (g.medida3d?' · montagem '+(g.sentido==='rtl'?'Borda B → Borda A':'Borda A → Borda B'):'')+
         (g.partes>1?' · '+g.partes+' partes/faixa · transpasse '+mm(COB.traspasse)+' mm':'')+
@@ -27741,7 +27736,7 @@ render();
     if(tdet)tdet.innerHTML=r.ok?'<div><span>'+(planta?'Faixas calculadas':'Faixas por água')+'</span><b>'+r.faixas+'</b></div>'+
       '<div><span>Área coberta</span><b>'+dec(r.areaCoberta,1)+' m²</b></div>'+
       (planta&&r.economiaArea>0?'<div><span>Compra evitada pelas sobras</span><b>'+dec(r.economiaArea,1)+' m²</b></div>':'')+
-      (planta?'<div><span>Recorte diagonal bruto</span><b>'+dec(Math.max(0,r.perdaDiagonal),1)+' m²</b></div>':'')+
+      (planta?'<div><span>Recorte da ponta em ângulo</span><b>'+dec(Math.max(0,r.perdaDiagonal),1)+' m²</b></div>':'')+
       '<div><span>'+(planta?'Perda total estimada':'Excedente / transpasse')+'</span><b>'+dec(Math.max(0,r.sobreposicao),1)+' m²</b></div>':'';
     const av=document.getElementById('cobAlertas');
     if(av)av.innerHTML=tlObsHTML([...(r.erros||[]),...(r.avisos||[])],(r.erros||[]).length);
@@ -27832,7 +27827,7 @@ render();
           '<div class="fld"><label>&nbsp;</label><button type="button" class="btn ghost" id="cobReler" style="width:100%" title="Substitui apenas as medidas sugeridas">↻ Reler medidas do DWG</button></div>'+
         '</div></div>')+
       '<div class="tl-bloco cob-planta-only"><div class="tl-bloco-t">Aproveitamento</div><div class="tl-campos">'+
-        '<div class="fld tl-span2"><label>Recorte diagonal</label><label class="cob-chk" title="Desligado, toda faixa da ponta é comprada"><input type="checkbox" id="cobReaproveitar"'+(COB.reaproveitar!==false?' checked':'')+'> Reaproveitar a sobra (giro de 180°) na faixa da ponta, em vez de comprar</label></div>'+
+        '<div class="fld tl-span2"><label>Ponta em ângulo</label><label class="cob-chk" title="Desligado, toda faixa da ponta é comprada"><input type="checkbox" id="cobReaproveitar"'+(COB.reaproveitar!==false?' checked':'')+'> Reaproveitar a sobra (giro de 180°) na faixa da ponta, em vez de comprar</label></div>'+
         '<div class="fld tl-span2"><label>Largura entre blocos</label><label class="cob-chk" title="A sobra de largura da última telha de um bloco cobre a última faixa do bloco vizinho, se o comprimento de compra for igual"><input type="checkbox" id="cobReusarLargura"'+(COB.reusarLargura?' checked':'')+'> Aproveitar sobra de largura entre blocos (corte no comprimento)</label></div>'+
       '</div></div>'+
       '</div>'+
@@ -27848,7 +27843,7 @@ render();
       '<div class="tl-sec"><div class="tl-sec-t">Resultado</div>'+
         '<div id="cobAlertas"></div>'+
         '<div class="tl-kpis" id="cobTot"></div>'+
-        '<details class="tl-det"><summary>Ver detalhe <small>faixas, área coberta, recorte diagonal e sobras</small></summary>'+
+        '<details class="tl-det"><summary>Ver detalhe <small>faixas, área coberta, ponta em ângulo e sobras</small></summary>'+
           '<div class="tl-det-corpo"><div class="ct-res" id="cobTotDet"></div><div class="cob-reuso" id="cobReuso"></div></div></details>'+
         '<div class="cob-result" id="cobTotais"></div>'+
         '<div id="cobCumPainel"></div>'+
@@ -28123,14 +28118,25 @@ render();
      cobertura ficou sem: a mesma conta (m² de telha pedida x taxa da casa),
      com a taxa propria da cobertura, editavel e gravada com o resto. */
   function cobParafusos(r){return Math.ceil(Math.max(0,num(r&&r.areaPedido))*Math.max(0,num(COB.parafM2)));}
+  /* PARAFUSO DA CUMEEIRA: brocante 3/4, no mesmo padrão da telha (a taxa
+     por m²), sobre a área da cumeeira -- peças × largura útil × as abas
+     (uma de cada lado nas duas águas). A ficha mostrava a linha sem número. */
+  function cobAreaCumeeira(cum){
+    if(!cum||!cum.pecas)return 0;
+    return (cum.trechos||[]).reduce((a,t)=>a+t.pecas*num(cum.util)*(t.dois?2:1)*num(cum.aba)/1e6,0);
+  }
+  function cobParafusosCumeeira(cum){return Math.ceil(cobAreaCumeeira(cum)*Math.max(0,num(COB.parafM2)));}
   function cobAcessHTML(r,impresso){
     const q=cobParafusos(r),tx=String(num(COB.parafM2)).replace('.',',');
-    if(impresso)return q?'<div class="cob-cum"><div class="cob-cum-d"><b>Parafusos de costura e fixação: '+q+'</b> · '+tx+' por m² de telha · taxa da casa, confira</div></div>':'';
+    const cum=cobCumeeiras(r),qc=cobParafusosCumeeira(cum),ac=cobAreaCumeeira(cum);
+    if(impresso)return q?'<div class="cob-cum"><div class="cob-cum-d"><b>Parafusos de costura e fixação: '+q+'</b> · '+tx+' por m² de telha · taxa da casa, confira'+
+      (qc?'<br><b>Parafuso brocante 3/4 da cumeeira: '+qc+'</b> · '+tx+' por m² de cumeeira ('+dec(ac,1)+' m²)':'')+'</div></div>':'';
     return '<details class="tl-det" open><summary>Acessórios <small>parafusos da cobertura</small></summary><div class="tl-det-corpo">'+
       '<div class="tl-campos" style="margin-bottom:8px"><div class="fld"><label>Parafusos por m²</label>'+
         '<input data-cob-paraf type="number" min="0" step="0.5" value="'+num(COB.parafM2)+'" title="Taxa da casa: parafusos por m² de telha pedida"></div></div>'+
       '<table class="ct-t"><thead><tr><th>Item</th><th class="n">Qtd</th><th>Observação</th></tr></thead><tbody>'+
         '<tr><td><b>Parafusos de costura e fixação</b></td><td class="n"><b>'+q+'</b></td><td class="ct-org">'+tx+' por m² de telha ('+dec(r.areaPedido,1)+' m²) — taxa da casa, confira</td></tr>'+
+        (qc?'<tr><td><b>Parafuso brocante 3/4 da cumeeira</b></td><td class="n"><b>'+qc+'</b></td><td class="ct-org">'+tx+' por m² de cumeeira ('+dec(ac,1)+' m²: peças × largura útil × abas)</td></tr>':'')+
       '</tbody></table><div class="hint">Vão para o Orçamento junto com as telhas, como item avulso sem preço.</div></div></details>';
   }
   function cumHTML(c,impresso){
@@ -28256,15 +28262,16 @@ render();
        outra são 28 telhas iguais -- não duas linhas. As faces e o recorte
        diagonal vão na observação da linha. */
     const linhas=cobTotaisComprimento(r.lista).map(g=>({telhaId:m.telhaId,comp:g.x.mm,qtd:g.qtd,larguraUtilMm:COB.util,
-      obs:'Cobertura · '+[...g.destinos].join(', ')+(g.diag?' · '+g.diag+' com recorte diagonal':'')}));
+      obs:'Cobertura · '+[...g.destinos].join(', ')+(g.diag?' · '+g.diag+' com ponta em ângulo (corte na obra)':'')}));
     const cum=cobCumeeiras(r),avulsos=[];
     if(cum&&cum.pecas){const cad=cumCadastro(cum.tipo),obs='Cumeeira '+cum.tipo+' · peças de '+cum.util+' mm (largura útil) · abas de '+cum.aba+' mm';
       if(cad)linhas.push({telhaId:String(cad.id),comp:cum.util,qtd:cum.pecas,larguraUtilMm:cum.util,obs});
       else avulsos.push({nome:'Cumeeira '+cum.tipo+' ('+obs+')',tamanho:cum.pecas+' × '+cum.util+' mm',qtd:cum.pecas});}
     if(cum&&cum.rufo&&cum.rufo.pecas)avulsos.push({nome:'Rufo de topo (aba '+RUFO_ABA+' mm sobre a telha · '+dec(cum.rufo.metros,2)+' m · sobreposição '+cum.rufo.sobrepoe+' mm)',
       tamanho:cum.rufo.pecas+' × '+cum.rufo.peca+' mm',qtd:cum.rufo.pecas});
-    const paraf=cobParafusos(r);
+    const paraf=cobParafusos(r),parafCum=cobParafusosCumeeira(cum);
     if(paraf)avulsos.push({nome:'Parafusos de costura e fixação ('+String(num(COB.parafM2)).replace('.',',')+' por m² de telha — taxa da casa, confira)',tamanho:'',qtd:paraf});
+    if(parafCum)avulsos.push({nome:'Parafuso brocante 3/4 da cumeeira ('+String(num(COB.parafM2)).replace('.',',')+' por m² de cumeeira)',tamanho:'',qtd:parafCum});
     if(orcExportarTelhas(linhas,nomeObra(),'cobertura','',avulsos)){
       if(b){b.textContent='Arquivo gerado ✓';setTimeout(()=>b.textContent='Importar p/ Orçamento RM',1800);}
     }
@@ -28751,13 +28758,81 @@ render();
     });
     c.textAlign='start';
   }
+  /* ===== 3D DA FICHA DO MONTADOR =====
+     "Uma imagem 3D do telhado, com sentido de montagem, divisão das telhas
+     e comprimento e nome de cada uma na mesma imagem." O mesmo desenho do
+     3D de conferência, em modo papel (C3.ficha): fundo branco, sem piso nem
+     eixos, e sobre cada telha o código (água-posição) e o comprimento,
+     escritos ao longo dela; a seta de cada água vai da primeira à última
+     faixa. Ponta em ângulo sai em vermelho. */
+  function cobPintaFaixas3D(c,fx,tr,sx,sy){
+    const P=fx.map(x=>{const a=tr(x.a),b=tr(x.b);return {...x,ax:sx(a),ay:sy(a),bx:sx(b),by:sy(b),lt:.68};});
+    const sub=(u,v)=>[u[0]-v[0],u[1]-v[1],u[2]-v[2]],dot=(u,v)=>u[0]*v[0]+u[1]*v[1]+u[2]*v[2];
+    /* 1) a seta de cada água: SEMPRE RETA, na perpendicular das telhas, na
+       altura comum a todas elas (onde a água é mais comprida) */
+    const grupos=new Map(),setas=[];
+    P.forEach(p=>{const k=p.bn+'|'+(p.st&&p.st.id||'');if(!grupos.has(k))grupos.set(k,[]);grupos.get(k).push(p);});
+    grupos.forEach(g=>{
+      g.sort((a,b)=>a.f.ordem-b.f.ordem);
+      const f0=g[0],fz=g[g.length-1],ax3=sub(f0.b,f0.a),Lx=Math.sqrt(dot(ax3,ax3))||1,ex=ax3.map(v=>v/Lx);
+      const tAt=q=>dot(sub(q,f0.a),ex);let lo=-Infinity,hi=Infinity;
+      g.forEach(p=>{const a1=tAt(p.a),b1=tAt(p.b);lo=Math.max(lo,Math.min(a1,b1));hi=Math.min(hi,Math.max(a1,b1));});
+      const tm=hi>lo?(lo+hi)/2:Lx*.5;
+      /* o código de cada telha vai na metade oposta à da seta */
+      g.forEach(p=>{const ta=tAt(p.a),tb=tAt(p.b),fr=Math.abs(tb-ta)>1e-6?(tm-ta)/(tb-ta):.5;p.lt=fr<.5?.74:.26;});
+      if(g.length<2)return;
+      const mid=p=>[(p.a[0]+p.b[0])/2,(p.a[1]+p.b[1])/2,(p.a[2]+p.b[2])/2],D=sub(mid(fz),mid(f0)),k=dot(D,ex),Dp=D.map((v,i)=>v-ex[i]*k);
+      const A=f0.a.map((v,i)=>v+ex[i]*tm),Z=A.map((v,i)=>v+Dp[i]),pa=tr(A),pz=tr(Z);
+      setas.push({a:{x:sx(pa),y:sy(pa)},z:{x:sx(pz),y:sy(pz)}});
+    });
+    /* 2) código e comprimento ao longo de cada telha */
+    P.forEach(p=>{p.mx=p.ax+(p.bx-p.ax)*p.lt;p.my=p.ay+(p.by-p.ay)*p.lt;});
+    P.forEach(p=>{let d=Infinity;P.forEach(o=>{if(o!==p&&o.st===p.st)d=Math.min(d,Math.hypot(o.mx-p.mx,o.my-p.my));});p.larg=d;});
+    c.save();c.textAlign='center';c.textBaseline='middle';
+    P.forEach(p=>{
+      const L=Math.hypot(p.bx-p.ax,p.by-p.ay);if(L<20)return;
+      let ang=Math.atan2(p.by-p.ay,p.bx-p.ax);if(ang>Math.PI/2)ang-=Math.PI;if(ang<-Math.PI/2)ang+=Math.PI;
+      const txt=String.fromCharCode(65+(p.f.setor||0))+'-'+String(p.f.ordem).padStart(2,'0')+'  '+Math.round(num(p.f.pedido)).toLocaleString('pt-BR');
+      const fs=Math.max(7,Math.min(15,(isFinite(p.larg)?p.larg:30)*.62,L*.45/(txt.length*.62)));
+      c.save();c.translate(p.mx,p.my);c.rotate(ang);c.font='700 '+fs.toFixed(1)+'px Arial, sans-serif';
+      c.lineWidth=Math.max(2,fs*.3);c.lineJoin='round';c.strokeStyle='rgba(255,255,255,.94)';c.strokeText(txt,0,0);
+      c.fillStyle=p.f.diagonal?'#b42318':'#141414';c.fillText(txt,0,0);c.restore();
+    });
+    /* 3) as setas por cima */
+    setas.forEach(({a,z})=>{
+      const ang=Math.atan2(z.y-a.y,z.x-a.x),hd=18;
+      c.strokeStyle='#d53309';c.lineWidth=5;c.lineCap='round';
+      c.beginPath();c.moveTo(a.x,a.y);c.lineTo(z.x-Math.cos(ang)*hd*.7,z.y-Math.sin(ang)*hd*.7);c.stroke();
+      c.beginPath();c.moveTo(z.x,z.y);c.lineTo(z.x-Math.cos(ang-.45)*hd,z.y-Math.sin(ang-.45)*hd);c.lineTo(z.x-Math.cos(ang+.45)*hd,z.y-Math.sin(ang+.45)*hd);c.closePath();c.fillStyle='#d53309';c.fill();
+      c.beginPath();c.arc(a.x,a.y,8,0,Math.PI*2);c.fillStyle='#fff';c.fill();c.lineWidth=4;c.stroke();
+      /* INÍCIO antes do ponto de partida, no sentido contrário ao da seta:
+         fica fora da primeira telha e não cobre o código dela */
+      const ix=a.x-Math.cos(ang)*14,iy=a.y-Math.sin(ang)*14;
+      c.font='800 14px Arial, sans-serif';c.textAlign=Math.cos(ang)>=0?'right':'left';c.textBaseline='middle';c.lineWidth=4;c.strokeStyle='#fff';c.strokeText('INÍCIO',ix,iy);c.fillStyle='#d53309';c.fillText('INÍCIO',ix,iy);c.textBaseline='alphabetic';
+    });
+    c.restore();
+  }
+  function cob3DImagem(r){
+    if(!r||!r.ok||!cobGeometrico())return null;
+    const cv=document.createElement('canvas');cv._w=1500;cv._h=860;
+    const salvo={yaw:C3.yaw,pitch:C3.pitch,zoom:C3.zoom,vista:C3.vista,rotulos:C3.rotulos},dpr0=window.rmImprimindoAlta;
+    window.rmImprimindoAlta=1.6;
+    try{
+      Object.assign(C3,{yaw:-.62,pitch:.62,zoom:1,ficha:true});
+      if(COB.leitura==='sketchup')desenha3DSketchup(cv,r);else desenha3DPlanta(cv,r);
+      return cv.toDataURL('image/png');
+    }catch(e){console.warn('3D da ficha:',e);return null;}
+    finally{Object.assign(C3,salvo);C3.ficha=false;window.rmImprimindoAlta=dpr0;}
+  }
   function desenha3DPlanta(cv,r){
-    const dpr=window.rmImprimindoAlta||Math.min(2,window.devicePixelRatio||1),W=cv.clientWidth||800,H=cv.clientHeight||500;
+    const dpr=window.rmImprimindoAlta||Math.min(2,window.devicePixelRatio||1),W=cv._w||cv.clientWidth||800,H=cv._h||cv.clientHeight||500;
     cv.width=Math.round(W*dpr);cv.height=Math.round(H*dpr);const c=cv.getContext('2d');c.setTransform(dpr,0,0,dpr,0,0);c.clearRect(0,0,W,H);
-    const paineis=[],linhas=[],rotulosMundo=[],cums=[],gomosT=[],wpBloco=new Map();let offY=0;
+    const paineis=[],linhas=[],rotulosMundo=[],cums=[],gomosT=[],wpBloco=new Map(),fx3=[];let offY=0;
     r.blocos.forEach((b,bi)=>{
       const xs=b.poligono.map(p=>p.x),ys=b.poligono.map(p=>p.y),x0=Math.min(...xs),y0=Math.min(...ys),y1=Math.max(...ys),eixos=cobEixos(b);
-      const Wp=(p,inc)=>[p.x-x0,p.y-y0+offY,-Math.abs(cobDot(p,eixos.v)-eixos.v0)*(num(inc)/100)];
+      /* oy fixo: offY muda a cada bloco, e a cumeeira/rufo usam Wp depois
+         do laço -- iam todos para a altura do último bloco, fora do telhado. */
+      const oy=offY,Wp=(p,inc)=>[p.x-x0,p.y-y0+oy,-Math.abs(cobDot(p,eixos.v)-eixos.v0)*(num(inc)/100)];
       wpBloco.set(b,Wp);
       const pontosBloco=[];
       b.setores.forEach((s,si)=>{
@@ -28768,6 +28843,7 @@ render();
         s.faixas.forEach(f=>{
           if(f.pPedido&&cobDist(f.p1,f.pPedido)>1)linhas.push({a:Wp(f.p1,s.inclinacao),b:Wp(f.pPedido,s.inclinacao),perda:true});
         });
+        if(C3.ficha)s.faixas.forEach(f=>{if(f.p0&&f.p1)fx3.push({a:Wp(f.p0,s.inclinacao),b:Wp(f.p1,s.inclinacao),f,st:s,bn:b.nome});});
       });
       if(b.cumeeira&&!b.medida3d)linhas.push({a:Wp(b.cumeeira.a,b.inclinacao),b:Wp(b.cumeeira.b,b.inclinacao),ridge:true});
       b.setores.forEach(s=>gomosT.push(...cumGomosTelha(b,eixos,s,p=>Wp(p,s.inclinacao))));
@@ -28786,7 +28862,7 @@ render();
     const tr=p=>{let x=p[0]-cen[0],y=p[1]-cen[1],z=p[2]-cen[2];const xr=x*co-y*si,yr=x*si+y*co;return {x:xr,y:-(z*cp-yr*sp),d:yr*cp+z*sp};};
     const pp=todos.map(tr),mnX=Math.min(...pp.map(p=>p.x)),mxX=Math.max(...pp.map(p=>p.x)),mnY=Math.min(...pp.map(p=>p.y)),mxY=Math.max(...pp.map(p=>p.y));
     const sc=Math.min((W-90)/Math.max(1,mxX-mnX),(H-90)/Math.max(1,mxY-mnY))*C3.zoom,sx=p=>(p.x-(mnX+mxX)/2)*sc+W/2,sy=p=>(p.y-(mnY+mxY)/2)*sc+H/2;
-    c3Cenario(c,W,H,tr,sx,sy,min,max);
+    if(C3.ficha){c.fillStyle='#fff';c.fillRect(0,0,W,H);}else c3Cenario(c,W,H,tr,sx,sy,min,max);
     paineis.map(x=>({...x,q:x.p.map(tr)})).sort((a,b)=>a.q.reduce((s,p)=>s+p.d,0)-b.q.reduce((s,p)=>s+p.d,0)).forEach(x=>{
       c.beginPath();x.q.forEach((p,i)=>i?c.lineTo(sx(p),sy(p)):c.moveTo(sx(p),sy(p)));c.closePath();c.fillStyle=x.cor;c.fill();c.strokeStyle='#bfc7cf';c.lineWidth=1.2;c.stroke();
     });
@@ -28812,14 +28888,16 @@ render();
       cums.push(...rufoQuads(l.u0,l.u1,u=>Wb(cobPontoUV(ex,u,ex.v0),num(b.inclinacao)||0),lados));
     });
     cumPinta3D(c,cums,tr,sx,sy);
+    /* conferência: cumeeira e rufo dentro do telhado (em planta) */
+    if(C3.relevo)C3.relevo.cumFora=cums.flatMap(x=>x.p).filter(p=>p[0]<min[0]-500||p[0]>max[0]+500||p[1]<min[1]-500||p[1]>max[1]+500).length;
     cobPintaRotulos3D(c,rotulosMundo,tr,sx,sy);
-    c3Gizmo(c,W,H,tr,sc);
+    if(C3.ficha)cobPintaFaixas3D(c,fx3,tr,sx,sy);else c3Gizmo(c,W,H,tr,sc);
     document.querySelectorAll('#cob3ov [data-v]').forEach(x=>x.classList.toggle('on',x.dataset.v===C3.vista));
   }
   function desenha3DSketchup(cv,r){
-    const dpr=window.rmImprimindoAlta||Math.min(2,window.devicePixelRatio||1),W=cv.clientWidth||800,H=cv.clientHeight||500;
+    const dpr=window.rmImprimindoAlta||Math.min(2,window.devicePixelRatio||1),W=cv._w||cv.clientWidth||800,H=cv._h||cv.clientHeight||500;
     cv.width=Math.round(W*dpr);cv.height=Math.round(H*dpr);const c=cv.getContext('2d');c.setTransform(dpr,0,0,dpr,0,0);c.clearRect(0,0,W,H);
-    const paineis=[],linhas=[],rotulosMundo=[],gomosT=[],corEscoa=cobCoresPorEscoamento(r.blocos);
+    const paineis=[],linhas=[],rotulosMundo=[],gomosT=[],corEscoa=cobCoresPorEscoamento(r.blocos),fx3=[];
     r.blocos.forEach((b,bi)=>{
       const outer=b.sketchup&&b.sketchup.worldOuter;if(!outer||outer.length<3)return;
       paineis.push({p:outer,cor:cobCor3D(corEscoa,b,bi,'.78')});
@@ -28834,8 +28912,9 @@ render();
       (b.sketchup.worldHoles||[]).forEach(f=>linhas.push({loop:f,furo:true}));
       (b.setores||[]).forEach(s=>cobDivisasFaixas(b,s,s.faixas||[]).forEach(d=>linhas.push({a:cobLocalMundo(b,d.p0),b:cobLocalMundo(b,d.p1)})));
       (b.setores||[]).forEach(s=>gomosT.push(...cumGomosTelha(b,cobEixos(b),s,p=>cobLocalMundo(b,p))));
+      if(C3.ficha)(b.setores||[]).forEach(s=>(s.faixas||[]).forEach(f=>{if(f.p0&&f.p1)fx3.push({a:cobLocalMundo(b,f.p0),b:cobLocalMundo(b,f.p1),f,st:s,bn:b.nome});}));
       const fx=(b.setores||[]).flatMap(s=>s.faixas||[]).slice().sort((a,z)=>a.ini-z.ini||a.segmento-z.segmento);
-      if(fx.length){const lo=fx[0],hi=fx[fx.length-1],mid=f=>cobLocalMundo(b,{x:(f.p0.x+f.p1.x)/2,y:(f.p0.y+f.p1.y)/2}),rtl=cobSentidoFace(b)==='rtl',last=rtl?lo:hi;
+      if(fx.length&&!C3.ficha){const lo=fx[0],hi=fx[fx.length-1],mid=f=>cobLocalMundo(b,{x:(f.p0.x+f.p1.x)/2,y:(f.p0.y+f.p1.y)/2}),rtl=cobSentidoFace(b)==='rtl',last=rtl?lo:hi;
         linhas.push({a:rtl?mid(hi):mid(lo),b:rtl?mid(lo):mid(hi),seq:true,fim:last.largura<COB.util-1?'SOBRA':'FIM'});}
     });
     const todos=paineis.flatMap(x=>x.p);if(!todos.length)return;
@@ -28845,7 +28924,7 @@ render();
     const tr=p=>{let x=p[0]-cen[0],y=p[1]-cen[1],z=p[2]-cen[2];const xr=x*co-y*si,yr=x*si+y*co;return {x:xr,y:-(z*cp-yr*sp),d:yr*cp+z*sp};};
     const pp=todos.map(tr),mnX=Math.min(...pp.map(p=>p.x)),mxX=Math.max(...pp.map(p=>p.x)),mnY=Math.min(...pp.map(p=>p.y)),mxY=Math.max(...pp.map(p=>p.y));
     const sc=Math.min((W-90)/Math.max(1,mxX-mnX),(H-90)/Math.max(1,mxY-mnY))*C3.zoom,sx=p=>(p.x-(mnX+mxX)/2)*sc+W/2,sy=p=>(p.y-(mnY+mxY)/2)*sc+H/2;
-    c3Cenario(c,W,H,tr,sx,sy,min,max);
+    if(C3.ficha){c.fillStyle='#fff';c.fillRect(0,0,W,H);}else c3Cenario(c,W,H,tr,sx,sy,min,max);
     paineis.map(x=>({...x,q:x.p.map(tr)})).sort((a,b)=>a.q.reduce((s,p)=>s+p.d,0)-b.q.reduce((s,p)=>s+p.d,0)).forEach(x=>{
       c.beginPath();x.q.forEach((p,i)=>i?c.lineTo(sx(p),sy(p)):c.moveTo(sx(p),sy(p)));c.closePath();c.fillStyle=x.cor;c.fill();c.strokeStyle='#d7dde3';c.lineWidth=1.25;c.stroke();
     });
@@ -28860,7 +28939,7 @@ render();
       return cr.tipo==='rufo'?rufoQuads(cr.u0,cr.u1,P,lados):cumQuads(cr.pecas,P,lados,3);
     }),tr,sx,sy);
     cobPintaRotulos3D(c,rotulosMundo,tr,sx,sy);
-    c3Gizmo(c,W,H,tr,sc);
+    if(C3.ficha)cobPintaFaixas3D(c,fx3,tr,sx,sy);else c3Gizmo(c,W,H,tr,sc);
     document.querySelectorAll('#cob3ov [data-v]').forEach(x=>x.classList.toggle('on',x.dataset.v===C3.vista));
   }
   function desenha3D(){
@@ -28872,7 +28951,7 @@ render();
        que renomear. Limpa a lista velha para o clique nao abrir edicao
        de um bloco que nem esta mais na tela. */
     C3.rotulos=[];
-    const dpr=window.rmImprimindoAlta||Math.min(2,window.devicePixelRatio||1),W=cv.clientWidth||800,H=cv.clientHeight||500;
+    const dpr=window.rmImprimindoAlta||Math.min(2,window.devicePixelRatio||1),W=cv._w||cv.clientWidth||800,H=cv._h||cv.clientHeight||500;
     cv.width=Math.round(W*dpr);cv.height=Math.round(H*dpr);const c=cv.getContext('2d');c.setTransform(dpr,0,0,dpr,0,0);c.clearRect(0,0,W,H);
     const L=num(COB.comprimento),a=r.aguas[0],b=r.aguas[1],yA=num(COB.projA),yB=COB.aguas===2?num(COB.projB):0,zA=num(COB.desnA),zB=COB.aguas===2?num(COB.desnB):0;
     const cy=(yA+yB)/2,cz=Math.max(zA,zB)/2,cx=L/2,co=Math.cos(C3.yaw),si=Math.sin(C3.yaw),cp=Math.cos(C3.pitch),sp=Math.sin(C3.pitch);
@@ -28946,7 +29025,7 @@ render();
      a coluna toda. */
   function cobFabCelulas(x){
     const badge='<span class="cob-badge '+(x.tipo==='diagonal'?'diag':'reta')+'">'+
-      (x.tipo==='diagonal'?'Diagonal':'Reta')+'</span>';
+      (x.tipo==='diagonal'?'Ponta em ângulo':'Reta')+'</span>';
     const nota=(x.notas&&x.notas.length)?'<span class="sub">'+x.notas.map(h).join(' · ')+'</span>':'';
     /* Na telha termica a coluna do comprimento carrega as DUAS chapas, como
        o desenho do Everton escreve: "sup. 13.650 / inf. 13.600". Duas linhas
@@ -28983,7 +29062,7 @@ render();
     const sobraL=nrl?'<tr><td colspan="4" class="cob-sobra">+ '+nrl+' telha'+(nrl>1?'s':'')+' da sobra de largura entre blocos, sem compra: '+
       (reusosLargura||[]).map(x=>h(x.destino)+' (sobra de '+h(x.fonte)+', '+x.sobra+' mm)').join(', ')+'</td></tr>':'';
     return '<table class="'+classe+'"><thead><tr><th colspan="4">Total para fabricar — somado por comprimento, todas as faces</th></tr>'+
-      '<tr><th>Comprimento</th><th class="n">Quantidade</th><th class="n">Com recorte diagonal</th><th>Faces</th></tr></thead><tbody>'+
+      '<tr><th>Comprimento</th><th class="n">Quantidade</th><th class="n">Com ponta em ângulo</th><th>Faces</th></tr></thead><tbody>'+
       t.map(g=>'<tr><td>'+cobFabCelulas(g.x).comprimento+'</td><td class="n"><b>'+g.qtd+'</b></td><td class="n">'+(g.diag||'—')+'</td>'+
         '<td>'+[...g.destinos].map(h).join(', ')+'</td></tr>').join('')+
       '</tbody><tfoot><tr><td><b>Total</b></td><td class="n"><b>'+soma+'</b></td><td class="n">'+
@@ -29018,6 +29097,7 @@ render();
       +'.tmf-ok{display:inline-block;width:3.2mm;height:3.2mm;border:.25mm solid #141414;border-radius:.6mm}'
       +'.tmf-pe{display:flex;justify-content:space-between;gap:6mm;font-size:7.5pt;color:#777;border-top:.2mm solid #ccc;padding-top:1.5mm}'
       +'#printArea .tmf-sep td{font-size:10pt;padding:1.2mm 1mm}.tmf-cod span{white-space:nowrap}'
+      +'.tmf-3d{min-height:0;height:100%;display:flex;align-items:center;justify-content:center;overflow:hidden}.tmf-3d img{width:100%;height:100%;object-fit:contain;display:block}'
       +'.tmf-corpo.longa{grid-template-columns:1fr;grid-template-rows:auto 1fr}.tmf-corpo.longa svg{max-height:80mm}.tmf-corpo.longa .tmf-lst{columns:4;column-gap:6mm}.tmf-l{display:grid;grid-template-columns:11mm 12mm 1fr 4mm;gap:1.5mm;align-items:baseline;font-size:8.5pt;padding:.4mm 0;border-bottom:.15mm solid #ddd;break-inside:avoid}.tmf-l b{text-align:right;font-size:9.5pt}.tmf-l .tmf-ob{font-size:7pt;color:#555}.tmf-corpo.larga{grid-template-columns:1fr 100mm}.tmf-lst.dupla{columns:2;column-gap:4mm}.tmf-lst.mini .tmf-l{font-size:7.5pt;padding:.2mm 0}.tmf-lst.mini .tmf-l b{font-size:8pt}.tmf-lst.mini .tmf-ok{width:2.8mm;height:2.8mm}</style>';
     const topo=(t,l1,l2)=>'<div class="tmf-top"><div class="tmf-tx"><div class="t">'+t+'</div>'+l1+'<div class="tmf-tx2">'+l2+'</div></div>'
       +'<div class="tmf-logo">'+logo+escapeHtml(obra)+' · '+dataBr+'</div></div>';
@@ -29032,7 +29112,7 @@ render();
       +'<div style="min-height:0;overflow:hidden"><table class="tmf-sep"><thead><tr><th class="r">Compr. (mm)</th><th class="r">Qtd.</th><th>Faces (destino)</th><th></th></tr></thead><tbody>'
       +totais.map(g=>'<tr><td class="r"><b>'+(g.x.chapaSup!=null&&g.x.chapaInf!=null&&g.x.chapaSup!==g.x.chapaInf?'sup. '+n0(g.x.chapaSup)+' / inf. '+n0(g.x.chapaInf):n0(g.x.mm))
         +'</b></td><td class="r">'+g.qtd+'</td><td class="tmf-cod"><span>'+[...g.destinos].map(escapeHtml).join(' · ')+'</span>'
-        +(g.diag?' <span class="tmf-ob">· '+g.diag+' com recorte diagonal</span>':'')+'</td><td><span class="tmf-ok"></span></td></tr>').join('')
+        +(g.diag?' <span class="tmf-ob">· '+g.diag+' com ponta em ângulo (cortar na obra)</span>':'')+'</td><td><span class="tmf-ok"></span></td></tr>').join('')
       +'</tbody></table></div>'
       +cobFichaParafusos(r,cum)
       +'<div class="tmf-pe"><span>Faces: '+r.blocos.map(b=>'<b>'+escapeHtml(b.nome)+'</b>').join(' · ')+'</span><span>Medidas em mm</span></div></article>';
@@ -29097,7 +29177,7 @@ render();
       const svg='<svg viewBox="0 0 '+W+' '+H+'"'+(longa?' style="max-height:'+r1(svgMax)+'mm"':'')+'>'+g+'</svg>';
       const curto2=f=>String.fromCharCode(65+(f.setor||0))+'-'+String(f.ordem).padStart(2,'0');
       const obs=f=>{const o=[];
-        if(f.diagonal)o.push('diagonal');
+        if(f.diagonal)o.push('ponta em ângulo');
         if(f.partes>1)o.push(f.partes+' partes');
         if(f.foraCumeeira)o.push('fora da cumeeira');
         return o.join(' · ');};
@@ -29112,7 +29192,13 @@ render();
         +'<div class="tmf-pe"><span>Medidas em mm. Confira o código escrito na telha antes de subir.</span><span>'+escapeHtml(rot)+' · útil '+n0(util)+'</span></div></article>';
     }).filter(Boolean);
     if(!folhas.length)return '';
-    return css+sep+folhas.join('');
+    const img3d=cob3DImagem(r);
+    const pag3d=img3d?'<article class="tmf">'+topo('COBERTURA · MONTAGEM EM 3D',
+        '<span>Telha:</span> <b>'+escapeHtml(rot)+'</b> · <b>'+totalQtd+'</b> chapas'+vezes,
+        'Sobre cada telha: código (água-posição) e comprimento em mm. A seta mostra o sentido de montagem de cada água, a partir do INÍCIO. Em vermelho: ponta em ângulo, cortar na obra.')
+      +'<div class="tmf-3d"><img src="'+img3d+'" alt="Cobertura em 3D com o sentido de montagem"></div>'
+      +'<div class="tmf-pe"><span>Faces: '+r.blocos.map(b=>'<b>'+escapeHtml(b.nome)+'</b>').join(' · ')+'</span><span>Medidas em mm</span></div></article>':'';
+    return css+pag3d+sep+folhas.join('');
   }
   function cobFichaParafusos(r,cum){
     const paraf=cobParafusos(r);
@@ -29121,7 +29207,7 @@ render();
     const linhas=[];
     if(termica)linhas.push({item:'Parafuso brocante 4"',uso:'Fixação das telhas térmicas',qtd:paraf});
     else linhas.push({item:'Parafuso brocante 3/4',uso:'Fixação das telhas simples',qtd:paraf});
-    if(cum&&cum.pecas)linhas.push({item:'Parafuso brocante 3/4',uso:'Fixação das cumeeiras',qtd:''});
+    if(cum&&cum.pecas)linhas.push({item:'Parafuso brocante 3/4',uso:'Fixação das cumeeiras',qtd:cobParafusosCumeeira(cum)});
     return '<table style="margin-top:2mm;font-size:9pt;width:100%;border-collapse:collapse"><thead><tr><th style="text-align:left;border-bottom:.3mm solid #141414;padding:1mm;font-size:7.5pt;color:#777;text-transform:uppercase;letter-spacing:.05em">Parafuso</th>'
       +'<th style="text-align:left;border-bottom:.3mm solid #141414;padding:1mm;font-size:7.5pt;color:#777;text-transform:uppercase;letter-spacing:.05em">Uso</th>'
       +'<th style="text-align:right;border-bottom:.3mm solid #141414;padding:1mm;font-size:7.5pt;color:#777;text-transform:uppercase;letter-spacing:.05em">Qtd.</th></tr></thead><tbody>'
@@ -29139,39 +29225,123 @@ render();
     try{ sairEmPDF(nomeArquivoSeguro('Montagem cobertura '+(nomeObra()||'obra'),90)); }
     finally{ setTimeout(fim,2500); }
   }
+  /* ===== PEDIDO AO FABRICANTE =====
+     "O esboço do telhado com os lados e a posição em que vai ser instalada
+     em tamanho grande, pode ser a primeira página (esquerda -> direita com
+     uma seta). Faixa, tipo, projeção em planta, montagem: nada disso
+     importa ao fabricante -- precisa do modelo da telha e da cumeeira."
+     Então: página 1 = modelos + esboço grande com o sentido de montagem;
+     depois só comprimento × quantidade, a cumeeira e o rufo. O resto (por
+     destino, ponta em ângulo, sobras) é da montagem e vai na ficha. */
+  function cobFaixasOrdem(s){return (s.faixas||[]).filter(f=>f.p0&&f.p1).slice().sort((a,b)=>a.ordem-b.ordem);}
+  function svgEsbocoFabricante(r){
+    const bs=(r.blocos||[]).filter(b=>b.poligono&&b.poligono.length>=3);
+    if(!cobGeometrico()||!bs.length)return svgPedido(r);
+    const W=1000,PAD=60,GAP=110;
+    /* planta: as águas no lugar em que estão no desenho; SketchUp: cada face
+       planificada tem o seu sistema, então elas vão uma embaixo da outra */
+    const junto=COB.leitura!=='sketchup';
+    const cx=bs.map(b=>{const xs=b.poligono.map(p=>p.x),ys=b.poligono.map(p=>p.y);
+      return {b,x0:Math.min(...xs),x1:Math.max(...xs),y0:Math.min(...ys),y1:Math.max(...ys)};});
+    let s,H,pos;
+    if(junto){
+      const X0=Math.min(...cx.map(c=>c.x0)),X1=Math.max(...cx.map(c=>c.x1)),Y0=Math.min(...cx.map(c=>c.y0)),Y1=Math.max(...cx.map(c=>c.y1));
+      s=Math.min((W-2*PAD)/Math.max(1,X1-X0),1150/Math.max(1,Y1-Y0));
+      H=Math.round((Y1-Y0)*s+2*PAD+40);
+      const ox=(W-(X1-X0)*s)/2;
+      pos=cx.map(()=>({X:x=>ox+(x-X0)*s,Y:y=>H-PAD-(y-Y0)*s}));
+    }else{
+      const mw=Math.max(...cx.map(c=>c.x1-c.x0)),sh=cx.reduce((a,c)=>a+(c.y1-c.y0),0);
+      s=Math.min((W-2*PAD)/Math.max(1,mw),(1150-GAP*(cx.length-1))/Math.max(1,sh));
+      let y=PAD+30;H=0;
+      pos=cx.map(c=>{const top=y,ox=(W-(c.x1-c.x0)*s)/2;y+=(c.y1-c.y0)*s+GAP;
+        return {X:x=>ox+(x-c.x0)*s,Y:yy=>top+(c.y1-yy)*s};});
+      H=Math.round(y-GAP+PAD);
+    }
+    const r1=v=>Math.round(v*10)/10,mt=v=>(v/1000).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+    let g='',seta='';
+    cx.forEach((c,i)=>{
+      const b=c.b,P=pos[i],pt=p=>r1(P.X(p.x))+' '+r1(P.Y(p.y));
+      (b.setores||[]).forEach(st=>{const azul=st.id==='B';
+        g+='<path d="M'+st.poly.map(pt).join('L')+'Z" fill="'+(azul?'#e9f1f8':'#fdf0eb')+'" stroke="none"/>';
+        cobDivisasFaixas(b,st,st.faixas||[]).forEach(d=>{g+='<line x1="'+r1(P.X(d.p0.x))+'" y1="'+r1(P.Y(d.p0.y))+'" x2="'+r1(P.X(d.p1.x))+'" y2="'+r1(P.Y(d.p1.y))+'" stroke="#9aa3ac" stroke-width="1"/>';});
+      });
+      (b.furos||[]).forEach(f=>{g+='<path d="M'+f.map(pt).join('L')+'Z" fill="#fff" stroke="#141414" stroke-width="1.5" stroke-dasharray="6 4"/>';});
+      g+='<path d="M'+b.poligono.map(pt).join('L')+'Z" fill="none" stroke="#141414" stroke-width="3"/>';
+      if(b.cumeeira&&b.cumeeira.a&&b.cumeeira.b&&!b.medida3d)
+        g+='<line x1="'+r1(P.X(b.cumeeira.a.x))+'" y1="'+r1(P.Y(b.cumeeira.a.y))+'" x2="'+r1(P.X(b.cumeeira.b.x))+'" y2="'+r1(P.Y(b.cumeeira.b.y))+'" stroke="#d53309" stroke-width="3" stroke-dasharray="14 7"/>';
+      /* a seta de montagem: da primeira faixa para a última, de cada água,
+         num quarto do comprimento -- longe da letra da água */
+      (b.setores||[]).forEach(st=>{
+        const fs=cobFaixasOrdem(st);if(!fs.length)return;
+        /* a seta corre na perpendicular das telhas: da primeira faixa até a
+           altura da última -- sem seguir uma ponta em ângulo */
+        const f0=fs[0],fz=fs[fs.length-1],L0=Math.hypot(f0.p1.x-f0.p0.x,f0.p1.y-f0.p0.y)||1;
+        const ex={x:(f0.p1.x-f0.p0.x)/L0,y:(f0.p1.y-f0.p0.y)/L0},pe={x:-ex.y,y:ex.x};
+        const meio=f=>({x:(f.p0.x+f.p1.x)/2,y:(f.p0.y+f.p1.y)/2}),m0=meio(f0),mz=meio(fz);
+        const dd=(mz.x-m0.x)*pe.x+(mz.y-m0.y)*pe.y;
+        /* SEMPRE RETA e dentro do telhado: a altura da seta é a faixa comum a
+           todas as telhas da água (onde ela é mais comprida); nunca acompanha
+           uma ponta em ângulo */
+        const tAt=q=>(q.x-f0.p0.x)*ex.x+(q.y-f0.p0.y)*ex.y;let lo=-Infinity,hi=Infinity;
+        fs.forEach(f=>{const a1=tAt(f.p0),b1=tAt(f.p1);lo=Math.max(lo,Math.min(a1,b1));hi=Math.min(hi,Math.max(a1,b1));});
+        const tm=hi>lo?(lo+hi)/2:L0*.5;
+        const a={x:f0.p0.x+ex.x*tm,y:f0.p0.y+ex.y*tm},z={x:a.x+pe.x*dd,y:a.y+pe.y*dd};
+        const ax=P.X(a.x),ay=P.Y(a.y),zx=P.X(z.x),zy=P.Y(z.y);
+        const cc=cobCentro(st.poly);
+        g+='<text x="'+r1(P.X(cc.x))+'" y="'+r1(P.Y(cc.y)+14)+'" font-size="40" font-weight="800" fill="'+(st.id==='B'?'#356f9c':'#c13a14')+'" text-anchor="middle" opacity=".55">'+h(st.id)+'</text>';
+        if(fs.length<2||Math.hypot(zx-ax,zy-ay)<20)return;
+        const ang=Math.atan2(zy-ay,zx-ax),hd=22;
+        seta+='<line x1="'+r1(ax)+'" y1="'+r1(ay)+'" x2="'+r1(zx-Math.cos(ang)*hd*.8)+'" y2="'+r1(zy-Math.sin(ang)*hd*.8)+'" stroke="#d53309" stroke-width="7" stroke-linecap="round"/>'+
+          '<path d="M'+r1(zx)+' '+r1(zy)+'L'+r1(zx-Math.cos(ang-.45)*hd)+' '+r1(zy-Math.sin(ang-.45)*hd)+'L'+r1(zx-Math.cos(ang+.45)*hd)+' '+r1(zy-Math.sin(ang+.45)*hd)+'Z" fill="#d53309"/>'+
+          '<circle cx="'+r1(ax)+'" cy="'+r1(ay)+'" r="11" fill="#fff" stroke="#d53309" stroke-width="5"/>'+
+          '<text x="'+r1(ax+16)+'" y="'+r1(ay+30)+'" font-size="18" font-weight="800" fill="#d53309" stroke="#fff" stroke-width="5" paint-order="stroke">INÍCIO</text>';
+      });
+      const nx=P.X(c.x0),ny=Math.min(P.Y(c.y1),P.Y(c.y0))-14;
+      g+='<text x="'+r1(nx)+'" y="'+r1(ny)+'" font-size="24" font-weight="800" fill="#141414">'+h(b.nome)+
+        '<tspan font-size="17" font-weight="400" fill="#555"> · '+mt(c.x1-c.x0)+' × '+mt(c.y1-c.y0)+' m'+
+        (b.inclinacao?' · inclinação '+dec(b.inclinacao,1)+'%':'')+'</tspan></text>';
+    });
+    return '<svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="Esboço da cobertura com o sentido de montagem" style="font-family:Arial,Helvetica,sans-serif">'+g+seta+'</svg>';
+  }
   function documentoCobertura(){
     const r=calculaCobertura();if(!COB.confirmada||!r.ok)return;
     const pa=document.getElementById('printArea');if(!pa)return;const m=modeloAtual(),data=new Date().toLocaleDateString('pt-BR');
     const logo=(typeof LOGO_RM!=='undefined'&&LOGO_RM)?'<img src="'+LOGO_RM+'" style="height:56px;display:block">':'<div style="font-weight:800;font-size:22px;color:#D53309">RM</div>';
+    const tc=COB.orcTelhaId?orcTelhaPorId(COB.orcTelhaId):null,telha=(tc&&tc.desc)||m.nome;
+    const cum=cobCumeeiras(r),cad=cum&&cum.pecas?cumCadastro(cum.tipo):null;
+    const tot=cobTotaisComprimento(r.lista),soma=tot.reduce((a,g)=>a+g.qtd,0);
+    const ml=tot.reduce((a,g)=>a+g.qtd*num(g.x.chapaSup!=null?g.x.chapaSup:g.x.mm),0)/1000;
+    const ru=cum&&cum.rufo&&cum.rufo.pecas?cum.rufo:null;
     pa.classList.remove('hide');
-    pa.innerHTML='<div class="rm-sheet rc-sheet ct-pedido pt-folha cob-pedido">'+ 
-      '<div class="rm-dagua" aria-hidden="true"><img src="'+LOGO_MARCA_DAGUA+'" alt=""></div>'+ 
-      '<div class="rm-head"><div class="rm-logo">'+logo+'</div><div class="rm-co">'+rmTimbre2()+'</div></div>'+'<div class="doc-tag tb2-tipo">Pedido de cobertura</div>'+ 
-      '<div class="rm-body"><div class="rm-obra"><span>Obra / Cliente</span><b>'+h(nomeObra())+'</b><span class="rm-date">'+data+'</span></div>'+ 
-      '<div class="cob-forn">Fabricante: <b>'+h(COB.fabricante||'a definir')+'</b> · Produto: <b>'+h(m.nome)+'</b></div>'+ 
-      '<div class="rc-res"><div><span>'+(cobGeometrico()?(COB.leitura==='sketchup'?'Faces 3D':'Blocos'):'Águas')+'</span><b>'+(cobGeometrico()?r.blocos.length:COB.aguas)+'</b></div><div><span>Largura útil</span><b>'+mm(COB.util)+' mm</b></div>'+ 
-      '<div><span>Peças a comprar</span><b>'+r.pecas+'</b></div><div><span>Metros lineares</span><b>'+dec(r.metros,2)+' m</b></div>'+ 
-      '<div><span>Área do pedido</span><b>'+dec(r.areaPedido,2)+' m²</b></div>'+ 
-      (cobGeometrico()&&r.economiaArea>0?'<div><span>Compra evitada</span><b>'+dec(r.economiaArea,2)+' m²</b></div>':'')+
-      (cobGeometrico()?'<div><span>Perda líquida estimada</span><b>'+dec(r.sobreposicao,2)+' m²</b></div>':'')+'</div>'+ 
-      '<div class="cob-diag">'+svgPedido(r)+'</div>'+ 
-      '<table class="cob-tab"><thead><tr><th>Destino</th><th class="n">Comprimento</th><th class="n">Quantidade</th><th class="n">Faixas</th><th>Tipo</th><th class="n">Projeção em planta</th><th class="c">Montagem</th></tr></thead><tbody>'+
-      cobLinhasAgrupadas(r.lista,(x,n)=>'<td rowspan="'+n+'"><b>'+h(x.agua)+'</b></td>',x=>{const c=cobFabCelulas(x);
-        return '<td class="n">'+c.comprimento+'</td><td class="n">'+x.qtd+'</td><td class="n">'+x.faixas+'</td>'+
-          '<td>'+c.badge+'</td><td class="n">'+c.projecao+'</td><td class="c">'+c.montagem+c.nota+'</td>';})+
-      '</tbody></table>'+cobTotaisHTML(r.lista,'cob-tab cob-tot',r.reusos,r.reusosLargura)+cumHTML(cobCumeeiras(r),true)+cobAcessHTML(r,true)+
-      (cobGeometrico()&&r.reusos&&r.reusos.length?'<table class="cob-tab"><thead><tr><th>Sobra de</th><th>Produz a peça</th><th>Qtd.</th><th>Aplicação</th></tr></thead><tbody>'+r.reusos.map(x=>'<tr><td><b>'+h(x.fonte)+'</b></td><td><b>'+h(x.destino)+'</b></td><td>'+x.qtd+'</td><td>giro 180° · folga de 10 mm</td></tr>').join('')+'</tbody></table>':'')+
-      (r.reusosLargura&&r.reusosLargura.length?'<table class="cob-tab"><thead><tr><th>Sobra de largura</th><th>Cobre a faixa</th><th>Qtd.</th><th>Aplicação</th></tr></thead><tbody>'+r.reusosLargura.map(x=>'<tr><td><b>'+h(x.fonte)+'</b> ('+x.sobra+' mm)</td><td><b>'+h(x.destino)+'</b> ('+x.larguraDest+' mm)</td><td>'+x.qtd+'</td><td>corte no comprimento · sobra de largura entre blocos</td></tr>').join('')+'</tbody></table>':'')+
-      '<div class="cob-obs">'+(COB.leitura==='sketchup'?'Comprimentos medidos diretamente nas faces 3D exportadas pelo SketchUp.':COB.leitura==='planta'?'Comprimentos calculados faixa a faixa a partir do contorno em planta e da inclinação confirmada.':'Comprimentos calculados pela inclinação real.')+' Avanço no beiral: '+mm(COB.beiral)+' mm · folga na cumeeira: '+mm(COB.cumeeira)+' mm.'+
-      (r.lista.some(x=>x.tipo==='diagonal')?' Peça "Diagonal": comprimento medido pelo próprio eixo da peça, só entre as interseções reais com o contorno.':'')+
-      (COB.termica?' Telha térmica: a medida "sup." é a chapa de cima e a "inf." a de baixo. '+
-        'As inferiores dividem o comprimento sem folga entre elas; a superior da peça do beiral avança '+
-        mm(COB.pingadeira)+' mm da pingadeira e a das peças de cima transpassa '+mm(COB.traspasse)+' mm.'
-        :(r.aguas.some(a=>a.partes>1)?' Telhas divididas com transpasse de '+mm(COB.traspasse)+' mm.':''))+
-      (cobGeometrico()&&r.perdaDiagonal>0?' Recorte diagonal bruto: '+dec(r.perdaDiagonal,2)+' m².':'')+
-      (cobGeometrico()&&r.economiaArea>0?' O reaproveitamento evita a compra de '+dec(r.economiaArea,2)+' m² e deixa perda líquida estimada de '+dec(r.sobreposicao,2)+' m².':'')+
-      ' Sequência de montagem: '+(COB.leitura==='sketchup'?r.blocos.map(b=>h(b.nome)+' — '+(cobSentidoFace(b)==='rtl'?'Borda B para Borda A':'Borda A para Borda B')).join('; '):(COB.sentido==='ltr'?'esquerda para direita':'direita para esquerda'))+'.'+ 
-      (COB.obs?' Observação: '+h(COB.obs)+'.':'')+' Medidas em milímetros; confirmar fabricação e prazo com a RM.</div></div></div>'+ 
+    pa.innerHTML='<style>#printArea .cob-fab .cob-fab-mod{display:grid;grid-template-columns:1.6fr 1.4fr 1fr;gap:10px;margin:10px 0 12px}'+
+      '#printArea .cob-fab .cob-fab-mod>div{border:1px solid #d6dade;border-left:4px solid #D53309;border-radius:6px;padding:8px 11px}'+
+      '#printArea .cob-fab .cob-fab-mod span{display:block;font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:#6b7280}'+
+      '#printArea .cob-fab .cob-fab-mod b{display:block;font-size:15px;line-height:1.25;color:#141414}#printArea .cob-fab .cob-fab-mod small{display:block;font-size:11px;color:#555;margin-top:2px}'+
+      '#printArea .cob-fab .cob-fab-esb svg{width:100%;height:auto;max-height:185mm;display:block;margin:0 auto}'+
+      '#printArea .cob-fab .cob-fab-leg{font-size:11px;color:#555;text-align:center;margin-top:6px}'+
+      '#printArea .cob-fab .cob-fab-quebra{break-after:page;page-break-after:always;height:0}'+
+      '#printArea .cob-fab h3{font-size:13px;letter-spacing:.06em;text-transform:uppercase;margin:14px 0 6px;color:#141414}'+
+      '#printArea .cob-fab .cob-fab-tab{width:100%;max-width:520px}#printArea .cob-fab .cob-fab-tab td,#printArea .cob-fab .cob-fab-tab th{font-size:13px}'+
+      '#printArea .cob-fab .cob-fab-tab tfoot td{border-top:1.5px solid #141414;font-weight:700}</style>'+
+      '<div class="rm-sheet rc-sheet ct-pedido pt-folha cob-pedido cob-fab">'+
+      '<div class="rm-dagua" aria-hidden="true"><img src="'+LOGO_MARCA_DAGUA+'" alt=""></div>'+
+      '<div class="rm-head"><div class="rm-logo">'+logo+'</div><div class="rm-co">'+rmTimbre2()+'</div></div>'+'<div class="doc-tag tb2-tipo">Pedido de telhas ao fabricante</div>'+
+      '<div class="rm-body"><div class="rm-obra"><span>Obra / Cliente</span><b>'+h(nomeObra())+'</b><span class="rm-date">'+data+'</span></div>'+
+      '<div class="cob-fab-mod"><div><span>Telha</span><b>'+h(telha)+'</b><small>largura útil '+mm(COB.util)+' mm'+(COB.termica?' · térmica (chapa sup. e inf.)':'')+'</small></div>'+
+        '<div><span>Cumeeira</span><b>'+(cum&&cum.pecas?h(cad?cad.desc:'Cumeeira '+cum.tipo):'—')+'</b>'+(cum&&cum.pecas?'<small>'+cum.pecas+' peças de '+mm(cum.util)+' mm · aba de '+cum.aba+' mm</small>':'')+'</div>'+
+        '<div><span>Fabricante</span><b>'+h(COB.fabricante||m.fabricante||'a definir')+'</b></div></div>'+
+      '<div class="cob-fab-esb">'+svgEsbocoFabricante(r)+
+        '<div class="cob-fab-leg">Seta: sentido de montagem, a partir do <b>INÍCIO</b> · linhas finas: divisão das telhas · tracejado laranja: cumeeira · A e B: águas</div></div>'+
+      '<div class="cob-fab-quebra"></div>'+
+      '<h3>Telhas</h3><table class="cob-tab cob-fab-tab"><thead><tr><th class="n">Comprimento</th><th class="n">Quantidade</th></tr></thead><tbody>'+
+        tot.map(g=>'<tr><td class="n">'+cobFabCelulas(g.x).comprimento+'</td><td class="n"><b>'+g.qtd+'</b></td></tr>').join('')+
+        '</tbody><tfoot><tr><td>Total</td><td class="n">'+soma+' peças · '+dec(ml,2)+' m</td></tr></tfoot></table>'+
+      (cum&&cum.pecas?'<h3>Cumeeira</h3><table class="cob-tab cob-fab-tab"><thead><tr><th>Modelo</th><th class="n">Comprimento</th><th class="n">Quantidade</th></tr></thead><tbody>'+
+        '<tr><td>'+h(cad?cad.desc:'Cumeeira '+cum.tipo)+'</td><td class="n">'+mm(cum.util)+' mm</td><td class="n"><b>'+cum.pecas+'</b></td></tr></tbody></table>':'')+
+      (ru?'<h3>Rufo</h3><table class="cob-tab cob-fab-tab"><thead><tr><th>Item</th><th class="n">Comprimento</th><th class="n">Quantidade</th></tr></thead><tbody>'+
+        '<tr><td>Rufo de topo (aba '+RUFO_ABA+' mm)</td><td class="n">'+mm(ru.peca)+' mm</td><td class="n"><b>'+ru.pecas+'</b></td></tr></tbody></table>':'')+
+      '<div class="cob-obs">Medidas em milímetros. Confirmar fabricação e prazo com a RM.'+(COB.obs?' Observação: '+h(COB.obs)+'.':'')+'</div></div></div>'+
       '<div style="margin-top:12px"><button class="btn" id="cobPrint">Imprimir / PDF</button> <button class="btn ghost" id="cobCloseDoc">Fechar</button></div>';
     document.getElementById('cobPrint').onclick=()=>sairEmPDF(nomeArquivoSeguro('Pedido de cobertura '+nomeObra(),100));
     document.getElementById('cobCloseDoc').onclick=()=>{pa.classList.add('hide');pa.innerHTML='';};
@@ -29224,7 +29394,7 @@ render();
     atualizaModo();
   }
   inicia();
-  window.rmCobertura={estado:COB,catalogo:CATALOGO,calcular:calculaCobertura,fichaHTML:cobFichaHTML,
+  window.rmCobertura={estado:COB,catalogo:CATALOGO,calcular:calculaCobertura,fichaHTML:cobFichaHTML,pedido:documentoCobertura,parafusosCumeeira:()=>cobParafusosCumeeira(cobCumeeiras(calculaCobertura())),
     detectar:()=>detectaCobertura(true),montarDXF:montaDXF,abrir:abreCobertura,novoDesenho:cobNovoDesenhoDwg,
     cumeeira:()=>cobCumeeiras(calculaCobertura()),topo:()=>topoLinhas(calculaCobertura()).map(l=>({key:l.key,nome:l.nome,L:l.L,auto:l.auto,tipo:l.tipo,dois:l.dois})),
     cristas:()=>cumCristas(calculaCobertura()).map(c=>({nome:c.nome,L:c.L,pecas:c.pecas})),gomosTelha:()=>cumSimplesFaixas(),relevo:()=>{C3.relevo=null;cria3D();desenha3D();return C3.relevo;},
@@ -29836,7 +30006,7 @@ if('serviceWorker' in navigator && location.protocol.startsWith('http')){
 }
 </script>
 <script>/* versão publicada (PADRAO_RM.md §3): sobe a cada publicação, junto com o CACHE do sw.js */
-const APP_VER='v252';
+const APP_VER='v253';
 </script>
 <script id="rmVersaoBloco">
 /* ===== SELO DE VERSÃO — igual em todos os sistemas (PADRAO_RM.md §3) =====
