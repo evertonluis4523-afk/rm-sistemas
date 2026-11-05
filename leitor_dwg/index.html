@@ -26983,7 +26983,7 @@ render();
       .sort((a,b)=>(b.pedido-b.minFinal)-(a.pedido-a.minFinal)||b.pedido-a.pedido);
     fontes.forEach(src=>{
       if(src.reusoDe||src.reusoPara||!src.perfilFinal||src.perfilFinal.length<2)return;
-      const candidatos=todas.filter(t=>t!==src&&!t.reusoDe&&!t.reusoPara&&t.partes===1&&
+      const candidatos=todas.filter(t=>t!==src&&!t.reusoDe&&!t.reusoPara&&!t.reusoLarguraDe&&!t.reusoLarguraPara&&t.partes===1&&
         t.bloco===src.bloco&&t.setor===src.setor&&t.largura<=util+2&&
         Math.abs(t.ordem-src.ordem)<=12&&t.pedido<src.pedido&&t.perfilFinal&&
         t.perfilFinal.length).filter(t=>{
@@ -27008,36 +27008,35 @@ render();
     });
     return reusos;
   }
-  function cobPlanejaReusoLargura(todas,util,e){
-    todas.forEach(x=>{delete x.reusoLarguraDe;delete x.reusoLarguraPara;});
-    if(!COB.reusarLargura)return [];
-    const reusos=[],usadoF=new Set(),usadoD=new Set();
-    const grupos=new Map();
-    todas.forEach(x=>{const k=x.bloco+'|'+x.setor;if(!grupos.has(k))grupos.set(k,[]);grupos.get(k).push(x);});
-    const fontes=[];
-    grupos.forEach((ff,k)=>{
-      ff.sort((a,b)=>a.ordem-b.ordem);
-      const u=ff[ff.length-1];
-      if(u&&u.largura<util-1&&u.partes===1&&!u.reusoDe)fontes.push({k,faixa:u,sobra:Math.round(util-u.largura)});
-    });
-    fontes.sort((a,b)=>b.sobra-a.sobra);
-    fontes.forEach(src=>{
-      if(usadoF.has(src.k)||src.faixa.reusoLarguraDe)return;
-      for(const [k,ff] of grupos){
-        if(k===src.k||usadoD.has(k))continue;
-        ff.sort((a,b)=>a.ordem-b.ordem);
-        const u=ff[ff.length-1];
-        if(!u||u.reusoDe||u.reusoLarguraDe)continue;
-        if(u.largura>src.sobra+1||u.pedido!==src.faixa.pedido||u.partes!==1)continue;
-        usadoF.add(src.k);usadoD.add(k);
-        u.reusoLarguraDe=src.faixa.codigo;src.faixa.reusoLarguraPara=u.codigo;
-        reusos.push({fonte:src.faixa.codigo,destino:u.codigo,blocoFonte:src.faixa.blocoNome,
-          blocoDest:u.blocoNome,pedido:src.faixa.pedido,sobra:src.sobra,
-          larguraDest:Math.round(u.largura),qtd:e});
-        break;
-      }
-    });
-    return reusos;
+  /* SOBRA DE LARGURA ENTRE BLOCOS (exemplo do telhado de dois blocos,
+     nov/2026). A última telha de um bloco é mais estreita que a útil (460
+     de 980): os 520 mm que sobram da chapa viram a PRIMEIRA faixa do bloco
+     seguinte, na ponta reta -- e a paginação dele passa a contar dali. Antes
+     a sobra ia para a ÚLTIMA faixa do vizinho e exigia o mesmo comprimento:
+     a última era a ponta em ângulo e nunca casava, nada era aproveitado.
+     Sobras: a última faixa de cada água do bloco. Destinos: a primeira de
+     cada água do bloco seguinte; todas precisam casar (comprimento até o da
+     sobra, corte no comprimento), senão o bloco fica como era. */
+  const cobCurto=f=>String.fromCharCode(65+(f.setor||0))+'-'+String(f.ordem).padStart(2,'0');
+  function cobSobrasLargura(itens,util){
+    const ult=new Map();
+    itens.forEach(x=>{const o=ult.get(x.setor);if(!o||x.indice>o.indice)ult.set(x.setor,x);});
+    return [...ult.values()].filter(x=>x.partes===1&&x.largura<util-1&&!x.reusoLarguraDe&&!x.foraCumeeira)
+      .map(x=>({faixa:x,sobra:Math.round(util-x.largura)})).filter(x=>x.sobra>=50);
+  }
+  function cobCasaSobrasLargura(sobras,itens,larg){
+    const porSetor=new Map();
+    itens.forEach(x=>{if(!porSetor.has(x.setor))porSetor.set(x.setor,[]);porSetor.get(x.setor).push(x);});
+    const dest=[];
+    for(const lista of porSetor.values()){
+      const d=lista.filter(x=>x.indice===0);
+      if(d.length!==1||d[0].partes!==1||Math.abs(d[0].largura-larg)>2)return null;
+      dest.push(d[0]);
+    }
+    if(!dest.length||dest.length>sobras.length)return null;
+    const fs=[...sobras].sort((a,b)=>b.faixa.pedido-a.faixa.pedido),ds=[...dest].sort((a,b)=>b.pedido-a.pedido);
+    const pares=ds.map((d,i)=>({src:fs[i],dest:d}));
+    return pares.every(p=>p.dest.pedido<=p.src.faixa.pedido)?pares:null;
   }
   function calculaCoberturaPlanta(){
     const erros=[],avisos=[],util=inteiro(COB.util),e=Math.max(1,inteiro(COB.estruturas)||1),incAgr=Math.max(1,inteiro(COB.agrupamento)||10);
@@ -27053,11 +27052,12 @@ render();
     if(erros.length)return {ok:false,modo:'planta',erros,avisos,aguas:[],blocos:[],lista:[]};
     const blocos=[],todas=[],aguas=[];
     const grade=cobGradeCumeeira(blocosAtivos,util);
-    blocosAtivos.forEach((b,bi)=>{
-      const setores=cobSetores(b);if(!setores.length){erros.push(b.nome+': a cumeeira não divide o contorno.');return;}
+    const montaBloco=(b,bi,gb)=>{
+      const erros=[],todas=[],aguas=[];
+      const setores=cobSetores(b);if(!setores.length){erros.push(b.nome+': a cumeeira não divide o contorno.');return {erros};}
       const rb={...b,origIndex:COB.blocos.indexOf(b),setores:[]};
       setores.forEach((s,si)=>{
-        const fatorIncl=cobFatorIncl(s.inclinacao),fator=s.medida3d?1:fatorIncl,faixas=cobFaixas(b,s,util,grade.get(b)),rs={...s,faixas:[]};
+        const fatorIncl=cobFatorIncl(s.inclinacao),fator=s.medida3d?1:fatorIncl,faixas=cobFaixas(b,s,util,gb),rs={...s,faixas:[]};
         if(faixas.excesso){erros.push(b.nome+(setores.length>1?' / '+s.nome:'')+': '+mm(Math.round(faixas.excesso.total/1000))+' m de largura dariam '+mm(faixas.excesso.n)+' faixas — confira a unidade do desenho (mm) ou um ponto perdido longe do contorno.');return;}
         faixas.forEach((f,fi)=>{
           /* A telha com recorte diagonal e' comprada pela PONTA MAIS COMPRIDA
@@ -27095,13 +27095,40 @@ render();
         rb.setores.push(rs);aguas.push({id:s.nome,final:rs.faixas.length?Math.max(...rs.faixas.map(x=>x.pedido)):0,
           faixas:rs.faixas.length,partes:1,medida:0,proj:0,desn:0,angulo:Math.atan(num(s.inclinacao)/100)*180/Math.PI});
       });
-      blocos.push(rb);
+      return {erros,rb,todas,aguas};
+    };
+    const reusosLargura=[];let sobras=null;
+    blocosAtivos.forEach((b,bi)=>{
+      let m=montaBloco(b,bi,grade.get(b));
+      if(COB.reusarLargura&&!grade.get(b)&&sobras&&sobras.length&&!m.erros.length){
+        const larg=Math.min(...sobras.map(x=>x.sobra)),ex=cobEixos(b),us=b.poligono.map(p=>cobDot(p,ex.u));
+        const gb=cobSentidoFace(b)==='rtl'?{rtl:Math.max(...us)+util-larg}:{ltr:Math.min(...us)-(util-larg)};
+        const m2=montaBloco(b,bi,gb),pares=m2.erros.length?null:cobCasaSobrasLargura(sobras.filter(x=>x.sobra===larg),m2.todas,larg);
+        /* só se compensar: com o bloco deslocado ele não pode pedir mais telhas */
+        if(pares&&m2.todas.length-pares.length<=m.todas.length){
+          m=m2;
+          const marca=(x,k,v)=>{x[k]=v;m.rb.setores.forEach(s=>s.faixas.forEach(f=>{if(f.codigo===x.codigo)f[k]=v;}));};
+          pares.forEach(({src,dest})=>{
+            const f=src.faixa;f.reusoLarguraPara=dest.codigo;f.reusoLarguraParaCurto=dest.blocoNome+' '+cobCurto(dest);
+            src.marcaFonte(f,dest);
+            marca(dest,'reusoLarguraDe',f.codigo);marca(dest,'reusoLarguraDeCurto',f.blocoNome+' '+cobCurto(f));marca(dest,'reusoLarguraSobra',src.sobra);
+            reusosLargura.push({fonte:f.codigo,destino:dest.codigo,blocoFonte:f.blocoNome,blocoDest:dest.blocoNome,
+              fonteCurto:f.blocoNome+' '+cobCurto(f),destinoCurto:dest.blocoNome+' '+cobCurto(dest),
+              pedido:f.pedido,sobra:src.sobra,larguraDest:Math.round(dest.largura),qtd:e});
+          });
+        }
+      }
+      if(m.erros.length){erros.push(...m.erros);return;}
+      blocos.push(m.rb);todas.push(...m.todas);aguas.push(...m.aguas);
+      const rbLocal=m.rb;
+      sobras=COB.reusarLargura?cobSobrasLargura(m.todas,util).map(x=>({...x,marcaFonte:(f,dest)=>{
+        rbLocal.setores.forEach(s=>s.faixas.forEach(g=>{if(g.codigo===f.codigo){g.reusoLarguraPara=f.reusoLarguraPara;g.reusoLarguraParaCurto=f.reusoLarguraParaCurto;g.reusoLarguraSobra=x.sobra;}}));
+        f.reusoLarguraSobra=x.sobra;}})):null;
     });
     if(erros.length)return {ok:false,modo:'planta',erros,avisos,aguas,blocos,lista:[]};
     /* A ordem precisa existir antes de agrupar o pedido: as pecas obtidas de
        sobra deixam de ser compradas, mas continuam identificadas no plano. */
     const reusos=cobPlanejaReuso(todas,util,e);
-    const reusosLargura=cobPlanejaReusoLargura(todas,util,e);
     const compradas=todas.filter(x=>!x.reusoDe&&!x.reusoLarguraDe);
     const grupos=new Map();
     /* Na telha termica cada peca da faixa vira uma LINHA do pedido, porque
@@ -27195,7 +27222,7 @@ render();
     if(todas.some(x=>!x.tocaCumeeira&&!x.foraCumeeira))avisos.push('Há trechos separados por recortes/vãos. Eles foram divididos em peças próprias e não receberam desconto de folga na cumeeira.');
     if(reusos.length)avisos.push(reusos.reduce((s,x)=>s+x.qtd,0)+' reaproveitamento(s) confirmado(s) no mesmo bloco e setor, com giro de 180° e folga de corte de 10 mm.');
     else if(todas.some(x=>x.diagonal))avisos.push('Nenhuma sobra diagonal comporta outra peça inteira dentro do mesmo bloco e setor; por segurança, essas sobras permanecem como perda.');
-    if(reusosLargura.length)avisos.push(reusosLargura.reduce((s,x)=>s+x.qtd,0)+' reaproveitamento(s) de largura entre blocos: a sobra de largura de um bloco cobre a última faixa do vizinho (corte no comprimento).');
+    if(reusosLargura.length)avisos.push(reusosLargura.reduce((s,x)=>s+x.qtd,0)+' reaproveitamento(s) de largura entre blocos: a sobra de largura da última telha de um bloco vira a primeira faixa do bloco seguinte (corte no comprimento).');
     if(todas.some(x=>x.partes>1))avisos.push('Há telhas divididas pelo comprimento máximo, com transpasse de '+mm(COB.traspasse)+' mm.');
     const modelo=modeloAtual();if(modelo&&modelo.nota)avisos.push(modelo.nota+'. O valor pode ser corrigido no cadastro de telhas.');
     return {ok:true,modo:'planta',erros,avisos,aguas,blocos,faixas:todas.length,lista,todas,reusos,reusosLargura,e,
@@ -28497,6 +28524,10 @@ render();
           const q={x:m.x+nx*ht*1.95,y:m.y+ny*ht*1.95};
           tx('RM_REAPROVEITA',q,ht*.9,rp.fonte===f.codigo?'SOBRA > '+curto(rp.destinoObj):'REUSO < '+curto(rp.fonteObj),ang);
         }
+        if(f.reusoLarguraPara||f.reusoLarguraDe){
+          const q={x:m.x+nx*ht*1.95,y:m.y+ny*ht*1.95};
+          tx('RM_REAPROVEITA',q,ht*.9,f.reusoLarguraPara?'SOBRA '+f.reusoLarguraSobra+' MM > '+f.reusoLarguraParaCurto:'SOBRA DE '+f.reusoLarguraDeCurto,ang);
+        }
         if(f.partes>1)for(let j=1;j<f.partes;j++){
           const t=j*(f.medida-COB.traspasse)/f.pedido,c={x:a.x+(fim.x-a.x)*t,y:a.y+(fim.y-a.y)*t},dx=fim.x-a.x,dy=fim.y-a.y,L=Math.hypot(dx,dy)||1;
           ln('RM_DIVISAO',{x:c.x-dy/L*180,y:c.y+dx/L*180},{x:c.x+dy/L*180,y:c.y-dx/L*180});
@@ -28792,11 +28823,23 @@ render();
     P.forEach(p=>{
       const L=Math.hypot(p.bx-p.ax,p.by-p.ay);if(L<20)return;
       let ang=Math.atan2(p.by-p.ay,p.bx-p.ax);if(ang>Math.PI/2)ang-=Math.PI;if(ang<-Math.PI/2)ang+=Math.PI;
-      const txt=String.fromCharCode(65+(p.f.setor||0))+'-'+String(p.f.ordem).padStart(2,'0')+'  '+Math.round(num(p.f.pedido)).toLocaleString('pt-BR');
+      const txt=String.fromCharCode(65+(p.f.setor||0))+'-'+String(p.f.ordem).padStart(2,'0')+'  '+(p.f.reusoLarguraDe?'SOBRA':Math.round(num(p.f.pedido)).toLocaleString('pt-BR'));
       const fs=Math.max(7,Math.min(15,(isFinite(p.larg)?p.larg:30)*.62,L*.45/(txt.length*.62)));
       c.save();c.translate(p.mx,p.my);c.rotate(ang);c.font='700 '+fs.toFixed(1)+'px Arial, sans-serif';
       c.lineWidth=Math.max(2,fs*.3);c.lineJoin='round';c.strokeStyle='rgba(255,255,255,.94)';c.strokeText(txt,0,0);
-      c.fillStyle=p.f.diagonal?'#b42318':'#141414';c.fillText(txt,0,0);c.restore();
+      c.fillStyle=p.f.reusoLarguraDe||p.f.reusoLarguraPara?'#1d5fd1':p.f.diagonal?'#b42318':'#141414';c.fillText(txt,0,0);c.restore();
+    });
+    /* sobra de largura entre blocos: linha tracejada azul da telha cortada
+       até a faixa que ela cobre, com a largura da sobra */
+    P.filter(p=>p.f.reusoLarguraPara).forEach(p=>{
+      const d=P.find(o=>o.f.codigo===p.f.reusoLarguraPara);if(!d)return;
+      c.save();c.setLineDash([9,6]);c.strokeStyle='#1d5fd1';c.lineWidth=2.5;
+      const mx=(p.mx+d.mx)/2,my=Math.min(p.my,d.my)-60;
+      c.beginPath();c.moveTo(p.mx,p.my);c.quadraticCurveTo(mx,my,d.mx,d.my);c.stroke();c.setLineDash([]);
+      const ang=Math.atan2(d.my-my,d.mx-mx);c.fillStyle='#1d5fd1';
+      c.beginPath();c.moveTo(d.mx,d.my);c.lineTo(d.mx-Math.cos(ang-.4)*14,d.my-Math.sin(ang-.4)*14);c.lineTo(d.mx-Math.cos(ang+.4)*14,d.my-Math.sin(ang+.4)*14);c.closePath();c.fill();
+      const t='SOBRA '+p.f.reusoLarguraSobra+' mm';c.font='800 14px Arial, sans-serif';c.textAlign='center';c.textBaseline='middle';
+      c.lineWidth=4;c.strokeStyle='#fff';c.strokeText(t,mx,(p.my+d.my)/4+my/2);c.fillText(t,mx,(p.my+d.my)/4+my/2);c.restore();
     });
     /* 3) as setas por cima */
     setas.forEach(({a,z})=>{
@@ -29113,7 +29156,10 @@ render();
       +totais.map(g=>'<tr><td class="r"><b>'+(g.x.chapaSup!=null&&g.x.chapaInf!=null&&g.x.chapaSup!==g.x.chapaInf?'sup. '+n0(g.x.chapaSup)+' / inf. '+n0(g.x.chapaInf):n0(g.x.mm))
         +'</b></td><td class="r">'+g.qtd+'</td><td class="tmf-cod"><span>'+[...g.destinos].map(escapeHtml).join(' · ')+'</span>'
         +(g.diag?' <span class="tmf-ob">· '+g.diag+' com ponta em ângulo (cortar na obra)</span>':'')+'</td><td><span class="tmf-ok"></span></td></tr>').join('')
-      +'</tbody></table></div>'
+      +'</tbody></table>'
+      +(r.reusosLargura||[]).map(x=>'<div class="tmf-ob" style="margin-top:1.5mm;font-size:9pt;color:#1d5fd1"><b>Sobra de largura (não vem do fabricante):</b> corte a telha <b>'+escapeHtml(x.fonteCurto)+'</b> no comprimento — '
+        +n0(util-x.sobra)+' mm ficam nela e os <b>'+n0(x.sobra)+' mm</b> que sobram são a <b>'+escapeHtml(x.destinoCurto)+'</b>.</div>').join('')
+      +'</div>'
       +cobFichaParafusos(r,cum)
       +'<div class="tmf-pe"><span>Faces: '+r.blocos.map(b=>'<b>'+escapeHtml(b.nome)+'</b>').join(' · ')+'</span><span>Medidas em mm</span></div></article>';
     const folhas=r.blocos.map(bloco=>{
@@ -29172,7 +29218,8 @@ render();
         const fs=Math.max(7,Math.min(11,w2*.04));
         const ang2=Math.atan2(dy2,dx2)*180/Math.PI;
         const rAng=(ang2>90||ang2<-90)?ang2+180:ang2;
-        g+='<text x="'+cx+'" y="'+cy+'" font-size="'+r1(fs)+'" font-weight="700" fill="#141414" text-anchor="middle" dominant-baseline="middle" transform="rotate('+r1(rAng)+' '+cx+' '+cy+')">'+cod+'</text>';
+        const reu=f.reusoLarguraDe?' SOBRA':f.reusoLarguraPara?' → '+f.reusoLarguraParaCurto:'';
+        g+='<text x="'+cx+'" y="'+cy+'" font-size="'+r1(fs)+'" font-weight="700" fill="'+(reu?'#1d5fd1':'#141414')+'" text-anchor="middle" dominant-baseline="middle" transform="rotate('+r1(rAng)+' '+cx+' '+cy+')">'+cod+escapeHtml(reu)+'</text>';
       });
       const svg='<svg viewBox="0 0 '+W+' '+H+'"'+(longa?' style="max-height:'+r1(svgMax)+'mm"':'')+'>'+g+'</svg>';
       const curto2=f=>String.fromCharCode(65+(f.setor||0))+'-'+String(f.ordem).padStart(2,'0');
@@ -29180,6 +29227,8 @@ render();
         if(f.diagonal)o.push('ponta em ângulo');
         if(f.partes>1)o.push(f.partes+' partes');
         if(f.foraCumeeira)o.push('fora da cumeeira');
+        if(f.reusoLarguraPara)o.push('cortar no comprimento: a sobra de '+f.reusoLarguraSobra+' mm vai para '+f.reusoLarguraParaCurto);
+        if(f.reusoLarguraDe)o.push('é a sobra de '+f.reusoLarguraDeCurto+' (não vem do fabricante)');
         return o.join(' · ');};
       const linha=f=>'<tr><td>'+curto2(f)+'</td><td class="r"><b>'+n0(f.pedido)+'</b></td><td class="tmf-ob">'+obs(f)+'</td><td><span class="tmf-ok"></span></td></tr>';
       const lista=(longa||nF>12)
@@ -30006,7 +30055,7 @@ if('serviceWorker' in navigator && location.protocol.startsWith('http')){
 }
 </script>
 <script>/* versão publicada (PADRAO_RM.md §3): sobe a cada publicação, junto com o CACHE do sw.js */
-const APP_VER='v253';
+const APP_VER='v254';
 </script>
 <script id="rmVersaoBloco">
 /* ===== SELO DE VERSÃO — igual em todos os sistemas (PADRAO_RM.md §3) =====
