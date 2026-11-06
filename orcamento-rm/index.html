@@ -10206,7 +10206,7 @@ function applyImport(){
    publicacao, e ha uma prova automatica que falha se um subir sem o outro.
    Assim o numero na tela e' o mesmo do arquivo que o aparelho guardou, e
    dizer "estou na v15" passa a significar alguma coisa. */
-const APP_VER='v145';
+const APP_VER='v146';
 (function(){ try{ const p=document.getElementById('verPill'); if(p)p.textContent=APP_VER; }catch(e){} })();
 /* Versao nova assumiu com a pagina aberta: avisa, em vez de recarregar por
    conta propria e jogar fora um orcamento pela metade. */
@@ -14787,7 +14787,7 @@ function orcDocHTML(modo,valores,fora){
   const dims=s=>String(s||'').replace(/\s*X\s*/gi,' × ');
   const cap=s=>{s=String(s||'').trim();return s?s.charAt(0)+s.slice(1).toLowerCase():'';};
   let n=0,pecas=0,metros=0,peso=0;const blocos=[];
-  const nc=valores?8:6,thV=valores?'<th class="r">Preço</th><th class="r">Total</th>':'';
+  const nc=valores?9:7,thV=valores?'<th class="r">Preço</th><th class="r">Total</th>':'';
   const linha=(desc,cols,pr,tot)=>{n++;return '<tr><td class="it">'+String(n).padStart(2,'0')+'</td><td>'+desc+'</td>'+cols.map(c=>'<td class="r">'+c+'</td>').join('')+(valores?'<td class="r">'+pr+'</td><td class="r b">'+tot+'</td>':'')+'</tr>';};
   const sub=(nome,cols,tot)=>'<tr class="st"><td></td><td>Subtotal '+nome+'</td>'+cols.map(c=>'<td class="r">'+c+'</td>').join('')+(valores?'<td></td><td class="r">'+tot+'</td>':'')+'</tr>';
   const grupoTit=(nome,info)=>'<tr class="g"><td colspan="'+nc+'"><b>'+nome+'</b>'+(info?'<span>'+info+'</span>':'')+'</td></tr>';
@@ -14799,15 +14799,16 @@ function orcDocHTML(modo,valores,fora){
     ordem.forEach(p=>{
       const nome=h((p.tipo?p.tipo+' ':'')+dims(p.dims)),ls=por[p.id];let gp=0,gm=0,gk=0,gt=0;
       /* "fora do catálogo" é coisa nossa: não vai para fornecedor nem cliente */
-      rows+=grupoTit(nome,(p.livre?'':h(cap(p.grupo))+' · ')+h(p.esp)+' mm');
+      rows+=grupoTit(nome,p.livre?'':h(cap(p.grupo)));
       ls.forEach(l=>{const c=perfilCalc(l,p),comp=l.comp||p.comp||0,q=l.qtd||0,m=comp/1000*q;
         gp+=q;gm+=m;gk+=c.pesoTot||0;gt+=c.tot||0;
-        rows+=linha(nome+' <i>'+h(p.esp)+' mm</i>',[num(comp,0),'<b>'+q+'</b>',num(m,2),num(c.pesoTot||0,1)],c.pk!=null?num(c.pk,2)+'/kg':'—',c.semPreco?'—':brl(c.tot));});
-      if(ls.length>1)rows+=sub(nome,['',gp,num(gm,2),num(gk,1)],brl(gt));
+        /* espessura em coluna própria, em toda opção do impresso */
+        rows+=linha(nome,[h(p.esp),num(comp,0),'<b>'+q+'</b>',num(m,2),num(c.pesoTot||0,1)],c.pk!=null?num(c.pk,2)+'/kg':'—',c.semPreco?'—':brl(c.tot));});
+      if(ls.length>1)rows+=sub(nome,['','',gp,num(gm,2),num(gk,1)],brl(gt));
       sP+=gp;sM+=gm;sK+=gk;sT+=gt;
     });
     pecas+=sP;metros+=sM;peso+=sK;
-    blocos.push({t:'Perfis',head:'<th class="r">Compr. (mm)</th><th class="r">Qtd.</th><th class="r">Metros</th><th class="r">Peso (kg)</th>',rows,tot:['',sP,num(sM,2),num(sK,1)],tv:sT});
+    blocos.push({t:'Perfis',head:'<th class="r">Espess. (mm)</th><th class="r">Compr. (mm)</th><th class="r">Qtd.</th><th class="r">Metros</th><th class="r">Peso (kg)</th>',rows,tot:['','',sP,num(sM,2),num(sK,1)],tv:sT});
   }
   if(!fora.avulsos&&(S.linhasAvulso||[]).length){
     let rows='',sP=0,sT=0;
@@ -14815,9 +14816,9 @@ function orcDocHTML(modo,valores,fora){
       /* o tamanho digitado em número é o comprimento: vai para a coluna, não
          para a descrição (o papel saía "PERFIL U ... 6000" e Compr. vazio) */
       const tm=String(l.tamanho||'').trim(),tn=/^\d+([.,]\d+)?$/.test(tm)?parseFloat(tm.replace(',','.')):0,cp=tn||l.comprimentoCalc||0;
-      rows+=linha(h([l.nome,tn?'':tm].filter(Boolean).join(' '))+(l.esp?' <i>'+h(l.esp)+' mm</i>':''),[cp?num(cp,0):'—','<b>'+q+'</b>'],brl(l.valor||0),brl(t));});
+      rows+=linha(h([l.nome,tn?'':tm].filter(Boolean).join(' ')),[l.esp?h(l.esp):'—',cp?num(cp,0):'—','<b>'+q+'</b>'],brl(l.valor||0),brl(t));});
     pecas+=sP;
-    blocos.push({t:'Outros itens',head:'<th class="r">Compr. (mm)</th><th class="r">Qtd.</th>',rows,tot:['',sP],tv:sT});
+    blocos.push({t:'Outros itens',head:'<th class="r">Espess. (mm)</th><th class="r">Compr. (mm)</th><th class="r">Qtd.</th>',rows,tot:['','',sP],tv:sT});
   }
   if(!fora.telhas&&(S.linhasTelha||[]).length){
     let rows='',sP=0,sM=0,sA=0,sT=0;
