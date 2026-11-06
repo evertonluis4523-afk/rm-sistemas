@@ -10164,7 +10164,7 @@ function applyImport(){
    publicacao, e ha uma prova automatica que falha se um subir sem o outro.
    Assim o numero na tela e' o mesmo do arquivo que o aparelho guardou, e
    dizer "estou na v15" passa a significar alguma coisa. */
-const APP_VER='v141';
+const APP_VER='v142';
 (function(){ try{ const p=document.getElementById('verPill'); if(p)p.textContent=APP_VER; }catch(e){} })();
 /* Versao nova assumiu com a pagina aberta: avisa, em vez de recarregar por
    conta propria e jogar fora um orcamento pela metade. */
@@ -14834,7 +14834,7 @@ function orcDocHTML(modo,valores,fora){
 .sheet.doc-novo #orcDoc{display:flex;flex-direction:column;gap:4mm}
 .sheet.doc-novo>:not(.head):not(#orcDoc):not(.sheetfoot):not(.rm-dagua){display:none!important}
 #orcDoc{font-family:var(--sans);color:#1d2127}
-#orcDoc .od-tit{display:flex;justify-content:space-between;align-items:flex-end;border-top:.5mm solid #d53309;padding-top:3mm}
+#orcDoc .od-tit{display:flex;justify-content:space-between;align-items:flex-end;padding-top:1mm}
 #orcDoc .od-tit h1{margin:0;font-size:19pt;font-weight:700;letter-spacing:-.01em}
 #orcDoc .od-tit .n{text-align:right;font-size:8pt;color:#6b7480;text-transform:uppercase;letter-spacing:.08em}
 #orcDoc .od-tit .n b{display:block;font-size:15pt;color:#d53309;letter-spacing:0}
