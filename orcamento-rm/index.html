@@ -1438,6 +1438,8 @@ table.items td.l{text-align:left}
 .mono{font-family:var(--mono)}
 .tag{display:inline-block;font-size:11px;letter-spacing:.06em;text-transform:uppercase;font-weight:700;padding:1px 6px;border-radius:4px;vertical-align:middle}
 .tag.u{background:#eef1f4;color:var(--gray)}
+.tag.livre{background:#eef1f4;color:var(--gray);text-transform:none;letter-spacing:0;font-weight:600}
+.rowacts .mvperf{width:auto;padding:0 7px;font-size:11px;font-weight:600;color:var(--red);border:1px solid currentColor;border-radius:6px;white-space:nowrap}
 .tag.ue{background:var(--red-soft);color:var(--rm-marca-escura,#9B2709)} /* a marca no fundo suave dela: 4,2:1 -> 6,8:1 */
 .cell-in{width:74px;text-align:right;border:1px solid var(--line);border-radius:6px;padding:5px 7px;font-family:var(--mono);font-size:14px;font-weight:600;background:#fff}
 /* preço digitado na linha: um fio laranja à esquerda diz "não é o da tabela" */
@@ -4297,8 +4299,8 @@ body[data-theme="escuro"] .cob-t input[type=date]{color-scheme:dark}
     </div>
 
     <div class="addrow-actions">
-      <button class="chip big" style="font-weight:600;border-color:var(--red);color:var(--red)" onclick="openCalc()">🧮 Calcular perfil (fora de catálogo)</button>
-      <button class="chip big" style="font-weight:600;border-color:var(--gray)" onclick="addAvulsoLine()">+ Item avulso (livre)</button>
+      <button class="chip big" style="font-weight:600;border-color:var(--red);color:var(--red)" onclick="openCalc()">+ Perfil fora do catálogo</button>
+      <button class="chip big" style="font-weight:600;border-color:var(--gray)" onclick="addAvulsoLine()">+ Outro item (livre)</button>
     </div>
   </div>
 
@@ -4342,7 +4344,7 @@ body[data-theme="escuro"] .cob-t input[type=date]{color-scheme:dark}
     <div id="catSecs"></div>
 
     <div id="avulsoSecWrap" class="hidden">
-      <div class="secttl">Itens avulsos</div>
+      <div class="secttl">Outros itens</div>
       <table class="items">
         <thead><tr>
           <th class="l">Descrição</th>
@@ -6012,7 +6014,41 @@ function precoKgPerfil(p){
   if(p&&p.especial&&p.rkgProprio!=null&&parseNumLoose(p.rkgProprio)>0)return parseNumLoose(p.rkgProprio);
   return precoKg(p.esp);
 }
-function perfilById(id){return S.perfis.find(p=>p.id===id);}
+/* PERFIL FORA DO CATÁLOGO (nov/2026): "os itens avulsos nesse caso são
+   perfis, porém fora de catálogo, e acabam fora do grupo correto". A linha
+   fica em Perfis com perfilId 'livre:<lid>' e os dados dela (descrição,
+   espessura, largura e preço) em l.livre; aqui ela vira um perfil como os do
+   cadastro, e assim soma em Metálica, no peso total e sai no bloco Perfis. */
+function espFmt(v){const n=parseNumLoose(v);return n>0?n.toFixed(2).replace('.',','):'';}
+function perfilLivre(l){const v=l.livre||{};return {id:l.perfilId,livre:true,tipo:'',dims:String(v.desc||'').trim()||'Perfil fora do catálogo',esp:espFmt(v.esp),slitter:parseNumLoose(v.larg)||0,comp:l.comp||6000,grupo:'Fora do catálogo',especial:false};}
+function perfilById(id){
+  if(typeof id==='string'&&id.indexOf('livre:')===0){const l=(S.linhasPerfil||[]).find(x=>x.perfilId===id);return l&&l.livre?perfilLivre(l):undefined;}
+  return S.perfis.find(p=>p.id===id);
+}
+function setLivre(lidv,f,v){
+  const l=(S.linhasPerfil||[]).find(x=>x.lid===lidv);if(!l||!l.livre)return;
+  if(f==='rkg'||f==='peca'){const n=valorDigitado(v);if(n>0)l.livre[f]=n;else delete l.livre[f];}
+  else l.livre[f]=v;
+  delete l.precoSalvo;save();renderLines();
+}
+function novaLinhaLivre(d){const l={lid:lid(),qtd:d.qtd||1,comp:d.comp||6000};l.perfilId='livre:'+l.lid;
+  l.livre={desc:d.desc||'',esp:d.esp||'',larg:d.larg||'',modo:d.modo==='peca'?'peca':'kg'};
+  if(d.rkg>0)l.livre.rkg=d.rkg;if(d.peca>0)l.livre.peca=d.peca;
+  if(d.forn)l.compra={supplier:d.forn,quotes:{},escolhido:true};
+  S.linhasPerfil.push(l);return l;}
+/* a linha avulsa que é perfil (tem espessura e largura) muda para Perfis
+   mantendo o total: o valor por peça vai junto */
+function avulsoEhPerfil(a){return !!(a&&parseNumLoose(a.esp)>0&&(parseNumLoose(a.slitter)>0||a.comprimentoCalc>0));}
+function avulsoParaPerfis(lidv){
+  const i=S.linhasAvulso.findIndex(x=>x.lid===lidv);if(i<0)return;const a=S.linhasAvulso[i];
+  const tm=String(a.tamanho||'').trim(),mL=tm.match(/^([\d.,]+)\s*[×x]/i);
+  const comp=a.comprimentoCalc||(/^\d+([.,]\d+)?$/.test(tm)?parseNumLoose(tm):0)||6000;
+  const larg=parseNumLoose(a.slitter)>0?a.slitter:(mL?mL[1]:'');
+  const peca=round2((Number(a.valor)||0)*(1+(a.acrescimoPct||0)/100));
+  novaLinhaLivre({desc:a.nome,esp:a.esp,larg,comp,qtd:a.qtd,modo:'peca',peca,forn:a.forn});
+  S.linhasAvulso.splice(i,1);
+  save();renderLines();toast('Movido para Perfis');
+}
 function telhaById(id){return S.telhas.find(t=>t.id===id);}
 /* A area de cobertura depende da largura UTIL, nao da largura total da chapa.
    O cadastro manual sempre vence. Para a base antiga, os modelos conhecidos
@@ -6842,7 +6878,7 @@ function avisoDesfazer(txt,fn){
 function copyIcon(){return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="11" height="11" rx="1.5"/><path d="M5 15H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1"/></svg>';}
 function dupLine(arr,lidv){
   const i=S[arr].findIndex(x=>x.lid===lidv); if(i<0)return;
-  const c=JSON.parse(JSON.stringify(S[arr][i])); c.lid=lid(); if(c.compra&&c.compra.quotes)Object.values(c.compra.quotes).forEach(q=>delete q.fixed);
+  const c=JSON.parse(JSON.stringify(S[arr][i])); c.lid=lid(); if(c.livre)c.perfilId='livre:'+c.lid; if(c.compra&&c.compra.quotes)Object.values(c.compra.quotes).forEach(q=>delete q.fixed);
   S[arr].splice(i+1,0,c);
   save(); renderLines(); toast('Linha duplicada — ajuste tamanho/qtd');
 }
@@ -6934,6 +6970,7 @@ function renderLines(){
     pb.innerHTML=S.linhasPerfil.map(l=>{
       const p=perfilById(l.perfilId);
       if(!p) return `<tr><td class="l desc" style="color:var(--warn)">Item removido do cadastro</td><td colspan="7"></td><td class="no-print"><div class="rowacts"><button class="dup" title="Duplicar linha" onclick="dupLine('linhasPerfil','${l.lid}')">${copyIcon()}</button><button class="del" title="Excluir linha" onclick="delLine('linhasPerfil','${l.lid}')">${trash()}</button></div></td></tr>`;
+      if(p.livre)return linhaLivreHTML(l,p);
       const isUE=p.tipo==='UE';
       const {pesoTot,pk,tot,semPreco,modo,digitado}=perfilCalc(l,p);
       /* R$/kg editável na linha (preço fechado na compra continua só texto) */
@@ -6995,6 +7032,23 @@ function renderLines(){
   renderAvulsos();
   renderFretes();
   recompute();
+}
+function linhaLivreHTML(l,p){
+  const lv=l.livre,c=perfilCalc(l,p),pc=lv.modo==='peca',L=l.lid;
+  const valPreco=pc?(lv.peca>0?num(lv.peca,2):''):(lv.rkg>0?num(lv.rkg,2):'');
+  const dica=!pc&&!(lv.rkg>0)&&c.pk!=null?num(c.pk,2):'0,00';
+  return `<tr ${dragAttrs('linhasPerfil',L)}>
+    <td class="l"><input class="cell-in cell-in-desc" value="${escapeAttr(lv.desc||'')}" placeholder="Ex.: U 35 X 140 X 35" aria-label="Descrição do perfil" onchange="setLivre('${L}','desc',this.value)">
+      <div class="sub"><span class="tag livre">fora do catálogo</span>${c.semPreco?' · <span class="warnote">sem preço</span>':''}${cpRowTag(l,p,'p')}</div></td>
+    <td class="mono col-esp"><input class="cell-in" style="width:56px" inputmode="decimal" value="${escapeAttr(lv.esp||'')}" placeholder="2,00" aria-label="Espessura (mm)" onchange="setLivre('${L}','esp',this.value)"></td>
+    <td class="mono col-larg"><input class="cell-in" style="width:64px" inputmode="decimal" value="${escapeAttr(lv.larg||'')}" placeholder="0" aria-label="Largura da chapa (mm)" title="Largura da tira (slitter): com a espessura e o comprimento dá o peso" onchange="setLivre('${L}','larg',this.value)"></td>
+    <td><input class="cell-in" value="${l.comp||p.comp}" onchange="setLineVal('linhasPerfil','${L}','comp', parseInt(this.value)||0)"></td>
+    <td><input class="cell-in" style="width:58px" value="${l.qtd}" onchange="setLineVal('linhasPerfil','${L}','qtd', parseNumLoose(this.value))"></td>
+    <td class="mono col-peso" id="peso-${L}">${kg(c.pesoTot)}</td>
+    <td class="mono vcol col-rkg" id="pk-${L}"><span class="preco-cel"><input class="cell-in preco-in" style="width:72px" inputmode="decimal" value="${valPreco}" placeholder="${dica}" aria-label="Preço desta linha" title="${pc?'Valor por peça':'R$/kg desta linha. Em branco usa o R$/kg da espessura no fornecedor'}" onchange="setLivre('${L}','${pc?'peca':'rkg'}',this.value)"></span><select class="un-sel no-print" aria-label="Unidade do preço" onchange="setLivre('${L}','modo',this.value)"><option value="kg"${pc?'':' selected'}>R$/kg</option><option value="peca"${pc?' selected':''}>R$/peça</option></select><small class="so-imp" style="display:block;color:var(--muted);font-size:8px">${pc?'R$/peça':'R$/kg'}</small></td>
+    <td class="tot vcol" id="tot-${L}">${brl(c.tot)}</td>
+    <td class="no-print"><div class="rowacts">${dragHandle('linhasPerfil',L)}<button class="dup" title="Duplicar linha" onclick="dupLine('linhasPerfil','${L}')">${copyIcon()}</button><button class="del" title="Excluir linha" onclick="delLine('linhasPerfil','${L}')">${trash()}</button></div></td>
+  </tr>`;
 }
 function trash(){return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2m2 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg>';}
 function gripIcon(){return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="6" r="1.2"/><circle cx="9" cy="12" r="1.2"/><circle cx="9" cy="18" r="1.2"/><circle cx="15" cy="6" r="1.2"/><circle cx="15" cy="12" r="1.2"/><circle cx="15" cy="18" r="1.2"/></svg>';}
@@ -7227,7 +7281,7 @@ function renderAvulsos(){
         <input class="cell-in" style="width:38px" value="${pct||''}" placeholder="%" title="Acréscimo — soma em cima do valor cotado" onchange="setLineVal('linhasAvulso','${l.lid}','acrescimoPct',parseNumLoose(this.value))">
       </div></td>
       <td class="tot vcol" id="tot-${l.lid}">${brl(tot)}</td>
-      <td class="no-print"><div class="rowacts">${dragHandle('linhasAvulso',l.lid)}<button class="dup" title="Duplicar linha" onclick="dupLine('linhasAvulso','${l.lid}')">${copyIcon()}</button><button class="del" title="Excluir linha" onclick="delLine('linhasAvulso','${l.lid}')">${trash()}</button></div></td>
+      <td class="no-print"><div class="rowacts">${avulsoEhPerfil(l)?`<button class="mvperf" title="É perfil: mover para Perfis (soma na Metálica e no peso)" onclick="avulsoParaPerfis('${l.lid}')">→ Perfis</button>`:''}${dragHandle('linhasAvulso',l.lid)}<button class="dup" title="Duplicar linha" onclick="dupLine('linhasAvulso','${l.lid}')">${copyIcon()}</button><button class="del" title="Excluir linha" onclick="delLine('linhasAvulso','${l.lid}')">${trash()}</button></div></td>
     </tr>`;
   }).join('');
 }
@@ -8398,7 +8452,7 @@ function importHash(str){
 function importSignature(d){
   const pick=(a,campos)=>(Array.isArray(a)?a:[]).map(x=>campos.map(k=>x&&x[k]!=null?x[k]:''));
   const base={
-    p:pick(d.linhasPerfil,['perfilId','comp','qtd','obs']),
+    p:pick(d.linhasPerfil,['perfilId','comp','qtd','obs','livre']),
     t:pick(d.linhasTelha,['telhaId','comp','qtd','larguraUtilMm','obs']),
     c:pick(d.linhasCat,['catId','itemId','qtd','valor','semAcrescimo']),
     a:pick(d.linhasAvulso,['nome','tamanho','qtd','valor','unidade','esp','slitter']),
@@ -9220,7 +9274,7 @@ function orcPrevia(e){
    atropelam. Tirar a obra do controle só a marca como tirada (sem a marca,
    a cópia da nuvem a traria de volta). Abrir o sistema não grava nada.
    Teste orcamento-compras-da-obra. */
-const COB_GRUPOS=[['met','Metálica'],['tel','Telhas'],['av','Itens avulsos'],['srv','Serviços']];
+const COB_GRUPOS=[['met','Metálica'],['tel','Telhas'],['av','Outros itens'],['srv','Serviços']];
 const COB_SIT={comprar:'A comprar',comprado:'Comprado',entregue:'Entregue',fora:'Fora da obra'};
 let COB_SEL=null, COB_ABERTA={};
 function cobLista(){ if(!Array.isArray(S.comprasObras))S.comprasObras=[]; return S.comprasObras; }
@@ -9570,7 +9624,7 @@ function renderSalvoPrevia(){
     +'<div><i>Itens</i><b>'+(r.perf.length+r.telha.length+r.cat.length+r.av.length+r.esq.length)+'</b></div></div>'
     +(difere?'<div class="sp-aviso">Com os preços de hoje este orçamento daria <b>'+brl(r.total)+'</b> (foi salvo com '+escapeAttr(e.total||brl(salvoNum))+'). Ao editar, valem os preços de hoje.</div>':'')
     +(r.semPreco?'<div class="sp-aviso">'+r.semPreco+' item(ns) sem preço.</div>':'')
-    +sec('Perfis',r.perf,true)+sec('Telhas',r.telha,true)+sec('Itens',r.cat,true)+sec('Avulsos',r.av,true)+sec('Fretes',r.fretes,false)
+    +sec('Perfis',r.perf,true)+sec('Telhas',r.telha,true)+sec('Itens',r.cat,true)+sec('Outros itens',r.av,true)+sec('Fretes',r.fretes,false)
     +(r.esq.length?'<div class="sp-sec"><div class="sp-sec-t">Esquadrias <span>'+r.esq.length+'</span></div><table class="sp-t"><tbody>'+r.esq.map(x=>'<tr><td class="l"><div class="sp-d">'+escapeAttr(x.d)+'</div>'+(x.x?'<div class="sp-x">'+escapeAttr(x.x)+'</div>':'')+'</td><td class="n">'+(x.q!=null?escapeAttr(String(x.q)):'')+'</td></tr>').join('')+'</tbody></table></div>':'')
     +(r.cnm?'<div class="sp-sec"><div class="sp-sec-t">Chave na mão'+(r.cnm.cidade?' · '+escapeAttr(r.cnm.cidade):'')+(r.cnm.m2>0?' · '+num(r.cnm.m2,2)+' m²':'')+'</div><table class="sp-t"><tbody>'+r.cnm.serv.map(x=>'<tr><td class="l"><div class="sp-d">'+escapeAttr(x.d)+'</div></td><td class="n">'+brl(x.v)+'</td></tr>').join('')+'</tbody><tfoot><tr><td class="l">Total do chave na mão</td><td class="n">'+brl(r.cnm.total)+'</td></tr></tfoot></table></div>':'')
     +((r.sub>0)?'<div class="sp-tot"><div><span>Subtotal</span><b>'+brl(r.sub)+'</b></div>'+(r.desc>0?'<div><span>Desconto '+num(r.descPct,2).replace(/,00$/,'')+'%</span><b>− '+brl(r.desc)+'</b></div>':'')+'<div class="sp-tot-f"><span>Total</span><b>'+brl(r.sub-r.desc)+'</b></div></div>':'')
@@ -9949,25 +10003,13 @@ function calcGerar(){
   if(t.rkg<=0){toast('Informe o R$/kg');return;}
   const desc=document.getElementById('calcDesc').value.trim()||'Perfil sob medida';
   S.calcCfg={rkg:document.getElementById('calcRkg').value, ipi:t.ipi};
-  let nome=desc,tamanho,esp,valor,qtd,comprimentoCalc=null;
-  if(CALC.rows.length===1){
-    const r=CALC.rows[0];
-    const pUnit=calcRowPeso({esp:r.esp,larg:r.larg,comp:r.comp,qtd:1});
-    qtd=parseNumLoose(r.qtd)||1;
-    valor=round2(pUnit*t.rkg*(t.ipi?1.0325:1));
-    esp=(r.esp||'').toString();
-    comprimentoCalc=parseNumLoose(r.comp)||0;
-    tamanho=(parseNumLoose(r.larg)||0)+'×'+comprimentoCalc+' ('+pUnit.toLocaleString('pt-BR',{maximumFractionDigits:2})+'kg)';
-  }else{
-    qtd=1; valor=round2(t.valor); esp='';
-    tamanho=t.peso.toLocaleString('pt-BR',{maximumFractionDigits:2})+' kg';
-  }
-  // comprimentoCalc so existe pra perfil sob medida (1 linha, largura x
-  // comprimento) -- no modo fornecedor (solicitacao de material) mostra so
-  // o comprimento nessa coluna, a largura nao importa pra quem vai cortar.
-  S.linhasAvulso.push({lid:lid(),nome,tamanho,esp,valor,qtd,comprimentoCalc});
+  /* cada linha do cálculo vira um perfil fora do catálogo em PERFIS (antes
+     ia para Avulsos e ficava fora da Metálica e do peso) */
+  const rkg=round2(t.rkg*(t.ipi?1.0325:1)*10000)/10000;
+  CALC.rows.forEach(r=>{ if(calcRowPeso(r)<=0)return;
+    novaLinhaLivre({desc,esp:String(r.esp||''),larg:String(r.larg||''),comp:parseNumLoose(r.comp)||6000,qtd:parseNumLoose(r.qtd)||1,rkg}); });
   save(); recompute(); renderLines(); closeCalc();
-  toast('Perfil adicionado ao orçamento');
+  toast('Perfil adicionado em Perfis');
 }
 function calcReset(){
   CALC={rows:[{esp:'',larg:'',comp:'',qtd:1}], tipo:document.getElementById('calcTipo').value, nseg:3, segVals:[], segEsp:''};
@@ -10164,7 +10206,7 @@ function applyImport(){
    publicacao, e ha uma prova automatica que falha se um subir sem o outro.
    Assim o numero na tela e' o mesmo do arquivo que o aparelho guardou, e
    dizer "estou na v15" passa a significar alguma coisa. */
-const APP_VER='v142';
+const APP_VER='v144';
 (function(){ try{ const p=document.getElementById('verPill'); if(p)p.textContent=APP_VER; }catch(e){} })();
 /* Versao nova assumiu com a pagina aberta: avisa, em vez de recarregar por
    conta propria e jogar fora um orcamento pela metade. */
@@ -12948,7 +12990,7 @@ const CP_GROUP_DEF={
  'telha-termica':{nome:'Telhas térmicas / forro',modo:'m2',unidade:'R$/m²',ajuda:'Um preço por m² para todas as medidas de telha térmica e telha térmica com forro.'},
  'telha-simples':{nome:'Telhas simples',modo:'m2',unidade:'R$/m²',ajuda:'Um preço por m² para as telhas simples deste orçamento.'},
  cumeeira:{nome:'Cumeeiras',modo:'m',unidade:'R$/m',ajuda:'Grupo isolado. Não herda o preço das telhas térmicas ou do forro.'},
- avulsos:{nome:'Itens avulsos',modo:'',unidade:'',ajuda:'Sem cadastro: o custo é o valor digitado na linha. O fornecedor aqui organiza o resumo de compra.'}
+ avulsos:{nome:'Outros itens',modo:'',unidade:'',ajuda:'Sem cadastro: o custo é o valor digitado na linha. O fornecedor aqui organiza o resumo de compra.'}
 };
 /* CATEGORIAS E AVULSOS TAMBEM SAO COMPRA. Antes eles viravam um total so'
    ("Outros itens"), sem linha por item: Laminados, Vergalhao e Malhas e os
@@ -13122,6 +13164,8 @@ function cpCalc(l,p,k,supplier,row){
  const cad=cpForn(f), cadastrado=!!cad;
  const rate=k==='p'?db.rates[cpRateKey(l,p,f)]:null;
  let larg=shared.width>0?shared.width:(cadastrado?p.slitter:null);
+ /* perfil fora do catálogo: a largura é a digitada na linha, com qualquer fornecedor */
+ if(k==='p'&&p.livre&&!(shared.width>0))larg=p.slitter>0?p.slitter:null;
  let pesoTot=k==='p'&&larg>0?larg*espNum(p)*dens()/1e6*metros:null;
  // Quoted kg is per piece at the specified length; quantity alone can change.
  const w=shared.weights&&shared.weights[String(comp)];
@@ -13142,7 +13186,7 @@ function cpCalc(l,p,k,supplier,row){
     "Usar os preços de hoje". Teste orcamento-preco-do-salvo. */
  const ps=precoSalvoDe(l,f);
  if(ps&&k==='p'&&ps.pk>0){
-  if(ps.larg>0&&!(w>0)){larg=ps.larg;pesoTot=larg*espNum(p)*dens()/1e6*metros;}
+  if(ps.larg>0&&!(w>0)&&!p.livre){larg=ps.larg;pesoTot=larg*espNum(p)*dens()/1e6*metros;}
   pk=ps.pk;tot=pesoTot!=null?pk*pesoTot:null;
  }
  if(ps&&k==='t'&&ps.preco>0){preco=ps.preco;modo=ps.modo||modo;tot=modo==='m2'?preco*telhaAreaM2(l,p,metros):preco*metros;}
@@ -13150,6 +13194,10 @@ function cpCalc(l,p,k,supplier,row){
     para esta linha e este fornecedor, neste orçamento -- ganha da cotação e
     do cadastro, que não mudam. Apagar o número volta ao preço da tabela. */
  if(k==='p'&&local.kg>0){pk=Number(local.kg);tot=pesoTot!=null?pk*pesoTot:null;}
+ /* fora do catálogo: o preço digitado na própria linha, por kg ou por peça */
+ if(k==='p'&&p.livre&&l.livre&&!(local.kg>0)){const lv=l.livre;
+  if(lv.modo==='peca'&&lv.peca>0){modo='peca';tot=lv.peca*qtd;pk=pesoTot>0?tot/pesoTot:null;}
+  else if(lv.rkg>0){pk=Number(lv.rkg);tot=pesoTot!=null?pk*pesoTot:null;}}
  if(k==='t'&&local.unit>0){preco=Number(local.unit);modo=local.mode==='m2'?'m2':'m';tot=modo==='m2'?preco*telhaAreaM2(l,p,metros):preco*metros;}
  if(local.fixed){
   modo=local.fixed.mode;pk=null;preco=null;
@@ -13980,7 +14028,7 @@ initAuth();
      telhas -- mandar tudo obriga o outro lado a garimpar o que e dele. */
   var SECOES = [
     ['perfis',  'Perfis',  'perfilSecWrap'],
-    ['avulsos', 'Avulsos', 'avulsoSecWrap'],
+    ['avulsos', 'Outros itens', 'avulsoSecWrap'],
     ['telhas',  'Telhas',  'telhaSecWrap'],
     ['outros',  'Outros',  'catSecs']
   ];
@@ -14749,7 +14797,7 @@ function orcDocHTML(modo,valores,fora){
     S.linhasPerfil.forEach(l=>{const p=perfilById(l.perfilId);if(!p)return;if(!por[p.id]){por[p.id]=[];ordem.push(p);}por[p.id].push(l);});
     let rows='',sP=0,sM=0,sK=0,sT=0;
     ordem.forEach(p=>{
-      const nome=h(p.tipo+' '+dims(p.dims)),ls=por[p.id];let gp=0,gm=0,gk=0,gt=0;
+      const nome=h((p.tipo?p.tipo+' ':'')+dims(p.dims)),ls=por[p.id];let gp=0,gm=0,gk=0,gt=0;
       rows+=grupoTit(nome,h(cap(p.grupo))+' · '+h(p.esp)+' mm');
       ls.forEach(l=>{const c=perfilCalc(l,p),comp=l.comp||p.comp||0,q=l.qtd||0,m=comp/1000*q;
         gp+=q;gm+=m;gk+=c.pesoTot||0;gt+=c.tot||0;
@@ -14763,9 +14811,12 @@ function orcDocHTML(modo,valores,fora){
   if(!fora.avulsos&&(S.linhasAvulso||[]).length){
     let rows='',sP=0,sT=0;
     S.linhasAvulso.forEach(l=>{const q=l.qtd||0,t=avulsoLineTotal(l);sP+=q;sT+=t;
-      rows+=linha(h([l.nome,l.tamanho].filter(Boolean).join(' '))+(l.esp?' <i>'+h(l.esp)+' mm</i>':''),[l.comprimentoCalc?num(l.comprimentoCalc,0):'—','<b>'+q+'</b>'],brl(l.valor||0),brl(t));});
+      /* o tamanho digitado em número é o comprimento: vai para a coluna, não
+         para a descrição (o papel saía "PERFIL U ... 6000" e Compr. vazio) */
+      const tm=String(l.tamanho||'').trim(),tn=/^\d+([.,]\d+)?$/.test(tm)?parseFloat(tm.replace(',','.')):0,cp=tn||l.comprimentoCalc||0;
+      rows+=linha(h([l.nome,tn?'':tm].filter(Boolean).join(' '))+(l.esp?' <i>'+h(l.esp)+' mm</i>':''),[cp?num(cp,0):'—','<b>'+q+'</b>'],brl(l.valor||0),brl(t));});
     pecas+=sP;
-    blocos.push({t:'Avulsos',head:'<th class="r">Compr. (mm)</th><th class="r">Qtd.</th>',rows,tot:['',sP],tv:sT});
+    blocos.push({t:'Outros itens',head:'<th class="r">Compr. (mm)</th><th class="r">Qtd.</th>',rows,tot:['',sP],tv:sT});
   }
   if(!fora.telhas&&(S.linhasTelha||[]).length){
     let rows='',sP=0,sM=0,sA=0,sT=0;
