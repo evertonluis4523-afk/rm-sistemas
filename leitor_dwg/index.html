@@ -5394,6 +5394,14 @@ function componentesEstruturais(jaUsados,opt){
    cada agrupamento. Validação: os desenhos de referência, pintados de uma
    cor só, têm de dar a mesma lista e o mesmo detalhamento do original. */
 let BANZO_CORRIGIDO=[],FORMA={modo:false,estruturas:0,corrigidas:0};
+/* MONTANTE DA PONTA NO PERFIL DO BANZO (nov/2026): no padrão, a vertical que
+   fecha a estrutura no começo e no fim é interna, e a forma corrige a ponta
+   pintada de amarelo. Há cliente que quer a ponta no mesmo perfil do banzo:
+   com a opção ligada (vale para o arquivo aberto), a ponta continua sendo
+   peça cortada do detalhamento -- posição, painel e medida entre as faces
+   dos banzos --, mas marcada pontaBanzo: sai no corte e na compra pelo
+   perfil do banzo. PONTAS guarda as pontas da última leitura. */
+let PONTA_BANZO=false;const PONTAS=new Set();
 function camadaNaoPeca(layer){
   const lay=(layer||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase();
   return /\bsuportes?\b/.test(lay)||/\bquadros?\b/.test(lay);
@@ -5449,6 +5457,9 @@ function formaDoGrupo(ids){
     if(emCima)topo.push(s);if(emBaixo)base.push(s);
     if(emCima||emBaixo)cls.set(s.i,'banzo');
     else{cls.set(s.i,'interno');internas++;
+      /* montante da ponta: a vertical no começo ou no fim do vão */
+      const naPonta=X=>Math.abs(s.a.x-X)<=tol*2&&Math.abs(s.b.x-X)<=tol*2;
+      if(dx<=tol*2&&(naPonta(x0)||naPonta(x1)))PONTAS.add(s.i);
       // diagonal de verdade: inclinada (15° a 80°) -- grade de horizontais e verticais não é treliça
       const a=Math.atan2(dy,dx)*180/Math.PI;if(a>=15&&a<=80)diag++;}
   });
@@ -5459,9 +5470,9 @@ function formaDoGrupo(ids){
   return cls;
 }
 function leituraPelaForma(){
-  BANZO_CORRIGIDO=[];FORMA={modo:false,estruturas:0,corrigidas:0};
+  BANZO_CORRIGIDO=[];FORMA={modo:false,estruturas:0,corrigidas:0};PONTAS.clear();
   // a leitura é refeita do zero: volta a cor e a camada de origem
-  SEG.forEach(sg=>{if(sg.cor0!==undefined){sg.cor=sg.cor0;sg.layer=sg.layer0;}delete sg.corrigida;delete sg.formaCor;});
+  SEG.forEach(sg=>{if(sg.cor0!==undefined){sg.cor=sg.cor0;sg.layer=sg.layer0;}delete sg.corrigida;delete sg.formaCor;delete sg.pontaBanzo;});
   const linhas=[];SEG.forEach((sg,i)=>{if((!sg.ent||sg.ent==='LINE')&&!camadaNaoPeca(sg.layer)&&dist(sg.a,sg.b)>0)linhas.push(i);});
   if(linhas.length<5||linhas.length>40000)return;
   let nB=0,nI=0;linhas.forEach(i=>{const k=detClasse(SEG[i].cor,SEG[i].layer);if(k==='banzo')nB++;else if(k==='interno')nI++;});
@@ -5495,9 +5506,10 @@ function leituraPelaForma(){
     }
     FORMA.estruturas++;
     ids.forEach(i=>{estrut.add(i);const k=cls.get(i),cor=detClasse(SEG[i].cor,SEG[i].layer);
+      if(PONTA_BANZO&&PONTAS.has(i)){SEG[i].pontaBanzo=true;if(FORMA.modo||cor==='banzo')pinta(i,1,false);return;}
       if(FORMA.modo){pinta(i,k==='banzo'?2:1,false);return;}
       if(cor&&cor!==k){const sg=SEG[i],c0=sg.cor;pinta(i,k==='banzo'?2:1,true);FORMA.corrigidas++;
-        BANZO_CORRIGIDO.push({i,cor:c0,para:k,layer:sg.layer0,p:{x:(sg.a.x+sg.b.x)/2,y:(sg.a.y+sg.b.y)/2}});}
+        BANZO_CORRIGIDO.push({i,cor:c0,para:k,ponta:PONTAS.has(i),layer:sg.layer0,p:{x:(sg.a.x+sg.b.x)/2,y:(sg.a.y+sg.b.y)/2}});}
     });
   });
   /* modo forma: o que não é estrutura deixa de ser peça (cotas, caixas de
@@ -5961,7 +5973,8 @@ function renderConferir(){
   const QA=quadrosAutomaticos(),nCorr=BANZO_CORRIGIDO.length;
   let qaHtml='';
   const nPraB=BANZO_CORRIGIDO.filter(x=>x.para==='banzo').length,nPraI=nCorr-nPraB;
-  if(QA.length||nCorr||simplesF.length||FORMA.modo){
+  const nPontaAm=BANZO_CORRIGIDO.filter(x=>x.ponta&&x.para==='interno').length;
+  if(QA.length||nCorr||simplesF.length||FORMA.modo||PONTA_BANZO){
     const cruz=QA.filter(q=>q.cruza).length;
     qaHtml='<div class="conf-qa'+(QA_OK||!QA.length?' ok':'')+'">'+
       (QA.length?(QA_OK?'<b>✓ Quadros automáticos conferidos</b> ('+QA.length+').':
@@ -5970,6 +5983,8 @@ function renderConferir(){
       (simplesF.length?' '+simplesF.map(f=>'<b>'+escapeHtml(f.nome)+'</b>: perfil simples, '+(f.banzoMM/1000).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})+' m de linha — os '+Math.min(2,(f.profiles||[]).length)+' perfis pela mesma linha ('+f.qty+'×).').join(' '):'')+
       (FORMA.modo?' <b style="color:var(--warn)">Este desenho não tem a distinção de cores (amarelo banzo / vermelho interna):</b> o leitor separou banzo e interna pela forma em '+FICHAS.filter(f=>fichaRole(f)&&CL[f.cluster]).length+' estrutura(s) — confira, e o DXF padronizado sai com as cores certas.':'')+
       (nCorr?' <b style="color:var(--warn)">'+nCorr+' linha(s) com a cor trocada</b> ('+[nPraB?nPraB+' com cor de interna que é banzo — borda da estrutura':'',nPraI?nPraI+' com cor de banzo que é interna — liga as duas bordas':''].filter(Boolean).join('; ')+'): lidas pela forma, marcadas em laranja no Desenho inteiro.':'')+
+      (nPontaAm||PONTA_BANZO?'<label class="conf-ponta"><input type="checkbox" data-ponta-banzo'+(PONTA_BANZO?' checked':'')+'> <b>Montante da ponta com o perfil do banzo</b> — projeto fora do padrão'+
+        (PONTA_BANZO?': as pontas seguem no detalhamento e saem no perfil do banzo no corte e na compra (só neste arquivo).':': '+nPontaAm+' ponta(s) desenhada(s) em amarelo. Marque se o cliente quer assim.')+'</label>':'')+
       '<span class="conf-qa-bts">'+(QA.length&&!QA_OK?'<button type="button" class="btn primary" data-qa-ok>Conferi os quadros</button>':'')+
       '<button type="button" class="btn ghost" data-qa-dxf title="O desenho no padrão RM: quadros verdes, cores corrigidas e as fichas">⭳ DXF padronizado</button></span></div>';
   }
@@ -5982,6 +5997,7 @@ function renderConferir(){
     corpo+(CONF_MODO==='tudo'?'<div class="conf-leg">'+leg+'</div>':'');
   el.querySelectorAll('[data-excl]').forEach(b=>b.addEventListener('click',e=>{e.stopPropagation();alternaExclusao(+b.dataset.excl);}));
   const qaOk=el.querySelector('[data-qa-ok]');if(qaOk)qaOk.addEventListener('click',()=>{QA_OK=true;renderConferir();});
+  const pb=el.querySelector('[data-ponta-banzo]');if(pb)pb.addEventListener('change',()=>{PONTA_BANZO=pb.checked;cluster();renderAll();});
   const qaDxf=el.querySelector('[data-qa-dxf]');if(qaDxf)qaDxf.addEventListener('click',baixarDxfPadronizado);
   el.querySelectorAll('[data-conf-modo]').forEach(b=>b.addEventListener('click',()=>{CONF_MODO=b.dataset.confModo;try{localStorage.setItem('leitor_conf_modo',CONF_MODO);}catch(_){}renderConferir();}));
   el.querySelectorAll('[data-conf-f]').forEach(b=>b.addEventListener('click',()=>{
@@ -7338,7 +7354,7 @@ async function handle(file,aba){
     /* os ids de grupo sao refeitos aqui; um vinculo manual antigo apontaria
        para outro desenho */
     for(const k in FORCE)delete FORCE[k];
-    QA_OK=false;EXCL.clear();
+    QA_OK=false;EXCL.clear();PONTA_BANZO=false;
     parseFichas();fitVB();cluster();
     /* O arquivo pertence a ABA em que foi aberto. Guardar aqui e' o que
        permite trocar de aba sem perder o desenho do outro lado. */
@@ -9020,7 +9036,9 @@ function detCalcularSecoes(){
        quando cada cruzamento gera uma de cada.
        A inclinação não entra: duas verticais de mesma medida são a mesma
        peça, inclinada ou não. */
-    const fam=q=>q.tipo+'|'+(q.interna||'')+'|'+(q.parte||'');
+    /* a ponta no perfil do banzo é outra peça na compra: família própria */
+    r.pecas.forEach(q=>{q.pontaBanzo=!!(q.fontes&&q.fontes.some(m=>m&&m.src!=null&&SEG[m.src]&&SEG[m.src].pontaBanzo));});
+    const fam=q=>q.tipo+'|'+(q.interna||'')+'|'+(q.parte||'')+(q.pontaBanzo?'|pb':'');
     /* Ordena por FAMÍLIA e depois por comprimento decrescente. Ordenar só por
        comprimento deixava as famílias intercaladas: entre duas diagonais de
        1.000 e 998 podia cair uma vertical de 999, e a segunda diagonal abria
@@ -9048,7 +9066,7 @@ function detCalcularSecoes(){
            verticais iguais só as 2 das pontas ficam; o rótulo pegava o da
            1ª peça e dizia "junto à linha" para as 7. */
         gr.push({corte:p.corte,qtd:1,tipo:p.tipo,inc:!!p.inclinada,alinha:p.alinha,junto:p.alinha==='junto à linha'?1:0,ang,
-                 parte:p.parte,interna:p.interna||'',fam:fp});
+                 parte:p.parte,interna:p.interna||'',fam:fp,pontaBanzo:!!p.pontaBanzo});
       }
     });
     const letra=String.fromCharCode(65+gi);
@@ -10166,8 +10184,9 @@ function detPecasPorGrupo(s){
     {id:'diagonal', rot:'Diagonais',                     ok:g=>g.tipo==='diagonal'&&!g.interna},
     {id:'dinf',     rot:'Diagonais inferiores internas', ok:g=>g.tipo==='diagonal'&&g.interna==='inf'},
     {id:'dsup',     rot:'Diagonais superiores internas', ok:g=>g.tipo==='diagonal'&&g.interna==='sup'},
-    {id:'vertical', rot:'Verticais',                     ok:g=>g.tipo==='vertical'},
-    {id:'outros',   rot:'Demais peças',                  ok:g=>g.tipo!=='diagonal'&&g.tipo!=='vertical'}
+    {id:'vertical', rot:'Verticais',                     ok:g=>g.tipo==='vertical'&&!g.pontaBanzo},
+    {id:'pontab',   rot:'Montantes da ponta · perfil do banzo', ok:g=>g.pontaBanzo},
+    {id:'outros',   rot:'Demais peças',                  ok:g=>g.tipo!=='diagonal'&&g.tipo!=='vertical'&&!g.pontaBanzo}
   ];
   return FAM.map(f=>({rot:f.rot,itens:(s.gr||[]).filter(f.ok)
     .slice().sort((a,b)=>a.corte-b.corte)})).filter(x=>x.itens.length);
@@ -15298,7 +15317,7 @@ function detRender(secoes,totGeral,pecasGeral){
         '<td class="n">'+detFmt(g.corte)+'</td>'+
         '<td class="rc-sub">'+((g.posicoes&&g.posicoes.length)?g.posicoes.join(' '):'—')+'</td>'+
         '<td>'+g.tipo+(g.interna==='sup'?' <span class="rc-sub">· superior interna</span>':(g.interna==='inf'?' <span class="rc-sub">· inferior interna</span>':''))+
-          (g.parte?' <span class="rc-sub">· '+g.parte+'</span>':'')+
+          (g.parte?' <span class="rc-sub">· '+g.parte+'</span>':'')+(g.pontaBanzo?' <span class="rc-sub">· ponta no perfil do banzo</span>':'')+
         (g.junto>0?' <span class="rc-sub">· '+(g.junto<g.qtd?g.junto+' de '+g.qtd+' ':'')+'junto à linha</span>':'')+
         '</td></tr>';
     });
@@ -16088,19 +16107,21 @@ function medidoNoDesenho(){
   const det=detSecoesCache(),m={};
   ((det&&det.secoes)||[]).forEach(s=>{
     if(!(s.fichaIdx>=0))return;
-    const br=s.banzosResumo;
+    const br=s.banzosResumo,grI=(s.gr||[]).filter(g=>!g.pontaBanzo),grB=(s.gr||[]).filter(g=>g.pontaBanzo&&g.corte>0&&g.qtd>0);
+    const mmB=grB.reduce((a,g)=>a+g.corte*g.qtd,0),pcB=grB.map(g=>({len:g.corte,qty:g.qtd}));
     m[s.fichaIdx]={
-      banzo:br?(br.superior.porEstrutura+br.inferior.porEstrutura):0,
+      /* a ponta no perfil do banzo vai para o banzo, peça por peça */
+      banzo:(br?(br.superior.porEstrutura+br.inferior.porEstrutura):0)+mmB,
       /* SEM o x2 da cantoneira dupla: quem multiplica e a lista (mult da
          ficha). Com o x2 aqui tambem, a dupla saia x4 na compra. */
-      int:(s.gr||[]).reduce((a,g)=>a+(g.corte||0)*(g.qtd||0),0),
+      int:grI.reduce((a,g)=>a+(g.corte||0)*(g.qtd||0),0),
       /* As medidas uma a uma, para UMA estrutura. Com elas a lista de compra
          conta barras encaixando peca por peca, em vez de dividir metro por
          metro -- e a diferenca entre saber e supor quanto cabe na barra. */
-      intPecas:(s.gr||[]).filter(g=>(g.corte>0)&&(g.qtd>0))
+      intPecas:grI.filter(g=>(g.corte>0)&&(g.qtd>0))
         .map(g=>({len:g.corte,qty:g.qtd})),
       /* os pedacos de banzo do plano de emenda, para UMA estrutura */
-      banzoPecas:br?br.linhas.flatMap(l=>l.segmentos.map(len=>({len,qty:l.qtd}))):null};
+      banzoPecas:br?br.linhas.flatMap(l=>l.segmentos.map(len=>({len,qty:l.qtd}))).concat(pcB):null};
   });
   return m;
 }
@@ -16523,11 +16544,14 @@ function dadosRelatorioCorte(){
   const usaDetalhamento=det.secoes.length>0;
   if(usaDetalhamento){
     det.secoes.forEach(s=>{
-      const g=pegaGrupo(s.nomeInt,s.matInt,s.foraInt);
-      g.qtdEstrut+=s.qtdEstrut;g.secoes.push(s.letra);
+      const g0=pegaGrupo(s.nomeInt,s.matInt,s.foraInt);
+      g0.qtdEstrut+=s.qtdEstrut;g0.secoes.push(s.letra);
       s.gr.forEach(pc=>{
         const chave='D:'+pc.cod;
-        const p=g.pecas[chave]||(g.pecas[chave]={cod:pc.cod,len:pc.corte,qty:0,tipo:pc.tipo,inc:!!pc.inc,parte:pc.parte||'',interna:pc.interna||'',origens:{},marcas:[]});
+        /* ponta no perfil do banzo: corta da barra do banzo */
+        const g=pc.pontaBanzo?pegaGrupo(s.nomeExt,s.matExt,s.foraExt):g0;
+        if(pc.pontaBanzo&&!g.secoes.includes(s.letra)){g.secoes.push(s.letra);g.qtdEstrut+=s.qtdEstrut;}
+        const p=g.pecas[chave]||(g.pecas[chave]={cod:pc.cod,len:pc.corte,qty:0,tipo:pc.tipo,inc:!!pc.inc,parte:pc.parte||'',interna:pc.interna||'',pontaBanzo:!!pc.pontaBanzo,origens:{},marcas:[]});
         p.qty+=pc.qtdTotal;
         p.origens[s.nomeFicha+' · '+s.letra]={porEstrut:pc.qtdPorEstrutura,estrut:s.qtdEstrut};
         /* O montador nao procura vao, procura PECA. As posicoes P vao junto
@@ -16561,7 +16585,7 @@ function dadosRelatorioCorte(){
   }
   grupos.forEach((g,gi)=>{
     g.letra=usaDetalhamento?g.secoes.join(' · '):letraGrupo(gi);
-    g.lista=Object.values(g.pecas).map(p=>({cod:p.cod||'',len:p.len,qty:p.qty,tipo:p.tipo||'',inc:!!p.inc,parte:p.parte||'',interna:p.interna||'',origens:p.origens,marcas:p.marcas||[]}));
+    g.lista=Object.values(g.pecas).map(p=>({cod:p.cod||'',len:p.len,qty:p.qty,tipo:p.tipo||'',inc:!!p.inc,parte:p.parte||'',interna:p.interna||'',pontaBanzo:!!p.pontaBanzo,origens:p.origens,marcas:p.marcas||[]}));
     if(usaDetalhamento)g.lista.sort((a,b)=>a.cod.localeCompare(b.cod,undefined,{numeric:true}));
     else{
       g.lista.sort((a,b)=>b.len-a.len);
@@ -19156,7 +19180,8 @@ document.getElementById('detComp').addEventListener('click',e=>{
    (exceto chapasCfg, que poe precos ficticios na memoria para o teste). */
 window.__leitorTeste={
   estado:()=>({SEG,TXT,FICHAS,CL,COTAS,unitF,CAD_META,LASTROWS,LASTPESO}),
-  banzoCorrigido:()=>BANZO_CORRIGIDO.map(b=>({x:b.p.x,y:b.p.y,cor:b.cor,para:b.para})),
+  corte:()=>dadosRelatorioCorte().grupos.map(g=>({perfil:g.perfil,lista:g.lista.map(p=>({cod:p.cod,len:p.len,qty:p.qty,tipo:p.tipo,pontaBanzo:!!p.pontaBanzo}))})),
+  banzoCorrigido:()=>BANZO_CORRIGIDO.map(b=>({x:b.p.x,y:b.p.y,cor:b.cor,para:b.para,ponta:!!b.ponta})),
   forma:()=>({modo:FORMA.modo,estruturas:FORMA.estruturas,corrigidas:FORMA.corrigidas}),
   quadrosAuto:()=>quadrosAutomaticos(),
   letras:fi=>letrasDaFicha(fi),
@@ -26038,6 +26063,8 @@ render();
 #pane-det .conf-leg .conf-leg-x{border:0;background:none;color:var(--muted);cursor:pointer;padding:2px 6px;font-size:12px}
 #pane-det .conf-leg .conf-leg-x:hover{color:var(--red)}
 #pane-det .conf-qa.ok{border-color:var(--ok);background:color-mix(in srgb,var(--ok) 7%,transparent)}
+#pane-det .conf-qa .conf-ponta{flex-basis:100%;display:flex;align-items:baseline;gap:6px;cursor:pointer}
+#pane-det .conf-qa .conf-ponta input{accent-color:var(--rm-laranja);margin:0}
 #pane-det .conf-qa .conf-qa-bts{display:inline-flex;gap:6px;margin-left:auto}
 #pane-det .conf-topo{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin:0 0 8px}
 #pane-det .conf-topo .conf-res{margin:0}
@@ -30060,7 +30087,7 @@ if('serviceWorker' in navigator && location.protocol.startsWith('http')){
 }
 </script>
 <script>/* versão publicada (PADRAO_RM.md §3): sobe a cada publicação, junto com o CACHE do sw.js */
-const APP_VER='v255';
+const APP_VER='v256';
 </script>
 <script id="rmVersaoBloco">
 /* ===== SELO DE VERSÃO — igual em todos os sistemas (PADRAO_RM.md §3) =====
