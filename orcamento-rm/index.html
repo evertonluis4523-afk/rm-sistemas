@@ -5192,7 +5192,7 @@ const META_KEYS=['_editedAt','_cloudAppliedAt','_updatedAt','_escritor'];
    computador vinha para o outro, que estava montando um orçamento novo. */
 const SO_AQUI=['orcamentoAtualId'];
 // chaves que pertencem ao orçamento de trabalho (não são salvas ao recarregar)
-const QUOTE_KEYS=['numero','solicitacao','data','validade','vendedor','cliente','fornecedorDest','obra','obs','desc','linhasPerfil','linhasTelha','linhasCat','linhasAvulso','freteMetalica','freteTelhas','fretesMetalica','fretesTelhas','fornecedorMetalica','fornecedorTelhas','compras','esquadrias','chaveMao'];
+const QUOTE_KEYS=['numero','solicitacao','data','validade','vendedor','cliente','fornecedorDest','obra','obs','desc','condImpresso','linhasPerfil','linhasTelha','linhasCat','linhasAvulso','freteMetalica','freteTelhas','fretesMetalica','fretesTelhas','fornecedorMetalica','fornecedorTelhas','compras','esquadrias','chaveMao'];
 let storageOK=true; const mem={};
 function storageWorks(){
   try{const k="__rmtest",v="ok"+Date.now();localStorage.setItem(k,v);const r=localStorage.getItem(k)===v;localStorage.removeItem(k);return r;}
@@ -5331,7 +5331,7 @@ function freshDB(){
 }
 function freshQuote(){
   return {numero:"",solicitacao:"",data:hoje(),validade:"15 dias",vendedor:"",cliente:"",fornecedorDest:"",obra:"",
-    obs:"",desc:"0",
+    obs:"",desc:"0",condImpresso:{},
     linhasPerfil:[],linhasTelha:[],linhasCat:[],linhasAvulso:[],freteMetalica:0,freteTelhas:0,fretesMetalica:{},fretesTelhas:{},
     fornecedorMetalica:"",fornecedorTelhas:"",compras:{rates:{},profiles:{},grupos:{},imports:[]},esquadrias:[],chaveMao:cnmVazio()};
 }
@@ -8709,6 +8709,11 @@ function renderAjustes(){
   '<div class="cfg-sec"><h3>Aparência</h3>'+
     '<div class="cfg-tog"><div><div class="t">Densidade</div><div class="s">Compacta mostra mais itens na tela.</div></div>'+seg('densidadeUI',[['normal','Normal'],['compacta','Compacta']])+'</div>'+
   '</div>'+
+  '<div class="cfg-sec"><h3>Textos do impresso</h3>'+
+    '<div class="s" style="margin:0 0 8px;color:var(--muted);font-size:12px">Condições que saem no fim do impresso. Uma por linha; o que vem antes de “:” sai em negrito. Cada orçamento pode mudar o seu no botão Impresso.</div>'+
+    '<div class="row-form"><div class="f" style="grid-column:1/-1"><div class="lab">Fornecedor (solicitação de cotação)</div><textarea class="din" rows="4" id="cfgCondForn" onchange="setCfgInput(\'condFornecedor\',this.value)">'+escapeAttr(orcDocCondPadrao('fornecedor'))+'</textarea></div>'+
+    '<div class="f" style="grid-column:1/-1"><div class="lab">Cliente (orçamento)</div><textarea class="din" rows="4" id="cfgCondCli" onchange="setCfgInput(\'condCliente\',this.value)">'+escapeAttr(orcDocCondPadrao('cliente'))+'</textarea></div></div>'+
+  '</div>'+
   '<div class="cfg-sec"><h3>Recursos visíveis</h3>'+
     sw('recCatalogos','Item \u201cCatálogos de preços\u201d no menu')+
     sw('recChapas','Aba \u201cChapas/Bobinas\u201d')+
@@ -8782,7 +8787,7 @@ function usoEsquecer(){
 function clearQuote(){
   ensureCfg();
   descartarRascunho();   // comecar do zero apaga a rede de baixo junto
-  S.numero='';S.solicitacao='';S.data=hoje();S.validade=(S.cfg.validadePadrao||'15 dias');S.vendedor=(S.cfg.vendedorPadrao||'');S.cliente='';S.fornecedorDest='';S.obra='';S.obs='';S.desc=String(S.cfg.descontoPadrao!=null?S.cfg.descontoPadrao:0);
+  S.numero='';S.solicitacao='';S.data=hoje();S.validade=(S.cfg.validadePadrao||'15 dias');S.vendedor=(S.cfg.vendedorPadrao||'');S.cliente='';S.fornecedorDest='';S.obra='';S.obs='';S.condImpresso={};S.desc=String(S.cfg.descontoPadrao!=null?S.cfg.descontoPadrao:0);
   if(S.cfg.fornecedorPadrao && S.fornecedores.some(function(f){return f.id===S.cfg.fornecedorPadrao;})) S.fornecedorAtivo=S.cfg.fornecedorPadrao;
   S.linhasPerfil=[];S.linhasTelha=[];S.linhasCat=[];S.linhasAvulso=[];
   S.freteMetalica=0;S.freteTelhas=0;S.fretesMetalica={};S.fretesTelhas={};S.fornecedorMetalica='';S.fornecedorTelhas='';
@@ -10159,7 +10164,7 @@ function applyImport(){
    publicacao, e ha uma prova automatica que falha se um subir sem o outro.
    Assim o numero na tela e' o mesmo do arquivo que o aparelho guardou, e
    dizer "estou na v15" passa a significar alguma coisa. */
-const APP_VER='v140';
+const APP_VER='v141';
 (function(){ try{ const p=document.getElementById('verPill'); if(p)p.textContent=APP_VER; }catch(e){} })();
 /* Versao nova assumiu com a pagina aberta: avisa, em vez de recarregar por
    conta propria e jogar fora um orcamento pela metade. */
@@ -14287,6 +14292,9 @@ initAuth();
       '<option value="cliente">Impresso · Cliente</option>' +
       '<option value="interno">Impresso · Interno</option>' +
       '<option value="fornecedor">Impresso · Fornecedor</option></select>' +
+      '<label class="orc-doc-val" id="orcDocValWrap"><input type="checkbox" id="orcDocValores"> Com valores (R$)</label>' +
+      '<div class="lab">Condições deste impresso <span class="orc-doc-pad" id="orcDocCondPad"></span></div>' +
+      '<textarea id="orcDocCond" rows="4" title="Uma condição por linha. &quot;Entrega: na obra&quot; sai com Entrega em negrito. O padrão fica em Configurações."></textarea>' +
       '<div class="lab">Entra na impressão</div><span class="orc-secs">' +
       SECOES.map(function (x) {
         return '<label><input type="checkbox" data-sec="' + x[0] + '" checked>' + x[1] + '</label>';
@@ -14683,6 +14691,189 @@ initAuth();
 })();
 </script>
 
+<script>
+/* ===== IMPRESSO NOVO: SOLICITAÇÃO DE COTAÇÃO E ORÇAMENTO (nov/2026) =====
+   "O orçamento que gera para envio de fornecedores e cliente fica muito
+   vazio, quero mais profissional." O papel era a própria tela impressa: o
+   cliente, o número e uma lista solta, com 2/3 da folha em branco. Agora,
+   nas versões Fornecedor e Cliente, o Imprimir / PDF monta um documento:
+   quadro de dados, resumo (itens, peças, metros, peso), itens numerados e
+   agrupados por perfil com subtotal, total geral e as condições (texto
+   padrão em Configurações, mudável em cada orçamento). Cliente sai com ou
+   sem valores (caixinha no botão Impresso). Assinatura e campo de resposta
+   do fornecedor ficaram de fora a pedido: o fornecedor responde no sistema
+   dele. O Interno continua sendo a tela impressa. Teste orcamento-impresso-novo. */
+var ORC_DOC_PADRAO={
+  fornecedor:'Entrega: na obra, no local indicado acima\nCotar: preço por kg dos perfis, aço carbono e galvanizado separados\nInformar: prazo de entrega, condição de pagamento e frete',
+  cliente:'Medidas: em milímetros; peso estimado pela largura de corte × espessura × comprimento\nPeso: pode variar até 3% pela tolerância da bobina\nFrete e descarga: conforme combinado'
+};
+function orcDocCondPadrao(modo){ensureCfg();const k=modo==='fornecedor'?'condFornecedor':'condCliente',v=S.cfg[k];return (v!=null&&String(v).trim())?String(v):ORC_DOC_PADRAO[modo==='fornecedor'?'fornecedor':'cliente'];}
+function orcDocCond(modo){const o=S.condImpresso&&S.condImpresso[modo];return (o!=null&&String(o).trim())?String(o):orcDocCondPadrao(modo);}
+function orcDocValores(){ensureCfg();return S.cfg.docValores!==false;}
+function orcDocPainel(){
+  const sel=document.getElementById('orcPrintMode'),ta=document.getElementById('orcDocCond'),vw=document.getElementById('orcDocValWrap'),vc=document.getElementById('orcDocValores'),pad=document.getElementById('orcDocCondPad');
+  if(!sel||!ta)return;const m=sel.value||'cliente',novo=m!=='interno';
+  ta.style.display=novo?'':'none';if(ta.previousElementSibling)ta.previousElementSibling.style.display=novo?'':'none';
+  if(vw)vw.style.display=m==='cliente'?'':'none';if(vc)vc.checked=orcDocValores();
+  if(novo&&document.activeElement!==ta)ta.value=orcDocCond(m);
+  if(pad)pad.textContent=novo&&S.condImpresso&&S.condImpresso[m]?'· deste orçamento':'· padrão';
+}
+(function(){
+  function liga(){
+    const sel=document.getElementById('orcPrintMode'),ta=document.getElementById('orcDocCond'),vc=document.getElementById('orcDocValores');
+    if(!sel||!ta){setTimeout(liga,300);return;}
+    sel.addEventListener('change',orcDocPainel);
+    const imp=document.getElementById('orcImp');if(imp)imp.addEventListener('toggle',orcDocPainel);
+    ta.addEventListener('change',function(){const m=sel.value;S.condImpresso=S.condImpresso||{};
+      const v=String(ta.value||'').trim();if(!v||v===orcDocCondPadrao(m).trim())delete S.condImpresso[m];else S.condImpresso[m]=ta.value;
+      try{gravarRascunho();}catch(e){}orcDocPainel();});
+    if(vc)vc.addEventListener('change',function(){ensureCfg();S.cfg.docValores=!!vc.checked;save();});
+    orcDocPainel();
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',liga);else liga();
+})();
+function orcDocHTML(modo,valores,fora){
+  try{recompute();}catch(e){}
+  const v=id=>{const e=document.getElementById(id);return e?String(e.value||'').trim():'';},h=escapeAttr;
+  const forn=modo==='fornecedor';if(forn)valores=false;
+  const dims=s=>String(s||'').replace(/\s*X\s*/gi,' × ');
+  const cap=s=>{s=String(s||'').trim();return s?s.charAt(0)+s.slice(1).toLowerCase():'';};
+  let n=0,pecas=0,metros=0,peso=0;const blocos=[];
+  const nc=valores?8:6,thV=valores?'<th class="r">Preço</th><th class="r">Total</th>':'';
+  const linha=(desc,cols,pr,tot)=>{n++;return '<tr><td class="it">'+String(n).padStart(2,'0')+'</td><td>'+desc+'</td>'+cols.map(c=>'<td class="r">'+c+'</td>').join('')+(valores?'<td class="r">'+pr+'</td><td class="r b">'+tot+'</td>':'')+'</tr>';};
+  const sub=(nome,cols,tot)=>'<tr class="st"><td></td><td>Subtotal '+nome+'</td>'+cols.map(c=>'<td class="r">'+c+'</td>').join('')+(valores?'<td></td><td class="r">'+tot+'</td>':'')+'</tr>';
+  const grupoTit=(nome,info)=>'<tr class="g"><td colspan="'+nc+'"><b>'+nome+'</b>'+(info?'<span>'+info+'</span>':'')+'</td></tr>';
+  /* perfis, agrupados pelo perfil, na ordem em que entraram */
+  if(!fora.perfis&&(S.linhasPerfil||[]).length){
+    const ordem=[],por={};
+    S.linhasPerfil.forEach(l=>{const p=perfilById(l.perfilId);if(!p)return;if(!por[p.id]){por[p.id]=[];ordem.push(p);}por[p.id].push(l);});
+    let rows='',sP=0,sM=0,sK=0,sT=0;
+    ordem.forEach(p=>{
+      const nome=h(p.tipo+' '+dims(p.dims)),ls=por[p.id];let gp=0,gm=0,gk=0,gt=0;
+      rows+=grupoTit(nome,h(cap(p.grupo))+' · '+h(p.esp)+' mm');
+      ls.forEach(l=>{const c=perfilCalc(l,p),comp=l.comp||p.comp||0,q=l.qtd||0,m=comp/1000*q;
+        gp+=q;gm+=m;gk+=c.pesoTot||0;gt+=c.tot||0;
+        rows+=linha(nome+' <i>'+h(p.esp)+' mm</i>',[num(comp,0),'<b>'+q+'</b>',num(m,2),num(c.pesoTot||0,1)],c.pk!=null?num(c.pk,2)+'/kg':'—',c.semPreco?'—':brl(c.tot));});
+      if(ls.length>1)rows+=sub(nome,['',gp,num(gm,2),num(gk,1)],brl(gt));
+      sP+=gp;sM+=gm;sK+=gk;sT+=gt;
+    });
+    pecas+=sP;metros+=sM;peso+=sK;
+    blocos.push({t:'Perfis',head:'<th class="r">Compr. (mm)</th><th class="r">Qtd.</th><th class="r">Metros</th><th class="r">Peso (kg)</th>',rows,tot:['',sP,num(sM,2),num(sK,1)],tv:sT});
+  }
+  if(!fora.avulsos&&(S.linhasAvulso||[]).length){
+    let rows='',sP=0,sT=0;
+    S.linhasAvulso.forEach(l=>{const q=l.qtd||0,t=avulsoLineTotal(l);sP+=q;sT+=t;
+      rows+=linha(h([l.nome,l.tamanho].filter(Boolean).join(' '))+(l.esp?' <i>'+h(l.esp)+' mm</i>':''),[l.comprimentoCalc?num(l.comprimentoCalc,0):'—','<b>'+q+'</b>'],brl(l.valor||0),brl(t));});
+    pecas+=sP;
+    blocos.push({t:'Avulsos',head:'<th class="r">Compr. (mm)</th><th class="r">Qtd.</th>',rows,tot:['',sP],tv:sT});
+  }
+  if(!fora.telhas&&(S.linhasTelha||[]).length){
+    let rows='',sP=0,sM=0,sA=0,sT=0;
+    S.linhasTelha.forEach(l=>{const t=telhaById(l.telhaId);if(!t)return;const c=telhaCalc(l,t),q=l.qtd||0,a=telhaAreaM2(l,t,c.metros);
+      sP+=q;sM+=c.metros||0;sA+=a;sT+=c.tot||0;
+      rows+=linha(h(t.desc),[num(l.comp||0,0),'<b>'+q+'</b>',num(c.metros||0,2),num(a,2)],c.preco>0?brl(c.preco)+'/m':'—',c.semPreco?'—':brl(c.tot));});
+    pecas+=sP;
+    blocos.push({t:'Telhas',head:'<th class="r">Compr. (mm)</th><th class="r">Qtd.</th><th class="r">Metros</th><th class="r">Área (m²)</th>',rows,tot:['',sP,num(sM,2),num(sA,2)],tv:sT,area:sA});
+  }
+  if(!fora.outros&&(S.linhasCat||[]).length){
+    const ordem=[],por={};
+    S.linhasCat.forEach(l=>{const cat=catById(l.catId),it=cat?catItemById(cat,l.itemId):null;if(!it)return;if(!por[cat.id]){por[cat.id]=[];ordem.push(cat);}por[cat.id].push([l,it]);});
+    ordem.forEach(cat=>{let rows='',sT=0;
+      por[cat.id].forEach(([l,it])=>{const t=catLineTotal(cat,it,l);sT+=t;
+        rows+=linha(h([it.grupo,it.tipo].filter(Boolean).join(' ')),[h(it.unidade||'un'),'<b>'+num(l.qtd||0,(l.qtd||0)%1?2:0)+'</b>'],brl(catLineUnitPrice(cat,it,l)),brl(t));});
+      blocos.push({t:catNomeBonito(cat.nome),head:'<th class="r">Unid.</th><th class="r">Qtd.</th>',rows,tot:null,tv:sT});});
+  }
+  const tabelas=blocos.map(b=>{
+    const tot=(b.tot||valores)?'<tr class="tg"><td></td><td>Total '+h(b.t.toLowerCase())+'</td>'+(b.tot||b.head.split('<th').slice(1).map(()=>'')).map(c=>'<td class="r">'+c+'</td>').join('')+(valores?'<td></td><td class="r">'+brl(b.tv)+'</td>':'')+'</tr>':'';
+    return '<div class="od-sec"><h3>'+h(b.t)+'</h3><table><thead><tr><th>Item</th><th>Descrição</th>'+b.head+thV+'</tr></thead><tbody>'+b.rows+tot+'</tbody></table></div>';}).join('');
+  const T=(typeof LAST_TOT!=='undefined'&&LAST_TOT)||{},area=blocos.reduce((a,b)=>a+(b.area||0),0);
+  const cards=[['Itens',n],pecas?['Peças',pecas]:null,metros?['Metros (perfis)',num(metros,1)+' m']:null,peso?['Peso estimado',num(peso,0)+' kg']:null,area?['Área de telhas',num(area,1)+' m²']:null].filter(Boolean);
+  const totais=valores?'<div class="od-tot"><div><span>Subtotal</span><b>'+brl(T.sub||0)+'</b></div>'+((T.desc||0)>0.004?'<div><span>Desconto</span><b>− '+brl(T.desc)+'</b></div>':'')+'<div class="g"><span>Total</span><b>'+brl(T.total||0)+'</b></div></div>':'';
+  const numero=forn?(v('q_solicitacao')||S.solicitacao||''):(v('q_numero')||S.numero||'');
+  const ent=v('x_entrega');
+  const dados=(forn?[['Fornecedor',v('q_fornecedorDest')],['Cliente / obra',[v('q_cliente'),v('q_obra')].filter(Boolean).join(' · ')],['Emissão',v('q_data')],['Prazo de entrega',v('q_validade')],['Local de entrega',v('x_cidade')],['Solicitante',v('q_vendedor')]]
+    :[['Cliente',v('q_cliente')],['Obra / referência',v('q_obra')],['Emissão',v('q_data')],['Validade',v('q_validade')],['Local',v('x_cidade')],['Vendedor',v('q_vendedor')],['Pagamento',v('x_pagto')],['Prazo de entrega',ent?ent+(/^\d+$/.test(ent)?' dias úteis':''):''],['Frete',v('x_frete')],['Contato',[v('x_contato'),v('x_fone')].filter(Boolean).join(' · ')]]).filter(x=>x[1]);
+  const conds=String(orcDocCond(forn?'fornecedor':'cliente')).split(/\n+/).map(x=>x.trim()).filter(Boolean)
+    .map(x=>{const i=x.indexOf(':');return '<li>'+(i>0&&i<40?'<b>'+h(x.slice(0,i+1))+'</b>'+h(x.slice(i+1)):h(x))+'</li>';}).join('');
+  const intro=forn?'Solicitamos cotação dos itens abaixo, informando o preço (R$/kg nos perfis), o prazo de entrega e a condição de pagamento.'
+    :(valores?'Apresentamos o orçamento dos itens abaixo, conforme o projeto.':'Relação do material deste orçamento, conforme o projeto.');
+  return '<div class="od-tit"><h1>'+(forn?'Solicitação de cotação':'Orçamento')+'</h1>'+(numero?'<div class="n">Nº<b>'+h(numero)+'</b></div>':'')+'</div>'
+    +(dados.length?'<div class="od-dados">'+dados.map(x=>'<div><span>'+x[0]+'</span><b>'+h(x[1])+'</b></div>').join('')+'</div>':'')
+    +'<p class="od-intro">'+intro+'</p>'
+    +'<div class="od-cards">'+cards.map(c=>'<div><span>'+c[0]+'</span><b>'+c[1]+'</b></div>').join('')+(valores?'<div class="tot"><span>Total</span><b>'+brl(T.total||0)+'</b></div>':'')+'</div>'
+    +tabelas+totais
+    +(conds?'<div class="od-cond"><h4>'+(forn?'Condições da cotação':'Condições')+'</h4><ul>'+conds+'</ul></div>':'');
+}
+(function(){
+  let pedido=false;
+  function monta(){
+    if(!pedido)return;pedido=false;
+    const b=document.body,sh=document.querySelector('.sheet');if(!sh||b.classList.contains('print-rel'))return;
+    const modo=b.classList.contains('pm-fornecedor')?'fornecedor':b.classList.contains('pm-cliente')?'cliente':'';
+    if(!modo)return;
+    const fora={};['perfis','avulsos','telhas','outros'].forEach(k=>{fora[k]=b.classList.contains('sec-off-'+k);});
+    let d=document.getElementById('orcDoc');
+    if(!d){d=document.createElement('div');d.id='orcDoc';const ft=sh.querySelector('.sheetfoot');sh.insertBefore(d,ft||null);}
+    try{d.innerHTML=orcDocHTML(modo,orcDocValores(),fora);sh.classList.add('doc-novo');}catch(e){console.error('[impresso novo]',e);sh.classList.remove('doc-novo');}
+  }
+  function limpa(){const sh=document.querySelector('.sheet');if(sh)sh.classList.remove('doc-novo');}
+  window.addEventListener('beforeprint',monta);
+  window.addEventListener('afterprint',limpa);
+  /* orcImprimir nasce no DOMContentLoaded (o layout monta a barra): embrulha
+     quando ele existir, e de novo se alguém o trocar depois. */
+  function embrulha(){['orcImprimir','rmSalvarPDF'].forEach(function(f){const o=window[f];if(typeof o!=='function'||o.__orcDoc)return;
+    const w=function(){pedido=true;try{return o.apply(this,arguments);}finally{setTimeout(function(){pedido=false;},50);}};w.__orcDoc=true;window[f]=w;});}
+  embrulha();document.addEventListener('DOMContentLoaded',function(){setTimeout(embrulha,0);});window.addEventListener('load',embrulha);
+  window.orcDocMonta=function(modo,valores){const sh=document.querySelector('.sheet');let d=document.getElementById('orcDoc');
+    if(!d){d=document.createElement('div');d.id='orcDoc';sh.insertBefore(d,sh.querySelector('.sheetfoot')||null);}
+    d.innerHTML=orcDocHTML(modo,valores,{});sh.classList.add('doc-novo');return d;};
+})();
+</script>
+<style>
+#orcDoc{display:none}
+.sheet.doc-novo #orcDoc{display:flex;flex-direction:column;gap:4mm}
+.sheet.doc-novo>:not(.head):not(#orcDoc):not(.sheetfoot):not(.rm-dagua){display:none!important}
+#orcDoc{font-family:var(--sans);color:#1d2127}
+#orcDoc .od-tit{display:flex;justify-content:space-between;align-items:flex-end;border-top:.5mm solid #d53309;padding-top:3mm}
+#orcDoc .od-tit h1{margin:0;font-size:19pt;font-weight:700;letter-spacing:-.01em}
+#orcDoc .od-tit .n{text-align:right;font-size:8pt;color:#6b7480;text-transform:uppercase;letter-spacing:.08em}
+#orcDoc .od-tit .n b{display:block;font-size:15pt;color:#d53309;letter-spacing:0}
+#orcDoc .od-dados{display:grid;grid-template-columns:repeat(4,1fr);border:.3mm solid #e2e4e6;border-radius:2mm;overflow:hidden}
+#orcDoc .od-dados div{padding:1.8mm 3mm;border-right:.3mm solid #e2e4e6;border-bottom:.3mm solid #e2e4e6;margin:0 -.3mm -.3mm 0}
+#orcDoc .od-dados span,#orcDoc .od-cards span{display:block;font-size:6.5pt;text-transform:uppercase;letter-spacing:.08em;color:#8a929b}
+#orcDoc .od-dados b{font-size:9pt}
+#orcDoc .od-intro{font-size:8.5pt;color:#4e5660;line-height:1.5;margin:0;border-left:.8mm solid #d53309;padding-left:3mm}
+#orcDoc .od-cards{display:flex;gap:2mm}
+#orcDoc .od-cards div{flex:1;background:#f4f5f6;border-radius:2mm;padding:2mm 3mm;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+#orcDoc .od-cards b{font-size:11pt;white-space:nowrap}
+#orcDoc .od-cards .tot{flex:1.6;background:#d53309;color:#fff}
+#orcDoc .od-cards .tot span{color:#ffd9cc}
+#orcDoc .od-sec h3{break-after:avoid;page-break-after:avoid;margin:0 0 1mm;font-size:7pt;text-transform:uppercase;letter-spacing:.1em;color:#d53309;font-weight:700}
+#orcDoc table{width:100%;border-collapse:collapse;font-size:8pt}
+#orcDoc th{font-size:6.5pt;text-transform:uppercase;letter-spacing:.07em;color:#8a929b;text-align:left;padding:1.4mm 1.5mm;border-bottom:.4mm solid #1d2127;font-weight:700;background:none}
+#orcDoc td{padding:1.2mm 1.5mm;border-bottom:.2mm solid #eceef0;font-variant-numeric:tabular-nums}
+#orcDoc .r{text-align:right}#orcDoc .b{font-weight:700}
+#orcDoc td.it{color:#8a929b;width:8mm}
+#orcDoc td i{font-style:normal;color:#8a929b;font-size:7pt}
+#orcDoc tr.g td{background:#fbf3f0;border-bottom:0;padding-top:2mm;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+#orcDoc tr.g b{font-size:8.5pt}#orcDoc tr.g span{margin-left:2.5mm;font-size:7pt;color:#8a929b}
+#orcDoc tr.st td{font-size:7pt;color:#6b7480;font-weight:700;border-bottom:.3mm solid #c9ced3}
+#orcDoc tr.tg td{font-weight:700;font-size:8.5pt;border-top:.4mm solid #1d2127;border-bottom:0;padding-top:1.6mm}
+#orcDoc tr{break-inside:avoid}
+#orcDoc thead{display:table-header-group}
+#orcDoc .od-sec{break-inside:auto}
+#orcDoc .od-sec table tbody tr:first-child{break-before:avoid}
+#orcDoc .od-tot{align-self:flex-end;min-width:70mm;font-size:9pt}
+#orcDoc .od-tot div{display:flex;justify-content:space-between;gap:8mm;padding:1mm 0;border-bottom:.2mm solid #eceef0}
+#orcDoc .od-tot .g{font-size:12pt;border-bottom:0;border-top:.5mm solid #1d2127;padding-top:1.6mm}
+#orcDoc .od-tot .g b{color:#d53309}
+#orcDoc .od-cond{border:.3mm solid #e2e4e6;border-radius:2mm;padding:2.5mm 3.5mm;break-inside:avoid}
+#orcDoc .od-cond h4{margin:0 0 1.2mm;font-size:6.5pt;text-transform:uppercase;letter-spacing:.08em;color:#d53309}
+#orcDoc .od-cond ul{margin:0;padding-left:4mm;font-size:8pt;line-height:1.6}
+.orc-doc-val{display:flex;align-items:center;gap:6px;font-size:12px;margin:8px 0 2px}
+.orc-doc-pad{font-weight:400;text-transform:none;letter-spacing:0;color:var(--muted)}
+#orcDocCond{width:100%;font:inherit;font-size:12px;border:1px solid var(--line);border-radius:7px;padding:6px 8px;resize:vertical;background:var(--surface,#fff);color:inherit}
+</style>
 <script>
 /* ===== RELATO DE ERRO À CENTRAL — igual em todos os sistemas =====
    Um erro de JavaScript aqui dentro morre no console do iframe e ninguém
