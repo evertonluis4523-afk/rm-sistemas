@@ -10206,7 +10206,7 @@ function applyImport(){
    publicacao, e ha uma prova automatica que falha se um subir sem o outro.
    Assim o numero na tela e' o mesmo do arquivo que o aparelho guardou, e
    dizer "estou na v15" passa a significar alguma coisa. */
-const APP_VER='v144';
+const APP_VER='v145';
 (function(){ try{ const p=document.getElementById('verPill'); if(p)p.textContent=APP_VER; }catch(e){} })();
 /* Versao nova assumiu com a pagina aberta: avisa, em vez de recarregar por
    conta propria e jogar fora um orcamento pela metade. */
@@ -14798,7 +14798,8 @@ function orcDocHTML(modo,valores,fora){
     let rows='',sP=0,sM=0,sK=0,sT=0;
     ordem.forEach(p=>{
       const nome=h((p.tipo?p.tipo+' ':'')+dims(p.dims)),ls=por[p.id];let gp=0,gm=0,gk=0,gt=0;
-      rows+=grupoTit(nome,h(cap(p.grupo))+' · '+h(p.esp)+' mm');
+      /* "fora do catálogo" é coisa nossa: não vai para fornecedor nem cliente */
+      rows+=grupoTit(nome,(p.livre?'':h(cap(p.grupo))+' · ')+h(p.esp)+' mm');
       ls.forEach(l=>{const c=perfilCalc(l,p),comp=l.comp||p.comp||0,q=l.qtd||0,m=comp/1000*q;
         gp+=q;gm+=m;gk+=c.pesoTot||0;gt+=c.tot||0;
         rows+=linha(nome+' <i>'+h(p.esp)+' mm</i>',[num(comp,0),'<b>'+q+'</b>',num(m,2),num(c.pesoTot||0,1)],c.pk!=null?num(c.pk,2)+'/kg':'—',c.semPreco?'—':brl(c.tot));});
