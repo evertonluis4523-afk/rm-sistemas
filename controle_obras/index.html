@@ -1615,6 +1615,11 @@ input,textarea,select{font-family:inherit;color:inherit}
 .relpdf-nota{font-size:13px;color:var(--muted);line-height:1.5;margin:12px 0 0}
 .rel-op{display:block;width:100%;text-align:left;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:10px;padding:14px 16px;margin:0 0 10px;cursor:pointer;font:inherit}
 .rel-op:hover{border-color:var(--red)}
+.oc-tit{margin:4px 0 8px;font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.oc-op{display:flex;gap:10px;align-items:flex-start;padding:10px 12px;border:1px solid var(--line);border-radius:10px;margin:0 0 8px;cursor:pointer}
+.oc-op input{margin-top:3px;accent-color:var(--red)}.oc-op b{display:block;font-size:14px}.oc-op small{display:block;font-size:12.5px;color:var(--muted);margin-top:2px;line-height:1.4}
+.oc-op:has(input:checked){border-color:var(--red)}
+.oc-nota{font-size:12px;color:var(--muted);margin:4px 0 12px}
 .rel-op b{display:block;font-size:15px}.rel-op span{display:block;font-size:13px;color:var(--muted);margin-top:3px;line-height:1.45}
 /* ===================== TRANSIÇÕES =====================
    O sistema é usado o dia inteiro, então a animação existe para dizer O QUE
@@ -4707,11 +4712,28 @@ async function garantirAnexosCarregados(list){
    HTML com visual proprio; ela continua existindo, no menu "Mais", porque
    leva as NFs anexadas dentro -- o PDF lista as notas, nao carrega os
    arquivos delas. */
-function docRelatorioObrasPDF(list,tipo){
+/* PARA O CLIENTE ACOMPANHAR (nov/2026): oc = {parcelas, valores}.
+   parcelas: true tira a tabela de parcelas e o Recebido / A receber.
+   valores: 'todos' (como sempre), 'nenhum' (nenhum R$ na folha) ou 'nota'
+   (só o total tirado em nota). Com oc, a cor da parcela (frio/quente) nunca
+   sai: é controle interno. Sem oc, o relatório é o de sempre. */
+const kpGrid=cel=>'<div class="kp" style="grid-template-columns:repeat('+Math.max(1,cel.length)+',1fr)">'+cel.join('')+'</div>';
+function docRelatorioObrasPDF(list,tipo,oc){
   const logo=(document.getElementById('printHeadLogo')||{}).src||'';
   const hoje=new Date().toLocaleDateString('pt-BR');
+  const cli=!!oc, V=(oc&&oc.valores)||'todos', semPar=!!(oc&&oc.parcelas), valTodos=V==='todos';
+  const kpCel=(rot,v,cls)=>'<div'+(cls?' class="'+cls+'"':'')+'><span>'+rot+'</span><b>'+v+'</b></div>';
   let tot='';
-  if(list.length>1){
+  if(cli&&list.length>1){
+    let cart=0,rec=0,emit=0,acord=0;
+    list.forEach(o=>{const c=calcObra(o);cart+=Number(o.valor)||0;rec+=c.recebido;emit+=c.tiradoNota;acord+=Number(o.notaAcordada)||0;});
+    const cel=[kpCel('Obras',list.length)];
+    if(valTodos){cel.push(kpCel('Carteira',repBRL(cart)));if(!semPar)cel.push(kpCel('Recebido',repBRL(rec)),kpCel('A receber',repBRL(cart-rec)));
+      cel.push(kpCel('Nota acordada',repBRL(acord)),kpCel('Nota emitida',repBRL(emit)));}
+    else if(V==='nota')cel.push(kpCel('Total em nota',repBRL(emit)));
+    tot=kpGrid(cel);
+  }
+  else if(list.length>1){
     let cart=0,rec=0,emit=0,acord=0;
     list.forEach(o=>{const c=calcObra(o);cart+=Number(o.valor)||0;rec+=c.recebido;emit+=c.tiradoNota;acord+=Number(o.notaAcordada)||0;});
     tot='<div class="kp"><div><span>Obras</span><b>'+list.length+'</b></div><div><span>Carteira</span><b>'+repBRL(cart)+'</b></div>'
@@ -4720,6 +4742,7 @@ function docRelatorioObrasPDF(list,tipo){
   }
   const obras=list.map(o=>{
     const c=calcObra(o), par=o.parcelas||[], forn=o.fornecedores||[];
+    if(cli) return secaoCliente(o,c,par,forn);
     const pr=par.length?par.map(p=>'<tr><td>'+(esc(p.desc)||'—')+'</td><td class="c">'+(esc(repData(p.data))||'—')+'</td><td class="r">'+repBRL(p.valor)+'</td><td>'+obRelForma(p)+'</td><td class="c">'+obRelTemp(p)+'</td><td class="c">'+(p.recebida?'Recebida':'Pendente')+'</td></tr>'+obRelPartes(p)).join('')
       :'<tr><td colspan="6" class="vz">Sem parcelas lançadas.</td></tr>';
     const fr=forn.length?forn.map(f=>{
@@ -4765,6 +4788,28 @@ function docRelatorioObrasPDF(list,tipo){
     +'<div class="pe"><div class="lin"><div>51 99789-7879 · @rm.estruturas</div><div class="c">www.rmestruturas.com.br</div><div class="d"><img src="'+RM_SIMBOLO+'" alt=""></div></div>'
     +'<div class="nota">RM Estruturas Pré-Fabricadas · Controle de Obras · '+hoje+'</div></div>'
     +'<div class="dagua" aria-hidden="true"><img src="'+RM_MARCA_DAGUA+'" alt=""></div></body></html>';
+  function secaoCliente(o,c,par,forn){
+    const cel=[];
+    if(valTodos){cel.push(kpCel('Valor da obra',repBRL(o.valor)));if(!semPar)cel.push(kpCel('Recebido',repBRL(c.recebido)),kpCel('A receber',repBRL(c.faltaReceber)));
+      cel.push(kpCel('Nota acordada',repBRL(o.notaAcordada)),kpCel('Nota emitida',repBRL(c.tiradoNota)),kpCel('Falta em nota',repBRL(c.faltaNota),c.faltaNota>0.005?'al':''));}
+    else if(V==='nota')cel.push(kpCel('Total em nota',repBRL(c.tiradoNota)));
+    let h='<section><div class="oh"><h2>'+(esc(o.nome)||'Obra sem nome')+'</h2>'+(o.cliente?'<span>Cliente: '+esc(rmNomePt(o.cliente))+'</span>':'')+(o.data?'<span>Ref.: '+esc(o.data)+'</span>':'')+'</div>'
+      +(cel.length?kpGrid(cel):'');
+    if(!semPar){
+      const linhas=[];
+      par.forEach(p=>{linhas.push('<tr><td>'+(esc(p.desc)||'—')+'</td><td class="c">'+(esc(repData(p.data))||'—')+'</td>'+(valTodos?'<td class="r">'+repBRL(p.valor)+'</td>':'')+'<td>'+obRelForma(p)+'</td><td class="c">'+(p.recebida?'Recebida':'Pendente')+'</td></tr>');
+        (obPartes(p)||[]).forEach((x,i)=>linhas.push('<tr class="pt"><td>&nbsp;&nbsp;&#8627; Parte '+(i+1)+'</td><td class="c">'+obParteData(p,x)+'</td>'+(valTodos?'<td class="r">'+repBRL(x.valor)+'</td>':'')+'<td>'+(obRotulo(OB_FORMAS,x.forma)||'—')+'</td><td></td></tr>'));});
+      const nc=valTodos?5:4;
+      h+='<h3>Parcelas</h3><table><thead><tr><th>Descrição</th><th class="c" style="width:15%">Data</th>'+(valTodos?'<th class="r" style="width:17%">Valor</th>':'')+'<th style="width:14%">Forma</th><th class="c" style="width:14%">Status</th></tr></thead><tbody>'
+        +(linhas.length?linhas.join(''):'<tr><td colspan="'+nc+'" class="vz">Sem parcelas lançadas.</td></tr>')+'</tbody></table>';
+    }
+    const fr=forn.length?forn.map(f=>{
+      const ch=(f.chave||'').replace(/[^0-9A-Za-z]/g,'');
+      return '<tr><td>'+(esc(f.nome)||'—')+'</td><td>'+(esc(f.numeroNF)||'—')+(ch?'<div class="ch">'+esc(ch)+'</div>':'')+'</td><td class="c">'+(esc(repData(f.dataNF))||'—')+'</td>'+(valTodos?'<td class="r">'+repBRL(f.valor)+'</td>':'')+'</tr>';
+    }).join(''):'<tr><td colspan="'+(valTodos?4:3)+'" class="vz">Sem notas lançadas.</td></tr>';
+    h+='<h3>Notas fiscais</h3><table><thead><tr><th>Fornecedor</th><th style="width:30%">Nº NF</th><th class="c" style="width:17%">Data NF</th>'+(valTodos?'<th class="r" style="width:17%">Valor</th>':'')+'</tr></thead><tbody>'+fr+'</tbody></table>';
+    return h+(o.obs?'<p class="obs"><b>Observações:</b> '+esc(o.obs)+'</p>':'')+'</section>';
+  }
 }
 /* No programa e na Central vai pela ponte (PDF vetorial, janela Salvar com o
    nome ja preenchido); no navegador, imprime por um quadro escondido, onde
@@ -4926,13 +4971,37 @@ function envioObra(id){
     +'<div class="mhead"><h2 id="relEscT">Enviar · '+esc(o.nome||'obra')+'</h2><button class="x" type="button" aria-label="Fechar">&times;</button></div>'
     +'<div class="mbody"><button type="button" class="rel-op" id="relOpNF"><b>Com as notas fiscais</b><span>Para a contabilidade: abre no navegador, com o relatório da obra e '
     +(nNF?(nNF===1?'a NF anexada':'as '+nNF+' NFs anexadas'):'as NFs anexadas')+' para ver e baixar.</span></button>'
-    +'<button type="button" class="rel-op" id="relOpPdf"><b>Relatório em PDF</b><span>No papel da empresa, para imprimir ou arquivar. Lista as notas, sem os arquivos.</span></button></div></div>';
+    +'<button type="button" class="rel-op" id="relOpPdf"><b>Relatório em PDF</b><span>No papel da empresa, para imprimir ou arquivar. Lista as notas, sem os arquivos.</span></button>'
+    +'<button type="button" class="rel-op" id="relOpCli"><b>Para o cliente acompanhar</b><span>PDF no papel da empresa, escolhendo o que ocultar: parcelas recebidas e valores.</span></button></div></div>';
   ov.classList.add('open');
   const fecha=()=>{ ov.classList.remove('open'); ov.innerHTML=''; };
   ov.querySelector('.x').onclick=fecha; ov.onclick=e=>{ if(e.target===ov) fecha(); };
   ov.querySelector('#relOpPdf').onclick=()=>{ fecha(); relObra(id); };
   ov.querySelector('#relOpNF').onclick=()=>{ fecha(); envioObraComNF(id); };
+  ov.querySelector('#relOpCli').onclick=()=>envioCliente(id,ov,fecha);
 }
+/* O QUE O CLIENTE VÊ. A escolha fica lembrada no aparelho para a próxima. */
+const OC_CHAVE='obras_envio_cliente';
+function ocLe(){ try{ const o=JSON.parse(localStorage.getItem(OC_CHAVE)||'{}'); return {parcelas:o.parcelas!==false,valores:['todos','nenhum','nota'].includes(o.valores)?o.valores:'nota'}; }catch(e){ return {parcelas:true,valores:'nota'}; } }
+function envioCliente(id,ov,fecha){
+  const o=obraById(id); if(!o) return; const oc=ocLe();
+  const rad=(v,t,d)=>'<label class="oc-op"><input type="radio" name="ocVal" value="'+v+'"'+(oc.valores===v?' checked':'')+'><span><b>'+t+'</b>'+(d?'<small>'+d+'</small>':'')+'</span></label>';
+  ov.querySelector('.mbody').innerHTML='<p class="oc-tit">O que ocultar no PDF do cliente</p>'
+    +'<label class="oc-op"><input type="checkbox" id="ocPar"'+(oc.parcelas?' checked':'')+'><span><b>Parcelas recebidas</b><small>Tira a tabela de parcelas e o Recebido / A receber.</small></span></label>'
+    +'<p class="oc-tit">Valores</p>'
+    +rad('nota','Ocultar valores, deixar só o total tirado em nota','Aparece só o “Total em nota”; as notas saem sem o valor de cada uma.')
+    +rad('nenhum','Ocultar todos os valores','Nenhum R$ na folha.')
+    +rad('todos','Mostrar todos os valores','Valor da obra, nota acordada, notas e parcelas (se não ocultadas).')
+    +'<p class="oc-nota">A cor das parcelas (frio/quente) nunca sai para o cliente.</p>'
+    +'<div class="relpdf-acts"><button class="btn-act" type="button" id="ocVolta">Voltar</button><button class="btn-act save" type="button" id="ocGerar">Gerar PDF</button></div>';
+  ov.querySelector('#ocVolta').onclick=()=>envioObra(id);
+  ov.querySelector('#ocGerar').onclick=()=>{
+    const esc2={parcelas:ov.querySelector('#ocPar').checked,valores:(ov.querySelector('input[name=ocVal]:checked')||{}).value||'nota'};
+    try{ localStorage.setItem(OC_CHAVE,JSON.stringify(esc2)); }catch(e){}
+    fecha(); relObraCliente(id,esc2);
+  };
+}
+function relObraCliente(id,oc){ const o=obraById(id); if(!o)return; entregarRelatorioPDF(docRelatorioObrasPDF([o],'Acompanhamento da obra',oc),nomeArquivoRel('Acompanhamento da Obra',o.nome).replace(/\.html$/,'')); }
 function envioObraComNF(id){
   const o=obraById(id); if(!o) return;
   const titulo='Relatório de Obra — '+(o.nome||'sem nome');
@@ -6300,7 +6369,7 @@ if('serviceWorker' in navigator){
 })();
 </script>
 <script>/* versão publicada (PADRAO_RM.md §3): sobe a cada publicação, junto com o CACHE do sw.js */
-const APP_VER='v105';
+const APP_VER='v106';
 </script>
 <script id="rmVersaoBloco">
 /* ===== SELO DE VERSÃO — igual em todos os sistemas (PADRAO_RM.md §3) =====
