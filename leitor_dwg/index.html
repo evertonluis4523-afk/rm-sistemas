@@ -3482,6 +3482,12 @@ body:not([data-theme="escuro"]){
            Orçamento), as pranchas, e o resto em "Mais", nos mesmos grupos de
            antes (Compra, Fábrica, Laser). Os ids são os de sempre. -->
       <div class="acoes-det" id="acoesDet">
+        <nav class="etapas" id="etapasNav" role="tablist" aria-label="Etapas do detalhamento">
+          <button type="button" role="tab" data-ir="conferir" class="on" aria-selected="true"><i>1</i>Conferir<span class="et-n"></span></button>
+          <button type="button" role="tab" data-ir="perfis" aria-selected="false"><i>2</i>Perfis<span class="et-n"></span></button>
+          <button type="button" role="tab" data-ir="compra" aria-selected="false"><i>3</i>Compra<span class="et-n"></span></button>
+          <button type="button" role="tab" data-ir="fab" aria-selected="false"><i>4</i>Fabricação<span class="et-n"></span></button>
+        </nav>
         <div class="ad-res" id="adRes" aria-live="polite"></div>
         <div class="ad-bts">
           <button class="btn primary" id="exportOrc">Importar p/ Orçamento RM</button>
@@ -3504,10 +3510,35 @@ body:not([data-theme="escuro"]){
         </div>
       </div>
 
+      <!-- ETAPAS (Fase 2, nov/2026): o detalhamento era uma página só, de
+           quase quatro telas. Agora são quatro etapas, uma por vez:
+           Conferir · Perfis · Compra · Fabricação. Os ids são os de sempre;
+           a etapa com aviso ganha a marca no seletor. -->
+      <div class="etapa" data-etapa="conferir">
       <!-- CONFERIR A LEITURA -->
       <h2 class="sec">Conferir a leitura</h2>
       <div class="card conf-card"><div class="bd" id="conferir"></div></div>
+      <div id="checagem" style="margin-bottom:12px"></div>
+      </div>
 
+
+
+
+      <div class="etapa hide" data-etapa="perfis">
+      <!-- FICHAS -->
+      <h2 class="sec">Fichas lidas do desenho</h2>
+      <div style="margin:-4px 0 8px;display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn ghost" id="diagBtn" style="font-size:11px;padding:4px 10px" title="O que o sistema enxergou no DWG (layers, cores, linhas) e os textos que leu">Diagnóstico da leitura</button>
+        <button class="btn ghost" id="impMedicoes" style="font-size:11px;padding:4px 10px">Importar medições do AutoCAD</button>
+        <input type="file" id="impMedFile" accept=".txt,.json" style="display:none">
+      </div>
+      <div id="diagPanel" class="hide caixa-suave" style="margin-bottom:12px;padding:12px;font-size:12px"></div>
+      <div id="padraoPanel" class="hide" style="margin-bottom:12px"></div>
+      <div id="perfilAudit" style="margin-bottom:12px"></div>
+      <div id="fichas"></div>
+      </div>
+
+      <div class="etapa hide" data-etapa="compra">
       <!-- AJUSTES -->
       <details class="ajustes-box" id="ajustesBox"><summary><b>Ajustes</b> <span class="muted" id="ajustesResumo"></span></summary>
       <div class="settings">
@@ -3529,27 +3560,24 @@ body:not([data-theme="escuro"]){
       </div>
       </details>
 
-
-
-      <!-- FICHAS -->
-      <h2 class="sec">Fichas lidas do desenho</h2>
-      <div style="margin:-4px 0 8px;display:flex;gap:8px;flex-wrap:wrap">
-        <button class="btn ghost" id="diagBtn" style="font-size:11px;padding:4px 10px" title="O que o sistema enxergou no DWG (layers, cores, linhas) e os textos que leu">Diagnóstico da leitura</button>
-        <button class="btn ghost" id="impMedicoes" style="font-size:11px;padding:4px 10px">Importar medições do AutoCAD</button>
-        <input type="file" id="impMedFile" accept=".txt,.json" style="display:none">
-      </div>
-      <div id="diagPanel" class="hide caixa-suave" style="margin-bottom:12px;padding:12px;font-size:12px"></div>
-      <div id="padraoPanel" class="hide" style="margin-bottom:12px"></div>
-      <div id="checagem" style="margin-bottom:12px"></div>
-      <div id="perfilAudit" style="margin-bottom:12px"></div>
-      <div id="fichas"></div>
-
       <!-- RESULTADO -->
       <h2 class="sec">Lista de compra</h2>
       <div class="card"><div class="bd" id="result" style="overflow-x:auto"></div></div>
       <div class="total"><span class="big" id="custoGeral">—</span><div class="m" style="display:flex;flex-direction:column;gap:2px"><span><b id="pesoTotal">0 kg</b> de aço</span><span id="totalMeta" class="muted"></span><span id="telhaTotal" class="muted"></span></div></div>
 
+      </div>
+
+      <div class="etapa hide" data-etapa="fab">
+      <h2 class="sec">Fabricação</h2>
+      <div class="fab-cards">
+        <div class="fab-card"><b>Pranchas de montagem</b><span>Peça inteira e planificada, peças por grupo, mapa por posição, DXF e conferência em 3D.</span><button type="button" class="btn" data-proxy="detalhar">Abrir pranchas</button></div>
+        <div class="fab-card"><b>Aproveitamento em barra 6 m</b><span>Plano de corte das barras, peça por peça, com a sobra de cada uma.</span><button type="button" class="btn ghost" data-proxy="cutReport">Abrir aproveitamento</button></div>
+        <div class="fab-card"><b>Pedido detalhado</b><span>Pedido ao fornecedor com cada peça cortada e o código dela.</span><button type="button" class="btn ghost" data-proxy="listaForn">Gerar pedido</button></div>
+        <div class="fab-card"><b>Chapas + parceiro / DXF laser</b><span>Chapas por largura, produção terceirizada e os arquivos para o laser.</span><button type="button" class="btn ghost" data-proxy="chapasParceiro">Abrir chapas</button></div>
+        <div class="fab-card"><b>Pedido chapas + parceiro</b><span>Pedido das chapas, com quantas de cada largura.</span><button type="button" class="btn ghost" data-proxy="lfChapas">Gerar pedido</button></div>
+      </div>
       <section id="cpPanel" class="hide" aria-label="Chapas e produção terceirizada"></section>
+      </div>
 
       </div><!-- /detLista -->
     </div><!-- /app do detalhamento -->
@@ -6019,6 +6047,7 @@ function renderConferir(){
   const qaDxf=el.querySelector('[data-qa-dxf]');if(qaDxf)qaDxf.addEventListener('click',baixarDxfPadronizado);
   el.querySelectorAll('[data-conf-modo]').forEach(b=>b.addEventListener('click',()=>{CONF_MODO=b.dataset.confModo;try{localStorage.setItem('leitor_conf_modo',CONF_MODO);}catch(_){}renderConferir();}));
   el.querySelectorAll('[data-conf-f]').forEach(b=>b.addEventListener('click',()=>{
+    irEtapa('perfis');
     const c=elFichas.children[+b.dataset.confF];if(c){c.scrollIntoView({behavior:'smooth',block:'center'});c.style.outline='2px solid var(--rm-laranja)';setTimeout(()=>c.style.outline='',1600);}}));
   const svg=el.querySelector('.conf-tudo svg');
   if(svg){
@@ -6046,6 +6075,7 @@ function renderChecagem(){
   const el=document.getElementById('checagem');if(!el)return;
   if(!SEG.length){el.innerHTML='';return;}
   let c=[];try{c=detChecagem();}catch(e){console.warn(e);}
+  ETAPA_AV.conferir=c.length;try{etapasMarcas();}catch(_){}
   const n1=v=>(Math.round(v*10)/10).toLocaleString('pt-BR',{maximumFractionDigits:1});
   const xy=x=>'X '+n1(x.x)+' · Y '+n1(x.y);
   const txt=x=>x.tipo==='solta'?'Ponta solta ('+x.cls+') — a linha não encosta em nenhuma outra'
@@ -6527,7 +6557,7 @@ function perfilDiagnostico(raw,fora,lam){
 }
 function renderPerfilAudit(){
   const el=document.getElementById('perfilAudit');if(!el)return;
-  const itens=[];
+  const itens=[];ETAPA_AV.perfis=0;
   FICHAS.forEach((f,fi)=>{
     const isTerca=/terç[ao]|terca|tca\b|t\.c\.a\.|terça\s*simples/i.test(f.nome);
     (f.profiles||[]).forEach((p,pi)=>{
@@ -6538,6 +6568,7 @@ function renderPerfilAudit(){
   });
   if(!itens.length){el.innerHTML='';return;}
   const erros=itens.filter(x=>!x.valido).length,inferidos=itens.filter(x=>x.valido&&x.inferido).length;
+  ETAPA_AV.perfis=erros;try{etapasMarcas();}catch(_){}
   const corResumo=erros?'var(--red)':(inferidos?'var(--warn)':'var(--ok)');
   const vistos=new Set();
   const linhas=itens.map(x=>{
@@ -7217,8 +7248,44 @@ function atualizaTotalGeral(){
   /* o mesmo total na barra de ações do alto */
   const ar=document.getElementById('adRes');
   if(ar){const pk=(document.getElementById('pesoTotal')||{}).textContent||'';
+    try{etapasMarcas();}catch(_){}
     ar.innerHTML=geral?('<b>R$ '+geral.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})+'</b><span>'+escapeHtml(pk)+' de aço</span>'):'<span>'+(pk?escapeHtml(pk)+' de aço':'')+'</span>';}
 }
+/* ---- ETAPAS do detalhamento ----
+   Uma etapa por vez. Quem leva a outra etapa leva junto: "ficha ›" da
+   conferência abre Perfis; os botões de Compra (barras, copiar, imprimir)
+   abrem Compra; os de oficina e laser abrem Fabricação. Arquivo novo
+   começa em Conferir. */
+const ETAPA_AV={conferir:0,perfis:0};
+let ETAPA_ATUAL='conferir';
+function irEtapa(e,rolar){
+  const lista=document.getElementById('detLista');if(!lista)return;
+  if(!lista.querySelector('.etapa[data-etapa="'+e+'"]'))e='conferir';
+  ETAPA_ATUAL=e;
+  lista.querySelectorAll('.etapa').forEach(x=>x.classList.toggle('hide',x.dataset.etapa!==e));
+  document.querySelectorAll('#etapasNav [data-ir]').forEach(b=>{const on=b.dataset.ir===e;b.classList.toggle('on',on);b.setAttribute('aria-selected',String(on));});
+  if(rolar){const bar=document.getElementById('acoesDet');if(bar&&bar.getBoundingClientRect().top<0)lista.scrollIntoView({block:'start'});}
+}
+function etapasMarcas(){
+  let corr=0;try{corr=BANZO_CORRIGIDO.length;}catch(_){}
+  let semMed=0;try{semMed=fichasNaoMedidas().length;}catch(_){}
+  const n={conferir:(ETAPA_AV.conferir||0)+corr,perfis:(ETAPA_AV.perfis||0)+semMed};
+  document.querySelectorAll('#etapasNav [data-ir]').forEach(b=>{const v=n[b.dataset.ir]||0,sp=b.querySelector('.et-n');
+    if(sp){sp.textContent=v?String(v):'';sp.title=v?v+' aviso(s) nesta etapa':'';}});
+}
+(function(){
+  const nav=document.getElementById('etapasNav');
+  if(nav)nav.addEventListener('click',e=>{const b=e.target.closest('[data-ir]');if(b)irEtapa(b.dataset.ir,true);});
+  document.querySelectorAll('#pane-det [data-proxy]').forEach(b=>b.addEventListener('click',()=>{const t=document.getElementById(b.dataset.proxy);if(t)t.click();}));
+  const ETAPA_DO={lfBarras:'compra',copy:'compra',print:'compra',detalhar:'fab',cutReport:'fab',listaForn:'fab',chapasParceiro:'fab',lfChapas:'fab'};
+  /* na captura: a etapa já está à vista quando o botão abre o que abre */
+  document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('button[id]');if(b&&ETAPA_DO[b.id])irEtapa(ETAPA_DO[b.id]);},true);
+
+  /* o painel de chapas abre por outros caminhos (o Comparativo leva a ele):
+     aberto, a etapa Fabricação vem junto */
+  const cp=document.getElementById('cpPanel');
+  if(cp)try{new MutationObserver(()=>{if(!cp.classList.contains('hide')&&ETAPA_ATUAL!=='fab')irEtapa('fab');}).observe(cp,{attributes:true,attributeFilter:['class']});}catch(_){}
+})();
 /* a barra de ações para logo abaixo do cabeçalho fixo, que muda de
    altura no celular */
 (function(){const ab=document.querySelector('.appbar');if(!ab)return;
@@ -7394,7 +7461,7 @@ async function handle(file,aba){
     /* os ids de grupo sao refeitos aqui; um vinculo manual antigo apontaria
        para outro desenho */
     for(const k in FORCE)delete FORCE[k];
-    QA_OK=false;EXCL.clear();PONTA_BANZO=false;
+    QA_OK=false;EXCL.clear();PONTA_BANZO=false;irEtapa('conferir');
     parseFichas();fitVB();cluster();
     /* O arquivo pertence a ABA em que foi aberto. Guardar aqui e' o que
        permite trocar de aba sem perder o desenho do outro lado. */
@@ -26171,6 +26238,21 @@ render();
 #pane-det .ad-menu .saida{border:0;padding:4px 2px;background:transparent}
 .ad-menu[hidden]{display:none!important}
 .ad-menu.ad-obras{width:min(460px,92vw);max-height:60vh;overflow:auto}
+/* etapas do detalhamento */
+#pane-det .etapas{flex-basis:100%;display:flex;gap:4px;flex-wrap:wrap;border-bottom:1px solid var(--line);padding-bottom:8px;margin-bottom:2px}
+#pane-det .etapas button{display:inline-flex;align-items:center;gap:7px;border:1px solid transparent;background:transparent;color:var(--muted);font:inherit;font-size:13.5px;font-weight:600;padding:6px 12px;border-radius:8px;cursor:pointer}
+#pane-det .etapas button i{font-style:normal;display:inline-grid;place-items:center;width:20px;height:20px;border-radius:50%;border:1.5px solid currentColor;font-size:11px;font-weight:800}
+#pane-det .etapas button:hover{color:var(--ink);background:var(--bg)}
+#pane-det .etapas button.on{color:var(--red);border-color:var(--red);background:color-mix(in srgb,var(--red) 7%,transparent)}
+#pane-det .etapas button.on i{background:var(--red);border-color:var(--red);color:#fff}
+#pane-det .etapas .et-n:empty{display:none}
+#pane-det .etapas .et-n{min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:var(--warn);color:#fff;font-size:11px;font-weight:800;display:inline-grid;place-items:center}
+#pane-det .fab-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px;margin-bottom:14px}
+#pane-det .fab-card{display:flex;flex-direction:column;gap:6px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px}
+#pane-det .fab-card b{font-size:15px}
+#pane-det .fab-card span{font-size:12.5px;color:var(--muted);line-height:1.45;flex:1}
+#pane-det .fab-card .btn{align-self:flex-start;margin-top:4px}
+@media(max-width:620px){#pane-det .etapas{flex-wrap:nowrap;overflow-x:auto}#pane-det .etapas button{flex:0 0 auto;padding:6px 9px}}
 details.explica{margin:8px 0 0}
 details.explica>summary{cursor:pointer;font-size:12px;color:var(--muted);font-weight:600;width:max-content}
 details.explica>summary::before{content:"ⓘ ";}
@@ -30151,7 +30233,7 @@ if('serviceWorker' in navigator && location.protocol.startsWith('http')){
 }
 </script>
 <script>/* versão publicada (PADRAO_RM.md §3): sobe a cada publicação, junto com o CACHE do sw.js */
-const APP_VER='v259';
+const APP_VER='v260';
 </script>
 <script id="rmVersaoBloco">
 /* ===== SELO DE VERSÃO — igual em todos os sistemas (PADRAO_RM.md §3) =====
