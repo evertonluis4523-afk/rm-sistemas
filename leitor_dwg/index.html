@@ -3330,7 +3330,8 @@ body:not([data-theme="escuro"]){
       <div class="doc-tag tb2-tipo">Levantamento de Material</div>
     </div>
 
-    <div class="log" id="log"></div>
+    <!-- as mensagens da leitura: uma linha só (a última), e o resto ao abrir -->
+    <details class="log-det hide" id="logDet"><summary id="logResumo"></summary><div class="log" id="log"></div></details>
 
     <div class="unit-gate hide" id="unitGate" role="dialog" aria-modal="true" aria-labelledby="unitTitle">
       <div class="unit-box">
@@ -3380,6 +3381,8 @@ body:not([data-theme="escuro"]){
              grupo "Compra"). Teste leitor-revisao-ux. -->
         <label class="fb-obra"><span>Obra / Cliente</span><input id="obra" placeholder="ex.: Pavilhão 2 – cobertura"></label>
         <button class="btn ghost" id="saveObra">Salvar obra</button>
+        <div class="ad-mais-w"><button class="btn ghost" id="abrirObraBt" aria-haspopup="true" aria-expanded="false" aria-controls="abrirObraMenu">Obras salvas ▾</button>
+          <div class="ad-menu ad-obras" id="abrirObraMenu" hidden><div id="historico"></div></div></div>
         <button class="btn ghost hide" id="btnCotas" title="Lê as cotas do desenho e monta a lista de compra">&#8892; Lista pelas cotas</button>
         <button class="btn ghost" id="trocarArq">&#8617; trocar arquivo</button></div>
 
@@ -3473,6 +3476,34 @@ body:not([data-theme="escuro"]){
       </div>
       <div id="detLista">
 
+      <!-- BARRA DE AÇÕES (Fase 1, nov/2026): o que se faz com a leitura fica
+           no alto e acompanha a rolagem -- antes eram 9 botões no fim da
+           página, depois de tudo. Um botão principal (Importar para o
+           Orçamento), as pranchas, e o resto em "Mais", nos mesmos grupos de
+           antes (Compra, Fábrica, Laser). Os ids são os de sempre. -->
+      <div class="acoes-det" id="acoesDet">
+        <div class="ad-res" id="adRes" aria-live="polite"></div>
+        <div class="ad-bts">
+          <button class="btn primary" id="exportOrc">Importar p/ Orçamento RM</button>
+          <button class="btn" id="detalhar">Pranchas de montagem</button>
+          <div class="ad-mais-w">
+            <button class="btn ghost" id="adMais" aria-haspopup="true" aria-expanded="false" aria-controls="adMenu">Mais ▾</button>
+            <div class="ad-menu saidas" id="adMenu" hidden>
+              <div class="saida"><div class="saida-t">Compra</div><div class="btnrow">
+                <button class="btn ghost" id="lfBarras">Pedido de barras 6 m</button>
+                <button class="btn ghost" id="copy">Copiar lista</button>
+                <button class="btn ghost" id="print">Imprimir lista de compra</button></div></div>
+              <div class="saida"><div class="saida-t">Fábrica</div><div class="btnrow">
+                <button class="btn ghost" id="cutReport">Aproveitamento em barra 6 m</button>
+                <button class="btn ghost" id="listaForn">Pedido detalhado</button></div></div>
+              <div class="saida"><div class="saida-t">Laser</div><div class="btnrow">
+                <button class="btn ghost" id="chapasParceiro">Chapas + parceiro / DXF laser</button>
+                <button class="btn ghost" id="lfChapas">Pedido chapas + parceiro</button></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- CONFERIR A LEITURA -->
       <h2 class="sec">Conferir a leitura</h2>
       <div class="card conf-card"><div class="bd" id="conferir"></div></div>
@@ -3503,8 +3534,8 @@ body:not([data-theme="escuro"]){
       <!-- FICHAS -->
       <h2 class="sec">Fichas lidas do desenho</h2>
       <div style="margin:-4px 0 8px;display:flex;gap:8px;flex-wrap:wrap">
-        <button class="btn ghost" id="diagBtn" style="font-size:11px;padding:4px 10px" title="O que o sistema enxergou no DWG (layers, cores, linhas) e os textos que leu">🔍 Diagnóstico da leitura</button>
-        <button class="btn ghost" id="impMedicoes" style="font-size:11px;padding:4px 10px">📐 Importar medições do AutoCAD</button>
+        <button class="btn ghost" id="diagBtn" style="font-size:11px;padding:4px 10px" title="O que o sistema enxergou no DWG (layers, cores, linhas) e os textos que leu">Diagnóstico da leitura</button>
+        <button class="btn ghost" id="impMedicoes" style="font-size:11px;padding:4px 10px">Importar medições do AutoCAD</button>
         <input type="file" id="impMedFile" accept=".txt,.json" style="display:none">
       </div>
       <div id="diagPanel" class="hide caixa-suave" style="margin-bottom:12px;padding:12px;font-size:12px"></div>
@@ -3517,25 +3548,9 @@ body:not([data-theme="escuro"]){
       <h2 class="sec">Lista de compra</h2>
       <div class="card"><div class="bd" id="result" style="overflow-x:auto"></div></div>
       <div class="total"><span class="big" id="custoGeral">—</span><div class="m" style="display:flex;flex-direction:column;gap:2px"><span><b id="pesoTotal">0 kg</b> de aço</span><span id="totalMeta" class="muted"></span><span id="telhaTotal" class="muted"></span></div></div>
-      <div class="saidas">
-        <div class="saida"><div class="saida-t">Compra</div><div class="btnrow">
-          <button class="btn primary" id="exportOrc">Importar p/ Orçamento RM</button>
-          <button class="btn ghost" id="lfBarras">Pedido de barras 6 m ✉</button>
-          <button class="btn ghost" id="copy">Copiar lista</button>
-          <button class="btn ghost" id="print">Imprimir / PDF</button></div></div>
-        <div class="saida"><div class="saida-t">Fábrica</div><div class="btnrow">
-          <button class="btn" id="detalhar">Pranchas de montagem ✂</button>
-          <button class="btn ghost" id="cutReport">Aproveitamento em barra 6 m</button>
-          <button class="btn ghost" id="listaForn">Pedido detalhado ✉</button></div></div>
-        <div class="saida"><div class="saida-t">Laser</div><div class="btnrow">
-          <button class="btn ghost" id="chapasParceiro">Chapas + parceiro / DXF laser</button>
-          <button class="btn ghost" id="lfChapas">Pedido chapas + parceiro ✉</button></div></div>
-      </div>
 
       <section id="cpPanel" class="hide" aria-label="Chapas e produção terceirizada"></section>
 
-      <h2 class="sec">Obras salvas</h2>
-      <div id="historico"></div>
       </div><!-- /detLista -->
     </div><!-- /app do detalhamento -->
     </div><!-- /pane-det -->
@@ -4172,7 +4187,10 @@ var _li=document.getElementById("logoImg"); if(_li) _li.src=LOGO_RM;
 var _abl=document.getElementById("appbarLogo"); if(_abl) _abl.src=LOGO_SIMBOLO;
 /* ===================== CARREGAMENTO (provado) ===================== */
 const logEl=document.getElementById('log');
-function log(m,c){const s=document.createElement('span');if(c)s.className=c;s.textContent=m+'\n';logEl.appendChild(s);}
+function log(m,c){const s=document.createElement('span');if(c)s.className=c;s.textContent=m+'\n';logEl.appendChild(s);
+  const d=document.getElementById('logDet'),r=document.getElementById('logResumo');
+  if(d&&r){d.classList.remove('hide');const n=logEl.children.length;
+    r.className=c||'';r.textContent=String(m).trim()+(n>1?'  ·  '+n+' mensagens':'');}}
 /* Travada na versao, nao em "latest": o wasm e' buscado aqui em cima e o
    glue/wrapper e' buscado de novo la' embaixo, dentro de init() -- que so'
    roda quando alguem abre um arquivo, minutos ou dias depois. Sem a versao
@@ -6666,7 +6684,7 @@ function renderFichas(){
         '</span>':'')+
         medHtml+marcas+
         '<span class="facoes">'+
-          (!lam&&plnDoPerfil(p)?'<button type="button" class="ficon" data-pln-ficha="'+fi+'|'+pi+'" title="Abrir este perfil na Planificação de dobra, já com tipo, medidas, espessura e material" aria-label="Planificar">📐</button>':'')+
+          (!lam&&plnDoPerfil(p)?'<button type="button" class="ficon" data-pln-ficha="'+fi+'|'+pi+'" title="Abrir este perfil na Planificação de dobra, já com tipo, medidas, espessura e material" aria-label="Planificar"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M4 20 20 4M7 17l2 2M10 14l2 2M13 11l2 2M16 8l2 2"/></svg></button>':'')+
           (temAjustes?'<button type="button" class="fmais'+(aberto?' on':'')+'" data-fmais="'+chave+'" aria-expanded="'+aberto+'">ajustes '+(aberto?'▴':'▾')+'</button>':'')+
         '</span></div>';
       let aj='';
@@ -7173,7 +7191,7 @@ function compute(){
       rows+='<tr><td>'+nomeMostra+'</td><td class="n">'+bars+'</td><td class="n" data-sem-encaixe>'+(semEnc==null?'<span class="muted">—</span>':semEnc)+'</td><td class="n">'+metros.toLocaleString('pt-BR',{minimumFractionDigits:1,maximumFractionDigits:1})+'</td><td class="n">'+(p.lam?'<span class="muted">—</span>':p.fora?('<span class="mono">'+p.kgm.toLocaleString('pt-BR',{minimumFractionDigits:3,maximumFractionDigits:3})+'</span> <span title="Calculado pelo slitter" style="font-size:10px;color:var(--blue)">⚙ slitter</span>'):('<input data-kgm="'+pi+'" value="'+String(p.kgm).replace('.',',')+'" style="'+(p.kgmSource==='estimado'?'border-color:var(--warn);background:#fffbf0':'border-color:var(--ok);background:#f0fbf5')+'"> <span title="'+(p.kgmSource==='catalogo'?'Valor de catálogo':'Estimado — confira!')+'" style="font-size:10px;color:'+(p.kgmSource==='estimado'?'var(--warn)':'var(--ok)')+'">'+(p.kgmSource==='estimado'?'⚠ est.':'✓ cat.')+'</span>'))+'</td><td class="n">'+(p.lam?'<span class="muted">—</span>':Math.round(peso)+' kg')+'</td>'+
         (temPreco?('<td class="n" style="font-size:11px">'+unitTxt+'</td><td class="n">'+(custo?'R$ '+custo.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}):'—')+'</td>'):'')+'</tr>';
     });
-    rows+='</tbody></table><div class="hint">Barras de '+(barra/1000)+' m (perfis) — laminados usam a barra do catálogo. Terça é encomendada no comprimento de cada peça: a coluna traz o número de peças, não de barras. <b>Barras por encaixe</b>: com o detalhamento pronto, as barras do banzo e do interno são contadas encaixando peça por peça na barra (o banzo pelo plano de emenda), e não dividindo metros — essas linhas não levam quebra, porque a sobra ali é medida e já está no número; os metros são os das barras compradas, sobra inclusa. <b>Sem encaixe</b>: a conta sem encaixar as peças — metros das peças + '+String(Math.round(quebra*1000)/10).replace('.',',')+'% de quebra (Ajustes), divididos pela barra; fica ao lado para comparar, o peso e o custo seguem a coluna com encaixe. Carbono: peso × R$/kg da '+(PRECOS.fornecedor||'Perfitec')+' (por espessura). Galvanizado: peso × R$ '+rkgGalv.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})+'/kg (editável em Ajustes). Laminados: nº de barras × R$/barra. Cantoneira dupla conta ×2.'+(!temPreco?' <b style="color:var(--warn)">Abra o Orçamento RM uma vez neste navegador para sincronizar os preços.</b>':'')+'</div>';
+    rows+='</tbody></table>'+(!temPreco?'<div class="hint"><b style="color:var(--warn)">Abra o Orçamento RM uma vez neste navegador para sincronizar os preços.</b></div>':'')+'<details class="explica"><summary>Como a lista é calculada</summary><div class="hint">Barras de '+(barra/1000)+' m (perfis) — laminados usam a barra do catálogo. Terça é encomendada no comprimento de cada peça: a coluna traz o número de peças, não de barras. <b>Barras por encaixe</b>: com o detalhamento pronto, as barras do banzo e do interno são contadas encaixando peça por peça na barra (o banzo pelo plano de emenda), e não dividindo metros — essas linhas não levam quebra, porque a sobra ali é medida e já está no número; os metros são os das barras compradas, sobra inclusa. <b>Sem encaixe</b>: a conta sem encaixar as peças — metros das peças + '+String(Math.round(quebra*1000)/10).replace('.',',')+'% de quebra (Ajustes), divididos pela barra; fica ao lado para comparar, o peso e o custo seguem a coluna com encaixe. Carbono: peso × R$/kg da '+(PRECOS.fornecedor||'Perfitec')+' (por espessura). Galvanizado: peso × R$ '+rkgGalv.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})+'/kg (editável em Ajustes). Laminados: nº de barras × R$/barra. Cantoneira dupla conta ×2.</div></details>';
     elResult.innerHTML=avisoLongas+avisoMed+rows;
     elResult.querySelectorAll('input[data-kgm]').forEach(inp=>inp.addEventListener('change',()=>{KGM[list[+inp.dataset.kgm].name]=num(inp.value)||0;compute();save();atualizarRelatorioCorteAberto();}));
   }
@@ -7196,7 +7214,29 @@ function atualizaTotalGeral(){
   }
   const g=document.getElementById('custoGeral');
   if(g)g.textContent=geral?('R$ '+geral.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})):'—';
+  /* o mesmo total na barra de ações do alto */
+  const ar=document.getElementById('adRes');
+  if(ar){const pk=(document.getElementById('pesoTotal')||{}).textContent||'';
+    ar.innerHTML=geral?('<b>R$ '+geral.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})+'</b><span>'+escapeHtml(pk)+' de aço</span>'):'<span>'+(pk?escapeHtml(pk)+' de aço':'')+'</span>';}
 }
+/* a barra de ações para logo abaixo do cabeçalho fixo, que muda de
+   altura no celular */
+(function(){const ab=document.querySelector('.appbar');if(!ab)return;
+  const m=()=>document.documentElement.style.setProperty('--appbar-h',Math.round(ab.getBoundingClientRect().height)+'px');
+  m();addEventListener('resize',m);try{new ResizeObserver(m).observe(ab);}catch(_){}})();
+/* menus "Mais ▾" e "Obras salvas ▾": abre e fecha no botão, fecha ao
+   escolher, ao clicar fora ou com Esc */
+(function(){
+  const pares=[['adMais','adMenu'],['abrirObraBt','abrirObraMenu']];
+  const fecha=(bt,mn)=>{if(!mn.hidden){mn.hidden=true;bt.setAttribute('aria-expanded','false');}};
+  pares.forEach(([b,m])=>{const bt=document.getElementById(b),mn=document.getElementById(m);if(!bt||!mn)return;
+    bt.addEventListener('click',e=>{e.stopPropagation();const abrir=mn.hidden;pares.forEach(([b2,m2])=>{const x=document.getElementById(b2),y=document.getElementById(m2);if(x&&y)fecha(x,y);});
+      if(abrir){mn.hidden=false;bt.setAttribute('aria-expanded','true');}});
+    mn.addEventListener('click',e=>{if(e.target.closest('button'))setTimeout(()=>fecha(bt,mn),0);});
+  });
+  document.addEventListener('click',e=>pares.forEach(([b,m])=>{const bt=document.getElementById(b),mn=document.getElementById(m);if(bt&&mn&&!mn.contains(e.target)&&e.target!==bt)fecha(bt,mn);}));
+  document.addEventListener('keydown',e=>{if(e.key==='Escape')pares.forEach(([b,m])=>{const bt=document.getElementById(b),mn=document.getElementById(m);if(bt&&mn)fecha(bt,mn);});});
+})();
 
 function computeTelha(){
   // Telha removida do sistema — zera os valores para não afetar a lista de compra.
@@ -13260,7 +13300,7 @@ function telhaAcessPinta(){
       '<td class="n">'+(x.mm!=null?m(x.mm)+' m':'—')+'</td>'+
       '<td class="n"><b>'+(x.pecas!=null?x.pecas+' × '+(TLH_ACESS.peca/1000).toLocaleString('pt-BR')+' m':(x.qtd!=null?x.qtd:'—'))+'</b></td>'+
       '<td class="ct-org">'+escapeHtml(x.obs||'')+'</td>'+
-      '<td>'+(x.grupo?'<button type="button" class="btn ghost" data-acess-pln="'+x.id+'" style="font-size:11px;padding:3px 9px" title="Abrir na Planificação de dobra, com o comprimento da peça">📐 planificar</button>':'')+'</td></tr>').join('')+
+      '<td>'+(x.grupo?'<button type="button" class="btn ghost" data-acess-pln="'+x.id+'" style="font-size:11px;padding:3px 9px" title="Abrir na Planificação de dobra, com o comprimento da peça">Planificar</button>':'')+'</td></tr>').join('')+
     '</tbody></table><div class="hint">Vão para o Orçamento junto com as telhas, como itens avulsos sem preço.</div></div></details>';
   box.querySelectorAll('input[data-acess]').forEach(i=>i.addEventListener('change',()=>{
     const v=Number(i.value);if(v>=0){TLH_ACESS[i.dataset.acess]=v;try{localStorage.setItem('rm_telha_acess_v1',JSON.stringify(TLH_ACESS));}catch(_){}}
@@ -15401,15 +15441,15 @@ function detRender(secoes,totGeral,pecasGeral){
         .map(o=>'<option value="'+o[0]+'"'+(o[0]===String(DXF_PARTES)?' selected':'')+'>'+o[1]+'</option>').join('')+
       '</select> por estrutura</div>'+
     '<div class="dt-saidas-g"><span class="dt-saidas-t">Para o montador (PDF)</span>'+
-      '<button class="btn" id="dtPrancha">\u25a4 Prancha montagem — peça inteira</button>'+
-      '<button class="btn" id="dtPranchaDiv" title="Usa as mesmas divisões e identificações 1/2 e 2/2 do DXF das chapas">\u25a4 Prancha montagem — planificada</button>'+
-      '<button class="btn" id="dtGrupos">\u2261 Peças por grupo</button></div>'+
+      '<button class="btn" id="dtPrancha">Prancha montagem — peça inteira</button>'+
+      '<button class="btn" id="dtPranchaDiv" title="Usa as mesmas divisões e identificações 1/2 e 2/2 do DXF das chapas">Prancha montagem — planificada</button>'+
+      '<button class="btn" id="dtGrupos">Peças por grupo</button></div>'+
     '<div class="dt-saidas-g"><span class="dt-saidas-t">Arquivos (DXF)</span>'+
-      '<button class="btn ghost" id="dtDxf">\u2b07 DXF montagem — peça inteira</button>'+
-      '<button class="btn ghost" id="dtDxfDiv" title="O mesmo desenho, lido pela planificação: as peças acima do limite da chapa aparecem em 1/2 e 2/2, na camada RM-CODIGO-DIVIDIDO">\u2b07 DXF fabricação — planificado</button></div>'+
+      '<button class="btn ghost" id="dtDxf">DXF montagem — peça inteira</button>'+
+      '<button class="btn ghost" id="dtDxfDiv" title="O mesmo desenho, lido pela planificação: as peças acima do limite da chapa aparecem em 1/2 e 2/2, na camada RM-CODIGO-DIVIDIDO">DXF fabricação — planificado</button></div>'+
     '<div class="dt-saidas-g"><span class="dt-saidas-t">Este relatório</span>'+
-      '<button class="btn" id="dtPrint">Imprimir / PDF</button>'+
-      '<button class="btn ghost" id="dt3d">\u25c8 Conferir em 3D</button>'+
+      '<button class="btn" id="dtPrint">Imprimir relatório</button>'+
+      '<button class="btn ghost" id="dt3d">Conferir em 3D</button>'+
       '<button class="btn ghost" id="dtUnid">Ver em '+(DET_UNID==='mm'?'cm':'mm')+'</button>'+
       '<button class="btn ghost" id="dtClose">Fechar</button></div>'+
     '</div>';
@@ -15471,10 +15511,11 @@ function detRender(secoes,totGeral,pecasGeral){
   function avisoFolha(){
     const folha=dxfFolhaEscolhida();
     const el=document.getElementById('dxfAviso'); if(!el)return;
-    el.innerHTML='<b>Duas pranchas de montagem</b> — <b>peça inteira</b> mostra a medida original; <b>planificada</b> usa exatamente as divisões e identificações 1/2 e 2/2 do DXF das chapas. '+
+    /* a unidade fica à vista, no resumo: é o que o montador lê na trena */
+    el.innerHTML='<details class="explica"><summary>Sobre as pranchas · comprimento de corte em '+(DET_UNID==='cm'?'cm':'mm')+'</summary><b>Duas pranchas de montagem</b> — <b>peça inteira</b> mostra a medida original; <b>planificada</b> usa exatamente as divisões e identificações 1/2 e 2/2 do DXF das chapas. '+
       'As duas mantêm estrutura, posição P, tipo e comprimento de corte em '+(DET_UNID==='cm'?'cm (a peça gravada traz o mesmo em mm)':'mm')+'. '+
       'Letra alvo de '+DXF_LETRA_MM+' mm impressos.'+
-      (folha==='A4'?' Tesoura longa: a folha da tesoura inteira sai em A3 e o PDF da prancha vai junto para A3 — numa impressora A4, “ajustar à página” reduz tudo igual.':'')+
+      (folha==='A4'?' Tesoura longa: a folha da tesoura inteira sai em A3 e o PDF da prancha vai junto para A3 — numa impressora A4, “ajustar à página” reduz tudo igual.':'')+'</details>'+
       (DT_IDENT_AVISO?'<div style="color:#a52c18">'+escapeHtml(DT_IDENT_AVISO)+'</div>':'')+
       '<ul style="margin:6px 0 0 16px">'+secoes.map(s=>{
         const n=(DXF_PARTES>0)?DXF_PARTES:detPartesIdeais(s,folha,3);
@@ -17365,7 +17406,7 @@ document.getElementById('impMedFile').addEventListener('change',async (ev)=>{
     }else{
       b.textContent='✗ nenhuma ficha casou';
     }
-    setTimeout(()=>b.textContent='📐 Importar medições do AutoCAD',2500);
+    setTimeout(()=>b.textContent='Importar medições do AutoCAD',2500);
     if(res.naoCasadas.length){
       alert('Importado, mas estas medições não casaram com nenhuma ficha:\n\n'+res.naoCasadas.join('\n')+'\n\nConfira se o nome no AutoCAD bate com o nome da ficha no desenho.');
     }
@@ -26119,6 +26160,25 @@ render();
 #pane-det .saida{border:1px solid var(--line);border-radius:10px;padding:9px 11px;background:var(--surface)}
 #pane-det .saida-t{font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
 #pane-det .saida .btnrow{margin:0}
+/* barra de ações do detalhamento: no alto, acompanha a rolagem */
+#pane-det .acoes-det{position:sticky;top:calc(var(--appbar-h,52px) + 6px);z-index:30;display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:8px 10px;margin:0 0 14px;box-shadow:var(--shadow)}
+#pane-det .ad-res{flex:1 1 220px;min-width:0;font-size:13px;color:var(--muted);display:flex;gap:10px;align-items:baseline;flex-wrap:wrap}
+#pane-det .ad-res b{font-size:17px;color:var(--ink);font-weight:800}
+#pane-det .ad-bts{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.ad-mais-w{position:relative}
+.ad-menu{position:absolute;right:0;top:calc(100% + 6px);z-index:40;width:min(560px,92vw);background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px;box-shadow:0 12px 32px rgba(0,0,0,.18)}
+#pane-det .ad-menu.saidas{margin-top:0;grid-template-columns:1fr}
+#pane-det .ad-menu .saida{border:0;padding:4px 2px;background:transparent}
+.ad-menu[hidden]{display:none!important}
+.ad-menu.ad-obras{width:min(460px,92vw);max-height:60vh;overflow:auto}
+details.explica{margin:8px 0 0}
+details.explica>summary{cursor:pointer;font-size:12px;color:var(--muted);font-weight:600;width:max-content}
+details.explica>summary::before{content:"ⓘ ";}
+details.explica[open]>summary{margin-bottom:4px}
+.log-det{margin-top:10px;font-size:12px}
+.log-det>summary{cursor:pointer;font-family:var(--mono);color:var(--muted);font-weight:560;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.log-det>summary.ok{color:var(--ok)}.log-det>summary.err{color:var(--red)}.log-det>summary.warn{color:var(--warn)}
+.log-det .log{margin-top:6px}
 #tlov .tl-ab{flex-basis:100%;font-size:12px}
 #tlov .tl-ab summary{cursor:pointer;color:var(--muted)}
 #tlov .tl-ab-l,#tlov .tl-ab-novo{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;padding:4px 0}
@@ -30091,7 +30151,7 @@ if('serviceWorker' in navigator && location.protocol.startsWith('http')){
 }
 </script>
 <script>/* versão publicada (PADRAO_RM.md §3): sobe a cada publicação, junto com o CACHE do sw.js */
-const APP_VER='v258';
+const APP_VER='v259';
 </script>
 <script id="rmVersaoBloco">
 /* ===== SELO DE VERSÃO — igual em todos os sistemas (PADRAO_RM.md §3) =====
