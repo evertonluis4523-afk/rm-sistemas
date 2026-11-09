@@ -1949,12 +1949,26 @@ else poe();
 .caixa-suave{background:var(--rm-fundo,#fbfbf9);border:1px solid var(--line);border-radius:8px}
 .checagem-box{border:1px solid var(--line);border-left:3px solid var(--warn);border-radius:8px;padding:8px 12px;background:var(--rm-superficie,#fff)}
 @media (max-width:600px){ .rm-head .rm-logo img{max-height:34px;width:auto} .rm-head{padding:16px 14px 12px;gap:12px} }
-.dt-saidas{display:flex;flex-wrap:wrap;gap:10px 18px;align-items:flex-end;margin:0 0 12px;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--rm-superficie,#fff)}
-.dt-saidas-g{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
-.dt-saidas-t{flex-basis:100%;font-size:11px;font-weight:700;color:var(--muted);letter-spacing:.02em}
+/* Saídas empilhadas: um grupo por linha, o nome numa coluna fixa e os
+   botões alinhados ao lado -- antes cada grupo ia para um canto (flex com
+   quebra). Teste leitor-saidas-empilhadas. */
+.dt-saidas{display:flex;flex-direction:column;margin:0 0 12px;padding:4px 14px;border:1px solid var(--line);border-radius:10px;background:var(--rm-superficie,#fff)}
+.dt-saidas-g{display:grid;grid-template-columns:200px 1fr;gap:6px 14px;align-items:center;padding:9px 0}
+.dt-saidas-g+.dt-saidas-g{border-top:1px solid var(--line)}
+.dt-saidas-t{font-size:11px;font-weight:700;color:var(--muted);letter-spacing:.02em}
+.dt-saidas-b{display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:13px}
+.dt-saidas-b select{background:var(--surface-2);border:1.5px solid var(--line);border-radius:9px;color:var(--ink);font:inherit;font-size:13px;padding:6px 8px}
+.dt-saidas-b select:focus{outline:none;border-color:var(--red);box-shadow:0 0 0 3px var(--red-soft)}
+@media (max-width:640px){.dt-saidas-g{grid-template-columns:1fr}}
 @media print{.dt-saidas{display:none!important}}
 .fb-obra{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--muted)}
-.fb-obra input{min-width:180px}
+/* o campo da obra no padrão dos outros campos: sem a moldura "afundada"
+   do navegador (borda de 2 px, que parecia borrada em volta) */
+.fb-obra input{min-width:180px;background:var(--surface-2);border:1.5px solid var(--line);border-radius:9px;color:var(--ink);font:inherit;font-size:13px;padding:7px 10px}
+.fb-obra input:focus{outline:none;border-color:var(--red);background:var(--surface);box-shadow:0 0 0 3px var(--red-soft)}
+/* as listas da Planificação que ficavam com a borda cinza do navegador */
+#pane-pln #pwModels,#pane-pln #pwAngle,#pane-pln #plnProj,#pane-pln #pwScope{background:var(--surface-2);border:1.5px solid var(--line);border-radius:9px;color:var(--ink);font:inherit;font-size:13px;padding:6px 8px}
+#pane-pln #pwModels:focus,#pane-pln #pwAngle:focus,#pane-pln #plnProj:focus,#pane-pln #pwScope:focus{outline:none;border-color:var(--red);box-shadow:0 0 0 3px var(--red-soft)}
 @media (max-width:600px){.fb-obra{flex-basis:100%}.fb-obra input{flex:1;min-width:0}}
 </style>
 <style>
@@ -15510,25 +15524,25 @@ function detRender(secoes,totGeral,pecasGeral){
      os arquivos (DXF). A folha escolhida vale para as pranchas e o DXF -- o
      nome antigo ("Imprimir o DXF em") escondia isso. Teste leitor-revisao-ux. */
   const saidas='<div class="dt-saidas no-print">'+
-    '<div class="dt-saidas-g"><span class="dt-saidas-t">Folha das pranchas e do DXF</span>'+
+    '<div class="dt-saidas-g"><span class="dt-saidas-t">Folha das pranchas e do DXF</span><div class="dt-saidas-b">'+
       '<select id="dxfFolha" aria-label="Folha das pranchas e do DXF">'+
       ['A4','A3','A2','A1'].map(f=>'<option value="'+f+'"'+(f===DXF_FOLHA?' selected':'')+'>'+f+'</option>').join('')+
       '</select> em <select id="dxfPartes" aria-label="Folhas por estrutura">'+
       [['0','partes automáticas'],['1','1 folha'],['2','2 folhas'],['3','3 folhas'],['4','4 folhas']]
         .map(o=>'<option value="'+o[0]+'"'+(o[0]===String(DXF_PARTES)?' selected':'')+'>'+o[1]+'</option>').join('')+
-      '</select> por estrutura</div>'+
-    '<div class="dt-saidas-g"><span class="dt-saidas-t">Para o montador (PDF)</span>'+
+      '</select> por estrutura</div></div>'+
+    '<div class="dt-saidas-g"><span class="dt-saidas-t">Para o montador (PDF)</span><div class="dt-saidas-b">'+
       '<button class="btn" id="dtPrancha">Prancha montagem — peça inteira</button>'+
       '<button class="btn" id="dtPranchaDiv" title="Usa as mesmas divisões e identificações 1/2 e 2/2 do DXF das chapas">Prancha montagem — planificada</button>'+
-      '<button class="btn" id="dtGrupos">Peças por grupo</button></div>'+
-    '<div class="dt-saidas-g"><span class="dt-saidas-t">Arquivos (DXF)</span>'+
+      '<button class="btn" id="dtGrupos">Peças por grupo</button></div></div>'+
+    '<div class="dt-saidas-g"><span class="dt-saidas-t">Arquivos (DXF)</span><div class="dt-saidas-b">'+
       '<button class="btn ghost" id="dtDxf">DXF montagem — peça inteira</button>'+
-      '<button class="btn ghost" id="dtDxfDiv" title="O mesmo desenho, lido pela planificação: as peças acima do limite da chapa aparecem em 1/2 e 2/2, na camada RM-CODIGO-DIVIDIDO">DXF fabricação — planificado</button></div>'+
-    '<div class="dt-saidas-g"><span class="dt-saidas-t">Este relatório</span>'+
+      '<button class="btn ghost" id="dtDxfDiv" title="O mesmo desenho, lido pela planificação: as peças acima do limite da chapa aparecem em 1/2 e 2/2, na camada RM-CODIGO-DIVIDIDO">DXF fabricação — planificado</button></div></div>'+
+    '<div class="dt-saidas-g"><span class="dt-saidas-t">Este relatório</span><div class="dt-saidas-b">'+
       '<button class="btn" id="dtPrint">Imprimir relatório</button>'+
       '<button class="btn ghost" id="dt3d">Conferir em 3D</button>'+
       '<button class="btn ghost" id="dtUnid">Ver em '+(DET_UNID==='mm'?'cm':'mm')+'</button>'+
-      '<button class="btn ghost" id="dtClose">Fechar</button></div>'+
+      '<button class="btn ghost" id="dtClose">Fechar</button></div></div>'+
     '</div>';
   pa.innerHTML=saidas+'<div class="rm-sheet rc-sheet">'+'<div class=\"rm-dagua\" aria-hidden=\"true\"><img src=\"'+LOGO_MARCA_DAGUA+'\" alt=\"\"></div>'+
     '<div class="rm-head"><div class="rm-logo">'+logo+'</div><div class="rm-co">'+rmTimbre2()+'</div></div>'+'<div class="doc-tag tb2-tipo">Detalhamento · Mapa de montagem e lista de corte · medidas em '+(DET_UNID==='cm'?'cm':'mm')+'</div>'+ 
@@ -30246,7 +30260,7 @@ if('serviceWorker' in navigator && location.protocol.startsWith('http')){
 }
 </script>
 <script>/* versão publicada (PADRAO_RM.md §3): sobe a cada publicação, junto com o CACHE do sw.js */
-const APP_VER='v261';
+const APP_VER='v262';
 </script>
 <script id="rmVersaoBloco">
 /* ===== SELO DE VERSÃO — igual em todos os sistemas (PADRAO_RM.md §3) =====
