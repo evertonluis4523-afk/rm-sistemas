@@ -2045,6 +2045,10 @@ html.ctaberto,html.ctaberto body{overflow:hidden}
    o modo sobreposto SO' para ele -- o #ctov (lista pelas cotas) continua
    abrindo por cima, que ali e' o certo, porque e' uma consulta rapida. */
 .abas{display:flex;gap:2px;margin:14px 0 0;border-bottom:1px solid var(--line)}
+/* seta das abas: aparece quando sobram abas à direita (celular) */
+.abas-w{position:relative}
+.abas-seta{position:absolute;right:0;top:0;bottom:1px;z-index:2;width:44px;border:0;padding:0 6px 0 18px;text-align:right;font:inherit;font-size:22px;font-weight:700;color:var(--red);cursor:pointer;background:linear-gradient(90deg,transparent,var(--bg) 45%)}
+.abas-seta[hidden]{display:none}
 .abas .aba{appearance:none;background:transparent;border:0;border-bottom:2px solid transparent;
   padding:9px 16px;font:inherit;font-size:14px;font-weight:600;color:var(--muted);cursor:pointer;
   display:inline-flex;align-items:center;gap:7px;margin-bottom:-1px}
@@ -2344,7 +2348,7 @@ function nomeArquivoSeguro(s,limite){
 </style>
 
 <style id="pln-workbench-style">
-#pane-pln .pln-wrap{max-width:1700px;margin:auto}#pane-pln .pw-inputs .pln-row{flex-wrap:wrap;gap:6px}#pane-pln .pw-inputs .pln-row .eq{flex-basis:100%;text-align:left}#pane-pln .pw-head{display:flex;align-items:center;justify-content:space-between;gap:16px;margin:20px 0}#pane-pln .pw-head h2{margin:0;font-size:24px}#pane-pln .pw-tools{display:flex;gap:8px;flex-wrap:wrap;align-items:center}#pane-pln .pw-grid{display:grid;grid-template-columns:minmax(340px,420px) minmax(0,1fr);gap:20px;align-items:start}#pane-pln .pw-view{position:sticky;top:16px;background:var(--panel,#fff);border:1px solid var(--line,#ddd);border-radius:16px;padding:16px;min-width:0}#pane-pln .pw-view .pln-svg,#pane-pln .pw-view .pln-3d{height:430px;width:100%}#pane-pln .pw-view .card{box-shadow:none;border:0}#pane-pln .pw-view .bd{padding:8px}#pane-pln .pw-view .pln-duo{display:block}#pane-pln .pw-view.pw-compare .pw-surfaces{display:grid;grid-template-columns:1fr 1fr;gap:10px}#pane-pln .pw-view.pw-compare .pln-svg{height:360px}#pane-pln .pw-summary{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}#pane-pln .pw-summary span{background:var(--bg,#f3f4f6);padding:10px 14px;border-radius:9px;font-size:13px;font-weight:530}#pane-pln .pw-summary b{display:block;font-size:16px;margin-top:4px}#pane-pln .pw-selected{background:#fff0e8!important;outline:2px solid #e65725}#pane-pln .pw-view.pw-full{position:fixed;inset:15px;z-index:9999;overflow:auto}#pane-pln .pw-full .pln-svg,#pane-pln .pw-full .pln-3d{height:65vh}#pane-pln .pw-note{padding:10px 12px;background:#f2f5f9;border-radius:8px;margin:8px 0;color:#354255;font-size:13px;font-weight:530}#pane-pln .pw-actions{margin:6px 0;display:flex;gap:5px}#pane-pln .pw-actions button{padding:3px 8px;font-size:12px;font-weight:560}#pane-pln .pw-inputs .pln-duo{display:block}#pane-pln .pw-inputs .pln-mini{display:none}#pane-pln .pw-inputs .settings{display:grid;grid-template-columns:1fr 1fr;gap:12px}#pane-pln .pw-inputs .fld{min-width:0;width:auto}#pane-pln details{margin:12px 0}#pane-pln summary{cursor:pointer;font-weight:600;padding:8px 0}#pane-pln .pw-models{margin:12px 0}#pane-pln .pw-list{overflow:auto}#pane-pln .pw-list input[type=number]{width:75px}#pane-pln button[data-view].active{background:#202329;color:#fff}#pane-pln .pw-mini{width:75px;height:42px}#pane-pln .pw-status{font-size:13px;color:#a34516;margin-top:10px;font-weight:530}#pane-pln .pw-table{width:100%;font-size:13px;font-weight:530}#pane-pln .pw-table th,#pane-pln .pw-table td{padding:8px;text-align:left}#pane-pln .pw-inputs .hint{font-size:12px;font-weight:560}#pane-pln .pw-inputs .pln-abert{display:block}#pane-pln .pw-inputs .pln-abert .fld{width:100%!important;margin-bottom:8px}
+#pane-pln .pln-wrap{max-width:1700px;margin:auto}#pane-pln .pw-inputs .pln-row{flex-wrap:wrap;gap:6px}#pane-pln .pw-inputs .pln-row .eq{flex-basis:100%;text-align:left}#pane-pln .pw-head{display:flex;align-items:center;justify-content:space-between;gap:16px;margin:20px 0}#pane-pln .pw-head h2{margin:0;font-size:24px}#pane-pln .pw-tools{display:flex;gap:8px;flex-wrap:wrap;align-items:center}#pane-pln .pw-grid{display:grid;grid-template-columns:minmax(340px,420px) minmax(0,1fr);gap:20px;align-items:start}#pane-pln .pw-view{position:sticky;top:calc(var(--appbar-h,52px) + 10px);background:var(--panel,#fff);border:1px solid var(--line,#ddd);border-radius:16px;padding:16px;min-width:0}#pane-pln .pw-view .pln-svg,#pane-pln .pw-view .pln-3d{height:430px;width:100%}#pane-pln .pw-view .card{box-shadow:none;border:0}#pane-pln .pw-view .bd{padding:8px}#pane-pln .pw-view .pln-duo{display:block}#pane-pln .pw-view.pw-compare .pw-surfaces{display:grid;grid-template-columns:1fr 1fr;gap:10px}#pane-pln .pw-view.pw-compare .pln-svg{height:360px}#pane-pln .pw-summary{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}#pane-pln .pw-summary span{background:var(--bg,#f3f4f6);padding:10px 14px;border-radius:9px;font-size:13px;font-weight:530}#pane-pln .pw-summary b{display:block;font-size:16px;margin-top:4px}#pane-pln .pw-selected{background:#fff0e8!important;outline:2px solid #e65725}#pane-pln .pw-view.pw-full{position:fixed;inset:15px;z-index:9999;overflow:auto}#pane-pln .pw-full .pln-svg,#pane-pln .pw-full .pln-3d{height:65vh}#pane-pln .pw-note{padding:10px 12px;background:#f2f5f9;border-radius:8px;margin:8px 0;color:#354255;font-size:13px;font-weight:530}#pane-pln .pw-actions{margin:6px 0;display:flex;gap:5px}#pane-pln .pw-actions button{padding:3px 8px;font-size:12px;font-weight:560}#pane-pln .pw-inputs .pln-duo{display:block}#pane-pln .pw-inputs .pln-mini{display:none}#pane-pln .pw-inputs .settings{display:grid;grid-template-columns:1fr 1fr;gap:12px}#pane-pln .pw-inputs .fld{min-width:0;width:auto}#pane-pln details{margin:12px 0}#pane-pln summary{cursor:pointer;font-weight:600;padding:8px 0}#pane-pln .pw-models{margin:12px 0}#pane-pln .pw-list{overflow:auto}#pane-pln .pw-list input[type=number]{width:75px}#pane-pln button[data-view].active{background:#202329;color:#fff}#pane-pln .pw-mini{width:75px;height:42px}#pane-pln .pw-status{font-size:13px;color:#a34516;margin-top:10px;font-weight:530}#pane-pln .pw-table{width:100%;font-size:13px;font-weight:530}#pane-pln .pw-table th,#pane-pln .pw-table td{padding:8px;text-align:left}#pane-pln .pw-inputs .hint{font-size:12px;font-weight:560}#pane-pln .pw-inputs .pln-abert{display:block}#pane-pln .pw-inputs .pln-abert .fld{width:100%!important;margin-bottom:8px}
 /* Barra do trabalho anterior. Discreta -- e um aviso, nao um alarme -- mas
    com os dois botoes a mostra, porque ignorar ja' e' comecar do zero. */
 #pane-pln .pln-ret{display:flex;gap:14px;align-items:center;flex-wrap:wrap;
@@ -3354,13 +3358,14 @@ body:not([data-theme="escuro"]){
          Por isso a aba vem ANTES do arquivo, e cada uma abre o seu proprio
          DWG. Cada lado guarda o desenho que abriu, entao trocar de aba nao
          obriga a abrir tudo de novo. -->
+    <div class="abas-w"><button type="button" class="abas-seta" id="abasSeta" aria-label="Mais abas à direita" hidden>›</button>
     <div class="abas" id="abas">
       <button type="button" class="aba on" data-aba="det">Detalhamento</button>
-      <button type="button" class="aba" data-aba="tel">Telhas de cobertura/fechamento<span class="ab-n" id="abaTelN"></span></button>
+      <button type="button" class="aba" data-aba="tel" title="Telhas de cobertura e fechamento">Telhas<span class="ab-n" id="abaTelN"></span></button>
       <button type="button" class="aba" data-aba="pln">Planificação de dobra</button>
       <button type="button" class="aba" data-aba="calc">Cálculo de chapas</button>
       <button type="button" class="aba" data-aba="esc">Escada</button>
-    </div>
+    </div></div>
 
     <div class="pane on" id="pane-det">
       <div class="entradas" id="entDet">
@@ -7286,6 +7291,11 @@ function etapasMarcas(){
   const cp=document.getElementById('cpPanel');
   if(cp)try{new MutationObserver(()=>{if(!cp.classList.contains('hide')&&ETAPA_ATUAL!=='fab')irEtapa('fab');}).observe(cp,{attributes:true,attributeFilter:['class']});}catch(_){}
 })();
+/* seta das abas: só quando há aba escondida à direita */
+(function(){const ab=document.getElementById('abas'),st=document.getElementById('abasSeta');if(!ab||!st)return;
+  const ve=()=>{st.hidden=!(ab.scrollLeft+ab.clientWidth<ab.scrollWidth-4);};
+  ab.addEventListener('scroll',ve,{passive:true});addEventListener('resize',ve);try{new ResizeObserver(ve).observe(ab);}catch(_){}
+  st.addEventListener('click',()=>ab.scrollBy({left:Math.max(120,ab.clientWidth*.6),behavior:'smooth'}));ve();})();
 /* a barra de ações para logo abaixo do cabeçalho fixo, que muda de
    altura no celular */
 (function(){const ab=document.querySelector('.appbar');if(!ab)return;
@@ -24752,6 +24762,9 @@ const css=document.createElement('style');css.textContent=`
 #pane-esc .es-nota{font-size:12px;color:var(--muted);margin-top:10px}
 #pane-esc .es-ok{color:var(--rm-ok,#1f7a4d)}#pane-esc .es-ruim{color:var(--red);font-weight:700}
 #pane-esc .es-grid>div{min-width:0}#pane-esc .es-card{min-width:0;overflow:hidden}
+/* tela larga: a coluna do 3D, do perfil e do pedido fica parada ao lado e
+   rola sozinha -- o 3D continua à vista enquanto se preenche o formulário */
+@media(min-width:981px){#pane-esc .es-grid>div:nth-child(2){position:sticky;top:calc(var(--appbar-h,52px) + 10px);max-height:calc(100vh - var(--appbar-h,52px) - 20px);overflow:auto;overscroll-behavior:contain}}
 @media(max-width:980px){#pane-esc .es-grid{grid-template-columns:1fr}}
 @media(max-width:560px){#pane-esc .es-f{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}#pane-esc label{min-width:0;overflow-wrap:anywhere}#pane-esc .es-wrap{margin:12px 0}#pane-esc .es-v3{height:320px}#pane-esc table{font-size:12.5px}#pane-esc thead{display:none}#pane-esc table,#pane-esc tbody{display:block}#pane-esc tbody tr{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:2px 10px;padding:9px 0;border-bottom:1px solid var(--line)}#pane-esc tbody td{border:0;padding:0;background:transparent!important}#pane-esc tbody td:nth-child(1){grid-column:1;grid-row:1}#pane-esc tbody td:nth-child(2){grid-column:1;grid-row:2;color:var(--muted)}#pane-esc tbody td:nth-child(3){grid-column:2;grid-row:1}#pane-esc tbody td:nth-child(4){grid-column:3;grid-row:1}#pane-esc tbody td:nth-child(4)::before{content:'× '}#pane-esc tbody td:nth-child(5){grid-column:1/-1;grid-row:3;font-size:12px;color:var(--muted)}}
 @media(max-width:560px){#pane-esc .es-ptab tbody tr{grid-template-columns:24px minmax(0,1fr) auto}#pane-esc .es-ptab tbody td:nth-child(1){grid-column:1;grid-row:1;color:var(--muted)}#pane-esc .es-ptab tbody td:nth-child(2){grid-column:2;grid-row:1;color:var(--ink)}#pane-esc .es-ptab tbody td:nth-child(3){grid-column:2;grid-row:2;font-size:12px;color:var(--muted)}#pane-esc .es-ptab tbody td:nth-child(4){grid-column:3;grid-row:1}#pane-esc .es-ptab tbody td:nth-child(5){grid-column:3;grid-row:2;font-size:12px;color:var(--muted);text-align:right}#pane-esc .es-ptab tbody td.sec{grid-column:1/-1;grid-row:1}}
@@ -30233,7 +30246,7 @@ if('serviceWorker' in navigator && location.protocol.startsWith('http')){
 }
 </script>
 <script>/* versão publicada (PADRAO_RM.md §3): sobe a cada publicação, junto com o CACHE do sw.js */
-const APP_VER='v260';
+const APP_VER='v261';
 </script>
 <script id="rmVersaoBloco">
 /* ===== SELO DE VERSÃO — igual em todos os sistemas (PADRAO_RM.md §3) =====
