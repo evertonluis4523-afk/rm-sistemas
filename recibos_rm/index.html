@@ -2526,6 +2526,14 @@ tr.det-achado{animation:det-achado 1.6s ease-out}
 .adv-ass .quem{font-size:10.5pt;font-weight:700;color:#1f2328;letter-spacing:.02em}
 .adv-ass .papel{margin-top:1.5mm;font-size:9pt;color:#5b626b;letter-spacing:.12em;text-transform:uppercase}
 .adv-motivo{min-height:96px;resize:vertical;font:inherit;line-height:1.55}
+.adv-mod-ctl{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.adv-mod-ctl select{flex:1 1 260px;min-width:0}
+.adv-mod-painel{margin-top:8px;padding:10px 12px;border:1px solid var(--line);border-radius:10px;display:flex;flex-direction:column;gap:10px}
+.adv-mod-item{display:grid;grid-template-columns:1fr auto;gap:6px;align-items:start}
+.adv-mod-item input{font-weight:600}
+.adv-mod-item textarea{grid-column:1/-1;min-height:64px;resize:vertical;font:inherit;line-height:1.5}
+.adv-mod-acoes{display:flex;gap:8px;flex-wrap:wrap}
+.adv-mod-dica{font-size:11.5px;color:var(--muted);line-height:1.5}
 /* ---- pedido de demissao ----
    No timbrado da RM, como a advertencia. O texto vem pronto;
    o que da validade de proprio punho -- data, nome, CPF, admissao e a
@@ -4886,6 +4894,10 @@ if(window.RM_CELULAR) document.body.classList.add('rm-campo');
           <div class="f span3"><span class="lab">CPF</span>
             <input id="adCpf" class="mono" placeholder="000.000.000-00" inputmode="numeric" autocomplete="off"></div>
           <div class="f span3"><span class="lab">Data</span><input id="adData" type="date"></div>
+          <div class="f span12 adv-mod-linha"><span class="lab">Modelo de motivo</span>
+            <div class="adv-mod-ctl"><select id="adModelo" aria-label="Modelo de motivo"></select>
+              <button type="button" class="btn ghost" id="adModGer" aria-expanded="false">Gerenciar modelos</button></div>
+            <div id="adModPainel" class="adv-mod-painel" hidden></div></div>
           <div class="f span12"><span class="lab">Motivo — o que entra no meio do texto</span>
             <textarea id="adMotivo" class="adv-motivo"
               placeholder="ex.: deixou o posto de trabalho durante o expediente do dia 12/08/2026, sem comunicar a chefia,"></textarea>
@@ -8801,8 +8813,71 @@ function adPrevia(){
   el.textContent='Vai sair: “…Vossa Senhoria '+solto+' sendo consistente como Ato de indisciplina…”';
   el.style.color='var(--muted)';
 }
+/* ---- MODELOS DE MOTIVO (nov/2026) ----
+   "Alguns modelos de texto nos são enviados pela contabilidade": o modelo
+   dela é a mesma advertência, só o motivo muda. Cada modelo é um motivo
+   pronto, guardado em state.cfg.advModelos (vai para a nuvem com as
+   configurações) e escolhido no seletor: preenche o campo, que continua
+   editável para aquele caso. Novos modelos entram pela própria tela, sem
+   mexer no sistema. As sementes entram uma vez só (advSementes): o que foi
+   excluído não volta. */
+const ADV_SEMENTES=[
+  {id:'adornos',nome:'Uso de adornos',motivo:'vem utilizando adornos durante a jornada de trabalho, mesmo após ter sido orientado verbalmente, por inúmeras vezes, de que essa prática não é permitida pela empresa,'},
+  {id:'celular',nome:'Uso de celular',motivo:'mesmo após ter sido expressamente orientado acerca do uso indevido do celular durante o expediente de trabalho continuou a utilizar o mesmo,'}
+];
+function advModelos(){
+  const c=state.cfg;
+  if(!Array.isArray(c.advModelos))c.advModelos=[];
+  const vistas=c.advSementes&&typeof c.advSementes==='object'?c.advSementes:(c.advSementes={});
+  let mudou=false;
+  ADV_SEMENTES.forEach(m=>{if(!vistas[m.id]){vistas[m.id]=1;if(!c.advModelos.some(x=>x.id===m.id))c.advModelos.push({...m});mudou=true;}});
+  if(mudou)try{persist();}catch(_){}
+  return c.advModelos;
+}
+function advLimpaMotivo(t){return String(t||'').trim().replace(/[.;]+$/,'');}
+function advSelect(){
+  const sel=$('#adModelo');if(!sel)return;const v=sel.value;
+  sel.innerHTML='<option value="">— escrever o motivo —</option>'+advModelos().map(m=>'<option value="'+esc(m.id)+'">'+esc(m.nome||'Sem nome')+'</option>').join('');
+  sel.value=advModelos().some(m=>m.id===v)?v:'';
+}
+function advPainel(){
+  const p=$('#adModPainel');if(!p||p.hidden)return;
+  const L=advModelos();
+  p.innerHTML='<div class="adv-mod-dica">Cada modelo é o motivo que entra no meio da frase: sem maiúscula no começo e sem ponto no fim. O restante da advertência (texto da CLT, CPF, data e assinaturas) é sempre o mesmo. As mudanças valem para todos que usam o sistema.</div>'+
+    (L.length?L.map(m=>'<div class="adv-mod-item" data-mod="'+esc(m.id)+'">'+
+      '<input data-campo="nome" value="'+esc(m.nome||'')+'" placeholder="Nome do modelo" aria-label="Nome do modelo">'+
+      '<button type="button" class="btn ghost" data-mod-del title="Excluir este modelo">Excluir</button>'+
+      '<textarea data-campo="motivo" aria-label="Motivo do modelo" placeholder="ex.: chegou atrasado sem justificativa nos dias …,">'+esc(m.motivo||'')+'</textarea></div>').join('')
+      :'<div class="adv-mod-dica">Nenhum modelo cadastrado.</div>')+
+    '<div class="adv-mod-acoes"><button type="button" class="btn" id="adModNovo">+ Novo modelo</button>'+
+    '<button type="button" class="btn ghost" id="adModDoCampo" title="Cria um modelo com o motivo escrito no campo abaixo">Salvar o motivo atual como modelo</button></div>';
+}
+function advNovo(nome,motivo){
+  const m={id:'m'+Date.now().toString(36)+Math.random().toString(36).slice(2,5),nome:nome||'Novo modelo',motivo:advLimpaMotivo(motivo)};
+  advModelos().push(m);persist();advSelect();advPainel();
+  const el=document.querySelector('[data-mod="'+m.id+'"] input');if(el){el.focus();el.select();}
+  return m;
+}
+function advLigarModelos(){
+  const sel=$('#adModelo'),ger=$('#adModGer'),p=$('#adModPainel');if(!sel||!ger||!p)return;
+  sel.addEventListener('change',()=>{const m=advModelos().find(x=>x.id===sel.value);
+    if(m){$('#adMotivo').value=m.motivo||'';adPrevia();}});
+  ger.addEventListener('click',()=>{p.hidden=!p.hidden;ger.setAttribute('aria-expanded',String(!p.hidden));advPainel();});
+  p.addEventListener('change',e=>{const it=e.target.closest('[data-mod]'),c=e.target.dataset.campo;if(!it||!c)return;
+    const m=advModelos().find(x=>x.id===it.dataset.mod);if(!m)return;
+    m[c]=c==='motivo'?advLimpaMotivo(e.target.value):e.target.value.trim();persist();advSelect();});
+  p.addEventListener('click',e=>{
+    if(e.target.closest('#adModNovo')){advNovo('','');return;}
+    if(e.target.closest('#adModDoCampo')){const t=advLimpaMotivo($('#adMotivo').value);
+      if(!t){toast('Escreva o motivo no campo antes.');$('#adMotivo').focus();return;}advNovo('',t);return;}
+    const d=e.target.closest('[data-mod-del]');if(d){const it=d.closest('[data-mod]'),m=advModelos().find(x=>x.id===it.dataset.mod);
+      if(!m||!confirm('Excluir o modelo “'+(m.nome||'')+'”?'))return;
+      state.cfg.advModelos=advModelos().filter(x=>x!==m);persist();advSelect();advPainel();}
+  });
+}
 function renderAdv(){
   if(!$('#adData').value)$('#adData').value=ceHojeISO();
+  advSelect();advPainel();
   adDica(); adPrevia();
 }
 function adGerar(){
@@ -8843,7 +8918,8 @@ function adLigar(){
   c.addEventListener('input',e=>{ e.target.value=ceMascaraCPF(e.target.value); adDica(); });
   m.addEventListener('input',adPrevia);
   $('#adGerar').onclick=adGerar;
-  $('#adLimpar').onclick=()=>{ n.value=''; c.value=''; m.value=''; d.value=ceHojeISO();
+  advLigarModelos();
+  $('#adLimpar').onclick=()=>{ n.value=''; c.value=''; m.value=''; d.value=ceHojeISO(); if($('#adModelo'))$('#adModelo').value='';
     adDica(); adPrevia(); n.focus(); };
   criarBuscaNome('adNome','adSugg',empBuscaItens,empBuscaLinha,e=>{
     n.value=e.nome; n.dispatchEvent(new Event('input',{bubbles:true}));
@@ -18430,7 +18506,7 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape'){if(fecharSemPerder(
    juntos a cada publicacao, e ha uma prova automatica que falha se um subir
    sem o outro. Assim o numero na tela e o mesmo do arquivo que o aparelho
    guardou, e dizer "estou na v81" passa a significar alguma coisa. */
-const APP_VER='v289';
+const APP_VER='v290';
 (function(){var p=document.getElementById('verPill'); if(p)p.textContent=APP_VER;})();
 
 if('serviceWorker' in navigator){
