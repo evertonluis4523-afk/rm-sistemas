@@ -20,7 +20,7 @@
   "versao": "v45"
  },
  "central_rm": {
-  "commit": "aa22f8c",
+  "commit": "191e8e8",
   "versao": "v147"
  },
  "controle_cheques": {
@@ -32,8 +32,8 @@
   "versao": "v77"
  },
  "controle_obras": {
-  "commit": "74051af",
-  "versao": "v106"
+  "commit": "7641c71",
+  "versao": "v107"
  },
  "leitor_dwg": {
   "commit": "fc16f27",
