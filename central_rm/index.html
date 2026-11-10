@@ -1380,6 +1380,7 @@ var RM_FONTE="@font-face{font-family:'Satoshi';src:url(data:font/woff2;base64,d0
   .ac-acao{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:12.5px}.ac-acao .ac-chk{flex:1;min-width:0}.ac-acao .ac-selo{flex:none}
   .ac-selo{font-size:10px;font-weight:700;letter-spacing:.04em;padding:2px 7px;border-radius:999px;white-space:nowrap;border:1px solid var(--divider);color:var(--text-muted)}
   .ac-selo.ok{color:var(--rm-ok);border-color:currentColor}
+  .ac-sujo{position:sticky;top:0;z-index:2;margin:0 0 12px;padding:10px 12px;border-radius:var(--rm-raio);background:color-mix(in srgb,#f0a020 18%,var(--card));border:1px solid color-mix(in srgb,#f0a020 55%,var(--card));color:var(--text);font-size:13px}
   .ac-ped{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px 12px;align-items:center;padding:10px 0;border-top:1px solid var(--divider);font-size:13px}
   .ac-ped:first-of-type{border-top:0}.ac-ped b{font-weight:650}.ac-ped .ac-nota{margin:2px 0 0}
   .ac-ped-bt{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
@@ -4786,7 +4787,7 @@ try { var _e = localStorage.getItem('rm_estilo_ultimo'); if (_e === 'viva' || _e
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js" crossorigin="anonymous"></script>
 
 <script>/* versão publicada (PADRAO_RM.md §3): sobe a cada publicação, junto com o CACHE do sw.js */
-const APP_VER='v157';
+const APP_VER='v158';
 </script>
 <script>
   /* ===== LOGIN (Firebase Authentication) =====
@@ -8949,7 +8950,11 @@ const APP_VER='v157';
 
   /* ===== SETTINGS ===== */
   function openSettings() { document.getElementById('settings-overlay').classList.add('open'); renderSettings(); if (typeof programaPrepara === 'function') programaPrepara(); }
-  function closeSettings() { document.getElementById('settings-overlay').classList.remove('open'); }
+  function closeSettings() {
+    /* acesso marcado e não confirmado se perdia calado ao fechar: pergunta antes */
+    const fecha = () => document.getElementById('settings-overlay').classList.remove('open');
+    try { if (window.rmAcessos && rmAcessos.sujo()) { rmPergunta({ titulo: 'Fechar sem salvar os acessos?', texto: 'Há alterações de acesso que ainda não foram salvas. Para gravar, clique em Revisar e salvar e depois em Confirmar.', ok: 'Fechar sem salvar', cancelar: 'Continuar editando', aoOk: () => { try { rmAcessos.desfaz(); } catch (e) { } fecha(); } }); return; } } catch (e) { }
+    fecha(); }
 
   /* Sobraram dois temas, claro e escuro, os dois na laranja da marca. Quem ja
      tinha escolhido azul, verde ou grafite cai no mais parecido em claridade --
@@ -9511,8 +9516,12 @@ const APP_VER='v157';
     const el=document.getElementById('ac-painel');if(!el||!isAdminUser())return;
     acOuvirTodos();if(!AC.orig)acMontar();
     acOuvirPedidos();
+    /* sem os acessos salvos lidos, marcar aqui partiria do perfil inicial e o
+       Salvar gravaria por cima do que está na nuvem: espera chegar */
+    if(!AC.carregado){el.innerHTML='<p class="ac-nota">Carregando os acessos salvos…</p>';return;}
     const U=AC.atual,us=Object.keys(U),e=AC.sel,u=U[e];
     let h='<p class="ac-nota">Só você vê este painel. Escolha a conta e marque o que ela pode usar. Cada ação mostra se o bloqueio <b>já funciona</b> ou ainda está <b>a implantar</b>: nada aqui finge uma proteção que ainda não existe.</p>'
+      +(acSujo()?'<div class="ac-sujo">Alterações ainda não salvas. Clique em <b>Revisar e salvar</b> (embaixo) e depois em <b>Confirmar</b>.</div>':'')
       +acPedidosHTML()
       +'<div class="ac-grid"><div class="ac-users">'
       +'<button type="button" class="ac-user" disabled title="O administrador não perde o acesso pelo painel: todos os sistemas, não pode ser alterado aqui"><em>administrador</em><b>Everton</b><span>todos os sistemas</span></button>'
@@ -9537,6 +9546,8 @@ const APP_VER='v157';
     h+='</div></div>';
     el.innerHTML=h;
   }
+  /* o que a pessoa mudou e ainda não confirmou (o perfil inicial sem mudança não conta) */
+  function acSujo(){if(!AC.orig||!AC.atual)return false;return Object.keys(AC.atual).some(e=>!AC.orig[e]||(AC.orig[e].novo&&!AC.atual[e].salvo)||JSON.stringify(acLimpa(AC.atual[e].p))!==JSON.stringify(acLimpa(AC.orig[e].p)));}
   function acDiferencas(){const out=[];if(!AC.orig)return out;
     Object.keys(AC.atual).forEach(e=>{const a=AC.orig[e].p,b=AC.atual[e].p,n=AC.atual[e].nome;
       const ini=!AC.atual[e].salvo&&!AC.orig[e].novo,P=(t,v,prot)=>out.push({conta:e,t,v,prot});
@@ -9577,7 +9588,7 @@ const APP_VER='v157';
     else if(d.acop){const [s,k]=d.acop.split('|');p.ops[s][k]=t.checked;}
     else if(d.acacao){const [s,k]=d.acacao.split('|');p.acoes[s][k]=t.checked;}
     renderAcessos();});
-  window.rmAcessos={estado:()=>AC,diferencas:acDiferencas,render:renderAcessos,salvar:acSalvar,responde:acResponde,pedidos:acPedidosAbertos,ouvirPedidos:acOuvirPedidos,reinicia:()=>{if(AC.desliga)try{AC.desliga();}catch(e){}AC={orig:null,atual:null,sel:'engenharia@rmestruturas.com.br',dif:false,nuvem:{},carregado:false,desliga:null,novo:false};}};
+  window.rmAcessos={estado:()=>AC,diferencas:acDiferencas,sujo:acSujo,desfaz:()=>{AC.atual=JSON.parse(JSON.stringify(AC.orig));Object.keys(AC.atual).forEach(k=>{if(AC.orig[k].novo&&!AC.orig[k].salvo){delete AC.atual[k];delete AC.orig[k];}});if(!AC.atual[AC.sel])AC.sel=Object.keys(AC.atual)[0];AC.dif=false;},render:renderAcessos,salvar:acSalvar,responde:acResponde,pedidos:acPedidosAbertos,ouvirPedidos:acOuvirPedidos,reinicia:()=>{if(AC.desliga)try{AC.desliga();}catch(e){}AC={orig:null,atual:null,sel:'engenharia@rmestruturas.com.br',dif:false,nuvem:{},carregado:false,desliga:null,novo:false};}};
   function setSettingsTab(t){
     if (!isAdminUser() && t !== 'aparencia') t = 'aparencia';
     document.querySelectorAll('.st-tab').forEach(b => b.classList.toggle('active', b.getAttribute('data-stab')===t));
