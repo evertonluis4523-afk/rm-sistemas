@@ -20,8 +20,8 @@
   "versao": "v46"
  },
  "central_rm": {
-  "commit": "b47fb3f",
-  "versao": "v152"
+  "commit": "7866761",
+  "versao": "v153"
  },
  "controle_cheques": {
   "commit": "5319b36",
@@ -32,8 +32,8 @@
   "versao": "v78"
  },
  "controle_obras": {
-  "commit": "8066453",
-  "versao": "v109"
+  "commit": "b9d8508",
+  "versao": "v110"
  },
  "leitor_dwg": {
   "commit": "014863b",
