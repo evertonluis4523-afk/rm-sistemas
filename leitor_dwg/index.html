@@ -4371,7 +4371,11 @@ window.RMGL=(function(){
         tri.forEach(t=>t.forEach(i=>{const q=P[i];A.pos.push(q[0],q[1],q[2]);A.cor.push(c[0],c[1],c[2],x.rel?c[3]:1);}));});
       Object.keys(B).forEach(k2=>{const A=B[k2];if(!A.pos.length)return;const g=new T.BufferGeometry();
         g.setAttribute('position',new T.Float32BufferAttribute(A.pos,3));g.setAttribute('color',new T.Float32BufferAttribute(A.cor,4));g.computeVertexNormals();
-        const m=new T.Mesh(g,C.mat[k2]);m.castShadow=!o.papel;m.receiveShadow=true;m.frustumCulled=false;C.cena.add(m);C.malhas.push(m);});
+        const m=new T.Mesh(g,C.mat[k2]);m.castShadow=!o.papel;m.receiveShadow=true;m.frustumCulled=false;C.cena.add(m);C.malhas.push(m);
+        /* arestas (planificação): as quinas da peça em traço fino; a face vai
+           um pouco para trás (polygonOffset), então a linha não pisca */
+        if(o.arestas&&k2==='p'){if(!C.linha)C.linha=new T.LineBasicMaterial({color:0x1c2128,transparent:true,opacity:.75});
+          const ls=new T.LineSegments(new T.EdgesGeometry(g,25),C.linha);ls.frustumCulled=false;C.cena.add(ls);C.malhas.push(ls);}});
       /* piso na cota mais baixa, com folga */
       const cen=[0,1,2].map(i=>(mn[i]+mx[i])/2),tam=Math.max(mx[h[0]]-mn[h[0]],mx[h[1]]-mn[h[1]],(mx[up]-mn[up])*.8,1),ext=tam*.72;
       const pz=mn[up]-Math.max(1,tam*.002),Pp=(a,b)=>{const q=[0,0,0];q[h[0]]=a;q[h[1]]=b;q[up]=pz;return q;};
@@ -4397,10 +4401,10 @@ window.RMGL=(function(){
       /* sol alto, vindo de quem olha */
       const vd=[0,1,2].map(i=>ex[i][2]),sd=[0,0,0];sd[up]=1;sd[h[0]]=-vd[h[0]]*.0;sd[h[1]]=0;
       const vis=[0,0,0];vis[h[0]]=vd[h[0]];vis[h[1]]=vd[h[1]];const nv=Math.hypot(vis[0],vis[1],vis[2])||1;
-      const dir=[0,1,2].map(i=>(i===up?1:0)+.55*vis[i]/nv+(i===h[0]?.25:0)),nd=Math.hypot(...dir);
+      const fr=o.arestas?1.1:.55,dir=[0,1,2].map(i=>(i===up?1:0)+fr*vis[i]/nv+(i===h[0]?.25:0)),nd=Math.hypot(...dir);
       C.sol.position.set(...cen.map((c0,i)=>c0+dir[i]/nd*tam*3));C.sol.target.position.set(...cen);C.sol.castShadow=!o.papel;
       const S=tam*1.8;Object.assign(C.sol.shadow.camera,{left:-S,right:S,top:S,bottom:-S,near:1,far:tam*8});C.sol.shadow.camera.updateProjectionMatrix();
-      C.hemi.position.set(...dir);C.hemi.intensity=o.papel?.9:.6;
+      C.hemi.position.set(...dir);C.hemi.intensity=(o.papel?.9:.6)*(o.arestas?1.6:1);
       C.R.setPixelRatio(k||1);C.R.setSize(Math.max(1,Math.round(W)),Math.max(1,Math.round(H)),false);
       C.R.render(C.cena,C.cam);
       C.cv._espelho=C.espelho;return C.cv;
@@ -21012,6 +21016,22 @@ function plnEixoDobraChapa(){
   }catch(e){}
   return null;
 }
+/* a peça da planificação no motor novo: devolve a imagem (PNG, fundo
+   transparente) do retângulo vx,vy,vw,vh do desenho, ou '' sem o motor */
+function plnGL3D(faces,pj3,vx,vy,vw,vh,telaPx,papel){
+  if(!window.RMGL||!RMGL.ativo()||!RMGL.pronto())return '';
+  try{
+    let W=Math.max(120,telaPx),H=W*vh/vw;if(H>1400){W*=1400/H;H=1400;}
+    const k=papel?Math.max(2,window.rmImprimindoAlta||2):Math.min(2,window.devicePixelRatio||1);
+    const polys=faces.map(f=>{const L=f.map((p,i)=>Math.hypot(...p.map((v,j)=>v-f[(i+1)%f.length][j])));
+      return {p:f,cor:Math.min(...L)<=PLN.esp*1.05?'rgb(150,158,168)':'rgb(196,203,211)'};});
+    const cv=RMGL.camada(polys,p=>{const q=pj3(p);return [(q.x-vx)/vw*W,(q.y-vy)/vh*H,q.z];},W,H,k,{up:1,semPiso:true,papel,arestas:1});
+    if(!cv)return '';
+    const o=document.createElement('canvas');o.width=cv.width;o.height=cv.height;const g=o.getContext('2d');
+    if(cv._espelho){g.translate(0,o.height);g.scale(1,-1);}
+    g.drawImage(cv,0,0);return o.toDataURL('image/png');
+  }catch(e){return '';}
+}
 function plnPinta3D(papel,alvo){
   const box=alvo||plnEl('plnVista3D'); if(!box)return '';
   const falta=!plnCompleto()?'O 3D aparece quando a peça tiver todas as medidas.'
@@ -21064,7 +21084,19 @@ function plnPinta3D(papel,alvo){
       return '<line x1="'+a.x.toFixed(2)+'" y1="'+a.y.toFixed(2)+'" x2="'+b.x.toFixed(2)+'" y2="'+b.y.toFixed(2)+'" stroke="'+St[l.t]+'" stroke-width="'+(lw*(l.t==='men'?.7:l.t==='mai'?1:1.2)).toFixed(3)+'"/>';}).join('')+'</g>';
     s+=RM3D.svgSombra(pj3,faces,null,1,mn[1],lw,0,'planificacao');
   }
-  proj.forEach(f=>{
+  /* motor novo (WebGL): a peça sai como imagem no mesmo lugar dos polígonos
+     (a câmera é a própria projeção deste desenho), com luz real e as quinas
+     em traço; piso, sombra clara, dobras e eixos continuam no SVG por cima.
+     No papel: sem sombra e sem piso (fundo branco). Sem o motor, o desenho
+     de antes. */
+  const gl=plnGL3D(faces,pj3,(x0+x1)/2-vw/zoom/2,(y0+y1)/2-vh/zoom/2,vw/zoom,vh/zoom,telaPx,!!papel);
+  if(gl){
+    if(papel)s=s.replace(/<g class="rm3d-sombra[\s\S]*?<\/g>/,'');
+    s+='<image class="pln-gl" href="'+gl+'" x="'+((x0+x1)/2-vw/zoom/2).toFixed(2)+'" y="'+((y0+y1)/2-vh/zoom/2).toFixed(2)+'" width="'+(vw/zoom).toFixed(2)+'" height="'+(vh/zoom).toFixed(2)+'" preserveAspectRatio="none"/>';
+  }else if(!papel&&window.RMGL&&RMGL.ativo()&&!RMGL.pronto()&&!plnPinta3D._esp){
+    plnPinta3D._esp=1;RMGL.three().then(()=>{plnPinta3D._esp=0;if(PLN.modo==='chapa')plnPinta3D(0,plnEl('plnVista3Dch'));else plnPinta3D();}).catch(()=>{});
+  }
+  if(!gl)proj.forEach(f=>{
     const tom=Math.round(f.thin?62+78*f.luz:96+146*f.luz);
     const cor='rgb('+Math.round(tom*0.98)+','+Math.round(tom*0.99)+','+tom+')';
     s+='<path d="'+f.q.map((p,i)=>(i?'L':'M')+p.x.toFixed(2)+' '+p.y.toFixed(2)).join('')+
@@ -21095,8 +21127,8 @@ function plnPinta3D(papel,alvo){
       const o=plnProj3([0,0,0],az,el,rot),e=v=>{const q=plnProj3(v,az,el,rot);return [q.x-o.x,q.y-o.y,q.z-o.z];};
       RM3D.gizmo(c,cv.width,cv.height,{X:e([1000,0,0]),Y:e([0,0,1000]),Z:e([0,1000,0])},k);
       const pxmm=Math.min(W/(vw/zoom),H/(vh/zoom))*k;
-      RM3D.ultimo.planificacao={estilo:RM3D.estilo(),grade,escala:RM3D.escala(c,cv.width,cv.height,pxmm,k,14)};
-    }else RM3D.ultimo.planificacao={estilo:RM3D.estilo(),grade,escala:0};
+      RM3D.ultimo.planificacao={estilo:RM3D.estilo(),grade,escala:RM3D.escala(c,cv.width,cv.height,pxmm,k,14),motor:gl?'novo':'classico'};
+    }else RM3D.ultimo.planificacao={estilo:RM3D.estilo(),grade,escala:0,motor:gl?'novo':'classico'};
   }catch(_){}
   return s;
 }
@@ -30627,7 +30659,7 @@ if('serviceWorker' in navigator && location.protocol.startsWith('http')){
 }
 </script>
 <script>/* versão publicada (PADRAO_RM.md §3): sobe a cada publicação, junto com o CACHE do sw.js */
-const APP_VER='v269';
+const APP_VER='v270';
 </script>
 <script id="rmVersaoBloco">
 /* ===== SELO DE VERSÃO — igual em todos os sistemas (PADRAO_RM.md §3) =====
