@@ -20,7 +20,7 @@
   "versao": "v46"
  },
  "central_rm": {
-  "commit": "7866761",
+  "commit": "2844705",
   "versao": "v153"
  },
  "controle_cheques": {
@@ -40,8 +40,8 @@
   "versao": "v263"
  },
  "orcamento-rm": {
-  "commit": "f4f1fe1",
-  "versao": "v148"
+  "commit": "0d663f5",
+  "versao": "v149"
  },
  "propostas_rm": {
   "commit": "098b07a",

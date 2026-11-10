@@ -1512,6 +1512,41 @@ table.items tbody tr.dragover td{box-shadow:inset 0 2px 0 var(--red)}
 
 /* ---------- Totals ---------- */
 .foot{display:flex;justify-content:flex-end;padding:14px 30px 28px}
+/* Fase 1 da tela (nov/2026): barra única de adicionar, cabeçalho compacto e
+   fornecedor/frete junto dos totais. Só na tela; o impresso não muda. */
+@media screen{
+  .addzone.com-abas{gap:0}
+  .add-abas{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin:0 0 10px}
+  .add-abas button{font:inherit;font-size:13px;font-weight:700;padding:8px 16px;border-radius:9px;border:1.5px solid var(--line);background:var(--surface,#fff);color:var(--ink);cursor:pointer}
+  .add-abas button.on{background:var(--red);border-color:var(--red);color:#fff}
+  .add-dica{font-size:12px;color:var(--muted);margin-left:6px}
+  .addzone.com-abas>.searchbox{display:none}
+  .addzone.com-abas>.searchbox.on{display:block}
+  .addzone.com-abas>.searchbox>.lab{display:none}
+  .addzone.com-abas>.addrow-actions{margin-top:10px}
+  .foot{justify-content:space-between;gap:20px;align-items:flex-start}
+  .frete-card{flex:0 1 420px;border:1px solid var(--line);border-radius:12px;padding:12px 14px;background:var(--surface,#fff)}
+  .frete-tit{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:700;margin-bottom:8px}
+  .frete-card .forn-frete-row{display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;margin:0 0 10px}
+  .frete-card .forn-frete-row:last-child{margin-bottom:0}
+  .frete-card .frete-grp{flex:0 0 58px;font-size:13px;font-weight:700;padding-bottom:11px}
+  .frete-card .forn-input{flex:1 1 180px;min-width:0}
+  .sheet.supplier .frete-card{display:none!important}
+  /* cabeçalho: Cliente e Obra largos, Nº e Data pequenos -- numa linha só */
+  .sheet:not(.supplier) .meta{grid-template-columns:repeat(12,1fr)}
+  .sheet:not(.supplier) .meta .fld:has(#q_cliente){order:1;grid-column:span 4}
+  .sheet:not(.supplier) .meta .fld:has(#q_obra){order:2;grid-column:span 4}
+  .sheet:not(.supplier) .meta .fld:has(#q_numero){order:3;grid-column:span 2}
+  .sheet:not(.supplier) .meta .fld:has(#q_data){order:4;grid-column:span 2}
+}
+@media screen and (max-width:720px){
+  .sheet:not(.supplier) .meta .fld:has(#q_cliente),.sheet:not(.supplier) .meta .fld:has(#q_obra){grid-column:span 12}
+  .sheet:not(.supplier) .meta .fld:has(#q_numero),.sheet:not(.supplier) .meta .fld:has(#q_data){grid-column:span 6}
+  .add-abas button{flex:1;padding:9px 6px}
+  .add-dica{display:none}
+  .frete-card{max-width:none}
+}
+
 .foot .totbox{width:320px;max-width:100%}
 .totbox{align-self:start}
 .sheet.supplier .vcol{display:none!important}
@@ -4236,8 +4271,21 @@ body[data-theme="escuro"] .cob-t input[type=date]{color-scheme:dark}
     ORÇAMENTO DE MATERIAL · sem valores
   </div>
 
-  <div class="addzone no-print">
-    <div class="searchbox">
+  <div class="addzone no-print com-abas" id="addZone">
+    <!-- UMA BARRA SÓ PARA ADICIONAR (nov/2026): "um layout melhor na tela do
+         orçamento, algo mais organizado". Eram três quadros empilhados
+         (perfil, telha, outros itens) e o primeiro item só aparecia lá
+         embaixo. Agora é uma barra com abas -- a mesma busca de cada um, só a
+         da aba escolhida à mostra (lembrada no aparelho). O fornecedor e o
+         frete de cada grupo foram para junto dos totais. Teste
+         orcamento-layout-fase1. -->
+    <div class="add-abas" role="tablist" aria-label="O que adicionar">
+      <button type="button" role="tab" data-add="perfil" onclick="orcAbaAdd('perfil')">Perfil</button>
+      <button type="button" role="tab" data-add="telha" onclick="orcAbaAdd('telha')">Telha</button>
+      <button type="button" role="tab" data-add="outros" onclick="orcAbaAdd('outros')">Outros itens</button>
+      <span class="add-dica" id="addDica"></span>
+    </div>
+    <div class="searchbox" data-add="perfil">
       <div class="lab">Adicionar perfil
         <span class="hint">digite ex.: <b>100x40x15 #1,95</b> · defina Qtd/Compr. e Enter adiciona</span>
       </div>
@@ -4255,13 +4303,9 @@ body[data-theme="escuro"] .cob-t input[type=date]{color-scheme:dark}
       </div>
       <div class="chips" id="grpChips"></div>
       <div class="sugg" id="sugg"></div>
-      <div class="forn-frete-row customer-only">
-        <div class="miniadd forn-input" style="flex:1;min-width:260px"><label>Fornecedor (se não Perfitec)</label><input id="fornecedorMetalica" placeholder="ex.: Perfiaço" oninput="onFornecedorGrupoInput('Metalica')"></div>
-        <div id="freteBoxMetalica" class="frete-box"></div>
-      </div>
     </div>
 
-    <div class="searchbox">
+    <div class="searchbox" data-add="telha">
       <div class="lab">Adicionar telha <span class="hint">preço por metro · defina Qtd/Compr.</span></div>
       <div class="qadd">
         <div class="grow">
@@ -4278,13 +4322,9 @@ body[data-theme="escuro"] .cob-t input[type=date]{color-scheme:dark}
         <button class="btn-sm qadd-btn" onclick="openBras()" title="Telhas, térmicas, cumeeiras e painéis da Brastelha, com a largura útil dela">Catálogo Brastelha</button>
       </div>
       <div class="sugg" id="suggT"></div>
-      <div class="forn-frete-row customer-only">
-        <div class="miniadd forn-input" style="flex:1;min-width:260px"><label>Fornecedor (se não Perfitec)</label><input id="fornecedorTelhas" placeholder="ex.: Brastelha" oninput="onFornecedorGrupoInput('Telhas')"></div>
-        <div id="freteBoxTelhas" class="frete-box"></div>
-      </div>
     </div>
 
-    <div class="searchbox">
+    <div class="searchbox" data-add="outros">
       <div class="lab">Outros itens <span class="hint">laminados, tubos e categorias personalizadas · cobrados por unidade</span></div>
       <div class="qadd">
         <div class="catsel-wrap"><label>Categoria</label>
@@ -4370,6 +4410,19 @@ body[data-theme="escuro"] .cob-t input[type=date]{color-scheme:dark}
        campos" faz tempo, e o texto livre no rodapé virou espaço em branco
        na folha. -->
   <div class="foot">
+    <div class="frete-card no-print customer-only" id="freteCard">
+      <div class="frete-tit">Fornecedor e frete</div>
+      <div class="forn-frete-row">
+        <div class="frete-grp">Perfis</div>
+        <div class="miniadd forn-input"><label>Fornecedor (se não Perfitec)</label><input id="fornecedorMetalica" placeholder="ex.: Perfiaço" oninput="onFornecedorGrupoInput('Metalica')"></div>
+        <div id="freteBoxMetalica" class="frete-box"></div>
+      </div>
+      <div class="forn-frete-row">
+        <div class="frete-grp">Telhas</div>
+        <div class="miniadd forn-input"><label>Fornecedor (se não Perfitec)</label><input id="fornecedorTelhas" placeholder="ex.: Brastelha" oninput="onFornecedorGrupoInput('Telhas')"></div>
+        <div id="freteBoxTelhas" class="frete-box"></div>
+      </div>
+    </div>
     <div class="totbox">
       <div class="totgroups" id="totGroups"></div>
       <div class="totrow"><span class="k">Peso total (kg)</span><span class="v" id="t_peso">0,000</span></div>
@@ -6829,6 +6882,18 @@ function onSearchTKey(e){
 }
 
 /* ---------- add / remove lines ---------- */
+
+/* As abas da barra de adicionar (ver .add-abas). A escolhida fica lembrada. */
+const ADD_DICAS={perfil:'digite ex.: 100x40x15 #1,95 · Enter adiciona',telha:'preço por metro · defina Qtd/Compr.',outros:'laminados, tubos e categorias · cobrados por unidade'};
+function orcAbaAdd(a,focar){
+  if(!ADD_DICAS[a]) a='perfil';
+  document.querySelectorAll('#addZone .searchbox[data-add]').forEach(b=>b.classList.toggle('on',b.dataset.add===a));
+  document.querySelectorAll('#addZone .add-abas [data-add]').forEach(b=>{ const on=b.dataset.add===a; b.classList.toggle('on',on); b.setAttribute('aria-selected',on?'true':'false'); });
+  const d=document.getElementById('addDica'); if(d) d.textContent=ADD_DICAS[a];
+  try{ localStorage.setItem('orc_aba_add',a); }catch(e){}
+  if(focar!==false){ const i=document.getElementById({perfil:'searchPerfil',telha:'searchTelha',outros:'searchCat'}[a]); if(i&&window.innerWidth>720) setTimeout(()=>i.focus(),0); }
+}
+document.addEventListener('DOMContentLoaded',()=>{ let a='perfil'; try{ a=localStorage.getItem('orc_aba_add')||'perfil'; }catch(e){} orcAbaAdd(a,false); });
 function addPerfilLine(pid){
   const p=perfilById(pid);if(!p)return;
   const q=parseNumLoose((document.getElementById('addQtd')||{}).value)||1;
@@ -10210,7 +10275,7 @@ function applyImport(){
    publicacao, e ha uma prova automatica que falha se um subir sem o outro.
    Assim o numero na tela e' o mesmo do arquivo que o aparelho guardou, e
    dizer "estou na v15" passa a significar alguma coisa. */
-const APP_VER='v148';
+const APP_VER='v149';
 (function(){ try{ const p=document.getElementById('verPill'); if(p)p.textContent=APP_VER; }catch(e){} })();
 /* Versao nova assumiu com a pagina aberta: avisa, em vez de recarregar por
    conta propria e jogar fora um orcamento pela metade. */
