@@ -1438,6 +1438,25 @@ table.items th.l{text-align:left}
 table.items td{padding:8px 9px;border-bottom:1px solid var(--line-2);text-align:right;vertical-align:middle}
 table.items td.l{text-align:left}
 .desc{font-weight:600;color:var(--ink)}
+
+/* Fase 2 da tela (nov/2026): linhas mais baixas -- o tipo, a espessura e o
+   "Compra:" numa linha só embaixo da medida; a observação vazia da telha só
+   aparece ao passar o mouse ou ao focar; subtotal no título do grupo.
+   Só na tela; o impresso não muda. Teste orcamento-layout-fase2. */
+@media screen{
+  table.items td{padding-top:8px;padding-bottom:8px}
+  table.items td.l .sub{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  table.items td.l .sub .cp-tag{display:inline;margin:0;font-size:12px}
+  table.items td.l .sub .cp-tag::before{content:' · ';color:var(--muted)}
+  /* as mesmas larguras em Perfis, Telhas e Outros: Descrição, Total e as ações alinhadas de um grupo ao outro */
+  .tblwrap table.items thead th.l{width:30%}
+  .tblwrap table.items thead th:nth-last-child(2){width:124px}
+  .tblwrap table.items thead th:last-child{width:92px}
+  .sec-sum{font-weight:600;letter-spacing:0;text-transform:none;color:var(--muted);font-size:12.5px;margin-left:2px}
+}
+@media screen and (hover:hover){
+  table.items tr:not(:hover):not(:focus-within) .obs-in:placeholder-shown{display:none}
+}
 .desc .sub{font-size:12px;color:var(--muted);font-weight:560;margin-top:1px;font-family:var(--mono);letter-spacing:-.01em}
 .mono{font-family:var(--mono)}
 .tag{display:inline-block;font-size:11px;letter-spacing:.06em;text-transform:uppercase;font-weight:700;padding:1px 6px;border-radius:4px;vertical-align:middle}
@@ -4350,7 +4369,7 @@ body[data-theme="escuro"] .cob-t input[type=date]{color-scheme:dark}
 
   <div class="tblwrap">
     <div id="perfilSecWrap">
-    <div class="secttl" id="perfilSec">Perfis</div>
+    <div class="secttl" id="perfilSec">Perfis<span class="sec-sum no-print" id="sumPerfis"></span></div>
     <table class="items">
       <thead><tr>
         <th class="l">Descrição</th>
@@ -4368,7 +4387,7 @@ body[data-theme="escuro"] .cob-t input[type=date]{color-scheme:dark}
     </div>
 
     <div id="telhaSecWrap" class="hidden">
-      <div class="secttl">Telhas</div>
+      <div class="secttl">Telhas<span class="sec-sum no-print" id="sumTelhas"></span></div>
       <table class="items">
         <thead><tr>
           <th class="l">Descrição</th>
@@ -4388,7 +4407,7 @@ body[data-theme="escuro"] .cob-t input[type=date]{color-scheme:dark}
     <div id="catSecs"></div>
 
     <div id="avulsoSecWrap" class="hidden">
-      <div class="secttl">Outros itens</div>
+      <div class="secttl">Outros itens<span class="sec-sum no-print" id="sumOutros"></span></div>
       <table class="items">
         <thead><tr>
           <th class="l">Descrição</th>
@@ -7672,6 +7691,18 @@ function delCategoria(catId){
   save(); renderCatTabs(); renderCatAddSelect(); showTab('perfis'); renderLines(); toast('Categoria excluída');
 }
 
+/* O SUBTOTAL NO TÍTULO DE CADA GRUPO (fase 2 da tela, nov/2026): "Perfis ·
+   5 itens · 58 kg · R$ 395,05" -- o tamanho de cada grupo sem descer até os
+   totais. Os números são os mesmos do recompute (frete do grupo incluso).
+   Só na tela. Teste orcamento-layout-fase2. */
+function secResumos(peso,gMet,area,gTel,gAv){
+  const it=n=>n+(n===1?' item':' itens');
+  const pon=(id,partes)=>{ const e=document.getElementById(id); if(e) e.textContent=partes.length?' · '+partes.join(' · '):''; };
+  const nP=(S.linhasPerfil||[]).length, nT=(S.linhasTelha||[]).length, nA=(S.linhasAvulso||[]).length;
+  pon('sumPerfis',nP?[it(nP),kg(peso)+' kg',brl(gMet)]:[]);
+  pon('sumTelhas',nT?[it(nT),m2(area),brl(gTel)]:[]);
+  pon('sumOutros',nA?[it(nA),brl(gAv)]:[]);
+}
 function recompute(){
   /* Toda mudanca no orcamento passa por aqui -- e' o unico lugar por onde
      todas passam. A copia de trabalho e' escrita com atraso, para digitar
@@ -7711,8 +7742,9 @@ function recompute(){
     const tot=catLineTotal(cat,it,l); sub+=tot; gOutros+=tot; if(catLinhaSemPreco(cat,it,l))semPreco++;
     const et=document.getElementById('tot-'+l.lid); if(et)et.textContent=brl(tot);
   });
+  let gAv=0;
   (S.linhasAvulso||[]).forEach(l=>{
-    const tot=avulsoLineTotal(l); sub+=tot; gOutros+=tot;
+    const tot=avulsoLineTotal(l); sub+=tot; gOutros+=tot; gAv+=tot;
     const et=document.getElementById('tot-'+l.lid); if(et)et.textContent=brl(tot);
   });
   const dpct=parseNumLoose(document.getElementById('q_desc').value)||0;
@@ -7727,6 +7759,7 @@ function recompute(){
   document.getElementById('t_total').textContent=brl(total);
   renderOrigemMateriais(gMetalica,gTelhas);
   renderTotGroups(sub,gMetalica,gTelhas,gOutros);
+  secResumos(pesoTotal,gMetalica,areaTelhas,gTelhas,gAv);
   updateSemPrecoBanner(semPreco);
   cpRender();
   save();
@@ -10275,7 +10308,7 @@ function applyImport(){
    publicacao, e ha uma prova automatica que falha se um subir sem o outro.
    Assim o numero na tela e' o mesmo do arquivo que o aparelho guardou, e
    dizer "estou na v15" passa a significar alguma coisa. */
-const APP_VER='v149';
+const APP_VER='v150';
 (function(){ try{ const p=document.getElementById('verPill'); if(p)p.textContent=APP_VER; }catch(e){} })();
 /* Versao nova assumiu com a pagina aberta: avisa, em vez de recarregar por
    conta propria e jogar fora um orcamento pela metade. */
