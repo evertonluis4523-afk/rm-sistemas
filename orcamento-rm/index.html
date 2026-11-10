@@ -10210,7 +10210,7 @@ function applyImport(){
    publicacao, e ha uma prova automatica que falha se um subir sem o outro.
    Assim o numero na tela e' o mesmo do arquivo que o aparelho guardou, e
    dizer "estou na v15" passa a significar alguma coisa. */
-const APP_VER='v147';
+const APP_VER='v148';
 (function(){ try{ const p=document.getElementById('verPill'); if(p)p.textContent=APP_VER; }catch(e){} })();
 /* Versao nova assumiu com a pagina aberta: avisa, em vez de recarregar por
    conta propria e jogar fora um orcamento pela metade. */
@@ -13561,6 +13561,44 @@ function fbGuardaVersao(chaves){
     FB.db.ref('orcamentos_versoes/'+fbHoraChave(new Date(agora.getTime()-VERSOES_DIAS*864e5))).remove().catch(function(){});
   }catch(e){ console.warn('[versões]',e); }
 }
+/* CATÁLOGO DE CONSULTA (nov/2026): "uma aba apenas de pesquisa de valores
+   de perfis padrões e valor por metro de telhas" para a arquiteta, na
+   Central. O cadastro (orcamentos_cadastro) é só do dono; daqui sobe uma cópia
+   leve em catalogo_precos -- o CUSTO DO FORNECEDOR, o MENOR entre eles, sem o
+   nome de quem vende: perfil por barra de 6 m (kg/m × 6 × menor R$/kg da
+   espessura, ou o preço próprio do perfil) e telha por metro. Sobe quando o
+   cadastro é lido ou gravado, só se mudou. Teste orcamento-catalogo-precos. */
+function catalogoPrecos(){
+  const fsKg=fornCols('kg').map(cpForn).filter(Boolean);
+  const menor=vs=>{const ok=vs.filter(v=>v>0);return ok.length?Math.min(...ok):0;};
+  const r2=v=>Math.round(v*100)/100;
+  const perfis=(S.perfis||[]).map(p=>{
+    const vs=fsKg.map(f=>{const pf=f.rkgPerfil&&Number(f.rkgPerfil[p.id]);if(pf>0)return pf;
+      if(p.especial&&parseNumLoose(p.rkgProprio)>0)return parseNumLoose(p.rkgProprio);
+      return f.precos&&Number(f.precos[p.esp])>0?Number(f.precos[p.esp]):0;});
+    const kg=menor(vs),kgBarra=kgM(p)*6;
+    return kg>0&&kgBarra>0?{g:String(p.grupo||''),t:String(p.tipo||''),d:String(p.dims||''),e:String(p.esp||''),v:r2(kg*kgBarra)}:null;
+  }).filter(Boolean);
+  const cols=fornCols('telhas');
+  const telhas=(S.telhas||[]).map(t=>{const v=menor(cols.map(n=>telhaPrecoDe(t,n)||0));
+    return v>0?{g:String(t.cat||''),d:String(t.desc||''),v:r2(v)}:null;}).filter(Boolean);
+  return {perfis,telhas};
+}
+let _catPubT=null;
+function publicaCatalogo(){
+  clearTimeout(_catPubT);
+  _catPubT=setTimeout(function(){
+    try{
+      if(!FB.db||!FB.leuNuvem||FB.nuvemVazia||ehSementeIntocada())return;
+      const c=catalogoPrecos(); if(!c.perfis.length&&!c.telhas.length)return;
+      const h=String(fbHash(c));
+      if(localStorage.getItem('rm_catalogo_pub')===h)return;
+      FB.db.ref('catalogo_precos').set({perfis:c.perfis,telhas:c.telhas,em:Date.now()})
+        .then(function(){try{localStorage.setItem('rm_catalogo_pub',h);}catch(e){}})
+        .catch(function(){});
+    }catch(e){}
+  },2500);
+}
 function fbOnValue(cloud){
   const primeira=!FB.leuNuvem;
   FB.leuNuvem=true;
@@ -13597,6 +13635,7 @@ function fbOnValue(cloud){
   /* O que foi editado antes de a nuvem responder não se perde: ficou guardado
      e sobe agora, já com a leitura feita e a comparação valendo. */
   if(FB.pushAdiado && !FB.pending){ FB.pushAdiado=false; fbQueuePush(); }
+  publicaCatalogo();
 }
 /* JUNTA AS LISTAS QUE SÓ CRESCEM com as da nuvem, em S, sem aplicar o resto.
    Antes a junção só acontecia quando a nuvem era "mais nova" (fbApply). Quando
@@ -13826,6 +13865,7 @@ function fbPush(tudo){
   try{ envio=FB.ref.update(payload); }
   catch(err){ envio=Promise.reject(err); }   /* o Firebase recusa na hora, sem promessa */
   envio.then(function(){
+    publicaCatalogo();
     FB.ultimoErro=segurados.length?FB.msgFreio:''; FB.ultimoOk=Date.now(); FB.tentativas=0; setSyncStatus(segurados.length?'erro':'ok');
     fbBaseMarca(cheio,mudados);
     /* o que acabou de subir e' o que a nuvem tem agora */

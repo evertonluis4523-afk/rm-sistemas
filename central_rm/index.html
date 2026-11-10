@@ -4020,6 +4020,12 @@ try { var _e = localStorage.getItem('rm_estilo_ultimo'); if (_e === 'viva' || _e
         </svg>
         <span class="nav-name">Etiquetas</span>
       </div>
+      <div class="nav-item" data-precos data-tooltip="Preços" tabindex="0" role="button" onclick="showPrecos(this)" style="display:none">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="11" cy="11" r="6.5"/><path d="M20.5 20.5 16 16"/><path d="M11 8v6M9 9.5c0-.8.9-1.5 2-1.5s2 .6 2 1.4-1 1.2-2 1.4-2 .7-2 1.5.9 1.4 2 1.4 2-.6 2-1.4"/>
+        </svg>
+        <span class="nav-name">Preços</span>
+      </div>
       <div class="nav-item" data-res data-tooltip="Meus resultados" tabindex="0" role="button" onclick="showResultados(this)" style="display:none">
         <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
           <path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>
@@ -4175,6 +4181,7 @@ try { var _e = localStorage.getItem('rm_estilo_ultimo'); if (_e === 'viva' || _e
 
     <div class="dashboard" id="docs-view" style="display:none"><div id="docs-body"></div></div>
     <div class="dashboard" id="etiq-view" style="display:none"><div id="etiq-body"></div></div>
+    <div class="dashboard" id="precos-view" style="display:none"><div id="precos-body"></div></div>
     <div class="dashboard" id="res-view" style="display:none"><div id="res-body"></div></div>
     <div class="dashboard" id="agenda-view" style="display:none">
       <div class="dash-header agenda-cab">
@@ -4746,7 +4753,7 @@ try { var _e = localStorage.getItem('rm_estilo_ultimo'); if (_e === 'viva' || _e
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js" crossorigin="anonymous"></script>
 
 <script>/* versão publicada (PADRAO_RM.md §3): sobe a cada publicação, junto com o CACHE do sw.js */
-const APP_VER='v151';
+const APP_VER='v152';
 </script>
 <script>
   /* ===== LOGIN (Firebase Authentication) =====
@@ -4828,6 +4835,12 @@ const APP_VER='v151';
   // Etiquetas: o dono e a engenharia. Só interface -- não há nó na nuvem:
   // a lista de etiquetas fica no aparelho de quem monta.
   const ETIQ_ACCESS = ['engenharia@rmestruturas.com.br'];
+  /* PREÇOS: catálogo de consulta (custo do fornecedor, o menor) publicado pelo
+     Orçamento RM em catalogo_precos. Só leitura. */
+  const PRECOS_ACCESS = ['engenharia@rmestruturas.com.br'];
+  function podePrecos() {
+    return isAdminUser() || (!!CURRENT_EMAIL && PRECOS_ACCESS.includes(CURRENT_EMAIL.toLowerCase()));
+  }
   function podeEtiquetas() {
     return isAdminUser() || (!!CURRENT_EMAIL && ETIQ_ACCESS.includes(CURRENT_EMAIL.toLowerCase()));
   }
@@ -6647,6 +6660,7 @@ const APP_VER='v151';
     document.getElementById('dashboard').style.display = 'none';
     { const dv = document.getElementById('docs-view'); if (dv) dv.style.display = 'none'; }
     { const ev = document.getElementById('etiq-view'); if (ev) ev.style.display = 'none'; }
+    { const pv = document.getElementById('precos-view'); if (pv) pv.style.display = 'none'; }
     { const rv = document.getElementById('res-view'); if (rv) rv.style.display = 'none'; }
     document.getElementById('agenda-view').style.display = 'block';
     document.getElementById('topbar-title').textContent = 'Minha Agenda';
@@ -7153,6 +7167,7 @@ const APP_VER='v151';
      que todo no' das regras esta numa das tres listas): */
   const NOS_FORA_DO_BACKUP = {
     caepi_consulta: 'resultado de consulta ao site do governo; refaz-se sozinho',
+    catalogo_precos: 'cópia leve do cadastro do Orçamento (que já vai no backup); refaz-se sozinha',
     orcamentos_versoes: 'ja e o historico das versoes dos orcamentos (PADRAO_RM.md, Backup)',
     users: 'pessoal do app Minhas Contas: cada um so le o seu (regra por uid)',
     rm_contas_usuarios: 'pessoal do app Minhas Contas: cada um so le o seu (regra por uid)',
@@ -8576,6 +8591,7 @@ const APP_VER='v151';
     document.getElementById('agenda-view').style.display = 'none';
     { const dv = document.getElementById('docs-view'); if (dv) dv.style.display = 'none'; }
     { const ev = document.getElementById('etiq-view'); if (ev) ev.style.display = 'none'; }
+    { const pv = document.getElementById('precos-view'); if (pv) pv.style.display = 'none'; }
     { const rv = document.getElementById('res-view'); if (rv) rv.style.display = 'none'; }
 
     // Toggle iframe layers
@@ -8782,6 +8798,7 @@ const APP_VER='v151';
     document.getElementById('agenda-view').style.display = 'none';
     { const dv = document.getElementById('docs-view'); if (dv) dv.style.display = 'none'; }
     { const ev = document.getElementById('etiq-view'); if (ev) ev.style.display = 'none'; }
+    { const pv = document.getElementById('precos-view'); if (pv) pv.style.display = 'none'; }
     { const rv = document.getElementById('res-view'); if (rv) rv.style.display = 'none'; }
     document.getElementById('dashboard').style.display = 'block';
     document.getElementById('topbar-title').textContent = 'Painel Geral';
@@ -8803,6 +8820,8 @@ const APP_VER='v151';
       document.querySelector('[data-agenda]')?.classList.add('active');
     } else if (activeNative === 'etiq') {
       document.querySelector('[data-etiq]')?.classList.add('active');
+    } else if (activeNative === 'precos') {
+      document.querySelector('[data-precos]')?.classList.add('active');
     } else if (activeNative === 'res') {
       document.querySelector('[data-res]')?.classList.add('active');
     } else {
@@ -11232,7 +11251,7 @@ const APP_VER='v151';
     if (!ehDono()) return;
     try { activeTabId = null; activeNative = 'res'; } catch (e) { }
     document.querySelectorAll('.iframe-layer').forEach(function (l) { l.classList.remove('active'); });
-    ['dashboard', 'agenda-view', 'docs-view', 'etiq-view'].forEach(function (id) { var x = document.getElementById(id); if (x) x.style.display = 'none'; });
+    ['dashboard', 'agenda-view', 'docs-view', 'etiq-view', 'precos-view'].forEach(function (id) { var x = document.getElementById(id); if (x) x.style.display = 'none'; });
     var v = document.getElementById('res-view'); if (v) v.style.display = 'block';
     var t = document.getElementById('topbar-title'); if (t) t.textContent = 'Meus resultados';
     var tg = document.getElementById('topbar-tag'); if (tg) { tg.textContent = 'SÓ VOCÊ'; tg.style.color = ''; }
@@ -13052,6 +13071,7 @@ const APP_VER='v151';
     if (ag) ag.style.display = 'none';
     if (dv) dv.style.display = 'block';
     var ev = q('#etiq-view'); if (ev) ev.style.display = 'none';
+    var pv = q('#precos-view'); if (pv) pv.style.display = 'none';
     var rv = q('#res-view'); if (rv) rv.style.display = 'none';
     var t = q('#topbar-title'); if (t) t.textContent = 'Documentos';
     var tg = q('#topbar-tag'); if (tg) { tg.textContent = 'ARQUIVO'; tg.style.color = ''; }
@@ -13397,7 +13417,7 @@ const APP_VER='v151';
     if (typeof podeEtiquetas === 'function' && !podeEtiquetas()) return;
     try { activeTabId = null; activeNative = 'etiq'; } catch (e) {}
     qa('.iframe-layer').forEach(function (l) { l.classList.remove('active'); });
-    ['#dashboard', '#agenda-view', '#docs-view', '#res-view'].forEach(function (s) { var x = q(s); if (x) x.style.display = 'none'; });
+    ['#dashboard', '#agenda-view', '#docs-view', '#res-view', '#precos-view'].forEach(function (s) { var x = q(s); if (x) x.style.display = 'none'; });
     var ev = q('#etiq-view'); if (ev) ev.style.display = 'block';
     var t = q('#topbar-title'); if (t) t.textContent = 'Etiquetas';
     var tg = q('#topbar-tag'); if (tg) { tg.textContent = 'IMPRESSÃO'; tg.style.color = ''; }
@@ -13431,6 +13451,123 @@ const APP_VER='v151';
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', function () { iniciar(0); });
   else iniciar(0);
+})();
+</script>
+<script>
+/* ===== PREÇOS: catálogo de consulta =====
+   "Uma aba apenas de pesquisa de valores de perfis padrões e valor por metro
+   de telhas, como um catálogo de consulta" -- para quem orça e não abre o
+   Orçamento (a arquiteta). Lê catalogo_precos, a cópia leve que o Orçamento
+   RM publica: o custo do fornecedor, o MENOR, sem o nome de quem vende;
+   perfil por barra de 6 m, telha por metro. Só consulta, nada se grava aqui.
+   Teste central-precos-consulta. */
+(function () {
+  var q = function (s) { return document.querySelector(s); }, qa = function (s) { return document.querySelectorAll(s); };
+  var DADOS = null, ERRO = '', aba = 'perfis', busca = '', ref = null;
+  var brl = function (v) { return 'R$ ' + Number(v || 0).toFixed(2).replace('.', ',').replace(/\B(?=(\d{3})+(?!\d))/g, '.'); };
+  var norm = function (t) { return String(t || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase(); };
+  var esc = function (t) { return String(t == null ? '' : t).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); };
+  function estilo() {
+    if (q('#prc-estilo')) return;
+    var e = document.createElement('style'); e.id = 'prc-estilo';
+    e.textContent = '.prc-cab{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap;margin-bottom:18px}'
+      + '.prc-barra{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:14px}'
+      + '.prc-busca{flex:1;min-width:220px;font:inherit;font-size:15px;padding:10px 14px;border-radius:10px;border:1.5px solid var(--divider);background:var(--card);color:var(--text)}'
+      + '.prc-busca:focus{outline:none;border-color:var(--accent-light);box-shadow:0 0 0 3px var(--accent-glow)}'
+      + '.prc-seg{display:inline-flex;border:1px solid var(--divider);border-radius:10px;overflow:hidden}'
+      + '.prc-seg button{font:inherit;font-size:13px;font-weight:600;padding:9px 16px;border:0;background:var(--card);color:var(--text-muted);cursor:pointer}'
+      + '.prc-seg button.on{background:var(--accent-fill);color:#fff}'
+      + '.prc-card{background:var(--card);border:1px solid var(--divider);border-radius:12px;overflow:hidden}'
+      + '.prc-tab{width:100%;border-collapse:collapse;font-size:14px}'
+      + '.prc-tab th{text-align:left;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--text-muted);font-weight:700;padding:10px 14px;border-bottom:1px solid var(--divider)}'
+      + '.prc-tab td{padding:9px 14px;border-bottom:1px solid var(--divider);color:var(--text)}'
+      + '.prc-tab tr:last-child td{border-bottom:0}.prc-tab .r{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}'
+      + '.prc-tab .v{font-weight:700}.prc-tab tr.g td{background:color-mix(in srgb,var(--text) 4%,var(--card));font-size:12px;font-weight:700;color:var(--text-muted);letter-spacing:.04em;padding:7px 14px}'
+      + '.prc-vazio{padding:28px;text-align:center;color:var(--text-muted)}.prc-nota{font-size:12px;color:var(--text-muted);margin-top:10px}'
+      + '@media (max-width:640px){.prc-tab td,.prc-tab th{padding:9px 8px}.prc-tab td.esp{white-space:nowrap}}';
+    document.head.appendChild(e);
+  }
+  function quando() {
+    if (!DADOS || !DADOS.em) return '';
+    var d = new Date(DADOS.em); return d.toLocaleDateString('pt-BR');
+  }
+  function linhas() {
+    var lista = (DADOS && Array.isArray(DADOS[aba])) ? DADOS[aba] : [];
+    var t = norm(busca).split(/\s+/).filter(Boolean);
+    var ok = lista.filter(function (x) {
+      var e = String(x.e || ''), txt = norm([x.g, x.t, x.d, e.replace(',', '.'), e.replace('.', ',')].join(' '));
+      return t.every(function (p) { return txt.indexOf(p) >= 0; });
+    });
+    if (!ok.length) return '<tr><td colspan="3" class="prc-vazio">' + (lista.length ? 'Nada encontrado para "' + esc(busca) + '".' : (ERRO || 'O catálogo ainda não foi publicado: ele sobe sozinho quando o Orçamento RM é aberto.')) + '</td></tr>';
+    var html = '', g = null;
+    ok.forEach(function (x) {
+      if (x.g !== g) { g = x.g; html += '<tr class="g"><td colspan="3">' + esc(g || 'Outros') + '</td></tr>'; }
+      html += aba === 'perfis'
+        ? '<tr><td>' + esc((x.t ? x.t + ' ' : '') + x.d) + '</td><td class="esp">' + esc(x.e ? String(x.e).replace('.', ',') + ' mm' : '') + '</td><td class="r v">' + brl(x.v) + '</td></tr>'
+        : '<tr><td colspan="2">' + esc(x.d) + '</td><td class="r v">' + brl(x.v) + '</td></tr>';
+    });
+    return html;
+  }
+  function pintaTabela() {
+    var tb = q('#prc-linhas'); if (tb) tb.innerHTML = linhas();
+  }
+  function render() {
+    estilo();
+    var b = q('#precos-body'); if (!b) return;
+    var np = DADOS && DADOS.perfis ? DADOS.perfis.length : 0, nt = DADOS && DADOS.telhas ? DADOS.telhas.length : 0;
+    b.innerHTML = '<div class="prc-cab"><div><div class="dash-greeting">Preços</div>'
+      + '<div class="dash-sub">Custo do fornecedor (o menor) · consulta' + (quando() ? ' · atualizado em ' + quando() : '') + '</div></div></div>'
+      + '<div class="prc-barra"><input class="prc-busca" id="prc-busca" type="search" placeholder="Pesquisar: U 100, 2,00, sanduíche…" value="' + esc(busca) + '" aria-label="Pesquisar">'
+      + '<div class="prc-seg" role="group" aria-label="Catálogo"><button data-aba="perfis" class="' + (aba === 'perfis' ? 'on' : '') + '">Perfis (' + np + ')</button>'
+      + '<button data-aba="telhas" class="' + (aba === 'telhas' ? 'on' : '') + '">Telhas (' + nt + ')</button></div></div>'
+      + '<div class="prc-card"><table class="prc-tab"><thead><tr>'
+      + (aba === 'perfis' ? '<th>Perfil</th><th>Espessura</th><th class="r">Barra 6 m</th>' : '<th colspan="2">Telha</th><th class="r">Por metro</th>')
+      + '</tr></thead><tbody id="prc-linhas">' + linhas() + '</tbody></table></div>'
+      + '<div class="prc-nota">Valores de custo, sem impostos de venda nem margem. Mudou o preço no Orçamento RM, muda aqui.</div>';
+    var i = q('#prc-busca');
+    i.addEventListener('input', function () { busca = i.value; pintaTabela(); });
+    qa('.prc-seg button').forEach(function (bt) { bt.addEventListener('click', function () { aba = bt.dataset.aba; render(); var n = q('#prc-busca'); if (n) n.focus(); }); });
+  }
+  function ouvir() {
+    if (ref || typeof firebase === 'undefined') return;
+    try {
+      ref = firebase.database().ref('catalogo_precos');
+      ref.on('value', function (snap) { DADOS = snap.val() || null; ERRO = ''; if (q('#precos-view') && q('#precos-view').style.display !== 'none') render(); },
+        function () { ERRO = 'Sem permissão para ler o catálogo (regras do Firebase sem o catalogo_precos?).'; ref = null; render(); });
+    } catch (e) {}
+  }
+  window.showPrecos = function () {
+    if (typeof podePrecos === 'function' && !podePrecos()) return;
+    try { activeTabId = null; activeNative = 'precos'; } catch (e) {}
+    qa('.iframe-layer').forEach(function (l) { l.classList.remove('active'); });
+    ['#dashboard', '#agenda-view', '#docs-view', '#res-view', '#etiq-view'].forEach(function (s) { var x = q(s); if (x) x.style.display = 'none'; });
+    var v = q('#precos-view'); if (v) v.style.display = 'block';
+    var t = q('#topbar-title'); if (t) t.textContent = 'Preços';
+    var tg = q('#topbar-tag'); if (tg) { tg.textContent = 'CONSULTA'; tg.style.color = ''; }
+    var po = q('#btn-popout'); if (po) po.style.display = 'none';
+    ouvir(); render();
+    try { renderTabs(); } catch (e) {}
+    qa('.nav-item').forEach(function (i) { i.classList.remove('active'); });
+    var nav = q('[data-precos]'); if (nav) nav.classList.add('active');
+    try { toggleMobileSidebar(false); } catch (e) {}
+    setTimeout(function () { var n = q('#prc-busca'); if (n && window.innerWidth > 700) n.focus(); }, 50);
+  };
+  function ajustar() {
+    var nav = q('[data-precos]'); if (!nav) return;
+    var pode = typeof podePrecos === 'function' && podePrecos();
+    nav.style.display = pode ? '' : 'none';
+    if (!pode) {
+      if (ref) { try { ref.off(); } catch (e) {} ref = null; } DADOS = null;
+      var v = q('#precos-view'); if (v && v.style.display !== 'none') { v.style.display = 'none'; try { showDashboard(); } catch (e) {} }
+    }
+  }
+  window.__prcTeste = { dados: function (d) { DADOS = d; render(); }, ajustar: ajustar };
+  function iniciar(n) {
+    if (!q('[data-precos]') || typeof firebase === 'undefined') { if ((n || 0) < 60) setTimeout(function () { iniciar((n || 0) + 1); }, 400); return; }
+    ajustar();
+    try { firebase.auth().onAuthStateChanged(function () { ajustar(); }); } catch (e) {}
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', function () { iniciar(0); }); else iniciar(0);
 })();
 </script>
 <!-- ================================================================
@@ -13752,13 +13889,13 @@ const APP_VER='v151';
   css.textContent = '.rm-view-enter{animation:rmConteudoEntra .3s var(--rm-motion-ease) both}';
   document.head.appendChild(css);
 
-  ['showDashboard','showAgenda','showDocumentos','showEtiquetas','showResultados'].forEach(function (nome) {
+  ['showDashboard','showAgenda','showDocumentos','showEtiquetas','showResultados','showPrecos'].forEach(function (nome) {
     var original = window[nome];
     if (typeof original !== 'function') return;
     window[nome] = function () {
       var retorno = original.apply(this, arguments);
       requestAnimationFrame(function () {
-        var id = nome === 'showDashboard' ? 'dashboard' : (nome === 'showAgenda' ? 'agenda-view' : (nome === 'showEtiquetas' ? 'etiq-view' : (nome === 'showResultados' ? 'res-view' : 'docs-view')));
+        var id = nome === 'showDashboard' ? 'dashboard' : (nome === 'showAgenda' ? 'agenda-view' : (nome === 'showEtiquetas' ? 'etiq-view' : (nome === 'showResultados' ? 'res-view' : (nome === 'showPrecos' ? 'precos-view' : 'docs-view'))));
         revelar(document.getElementById(id));
       });
       return retorno;
