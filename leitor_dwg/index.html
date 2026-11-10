@@ -4049,7 +4049,19 @@ function rmDxf2000(ent,bb,layers,estilo,unid){
    vista e barra de escala. Três estilos -- escuro (CAD), claro (papel) e
    blueprint --, trocados pelo botão "Fundo" de qualquer 3D; a escolha vale
    para todos e fica lembrada neste aparelho. Convenção dos eixos: X ao longo
-   da peça, Z para cima, Y a profundidade. */
+   da peça, Z para cima, Y a profundidade.
+
+   MAIS REALISMO ("melhoria visual, mais realismo, para os 3D e para o que
+   vai para a impressão"): o mesmo bloco dá a todos os 3D
+     - luz de estúdio no fundo e o piso como laje (não só a malha de linhas);
+     - a SOMBRA da peça no piso (sombra/svgSombra): é o que apoia a peça no
+       chão. Só no quadro parado; girando, o desenho fica simples;
+     - o MATERIAL (botão "Material"): "Código" são as cores de conferência
+       (tipo de peça, parede, lado da água) e continua igual; "Real" pinta
+       tudo de aço galvanizado/galvalume, para apresentar. Vale para todos
+       os 3D e fica lembrado, como o fundo.
+   No papel (fichas e PDF) a sombra sai clara, sobre o branco.
+   Teste leitor-3d-realista. */
 window.RM3D=(function(){
   const F={
     escuro:{nome:'Escuro',f0:'#2b323a',f1:'#13171b',men:'rgba(255,255,255,.045)',mai:'rgba(255,255,255,.13)',borda:'rgba(255,255,255,.22)',txt:'#c9d1d9',rot:'#ffffff',traco:'#cfd6dd'},
@@ -4067,10 +4079,53 @@ window.RM3D=(function(){
     window.dispatchEvent(new CustomEvent('rm-3d-fundo',{detail:e}));
   }
   function proximo(){define(ORD[(ORD.indexOf(estilo())+1)%ORD.length]);}
-  function botao(cls){return '<button type="button"'+(cls?' class="'+cls+'"':'')+' data-fundo3d title="Trocar o fundo do 3D: escuro, claro ou blueprint">Fundo: '+S().nome+'</button>';}
+  /* mat: junto, o botão do material (nos 3D que têm cor de conferência) */
+  function botao(cls,mat){return '<button type="button"'+(cls?' class="'+cls+'"':'')+' data-fundo3d title="Trocar o fundo do 3D: escuro, claro ou blueprint">Fundo: '+S().nome+'</button>'
+    +(mat?'<button type="button"'+(cls?' class="'+cls+'"':'')+' data-mat3d title="Código: as cores de conferência. Real: tudo na cor do aço, para apresentar.">Material: '+(real()?'Real':'Código')+'</button>':'');}
   document.addEventListener('click',e=>{const b=e.target&&e.target.closest&&e.target.closest('[data-fundo3d]');if(b){e.preventDefault();e.stopPropagation();proximo();}},true);
   function passo(L){const b=Math.pow(10,Math.floor(Math.log10(Math.max(1e-9,L))));return [1,2,5,10].map(k=>k*b).find(x=>x>=L-1e-9)||10*b;}
-  function fundo(c,W,H){const g=c.createLinearGradient(0,0,0,H);g.addColorStop(0,S().f0);g.addColorStop(1,S().f1);c.fillStyle=g;c.fillRect(0,0,W,H);}
+  function fundo(c,W,H){const g=c.createLinearGradient(0,0,0,H);g.addColorStop(0,S().f0);g.addColorStop(1,S().f1);c.fillStyle=g;c.fillRect(0,0,W,H);
+    const r=c.createRadialGradient(W*.5,H*.6,0,W*.5,H*.6,Math.max(W,H)*.62);r.addColorStop(0,'rgba(255,255,255,'+brilho()+')');r.addColorStop(1,'rgba(255,255,255,0)');c.fillStyle=r;c.fillRect(0,0,W,H);}
+  const brilho=()=>estilo()==='claro'?.85:.10, laje=()=>estilo()==='claro'?.55:.045, forca=()=>estilo()==='claro'?.2:.46;
+  /* fundo de um 3D em SVG (escada, planificação): o mesmo do canvas */
+  function svgFundo(){return 'background:radial-gradient(ellipse at 50% 62%,rgba(255,255,255,'+brilho()+'),rgba(255,255,255,0) 62%),linear-gradient(180deg,'+S().f0+','+S().f1+')';}
+  /* MATERIAL: código (cores de conferência) ou real (aço) */
+  const ACO=[178,186,194];let mat=null;
+  function material(){if(!mat){try{mat=localStorage.getItem('rm_3d_material');}catch(_){}}return mat==='real'?'real':'codigo';}
+  function real(){return material()==='real';}
+  function defineMaterial(m){mat=m==='real'?'real':'codigo';try{localStorage.setItem('rm_3d_material',mat);}catch(_){}
+    document.querySelectorAll('[data-mat3d]').forEach(b=>{b.textContent='Material: '+(mat==='real'?'Real':'Código');});
+    window.dispatchEvent(new CustomEvent('rm-3d-fundo',{detail:estilo()}));}
+  document.addEventListener('click',e=>{const b=e.target&&e.target.closest&&e.target.closest('[data-mat3d]');if(b){e.preventDefault();e.stopPropagation();defineMaterial(real()?'codigo':'real');}},true);
+  /* SOMBRA NO PISO. A luz vem de cima, inclinada (LUZ = quanto a sombra
+     anda, nos dois eixos do piso, por unidade de altura). polys: polígonos
+     em coordenadas do mundo; proj(p) -> [x,y] nas unidades do contexto; up:
+     índice do eixo vertical; cota: a altura do piso. Pintada num canvas
+     pequeno (1/4) e ampliada: sai esfumada em qualquer navegador, sem
+     depender de filtro. alfa: no papel, passe um valor baixo. */
+  const LUZ=[.42,.62], sombras={};
+  function cai(p,up,cota){const h=[0,1,2].filter(i=>i!==up),q=p.slice(),d=Math.max(0,p[up]-cota);q[h[0]]+=LUZ[0]*d;q[h[1]]+=LUZ[1]*d;q[up]=cota;return q;}
+  function sombra(c,proj,polys,up,cota,alfa,nome){
+    if(nome)sombras[nome]=polys.length;
+    if(!polys.length)return;
+    const W=c.canvas.width,H=c.canvas.height,R=4,o=document.createElement('canvas');o.width=Math.max(1,Math.ceil(W/R));o.height=Math.max(1,Math.ceil(H/R));
+    const g=o.getContext('2d'),T=c.getTransform?c.getTransform():{a:1,d:1,e:0,f:0};
+    g.setTransform(T.a/R,0,0,T.d/R,T.e/R,T.f/R);g.fillStyle='#000';g.strokeStyle='#000';g.lineWidth=2.5*R/(T.a||1);g.lineJoin='round';
+    polys.forEach(P=>{g.beginPath();P.forEach((p,i)=>{const q=proj(cai(p,up,cota));i?g.lineTo(q[0],q[1]):g.moveTo(q[0],q[1]);});g.closePath();g.fill();g.stroke();});
+    c.save();c.setTransform(1,0,0,1,0,0);c.globalAlpha=alfa||forca();c.imageSmoothingEnabled=true;c.imageSmoothingQuality='high';c.drawImage(o,0,0,o.width*R,o.height*R);c.restore();
+  }
+  /* a mesma sombra para os 3D em SVG. pj(p) -> {x,y}; faces: polígonos do
+     mundo; tubos: [{a,b,d}] (linha com espessura); lw: o traço do desenho */
+  function svgSombra(pj,faces,tubos,up,cota,lw,alfa,nome){
+    if(nome)sombras[nome]=faces.length+(tubos||[]).length;
+    const xy=p=>{const q=pj(cai(p,up,cota));return q.x.toFixed(1)+' '+q.y.toFixed(1);};
+    return '<defs><filter id="rm3d-sb" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="'+(lw*3.2).toFixed(2)+'"/></filter></defs>'
+      +'<g class="rm3d-sombra" opacity="'+(alfa||forca())+'" filter="url(#rm3d-sb)" fill="#000" stroke="#000" stroke-linecap="round" stroke-linejoin="round">'
+      +faces.map(f=>'<path d="M'+f.map(xy).join('L')+'Z"/>').join('')
+      +(tubos||[]).map(t=>'<path d="M'+xy(t.a)+'L'+xy(t.b)+'" fill="none" stroke-width="'+t.d.toFixed(1)+'"/>').join('')+'</g>';
+  }
+  /* a laje do piso, em SVG (P = piso(min,max,up)) */
+  function svgLaje(P,pj){const B=P.linhas.filter(l=>l.t==='borda');return '<path class="rm3d-laje" d="M'+B.map(l=>{const q=pj(l.a);return q.x.toFixed(1)+' '+q.y.toFixed(1);}).join('L')+'Z" fill="rgba(255,255,255,'+laje()+')"/>';}
   /* as linhas do piso, em coordenadas do mundo: min/max é a caixa da peça,
      up o índice do eixo vertical. O piso cobre a peça com folga e nunca fica
      mais estreito que 60% do lado maior (uma tesoura é comprida e fina). */
@@ -4089,6 +4144,7 @@ window.RM3D=(function(){
   /* proj(p) -> [x,y] na tela; k = pixels do canvas por pixel de CSS */
   function chao(c,proj,min,max,up,k){
     const L=piso(min,max,up),St=S();k=k||1;
+    {const B=L.linhas.filter(l=>l.t==='borda');c.beginPath();B.forEach((l,i)=>{const p=proj(l.a);i?c.lineTo(p[0],p[1]):c.moveTo(p[0],p[1]);});c.closePath();c.fillStyle='rgba(255,255,255,'+laje()+')';c.fill();}
     L.linhas.forEach(l=>{const p=proj(l.a),q=proj(l.b);c.beginPath();c.moveTo(p[0],p[1]);c.lineTo(q[0],q[1]);
       c.strokeStyle=St[l.t];c.lineWidth=(l.t==='men'?.7:l.t==='mai'?1:1.2)*k;c.stroke();});
     return L.grade;
@@ -4119,7 +4175,8 @@ window.RM3D=(function(){
   /* o próprio bloco, para ir dentro do "3D para enviar": o arquivo enviado
      leva o código do desenho, e o desenho usa este bloco */
   function fonte(){const el=document.getElementById('rm3dBloco');return el?'<script>'+el.textContent+'<\/script>':'';}
-  return {F,ORD,estilo,S,define,proximo,botao,passo,fundo,piso,chao,gizmo,escala,fonte,ultimo:{}};
+  return {F,ORD,estilo,S,define,proximo,botao,passo,fundo,piso,chao,gizmo,escala,fonte,ultimo:{},
+    LUZ,ACO,sombras,sombra,svgSombra,svgLaje,svgFundo,material,real,defineMaterial};
 })();
 </script>
 <script>
@@ -11271,6 +11328,8 @@ function det3dDesenha(){
       d.pecas.forEach(p=>{if(D3.so&&D3.sel&&p!==D3.sel)return;[[p.a.x,p.a.y,p.z],[p.b.x,p.b.y,p.z]].forEach(q=>{for(let i=0;i<3;i++){mn[i]=Math.min(mn[i],q[i]);mx[i]=Math.max(mx[i],q[i]);}});});
       const m=Math.max(d.I.alma,d.E.alma,d.I.aba);mn[1]-=m;mn[2]-=m;mx[2]+=m;
       grade=RM3D.chao(g1,q=>{const v=det3dGira(q,d);return [X(v),Y(v)];},mn,mx,1,dpr);
+      /* sombra das peças no piso (cada perfil, a alma dele em pé) */
+      RM3D.sombra(g1,q=>{const v=det3dGira(q,d);return [X(v),Y(v)];},d.pecas.filter(p=>!(D3.so&&D3.sel&&p!==D3.sel)).map(p=>[[p.a.x,p.a.y,p.z],[p.b.x,p.b.y,p.z],[p.b.x,p.b.y,p.z+p.sec.alma],[p.a.x,p.a.y,p.z+p.sec.alma]]),1,mn[1],0,'detalhamento');
       B.px.set(new Uint32Array(g1.getImageData(0,0,w,h).data.buffer));
     }
   }
@@ -11281,7 +11340,7 @@ function det3dDesenha(){
   d.pecas.forEach(p=>{
     if(D3.so&&D3.sel&&p!==D3.sel)return;
     const sel=(p===D3.sel), vidro=D3.vidro&&p.tipo==='banzo'&&!sel;
-    const cor=det3dCorNum(sel?'#ffffff':p.cor,!sel);
+    const cor=det3dCorNum(sel?'#ffffff':RM3D.real()?(p.tipo==='banzo'||p.pontaBanzo?'#aab2bb':'#c3cad1'):p.cor,!sel);
     /* Largura da peça NA TELA. Na visão geral de uma tesoura de 41 m o perfil
        inteiro tem 2 px: ali a divisão alma/aba não cabe, e riscá-la só faz a
        peça virar tracejado. Abaixo de 5 px a peça vira uma coisa só e fica
@@ -11498,7 +11557,7 @@ function det3dAbrir(secoes){
             'Limpa a leitura, mas esconde a sobreposição do apoio — o comprimento de corte não muda.">'+
             'Aparar as pontas</button>'+
           '<button id="d3ab">Mostrar abertura do U</button><button id="d3so">Só a selecionada</button>'+
-          '<button id="d3em" class="on">Emendas e suportes</button>'+RM3D.botao()+'</div>'+
+          '<button id="d3em" class="on">Emendas e suportes</button>'+RM3D.botao('',1)+'</div>'+
         '<div class="d3aju">arrastar gira · Shift+arrastar desloca · a roda amplia onde o cursor está<br>dois cliques voltam ao encaixe da tela</div>'+
         '<div class="d3leg"><div><i style="background:'+D3COR.banzo+'"></i>banzo</div>'+
           '<div><i style="background:'+D3COR.principal+'"></i>diagonal principal</div>'+
@@ -11718,7 +11777,7 @@ function det3dExportarHTML(){
 '<button id="d3no">Pontos de encontro</button><button id="d3vi">Banzos translúcidos</button>'+
 '<button id="d3apr" title="Recua a ponta até a face da peça encontrada. Limpa a leitura, '+
   'mas esconde a sobreposição do apoio — o comprimento de corte não muda.">Aparar as pontas</button>'+
-'<button id="d3ab">Mostrar abertura do U</button><button id="d3so">Só a selecionada</button>'+RM3D.botao()+'</div>'+
+'<button id="d3ab">Mostrar abertura do U</button><button id="d3so">Só a selecionada</button>'+RM3D.botao('',1)+'</div>'+
 '<div class="d3aju">arrastar gira · Shift+arrastar desloca · a roda amplia onde o cursor está<br>dois cliques voltam ao encaixe da tela</div>'+
 '<div class="d3leg" id="d3leg"></div></div>'+
 '<aside><div class="cx trava"><h4>Regra bloqueada</h4><div class="b">'+
@@ -14538,13 +14597,15 @@ function tlh3dDesenha(){
     d.quads.forEach(q=>q.pts.forEach(p=>{for(let i=0;i<3;i++){if(p[i]<mn[i])mn[i]=p[i];if(p[i]>mx[i])mx[i]=p[i];}}));d.caixa={mn,mx};}
   const dpr=devicePixelRatio||1;
   const grade=T3.pitch<-0.01?0:RM3D.chao(ctx,v=>{const g=tlh3dGira(v);return [X(g),Y(g)];},d.caixa.mn,d.caixa.mx,1,dpr);
+  if(!T3.arrastando&&T3.pitch>=-0.01)RM3D.sombra(ctx,v=>{const g=tlh3dGira(v);return [X(g),Y(g)];},d.quads.filter(q=>q.tipo!=='recorte').map(q=>q.pts),1,d.caixa.mn[1],0,'fechamento');
+  const realT=RM3D.real();
   const pr=d.quads.map(q=>{const V=q.pts.map(tlh3dGira);
     return {q,V,z:(V[0][2]+V[1][2]+V[2][2]+V[3][2])/4};}).sort((a,b)=>a.z-b.z);
   pr.forEach(({q,V})=>{
     ctx.beginPath(); V.forEach((v,i)=>{const x=X(v),y=Y(v); i?ctx.lineTo(x,y):ctx.moveTo(x,y);});
     ctx.closePath();
     if(q.tipo==='recorte'){ ctx.fillStyle='rgba(179,18,60,.55)'; ctx.fill(); return; }
-    const base=q.cor||(q.estreita?[214,170,110]:[178,186,194]);
+    const base=realT?(q.estreita?[206,212,218]:RM3D.ACO):(q.cor||(q.estreita?[214,170,110]:[178,186,194]));
     const rgb=k=>'rgb('+base.map(c=>Math.max(0,Math.min(255,Math.round(c*q.luz*k)))).join(',')+')';
     /* O brilho da onda e' um gradiente NOVO por quadrilatero -- numa obra
        inteira sao milhares por quadro, e era o custo que dominava o arrasto.
@@ -14554,7 +14615,7 @@ function tlh3dDesenha(){
     if(T3.arrastando){ ctx.fillStyle=rgb(1.0); ctx.fill(); }
     else{
       const brilho=ctx.createLinearGradient(X(V[0]),Y(V[0]),X(V[1]),Y(V[1]));
-      brilho.addColorStop(0,rgb(.82));brilho.addColorStop(.48,rgb(1.10));brilho.addColorStop(1,rgb(.88));
+      brilho.addColorStop(0,rgb(.66));brilho.addColorStop(.42,rgb(1.18));brilho.addColorStop(.6,rgb(1.0));brilho.addColorStop(1,rgb(.76));
       ctx.fillStyle=brilho;ctx.fill();
     }
     /* O fio branco de .075 no contorno de cada quadrilatero tambem so' sai
@@ -14567,7 +14628,7 @@ function tlh3dDesenha(){
   (d.linhas||[]).forEach(l=>{
     const a=tlh3dGira(l.a),b=tlh3dGira(l.b);
     ctx.beginPath();ctx.moveTo(X(a),Y(a));ctx.lineTo(X(b),Y(b));
-    ctx.strokeStyle='rgba(255,255,255,.72)';ctx.lineWidth=Math.max(1,devicePixelRatio*.8);ctx.stroke();
+    ctx.strokeStyle=realT?'rgba(20,24,30,.6)':'rgba(255,255,255,.72)';ctx.lineWidth=Math.max(1,devicePixelRatio*.8);ctx.stroke();
   });
   /* NOME DE CADA GRUPO, FLUTUANDO NA PROPRIA PAREDE.
      So existe no Conjunto completo -- olhando uma face por vez o nome ja
@@ -14837,7 +14898,7 @@ function tlh3dAbrir(){
           '<button data-v="iso">3D</button><button data-v="frente">Frente</button>'+
           '<button data-v="topo">Topo</button><button data-v="perfil">Perfil da telha</button>'+
           '<span class="d3sep"></span><button id="tl3rec">Mostrar o recorte</button>'+
-          '<button id="tl3on">Realçar a onda</button>'+RM3D.botao()+'</div>'+
+          '<button id="tl3on">Realçar a onda</button>'+RM3D.botao('',1)+'</div>'+
         '<div class="d3aju">arrastar gira · Shift+arrastar desloca · a roda amplia onde o cursor está<br>'+
           'dois cliques voltam ao encaixe da tela</div>'+
         '<div class="d3leg"><div><i style="background:#d3421b"></i><i style="background:#3472a6;margin-left:-4px"></i><i style="background:#2e8654;margin-left:-4px"></i>uma cor por parede</div>'+
@@ -14926,7 +14987,7 @@ function tlh3dExportarHTML(){
 '<div class="tela"><canvas id="tl3cv"></canvas>'+
 '<div class="bar" id="tl3bar"><button data-v="iso">3D</button><button data-v="frente">Frente</button>'+
 '<button data-v="topo">Topo</button><button data-v="perfil">Perfil</button>'+
-'<button id="tl3rec">Recorte</button><button id="tl3on">Onda</button>'+RM3D.botao()+'</div></div>'+
+'<button id="tl3rec">Recorte</button><button id="tl3on">Onda</button>'+RM3D.botao('',1)+'</div></div>'+
 '<footer><div id="tl3info">—</div>'+
 '<div class="leg"><span><i style="background:#d3421b"></i>uma cor por parede</span>'+
 '<span><i style="background:#e9a58f"></i>mais clara: cortada na largura</span>'+
@@ -20745,22 +20806,26 @@ function plnPinta3D(papel,alvo){
   const St=RM3D.S();
   let s='<svg class="pln-svg pln-3d" viewBox="'+((x0+x1)/2-vw/zoom/2).toFixed(2)+' '+((y0+y1)/2-vh/zoom/2).toFixed(2)+' '+
         (vw/zoom).toFixed(2)+' '+(vh/zoom).toFixed(2)+'" preserveAspectRatio="xMidYMid meet"'+
-        (papel?'':' style="background:linear-gradient(180deg,'+St.f0+','+St.f1+')"')+'>';
+        (papel?'':' style="'+RM3D.svgFundo()+'"')+'>';
   /* piso de engenharia (RM3D) na cota mais baixa da peça -- só na tela;
-     no papel e na imagem para o fabricante a peça sai limpa */
+     no papel e na imagem para o fabricante a peça sai limpa, só com a
+     sombra clara embaixo */
   let grade=0;
+  const mn=[1e15,1e15,1e15],mx=[-1e15,-1e15,-1e15];
+  faces.forEach(f=>f.forEach(p=>{for(let i=0;i<3;i++){if(p[i]<mn[i])mn[i]=p[i];if(p[i]>mx[i])mx[i]=p[i];}}));
+  const pj3=p=>plnProj3(p,az,el,rot);
+  if(papel&&el>=-0.01)s+=RM3D.svgSombra(pj3,faces,null,1,mn[1],lw,.12,'planificacaoPapel');
   if(!papel&&el>=-0.01){
-    const mn=[1e15,1e15,1e15],mx=[-1e15,-1e15,-1e15];
-    faces.forEach(f=>f.forEach(p=>{for(let i=0;i<3;i++){if(p[i]<mn[i])mn[i]=p[i];if(p[i]>mx[i])mx[i]=p[i];}}));
     const P=RM3D.piso(mn,mx,1);grade=P.grade;
-    s+='<g class="pln-chao">'+P.linhas.map(l=>{const a=plnProj3(l.a,az,el,rot),b=plnProj3(l.b,az,el,rot);
+    s+=RM3D.svgLaje(P,pj3)+'<g class="pln-chao">'+P.linhas.map(l=>{const a=plnProj3(l.a,az,el,rot),b=plnProj3(l.b,az,el,rot);
       return '<line x1="'+a.x.toFixed(2)+'" y1="'+a.y.toFixed(2)+'" x2="'+b.x.toFixed(2)+'" y2="'+b.y.toFixed(2)+'" stroke="'+St[l.t]+'" stroke-width="'+(lw*(l.t==='men'?.7:l.t==='mai'?1:1.2)).toFixed(3)+'"/>';}).join('')+'</g>';
+    s+=RM3D.svgSombra(pj3,faces,null,1,mn[1],lw,0,'planificacao');
   }
   proj.forEach(f=>{
-    const tom=Math.round(f.thin?75+65*f.luz:125+115*f.luz);
+    const tom=Math.round(f.thin?62+78*f.luz:96+146*f.luz);
     const cor='rgb('+Math.round(tom*0.98)+','+Math.round(tom*0.99)+','+tom+')';
     s+='<path d="'+f.q.map((p,i)=>(i?'L':'M')+p.x.toFixed(2)+' '+p.y.toFixed(2)).join('')+
-       'Z" fill="'+cor+'" stroke="#2b3138" stroke-width="'+lw.toFixed(3)+'" stroke-linejoin="round"/>';
+       'Z" fill="'+cor+'" stroke="rgba(22,26,32,.6)" stroke-width="'+(lw*.8).toFixed(3)+'" stroke-linejoin="round"/>';
   });
   if(PLN.viewOptions?.highlight){
     let lines=faces.bends||[];
@@ -22925,7 +22990,7 @@ pane.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('bu
     notice('K '+plnNum(PLN.k,3)+' guardado para '+plnMat().rot.toLowerCase()+' '+plnNum(PLN.esp,2)+' mm. Trocando para esta chapa, ele volta sozinho.');}
 });
 (function(){const r0=refresh;refresh=function(){r0();kHint();};})();
-window.__plnTeste={pinta3D:()=>plnPinta3D(),PLN:()=>PLN,kBase:()=>kBase(),kChave:()=>kChave(),secao:()=>plnSecaoPontos(),ordem:(t,d)=>plnOrdemDobra(t,d)};
+window.__plnTeste={pinta3D:(papel)=>plnPinta3D(papel),PLN:()=>PLN,kBase:()=>kBase(),kChave:()=>kChave(),secao:()=>plnSecaoPontos(),ordem:(t,d)=>plnOrdemDobra(t,d)};
 kAferidoAplica();
 plnPinta();history=[];future=[];last=snapshot();refresh();kAferidoPinta();
 })();
@@ -24685,28 +24750,33 @@ function pinta3D(box,papel){
   const zoom=papel?1:Math.max(.4,Math.min(5,V.zoom||1)),telaPx=papel||Math.max(200,(box.clientWidth||600)-2),lw=Math.max(vw/1100,.7*vw/zoom/telaPx);
   const St=RM3D.S();
   let s='<svg class="es-3d" viewBox="'+((x0+x1)/2-vw/zoom/2).toFixed(1)+' '+((y0+y1)/2-vh/zoom/2).toFixed(1)+' '+(vw/zoom).toFixed(1)+' '+(vh/zoom).toFixed(1)+'" preserveAspectRatio="xMidYMid meet"'
-    +(papel?'':' style="background:linear-gradient(180deg,'+St.f0+','+St.f1+')"')+'>';
+    +(papel?'':' style="'+RM3D.svgFundo()+'"')+'>';
+  /* a sombra da escada no piso (cota 0); no papel, clara */
+  const SOMBRA=(alfa,nome)=>RM3D.svgSombra(pj,S3.F.map(f=>f.pts),S3.T.filter(t=>!t.em),1,0,lw,alfa,nome);
+  if(papel)s+=SOMBRA(.13,'escadaPapel');
   let grade=0;
   if(!papel&&el>=-0.01){const mn=[1e15,0,1e15],mx=[-1e15,1,-1e15];
     S3.F.forEach(f=>f.pts.forEach(p=>{for(const i of [0,2]){if(p[i]<mn[i])mn[i]=p[i];if(p[i]>mx[i])mx[i]=p[i];}}));
     const P=RM3D.piso(mn,mx,1);grade=P.grade;
-    s+='<g>'+P.linhas.map(l=>{const a=pj(l.a),b=pj(l.b);return '<line x1="'+a.x.toFixed(1)+'" y1="'+a.y.toFixed(1)+'" x2="'+b.x.toFixed(1)+'" y2="'+b.y.toFixed(1)+'" stroke="'+St[l.t]+'" stroke-width="'+(lw*(l.t==='men'?.7:l.t==='mai'?1:1.2)).toFixed(2)+'"/>';}).join('')+'</g>';}
-  const cor=(c,l)=>{const t=c==='u'?100+105*l:c==='x'?150+95*l:120+100*l;
+    s+=RM3D.svgLaje(P,pj)+'<g>'+P.linhas.map(l=>{const a=pj(l.a),b=pj(l.b);return '<line x1="'+a.x.toFixed(1)+'" y1="'+a.y.toFixed(1)+'" x2="'+b.x.toFixed(1)+'" y2="'+b.y.toFixed(1)+'" stroke="'+St[l.t]+'" stroke-width="'+(lw*(l.t==='men'?.7:l.t==='mai'?1:1.2)).toFixed(2)+'"/>';}).join('')+'</g>';
+    s+=SOMBRA(0,'escada');}
+  const cor=(c,l)=>{const t=c==='u'?62+175*l:c==='x'?120+130*l:95+140*l;
     return c==='u'?'rgb('+Math.round(t*.86)+','+Math.round(t*.92)+','+Math.round(t)+')':'rgb('+Math.round(t)+','+Math.round(t*.99)+','+Math.round(t*.96)+')';};
   it.forEach(f=>{
     if(f.tubo){const [a,b]=f.tubo,L='x1="'+a.x.toFixed(1)+'" y1="'+a.y.toFixed(1)+'" x2="'+b.x.toFixed(1)+'" y2="'+b.y.toFixed(1)+'"';
       if(f.em){s+='<line '+L+' stroke="#2b3138" stroke-width="'+(f.d+lw*2).toFixed(1)+'" stroke-linecap="butt"/><line '+L+' stroke="#F24619" stroke-width="'+f.d.toFixed(1)+'" stroke-linecap="butt"/>';return;}
       /* tubo em pedaços: preenchido sem traço entre eles; contorno só dos
          lados e das pontas de verdade (ini/fim) */
-      {const dx=b.x-a.x,dy=b.y-a.y,Ln=Math.hypot(dx,dy)||1,nx=-dy/Ln*f.d/2,ny=dx/Ln*f.d/2,fc=f.qd?'#9aa3ad':'#c9d0d8';
+      {const dx=b.x-a.x,dy=b.y-a.y,Ln=Math.hypot(dx,dy)||1,nx=-dy/Ln*f.d/2,ny=dx/Ln*f.d/2,fc=f.qd?'#8e98a3':'#b4bcc6',up=ny>0?-1:1;
         const Q=(p,k)=>(p.x+nx*k).toFixed(1)+' '+(p.y+ny*k).toFixed(1);
         s+='<path d="M'+Q(a,1)+'L'+Q(b,1)+'L'+Q(b,-1)+'L'+Q(a,-1)+'Z" fill="'+fc+'" stroke="'+fc+'" stroke-width="'+(lw*.6).toFixed(2)+'"/>'
-          +(f.qd?'':'<line '+L+' stroke="rgba(255,255,255,.5)" stroke-width="'+(f.d*.22).toFixed(1)+'"/>')
-          +'<path d="M'+Q(a,1)+'L'+Q(b,1)+'M'+Q(a,-1)+'L'+Q(b,-1)+(f.ini?'M'+Q(a,1)+'L'+Q(a,-1):'')+(f.fim?'M'+Q(b,1)+'L'+Q(b,-1):'')+'" fill="none" stroke="#2b3138" stroke-width="'+lw.toFixed(2)+'"/>';return;}}
+          +'<path d="M'+Q(a,-.55*up)+'L'+Q(b,-.55*up)+'" stroke="rgba(0,0,0,.30)" stroke-width="'+(f.d*.42).toFixed(1)+'" fill="none"/>'
+          +'<path d="M'+Q(a,.38*up)+'L'+Q(b,.38*up)+'" stroke="rgba(255,255,255,.78)" stroke-width="'+(f.d*.2).toFixed(1)+'" fill="none"/>'
+          +'<path d="M'+Q(a,1)+'L'+Q(b,1)+'M'+Q(a,-1)+'L'+Q(b,-1)+(f.ini?'M'+Q(a,1)+'L'+Q(a,-1):'')+(f.fim?'M'+Q(b,1)+'L'+Q(b,-1):'')+'" fill="none" stroke="rgba(22,26,32,.6)" stroke-width="'+(lw*.8).toFixed(2)+'"/>';return;}}
     const fc=cor(f.c,f.luz),pt=p=>p.x.toFixed(1)+' '+p.y.toFixed(1);
     if(f.bordas){s+='<path d="M'+f.q.map(pt).join('L')+'Z" fill="'+fc+'" stroke="'+fc+'" stroke-width="'+(lw*.9).toFixed(2)+'" stroke-linejoin="round"/>';
-      if(f.bordas.length)s+='<path d="'+f.bordas.map(i=>'M'+pt(f.q[i])+'L'+pt(f.q[(i+1)%4])).join('')+'" fill="none" stroke="#2b3138" stroke-width="'+lw.toFixed(2)+'" stroke-linecap="round"/>';}
-    else s+='<path d="'+f.q.map((p,i)=>(i?'L':'M')+pt(p)).join('')+'Z" fill="'+fc+'" stroke="#2b3138" stroke-width="'+lw.toFixed(2)+'" stroke-linejoin="round"/>';
+      if(f.bordas.length)s+='<path d="'+f.bordas.map(i=>'M'+pt(f.q[i])+'L'+pt(f.q[(i+1)%4])).join('')+'" fill="none" stroke="rgba(22,26,32,.6)" stroke-width="'+(lw*.8).toFixed(2)+'" stroke-linecap="round"/>';}
+    else s+='<path d="'+f.q.map((p,i)=>(i?'L':'M')+pt(p)).join('')+'Z" fill="'+fc+'" stroke="rgba(22,26,32,.6)" stroke-width="'+(lw*.8).toFixed(2)+'" stroke-linejoin="round"/>';
     if(f.deco){const d=f.deco.txt.replace(/M([-\d.e]+) ([-\d.e]+) ([-\d.e]+)L([-\d.e]+) ([-\d.e]+) ([-\d.e]+)/g,(m0,ax,ay,az2,bx,by,bz)=>{
         const a=pj([+ax,+ay,+az2]),b=pj([+bx,+by,+bz]);return 'M'+a.x.toFixed(1)+' '+a.y.toFixed(1)+'L'+b.x.toFixed(1)+' '+b.y.toFixed(1);});
       s+='<path class="es-xz" d="'+d+'" stroke="rgba(38,44,52,.55)" stroke-width="7" stroke-linecap="round" fill="none"/>'
@@ -28602,6 +28672,7 @@ html[data-theme="escuro"] .log-det>summary.err{color:var(--red)}.log-det>summary
   const COB_RGB_COR=['242,70,25','77,131,173','201,138,30','74,138,95'];
   function cobCor3D(mapa,b,bi,alfa){
     const c=mapa&&mapa.get(b);
+    if(RM3D.real())return 'rgba('+RM3D.ACO.map((v,i)=>Math.round(v*((c?c.i:bi)%2?.93:1))).join(',')+',.97)';
     return 'rgba('+COB_RGB_COR[c?c.i:(bi%2)]+','+alfa+')';
   }
   /* de onde para onde, em palavras de quem olha a planta */
@@ -28832,7 +28903,7 @@ html[data-theme="escuro"] .log-det>summary.err{color:var(--red)}.log-det>summary
     const el=document.createElement('div');el.id='cob3ov';
     el.innerHTML='<div class="d3top"><div class="d3tit"><h3>Conferência 3D da cobertura</h3><p id="cob3sub"></p></div><button class="btn ghost" id="cob3close">Fechar</button></div>'+ 
       '<div class="d3corpo"><div class="d3tela"><canvas id="cob3cv"></canvas><div class="d3bar">'+ 
-      '<button data-v="iso">3D</button><button data-v="top">Superior</button><button data-v="baixo">Inferior</button><button data-v="frente">Frontal</button><button data-v="lado">Lateral</button>'+RM3D.botao()+ 
+      '<button data-v="iso">3D</button><button data-v="top">Superior</button><button data-v="baixo">Inferior</button><button data-v="frente">Frontal</button><button data-v="lado">Lateral</button>'+RM3D.botao('',1)+ 
       '</div><div class="d3aju">arrastar gira · a roda amplia<br>as linhas mostram cada largura útil</div></div>'+ 
       '<aside class="d3lado"><h4>Leitura confirmada</h4><div class="cob3res" id="cob3res"></div>'+ 
       '<div class="cob3leg" id="cob3leg"></div></aside></div>';
@@ -28984,9 +29055,13 @@ html[data-theme="escuro"] .log-det>summary.err{color:var(--red)}.log-det>summary
      e' o que o clique usa depois para saber em qual nome a pessoa tocou. */
   /* Cenário de engenharia (fundo, piso, eixos e escala): bloco RM3D,
      o mesmo dos outros 3D do leitor. Aqui X e Y são a planta e Z sobe. */
-  function c3Cenario(c,W,H,tr,sx,sy,min,max){
+  function c3Cenario(c,W,H,tr,sx,sy,min,max,polys){
+    const pj=p=>{const q=tr(p);return [sx(q),sy(q)];};
+    /* ficha do montador (papel): fundo branco, sem piso, e a sombra clara */
+    if(C3.ficha){c.fillStyle='#fff';c.fillRect(0,0,W,H);if(polys&&C3.pitch>=0)RM3D.sombra(c,pj,polys,2,min[2],.1,'coberturaFicha');return;}
     RM3D.fundo(c,W,H);
-    const grade=C3.pitch<0?0:RM3D.chao(c,p=>{const q=tr(p);return [sx(q),sy(q)];},min,max,2,1);
+    const grade=C3.pitch<0?0:RM3D.chao(c,pj,min,max,2,1);
+    if(polys&&C3.pitch>=0)RM3D.sombra(c,pj,polys,2,min[2],0,'cobertura');
     RM3D.ultimo.cobertura={estilo:RM3D.estilo(),grade};
   }
   function c3Gizmo(c,W,H,tr,sc){
@@ -29120,7 +29195,7 @@ html[data-theme="escuro"] .log-det>summary.err{color:var(--red)}.log-det>summary
     const tr=p=>{let x=p[0]-cen[0],y=p[1]-cen[1],z=p[2]-cen[2];const xr=x*co-y*si,yr=x*si+y*co;return {x:xr,y:-(z*cp-yr*sp),d:yr*cp+z*sp};};
     const pp=todos.map(tr),mnX=Math.min(...pp.map(p=>p.x)),mxX=Math.max(...pp.map(p=>p.x)),mnY=Math.min(...pp.map(p=>p.y)),mxY=Math.max(...pp.map(p=>p.y));
     const sc=Math.min((W-90)/Math.max(1,mxX-mnX),(H-90)/Math.max(1,mxY-mnY))*C3.zoom,sx=p=>(p.x-(mnX+mxX)/2)*sc+W/2,sy=p=>(p.y-(mnY+mxY)/2)*sc+H/2;
-    if(C3.ficha){c.fillStyle='#fff';c.fillRect(0,0,W,H);}else c3Cenario(c,W,H,tr,sx,sy,min,max);
+    c3Cenario(c,W,H,tr,sx,sy,min,max,paineis.map(x=>x.p));
     paineis.map(x=>({...x,q:x.p.map(tr)})).sort((a,b)=>a.q.reduce((s,p)=>s+p.d,0)-b.q.reduce((s,p)=>s+p.d,0)).forEach(x=>{
       c.beginPath();x.q.forEach((p,i)=>i?c.lineTo(sx(p),sy(p)):c.moveTo(sx(p),sy(p)));c.closePath();c.fillStyle=x.cor;c.fill();c.strokeStyle='#bfc7cf';c.lineWidth=1.2;c.stroke();
     });
@@ -29182,7 +29257,7 @@ html[data-theme="escuro"] .log-det>summary.err{color:var(--red)}.log-det>summary
     const tr=p=>{let x=p[0]-cen[0],y=p[1]-cen[1],z=p[2]-cen[2];const xr=x*co-y*si,yr=x*si+y*co;return {x:xr,y:-(z*cp-yr*sp),d:yr*cp+z*sp};};
     const pp=todos.map(tr),mnX=Math.min(...pp.map(p=>p.x)),mxX=Math.max(...pp.map(p=>p.x)),mnY=Math.min(...pp.map(p=>p.y)),mxY=Math.max(...pp.map(p=>p.y));
     const sc=Math.min((W-90)/Math.max(1,mxX-mnX),(H-90)/Math.max(1,mxY-mnY))*C3.zoom,sx=p=>(p.x-(mnX+mxX)/2)*sc+W/2,sy=p=>(p.y-(mnY+mxY)/2)*sc+H/2;
-    if(C3.ficha){c.fillStyle='#fff';c.fillRect(0,0,W,H);}else c3Cenario(c,W,H,tr,sx,sy,min,max);
+    c3Cenario(c,W,H,tr,sx,sy,min,max,paineis.map(x=>x.p));
     paineis.map(x=>({...x,q:x.p.map(tr)})).sort((a,b)=>a.q.reduce((s,p)=>s+p.d,0)-b.q.reduce((s,p)=>s+p.d,0)).forEach(x=>{
       c.beginPath();x.q.forEach((p,i)=>i?c.lineTo(sx(p),sy(p)):c.moveTo(sx(p),sy(p)));c.closePath();c.fillStyle=x.cor;c.fill();c.strokeStyle='#d7dde3';c.lineWidth=1.25;c.stroke();
     });
@@ -29221,10 +29296,10 @@ html[data-theme="escuro"] .log-det>summary.err{color:var(--red)}.log-det>summary
     const sx=p=>(p.x-(minX+maxX)/2)*sc+W/2,sy=p=>(p.y-(minY+maxY)/2)*sc+H/2;
     const poly=(arr,fill,stroke)=>{const p=arr.map(tr);c.beginPath();p.forEach((q,i)=>i?c.lineTo(sx(q),sy(q)):c.moveTo(sx(q),sy(q)));c.closePath();c.fillStyle=fill;c.fill();c.strokeStyle=stroke;c.lineWidth=1.5;c.stroke();};
     const linha=(p,q,cor,w=1)=>{p=tr(p);q=tr(q);c.beginPath();c.moveTo(sx(p),sy(p));c.lineTo(sx(q),sy(q));c.strokeStyle=cor;c.lineWidth=w;c.stroke();};
-    {const P3=[...A,...(B||[]),...base];c3Cenario(c,W,H,tr,sx,sy,[0,1,2].map(i=>Math.min(...P3.map(p=>p[i]))),[0,1,2].map(i=>Math.max(...P3.map(p=>p[i]))));}
+    {const P3=[...A,...(B||[]),...base];c3Cenario(c,W,H,tr,sx,sy,[0,1,2].map(i=>Math.min(...P3.map(p=>p[i]))),[0,1,2].map(i=>Math.max(...P3.map(p=>p[i]))),[A].concat(B?[B]:[]));}
     poly(base,'#353b42','#59616a');
-    const planos=[{p:A,fill:'rgba(242,70,25,.72)',cor:'#ff7a53',a,ini:[0,0,0],fim:[0,yA,zA]}];
-    if(B)planos.push({p:B,fill:'rgba(77,131,173,.72)',cor:'#82b7df',a:b,ini:[0,yA+yB,0],fim:[0,yA,zB]});
+    const planos=[{p:A,fill:cobCor3D(null,null,0,'.72'),cor:'#ff7a53',a,ini:[0,0,0],fim:[0,yA,zA]}];
+    if(B)planos.push({p:B,fill:cobCor3D(null,null,1,'.72'),cor:'#82b7df',a:b,ini:[0,yA+yB,0],fim:[0,yA,zB]});
     planos.sort((u,v)=>u.p.map(tr).reduce((s,p)=>s+p.d,0)-v.p.map(tr).reduce((s,p)=>s+p.d,0)).forEach(pl=>poly(pl.p,pl.fill,pl.cor));
     const gx=cumSimplesFaixas().flatMap(f=>f.gomos);
     telhaPintaRelevo(c,telhaRelevo(planos.flatMap(pl=>gx.map(x=>({a:[x,pl.ini[1],pl.ini[2]],b:[x,pl.fim[1],pl.fim[2]],du:[1,0,0]})))),tr,sx,sy);
@@ -30270,7 +30345,7 @@ if('serviceWorker' in navigator && location.protocol.startsWith('http')){
 }
 </script>
 <script>/* versão publicada (PADRAO_RM.md §3): sobe a cada publicação, junto com o CACHE do sw.js */
-const APP_VER='v264';
+const APP_VER='v265';
 </script>
 <script id="rmVersaoBloco">
 /* ===== SELO DE VERSÃO — igual em todos os sistemas (PADRAO_RM.md §3) =====

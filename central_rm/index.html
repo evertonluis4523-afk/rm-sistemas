@@ -4838,7 +4838,7 @@ const APP_VER='v154';
   const ETIQ_ACCESS = ['engenharia@rmestruturas.com.br'];
   /* PREÇOS: catálogo de consulta (custo do fornecedor, o menor) publicado pelo
      Orçamento RM em catalogo_precos. Só leitura. */
-  const PRECOS_ACCESS = ['engenharia@rmestruturas.com.br'];
+  const PRECOS_ACCESS = ['arquitetarm@rmestruturas.com.br'];
   function podePrecos() {
     return isAdminUser() || (!!CURRENT_EMAIL && PRECOS_ACCESS.includes(CURRENT_EMAIL.toLowerCase()));
   }

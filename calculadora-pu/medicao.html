@@ -2233,7 +2233,19 @@ else comeca();
    vista e barra de escala. Três estilos -- escuro (CAD), claro (papel) e
    blueprint --, trocados pelo botão "Fundo" de qualquer 3D; a escolha vale
    para todos e fica lembrada neste aparelho. Convenção dos eixos: X ao longo
-   da peça, Z para cima, Y a profundidade. */
+   da peça, Z para cima, Y a profundidade.
+
+   MAIS REALISMO ("melhoria visual, mais realismo, para os 3D e para o que
+   vai para a impressão"): o mesmo bloco dá a todos os 3D
+     - luz de estúdio no fundo e o piso como laje (não só a malha de linhas);
+     - a SOMBRA da peça no piso (sombra/svgSombra): é o que apoia a peça no
+       chão. Só no quadro parado; girando, o desenho fica simples;
+     - o MATERIAL (botão "Material"): "Código" são as cores de conferência
+       (tipo de peça, parede, lado da água) e continua igual; "Real" pinta
+       tudo de aço galvanizado/galvalume, para apresentar. Vale para todos
+       os 3D e fica lembrado, como o fundo.
+   No papel (fichas e PDF) a sombra sai clara, sobre o branco.
+   Teste leitor-3d-realista. */
 window.RM3D=(function(){
   const F={
     escuro:{nome:'Escuro',f0:'#2b323a',f1:'#13171b',men:'rgba(255,255,255,.045)',mai:'rgba(255,255,255,.13)',borda:'rgba(255,255,255,.22)',txt:'#c9d1d9',rot:'#ffffff',traco:'#cfd6dd'},
@@ -2251,10 +2263,53 @@ window.RM3D=(function(){
     window.dispatchEvent(new CustomEvent('rm-3d-fundo',{detail:e}));
   }
   function proximo(){define(ORD[(ORD.indexOf(estilo())+1)%ORD.length]);}
-  function botao(cls){return '<button type="button"'+(cls?' class="'+cls+'"':'')+' data-fundo3d title="Trocar o fundo do 3D: escuro, claro ou blueprint">Fundo: '+S().nome+'</button>';}
+  /* mat: junto, o botão do material (nos 3D que têm cor de conferência) */
+  function botao(cls,mat){return '<button type="button"'+(cls?' class="'+cls+'"':'')+' data-fundo3d title="Trocar o fundo do 3D: escuro, claro ou blueprint">Fundo: '+S().nome+'</button>'
+    +(mat?'<button type="button"'+(cls?' class="'+cls+'"':'')+' data-mat3d title="Código: as cores de conferência. Real: tudo na cor do aço, para apresentar.">Material: '+(real()?'Real':'Código')+'</button>':'');}
   document.addEventListener('click',e=>{const b=e.target&&e.target.closest&&e.target.closest('[data-fundo3d]');if(b){e.preventDefault();e.stopPropagation();proximo();}},true);
   function passo(L){const b=Math.pow(10,Math.floor(Math.log10(Math.max(1e-9,L))));return [1,2,5,10].map(k=>k*b).find(x=>x>=L-1e-9)||10*b;}
-  function fundo(c,W,H){const g=c.createLinearGradient(0,0,0,H);g.addColorStop(0,S().f0);g.addColorStop(1,S().f1);c.fillStyle=g;c.fillRect(0,0,W,H);}
+  function fundo(c,W,H){const g=c.createLinearGradient(0,0,0,H);g.addColorStop(0,S().f0);g.addColorStop(1,S().f1);c.fillStyle=g;c.fillRect(0,0,W,H);
+    const r=c.createRadialGradient(W*.5,H*.6,0,W*.5,H*.6,Math.max(W,H)*.62);r.addColorStop(0,'rgba(255,255,255,'+brilho()+')');r.addColorStop(1,'rgba(255,255,255,0)');c.fillStyle=r;c.fillRect(0,0,W,H);}
+  const brilho=()=>estilo()==='claro'?.85:.10, laje=()=>estilo()==='claro'?.55:.045, forca=()=>estilo()==='claro'?.2:.46;
+  /* fundo de um 3D em SVG (escada, planificação): o mesmo do canvas */
+  function svgFundo(){return 'background:radial-gradient(ellipse at 50% 62%,rgba(255,255,255,'+brilho()+'),rgba(255,255,255,0) 62%),linear-gradient(180deg,'+S().f0+','+S().f1+')';}
+  /* MATERIAL: código (cores de conferência) ou real (aço) */
+  const ACO=[178,186,194];let mat=null;
+  function material(){if(!mat){try{mat=localStorage.getItem('rm_3d_material');}catch(_){}}return mat==='real'?'real':'codigo';}
+  function real(){return material()==='real';}
+  function defineMaterial(m){mat=m==='real'?'real':'codigo';try{localStorage.setItem('rm_3d_material',mat);}catch(_){}
+    document.querySelectorAll('[data-mat3d]').forEach(b=>{b.textContent='Material: '+(mat==='real'?'Real':'Código');});
+    window.dispatchEvent(new CustomEvent('rm-3d-fundo',{detail:estilo()}));}
+  document.addEventListener('click',e=>{const b=e.target&&e.target.closest&&e.target.closest('[data-mat3d]');if(b){e.preventDefault();e.stopPropagation();defineMaterial(real()?'codigo':'real');}},true);
+  /* SOMBRA NO PISO. A luz vem de cima, inclinada (LUZ = quanto a sombra
+     anda, nos dois eixos do piso, por unidade de altura). polys: polígonos
+     em coordenadas do mundo; proj(p) -> [x,y] nas unidades do contexto; up:
+     índice do eixo vertical; cota: a altura do piso. Pintada num canvas
+     pequeno (1/4) e ampliada: sai esfumada em qualquer navegador, sem
+     depender de filtro. alfa: no papel, passe um valor baixo. */
+  const LUZ=[.42,.62], sombras={};
+  function cai(p,up,cota){const h=[0,1,2].filter(i=>i!==up),q=p.slice(),d=Math.max(0,p[up]-cota);q[h[0]]+=LUZ[0]*d;q[h[1]]+=LUZ[1]*d;q[up]=cota;return q;}
+  function sombra(c,proj,polys,up,cota,alfa,nome){
+    if(nome)sombras[nome]=polys.length;
+    if(!polys.length)return;
+    const W=c.canvas.width,H=c.canvas.height,R=4,o=document.createElement('canvas');o.width=Math.max(1,Math.ceil(W/R));o.height=Math.max(1,Math.ceil(H/R));
+    const g=o.getContext('2d'),T=c.getTransform?c.getTransform():{a:1,d:1,e:0,f:0};
+    g.setTransform(T.a/R,0,0,T.d/R,T.e/R,T.f/R);g.fillStyle='#000';g.strokeStyle='#000';g.lineWidth=2.5*R/(T.a||1);g.lineJoin='round';
+    polys.forEach(P=>{g.beginPath();P.forEach((p,i)=>{const q=proj(cai(p,up,cota));i?g.lineTo(q[0],q[1]):g.moveTo(q[0],q[1]);});g.closePath();g.fill();g.stroke();});
+    c.save();c.setTransform(1,0,0,1,0,0);c.globalAlpha=alfa||forca();c.imageSmoothingEnabled=true;c.imageSmoothingQuality='high';c.drawImage(o,0,0,o.width*R,o.height*R);c.restore();
+  }
+  /* a mesma sombra para os 3D em SVG. pj(p) -> {x,y}; faces: polígonos do
+     mundo; tubos: [{a,b,d}] (linha com espessura); lw: o traço do desenho */
+  function svgSombra(pj,faces,tubos,up,cota,lw,alfa,nome){
+    if(nome)sombras[nome]=faces.length+(tubos||[]).length;
+    const xy=p=>{const q=pj(cai(p,up,cota));return q.x.toFixed(1)+' '+q.y.toFixed(1);};
+    return '<defs><filter id="rm3d-sb" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="'+(lw*3.2).toFixed(2)+'"/></filter></defs>'
+      +'<g class="rm3d-sombra" opacity="'+(alfa||forca())+'" filter="url(#rm3d-sb)" fill="#000" stroke="#000" stroke-linecap="round" stroke-linejoin="round">'
+      +faces.map(f=>'<path d="M'+f.map(xy).join('L')+'Z"/>').join('')
+      +(tubos||[]).map(t=>'<path d="M'+xy(t.a)+'L'+xy(t.b)+'" fill="none" stroke-width="'+t.d.toFixed(1)+'"/>').join('')+'</g>';
+  }
+  /* a laje do piso, em SVG (P = piso(min,max,up)) */
+  function svgLaje(P,pj){const B=P.linhas.filter(l=>l.t==='borda');return '<path class="rm3d-laje" d="M'+B.map(l=>{const q=pj(l.a);return q.x.toFixed(1)+' '+q.y.toFixed(1);}).join('L')+'Z" fill="rgba(255,255,255,'+laje()+')"/>';}
   /* as linhas do piso, em coordenadas do mundo: min/max é a caixa da peça,
      up o índice do eixo vertical. O piso cobre a peça com folga e nunca fica
      mais estreito que 60% do lado maior (uma tesoura é comprida e fina). */
@@ -2273,6 +2328,7 @@ window.RM3D=(function(){
   /* proj(p) -> [x,y] na tela; k = pixels do canvas por pixel de CSS */
   function chao(c,proj,min,max,up,k){
     const L=piso(min,max,up),St=S();k=k||1;
+    {const B=L.linhas.filter(l=>l.t==='borda');c.beginPath();B.forEach((l,i)=>{const p=proj(l.a);i?c.lineTo(p[0],p[1]):c.moveTo(p[0],p[1]);});c.closePath();c.fillStyle='rgba(255,255,255,'+laje()+')';c.fill();}
     L.linhas.forEach(l=>{const p=proj(l.a),q=proj(l.b);c.beginPath();c.moveTo(p[0],p[1]);c.lineTo(q[0],q[1]);
       c.strokeStyle=St[l.t];c.lineWidth=(l.t==='men'?.7:l.t==='mai'?1:1.2)*k;c.stroke();});
     return L.grade;
@@ -2303,7 +2359,8 @@ window.RM3D=(function(){
   /* o próprio bloco, para ir dentro do "3D para enviar": o arquivo enviado
      leva o código do desenho, e o desenho usa este bloco */
   function fonte(){const el=document.getElementById('rm3dBloco');return el?'<script>'+el.textContent+'<\/script>':'';}
-  return {F,ORD,estilo,S,define,proximo,botao,passo,fundo,piso,chao,gizmo,escala,fonte,ultimo:{}};
+  return {F,ORD,estilo,S,define,proximo,botao,passo,fundo,piso,chao,gizmo,escala,fonte,ultimo:{},
+    LUZ,ACO,sombras,sombra,svgSombra,svgLaje,svgFundo,material,real,defineMaterial};
 })();
 </script>
 <!-- O three.js mora aqui dentro, e nao num CDN. Todos os outros sistemas da
