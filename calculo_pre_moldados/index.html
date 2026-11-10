@@ -3512,6 +3512,16 @@ function resumoDaNota(nota){
 function resumoPesoCarga(){ return resumoDaNota(notaAtiva()); }
 
 /* ---------- Tabela de preços ---------- */
+/* ações protegidas (Controle de acessos RM, etapa 3): preços por unidade
+   (parâmetros de custo) e as tabelas-base (densidade, pesos de referência,
+   seções, tipos de peça) são do administrador -- quem não tem a ação vê o
+   pedido de autorização ao tocar no campo ou no botão (bloco RMAcesso) */
+function acessoPm(acao,desc,refaz){return window.RMAcesso?RMAcesso.porta('premold',acao,{desc:desc||''},refaz):true;}
+function travaCampoPm(el,acao,desc){
+  if(!el||el._travaPm)return; el._travaPm=1;
+  el.addEventListener('focus',()=>{ if(window.RMAcesso&&!RMAcesso.pode('premold',acao)){ el.blur(); acessoPm(acao,desc,()=>el.focus()); } });
+  el.addEventListener('change',()=>{ if(window.RMAcesso)RMAcesso.agora('premold',acao,{desc:desc+': '+el.value}); });
+}
 function renderPrecos(){
   $('precoGrid').innerHTML = ORDEM.map(k => {
     const t = TIPOS[k];
@@ -3531,6 +3541,7 @@ function renderPrecos(){
       el.value = numBR(dados.precos[k]);
       aplicarRemotoPendente();
     });
+    travaCampoPm(el,'custos','Preço de '+TIPOS[k].nome+' (R$ por '+unidLabel(TIPOS[k].unid)+')');
   });
   const dens = $('fDensidade');
   if(dens){
@@ -3546,6 +3557,7 @@ function renderPrecos(){
       dens.value = String(Math.round(dados.densidade));
       aplicarRemotoPendente();
     };
+    travaCampoPm(dens,'tabelas','Densidade do concreto (kg/m³)');
   }
 }
 
@@ -3592,6 +3604,7 @@ function usarSecaoPilar(){
   atualizarBotaoExcluirSecao();
 }
 function salvarSecaoPilar(){
+  if(!acessoPm('tabelas','Cadastrar seção de pilar',salvarSecaoPilar)) return;
   if($('fTipo').value !== 'pilar'){ avisoCalc('Selecione Pilar para cadastrar uma seção.'); return; }
   const largura = val('fDimA'), altura = val('fDimB');
   if(largura <= 0 || altura <= 0){ avisoCalc('Informe a largura e a altura da seção.'); return; }
@@ -3607,6 +3620,7 @@ function salvarSecaoPilar(){
   avisoCalc('Seção do pilar cadastrada ✓', true);
 }
 async function excluirSecaoPilar(){
+  if(!acessoPm('tabelas','Excluir seção de pilar',excluirSecaoPilar)) return;
   const id = $('fSecaoPilar').value;
   const s = dados.secoesPilar.find(x => x.id === id);
   if(!s || s.padrao) return;
@@ -3670,6 +3684,7 @@ function usarReferenciaPeso(){
   atualizarBotaoExcluirRefPeso();
 }
 function salvarReferenciaPeso(){
+  if(!acessoPm('tabelas','Cadastrar peso de referência',salvarReferenciaPeso)) return;
   const tipo = $('fTipo').value;
   if(!pesaPorReferencia(tipo)){ avisoCalc('Selecione um tipo com peso por referência para cadastrar.'); return; }
   const peso = val('fDimB');
@@ -3691,6 +3706,7 @@ function salvarReferenciaPeso(){
   avisoCalc('Referência cadastrada ✓', true);
 }
 async function excluirReferenciaPeso(){
+  if(!acessoPm('tabelas','Excluir peso de referência',excluirReferenciaPeso)) return;
   const tipo = $('fTipo').value, id = $('fRefPeso').value;
   const lista = refsDoTipo(tipo);
   const r = lista.find(x => x.id === id);
@@ -3747,6 +3763,7 @@ function atualizarFormTipoCustom(){
   $('tcPesoRefWrap').style.display = (ehM2 && metodoEl.value === 'referencia') ? '' : 'none';
 }
 function criarTipoCustom(){
+  if(!acessoPm('tabelas','Cadastrar tipo de peça',criarTipoCustom)) return;
   const nome = $('tcNome').value.trim();
   if(!nome){ avisoCalc('Informe o nome do tipo novo.'); $('tcNome').focus(); return; }
   const unid = $('tcUnid').value;
@@ -3784,6 +3801,7 @@ function criarTipoCustom(){
   avisoCalc('Tipo “' + def.nome + '” cadastrado ✓', true);
 }
 async function excluirTipoCustom(id){
+  if(!acessoPm('tabelas','Excluir tipo de peça',()=>excluirTipoCustom(id))) return;
   const t = dados.tiposCustom.find(x => x.id === id);
   if(!t) return;
   if(tipoEmUso(id)){
@@ -5062,7 +5080,7 @@ if('serviceWorker' in navigator){
 })();
 </script>
 <script>/* versão publicada (PADRAO_RM.md §3): sobe a cada publicação, junto com o CACHE do sw.js */
-const APP_VER='v46';
+const APP_VER='v47';
 </script>
 <script id="rmVersaoBloco">
 /* ===== SELO DE VERSÃO — igual em todos os sistemas (PADRAO_RM.md §3) =====
@@ -5581,6 +5599,182 @@ const APP_VER='v46';
       .observe(document.documentElement, { childList: true, subtree: true, attributes: true, attributeFilter: ['list'] }); } catch (e) {}
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', comeca); else comeca();
+})();
+</script>
+<script>
+/* ===== ACESSO RM: AÇÕES PROTEGIDAS =====
+   Bloco compartilhado (central_rm/comum/acesso.html). Não editar dentro de
+   um sistema.
+
+   Etapa 3 do "Controle de acessos RM". Cada conta tem, na Central, o que
+   pode fazer em cada sistema (acessos/usuarios/<conta>/acoes/<sistema>).
+   Antes de uma ação protegida (reabrir pagamento, alterar salário...), o
+   sistema chama RMAcesso.exige(sistema, acao, {alvo, desc}):
+     - o administrador e quem tem a ação liberada seguem; fica no registro
+       (acessos/registro: quem, quando, o quê);
+     - quem não tem vê "Esta ação é do administrador" e pode PEDIR
+       AUTORIZAÇÃO, com o motivo (acessos/pedidos/<conta>). O dono autoriza
+       na Central, uma vez, para aquela ação e aquele item; a pessoa refaz a
+       ação e a autorização é gasta.
+   Conta sem cadastro salvo na Central segue como antes (tudo liberado) até
+   o dono salvar. Sem nuvem (modo local), não há o que restringir. As
+   regras do banco recusam o que dá para recusar lá (ferramentas/
+   regras_firebase.json); o resto é recusado aqui, na tela. */
+(function () {
+  if (window.RMAcesso) return;
+  var ADM = 'evertonluis4523@gmail.com';
+  var NOMES = {
+    contas: { pagar: 'Registrar pagamento', excluir_conta: 'Excluir conta', reabrir_pag: 'Reabrir pagamento', valor_pago: 'Alterar valor de conta paga' },
+    recibos: { recibos: 'Gerar recibos e relatórios', salario: 'Alterar salário-base', banco: 'Alterar dados bancários', excluir_recibo: 'Excluir recibo', reabrir_ciclo: 'Reabrir ciclo fechado', importa_sal: 'Importar alterações salariais' },
+    almocos: { lancar: 'Lançar e corrigir períodos em aberto', preco: 'Alterar preço da refeição', excluir_per: 'Excluir período', mudar_fechado: 'Modificar período fechado' },
+    premold: { calcular: 'Fazer cálculos', tabelas: 'Alterar tabelas-base e coeficientes', custos: 'Alterar parâmetros de custo' },
+    obras: { acompanhar: 'Atualizar acompanhamento e documentos', contrato: 'Alterar valor contratual aprovado', excluir_obra: 'Excluir obra', fin_fechado: 'Alterar registro financeiro fechado' },
+    pu: { lancar: 'Lançamentos operacionais', custos: 'Alterar parâmetros de custo', mudar_fechado: 'Modificar período fechado' },
+    propostas: { elaborar: 'Criar e editar propostas em elaboração', documentos: 'Gerar documentos', contrato_aprov: 'Alterar contrato aprovado' },
+    maquinas: { movimentar: 'Movimentações, empréstimos e devoluções', manutencao: 'Registrar manutenção', baixa: 'Baixa definitiva', historico: 'Alterar histórico' }
+  };
+  var E = { email: '', k: '', reg: null, carregado: false, pedidos: {}, ouvintes: [] };
+  function chave(e) { return String(e || '').trim().toLowerCase().replace(/\./g, ','); }
+  function teste() { return window.__rmAcessoTeste || null; }
+  function db() { try { return window.firebase && firebase.apps && firebase.apps.length ? firebase.database() : null; } catch (e) { return null; } }
+  function avisa() { E.ouvintes.forEach(function (f) { try { f(); } catch (e) { } }); }
+  /* liga quando o sistema já iniciou o Firebase (cada um inicia na sua hora) */
+  var liga = setInterval(function () {
+    var T = teste();
+    if (T) { clearInterval(liga); E.email = String(T.email || '').toLowerCase(); E.k = chave(E.email); E.reg = T.reg || null; E.pedidos = T.pedidos || {}; E.carregado = true; avisa(); return; }
+    var d = db(); if (!d) return;
+    clearInterval(liga);
+    var desl = [];
+    firebase.auth().onAuthStateChanged(function (u) {
+      desl.forEach(function (f) { try { f(); } catch (e) { } }); desl = [];
+      E.reg = null; E.pedidos = {}; E.carregado = false;
+      if (!u || !u.email) { E.email = ''; E.k = ''; return; }
+      E.email = String(u.email).toLowerCase(); E.k = chave(E.email);
+      if (E.email === ADM) { E.carregado = true; avisa(); return; }
+      var r1 = d.ref('acessos/usuarios/' + E.k), r2 = d.ref('acessos/pedidos/' + E.k);
+      var f1 = function (s) { E.reg = s.val(); E.carregado = true; avisa(); }, f2 = function (s) { E.pedidos = s.val() || {}; avisa(); };
+      /* sem as regras novas a leitura é recusada: fica como antes (liberado) */
+      r1.on('value', f1, function () { E.reg = null; E.carregado = true; avisa(); });
+      r2.on('value', f2, function () { });
+      desl.push(function () { r1.off('value', f1); }, function () { r2.off('value', f2); });
+    });
+  }, 300);
+  setTimeout(function () { clearInterval(liga); }, 120000);
+
+  function local() { return !teste() && !db(); }
+  function nomeAcao(s, a) { return (NOMES[s] && NOMES[s][a]) || a; }
+  /* autorização do dono ainda não gasta para esta ação (e este item) */
+  function liberacao(s, a, alvo) {
+    var lib = (((E.reg || {}).libera || {})[s] || {})[a] || 0;
+    if (!(Number(lib) > Date.now())) return null;
+    var id = Object.keys(E.pedidos || {}).find(function (i) {
+      var p = E.pedidos[i];
+      return p && p.estado === 'autorizado' && !p.usado && p.sistema === s && p.acao === a && (!p.alvo || !alvo || String(p.alvo) === String(alvo));
+    });
+    return id || null;
+  }
+  /* pode já? (síncrono, para a tela decidir o que mostrar) */
+  function pode(s, a, alvo) {
+    if (local() || !E.email) return true;
+    if (E.email === ADM) return true;
+    if (!E.carregado) return true;            /* o banco ainda confere */
+    if (!E.reg) return true;                  /* sem cadastro salvo: como antes */
+    if ((((E.reg.acoes || {})[s]) || {})[a] === true) return true;
+    return !!liberacao(s, a, alvo);
+  }
+  function grava(caminho, valor, modo) {
+    var T = teste();
+    if (T) { (T.escritas = T.escritas || []).push({ caminho: caminho, valor: valor, modo: modo || 'set' }); return Promise.resolve(); }
+    var d = db(); if (!d) return Promise.resolve();
+    var r = d.ref(caminho);
+    return modo === 'push' ? r.push(valor) : modo === 'update' ? r.update(valor) : r.set(valor);
+  }
+  function registra(s, a, info, via) {
+    if (local() || !E.email) return;
+    info = info || {};
+    grava('acessos/registro', { em: Date.now(), por: E.email, sistema: s, acao: a, acaoNome: nomeAcao(s, a), alvo: info.alvo != null ? String(info.alvo) : '', desc: String(info.desc || '').slice(0, 400), via: via || 'permitido' }, 'push').catch(function () { });
+  }
+  function esperaCarregar() {
+    return new Promise(function (ok) { var n = 0; (function v() { if (E.carregado || local() || !E.email || n++ > 30) return ok(); setTimeout(v, 100); })(); });
+  }
+  /* janela "Esta ação é do administrador" + pedido de autorização */
+  function janela(s, a, info) {
+    return new Promise(function (ok) {
+      var aberto = Object.keys(E.pedidos || {}).some(function (i) { var p = E.pedidos[i]; return p && p.estado === 'aberto' && p.sistema === s && p.acao === a && String(p.alvo || '') === String(info.alvo != null ? info.alvo : ''); });
+      var fundo = document.createElement('div');
+      fundo.className = 'rmac-fundo';
+      fundo.setAttribute('style', 'position:fixed;inset:0;z-index:100000;background:rgba(10,12,16,.55);display:flex;align-items:center;justify-content:center;padding:16px');
+      var esc = function (t) { return String(t == null ? '' : t).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); };
+      fundo.innerHTML = '<div class="rmac-caixa" role="dialog" aria-modal="true" style="background:var(--surface,var(--panel,#fff));color:var(--ink,var(--text,#16181c));border:1px solid var(--line,#ddd);border-radius:14px;max-width:440px;width:100%;padding:20px;box-shadow:0 20px 60px rgba(0,0,0,.35);font:inherit">'
+        + '<h3 style="margin:0 0 6px;font-size:17px">Esta ação é do administrador</h3>'
+        + '<p style="margin:0 0 10px;font-size:14px;line-height:1.5"><b>' + esc(nomeAcao(s, a)) + '</b>' + (info.desc ? '<br>' + esc(info.desc) : '') + '</p>'
+        + (aberto
+          ? '<p class="rmac-msg" style="margin:0 0 14px;font-size:14px;line-height:1.5">Você já pediu autorização para isso. Quando o administrador autorizar, é só refazer a ação.</p>'
+          : '<p style="margin:0 0 8px;font-size:14px;line-height:1.5">Você pode pedir autorização. Quando ela vier, refaça a ação: vale uma vez.</p>'
+          + '<textarea class="rmac-motivo" rows="3" placeholder="Por que precisa? (ex.: valor lançado errado)" style="width:100%;box-sizing:border-box;border:1px solid var(--line,#ccc);border-radius:9px;padding:9px;font:inherit;font-size:14px;background:transparent;color:inherit"></textarea>')
+        + '<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px;flex-wrap:wrap">'
+        + '<button type="button" class="rmac-nao" style="border:1px solid var(--line,#ccc);background:transparent;color:inherit;border-radius:9px;padding:8px 14px;font:inherit;cursor:pointer">' + (aberto ? 'Fechar' : 'Cancelar') + '</button>'
+        + (aberto ? '' : '<button type="button" class="rmac-pede" style="border:0;background:var(--rm-laranja,#F24619);color:#fff;border-radius:9px;padding:8px 14px;font:inherit;font-weight:600;cursor:pointer">Pedir autorização</button>')
+        + '</div></div>';
+      document.body.appendChild(fundo);
+      var fecha = function () { document.removeEventListener('keydown', tecla, true); fundo.remove(); ok(false); };
+      var tecla = function (e) { if (e.key === 'Escape') { e.stopPropagation(); fecha(); } };
+      document.addEventListener('keydown', tecla, true);
+      fundo.querySelector('.rmac-nao').onclick = fecha;
+      fundo.addEventListener('click', function (e) { if (e.target === fundo) fecha(); });
+      var tx = fundo.querySelector('.rmac-motivo'); if (tx) setTimeout(function () { tx.focus(); }, 30);
+      var pb = fundo.querySelector('.rmac-pede');
+      if (pb) pb.onclick = function () {
+        var motivo = String(tx.value || '').trim();
+        if (!motivo) { tx.style.borderColor = '#d33'; tx.focus(); return; }
+        pb.disabled = true;
+        grava('acessos/pedidos/' + E.k, { em: Date.now(), por: E.email, sistema: s, acao: a, acaoNome: nomeAcao(s, a), alvo: info.alvo != null ? String(info.alvo) : '', desc: String(info.desc || '').slice(0, 400), motivo: motivo.slice(0, 400), estado: 'aberto' }, 'push')
+          .then(function () {
+            fundo.querySelector('.rmac-caixa').innerHTML = '<h3 style="margin:0 0 6px;font-size:17px">Pedido enviado</h3><p class="rmac-msg" style="margin:0 0 14px;font-size:14px;line-height:1.5">O administrador vê o pedido na Central. Quando ele autorizar, refaça a ação.</p><div style="text-align:right"><button type="button" class="rmac-nao" style="border:1px solid var(--line,#ccc);background:transparent;color:inherit;border-radius:9px;padding:8px 14px;font:inherit;cursor:pointer">Fechar</button></div>';
+            fundo.querySelector('.rmac-nao').onclick = fecha;
+          })
+          .catch(function () { pb.disabled = false; alert('O pedido não foi enviado (sem conexão ou sem permissão). Tente de novo.'); });
+      };
+    });
+  }
+  /* pode AGORA? (síncrono) -- se pode, já registra e, se foi pela
+     autorização do dono, gasta a autorização */
+  function agora(s, a, info) {
+    info = info || {};
+    if (local() || !E.email) return true;
+    if (!E.carregado) return false;
+    var semReg = !E.reg, dono = E.email === ADM;
+    if (dono || semReg || (((E.reg.acoes || {})[s]) || {})[a] === true) { registra(s, a, info, dono ? 'administrador' : semReg ? 'sem-cadastro' : 'permitido'); return true; }
+    var lib = liberacao(s, a, info.alvo);
+    if (lib) {
+      grava('acessos/pedidos/' + E.k + '/' + lib, { usado: true, usadoEm: Date.now() }, 'update').catch(function () { });
+      if (E.pedidos[lib]) E.pedidos[lib].usado = true;
+      registra(s, a, info, 'autorizacao');
+      return true;
+    }
+    return false;
+  }
+  /* espera o cadastro chegar; se não pode, abre o pedido de autorização */
+  function exige(s, a, info) {
+    info = info || {};
+    return esperaCarregar().then(function () { return agora(s, a, info) || janela(s, a, info); });
+  }
+  /* a porta de cada ação protegida, para quem chama sem esperar: true =
+     segue já; false = não segue agora (abriu o pedido, ou o cadastro ainda
+     estava chegando -- aí, se puder, a ação é refeita sozinha por refaz) */
+  var passe = {};
+  function porta(s, a, info, refaz) {
+    var ch = s + '|' + a;
+    if (passe[ch]) { delete passe[ch]; return true; }
+    if (agora(s, a, info)) return true;
+    exige(s, a, info).then(function (ok) { if (ok && refaz) { passe[ch] = 1; try { refaz(); } finally { delete passe[ch]; } } });
+    return false;
+  }
+  window.RMAcesso = {
+    pode: pode, agora: agora, exige: exige, porta: porta, registra: registra, nome: nomeAcao,
+    ouvir: function (f) { E.ouvintes.push(f); },
+    estado: function () { return { email: E.email, carregado: E.carregado, reg: E.reg, pedidos: E.pedidos }; }
+  };
 })();
 </script>
 </body>

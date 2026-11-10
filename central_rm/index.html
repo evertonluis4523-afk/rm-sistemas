@@ -1380,6 +1380,11 @@ var RM_FONTE="@font-face{font-family:'Satoshi';src:url(data:font/woff2;base64,d0
   .ac-acao{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:12.5px}.ac-acao .ac-chk{flex:1;min-width:0}.ac-acao .ac-selo{flex:none}
   .ac-selo{font-size:10px;font-weight:700;letter-spacing:.04em;padding:2px 7px;border-radius:999px;white-space:nowrap;border:1px solid var(--divider);color:var(--text-muted)}
   .ac-selo.ok{color:var(--rm-ok);border-color:currentColor}
+  .ac-ped{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px 12px;align-items:center;padding:10px 0;border-top:1px solid var(--divider);font-size:13px}
+  .ac-ped:first-of-type{border-top:0}.ac-ped b{font-weight:650}.ac-ped .ac-nota{margin:2px 0 0}
+  .ac-ped-bt{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+  .ac-reg{font-size:12.5px;line-height:1.55;max-height:260px;overflow:auto}.ac-reg div{padding:4px 0;border-top:1px solid var(--divider)}.ac-reg div:first-child{border-top:0}
+  @media(max-width:560px){.ac-ped{grid-template-columns:1fr}.ac-ped-bt{justify-content:flex-start}}
   .ac-nota{font-size:12px;color:var(--text-muted);margin:0 0 12px;line-height:1.5}
   .ac-pe{display:flex;gap:8px;flex-wrap:wrap;align-items:center;justify-content:flex-end;margin-top:6px}
   .ac-dif{margin:10px 0 0;padding:10px 12px;border-radius:var(--rm-raio);background:var(--active-bg);font-size:12.5px;line-height:1.7}
@@ -4781,7 +4786,7 @@ try { var _e = localStorage.getItem('rm_estilo_ultimo'); if (_e === 'viva' || _e
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js" crossorigin="anonymous"></script>
 
 <script>/* versão publicada (PADRAO_RM.md §3): sobe a cada publicação, junto com o CACHE do sw.js */
-const APP_VER='v156';
+const APP_VER='v157';
 </script>
 <script>
   /* ===== LOGIN (Firebase Authentication) =====
@@ -4859,6 +4864,8 @@ const APP_VER='v156';
   function ouvirMeuAcesso() {
     if (_acDesliga) { try { _acDesliga(); } catch (e) { } _acDesliga = null; }
     MEU_ACESSO = null;
+    /* o dono ouve os pedidos de autorização desde a entrada (aviso + contador) */
+    if (CURRENT_EMAIL && isAdminUser()) setTimeout(() => { try { window.rmAcessos && rmAcessos.ouvirPedidos(); } catch (e) { } }, 1500);
     if (!CURRENT_EMAIL || isAdminUser()) return;
     const k = acChave(CURRENT_EMAIL), guarda = 'rm_acesso:' + k;
     try { const c = JSON.parse(localStorage.getItem(guarda) || 'null'); if (c && c.sistemas) MEU_ACESSO = c; } catch (e) { }
@@ -9445,6 +9452,11 @@ const APP_VER='v156';
   /* hoje só o acesso ao SISTEMA inteiro e às gavetas é protegido de fato (a
      regra do banco por conta); operações e ações ainda não */
   const AC_PROTEGIDO={sistema:true,gaveta:true};
+  /* etapa 3: ações que já são conferidas no sistema (bloco RMAcesso) -- quem
+     não tem vê "Esta ação é do administrador" e pode pedir autorização */
+  const AC_FUNCIONA={contas:{pagar:1,excluir_conta:1,reabrir_pag:1,valor_pago:1},recibos:{salario:1,banco:1,excluir_recibo:1,reabrir_ciclo:1,importa_sal:1},
+    almocos:{preco:1,mudar_fechado:1},premold:{tabelas:1,custos:1},obras:{contrato:1,excluir_obra:1,fin_fechado:1},pu:{custos:1},propostas:{contrato_aprov:1},maquinas:{baixa:1}};
+  const acFunciona=(s,k)=>!!(AC_FUNCIONA[s]||{})[k];
   let AC={orig:null,atual:null,sel:'engenharia@rmestruturas.com.br',dif:false,nuvem:{},carregado:false,desliga:null,novo:false};
   function acLimpa(p){const o={sistemas:{},gavetas:{},ops:{},acoes:{}};p=p||{};
     Object.keys(p.sistemas||{}).forEach(k=>{if(p.sistemas[k])o.sistemas[k]=true;});Object.keys(p.gavetas||{}).forEach(k=>{if(p.gavetas[k])o.gavetas[k]=true;});
@@ -9459,13 +9471,49 @@ const APP_VER='v156';
     AC.desliga=N.ouvir('acessos/usuarios',v=>{const m={};Object.values(v||{}).forEach(x=>{if(x&&x.email)m[String(x.email).toLowerCase()]=x;});
       AC.nuvem=m;AC.carregado=true;const sujo=AC.atual&&acDiferencas().length;if(!sujo)acMontar();renderAcessos();},
       ()=>{AC.carregado=true;AC.erro=true;acMontar();renderAcessos();});}
+  /* PEDIDOS DE AUTORIZAÇÃO (etapa 3): quem não tem a ação pede; o dono
+     autoriza UMA vez (aquela ação, aquele item, por 24 h) ou nega. A
+     autorização vai para acessos/usuarios/<conta>/libera (o banco confere)
+     e o pedido fica marcado; a pessoa refaz a ação e ela é gasta. */
+  const AC_SIS_NOME={contas:'Contas a Pagar',recibos:'Recibos e Folha',almocos:'Almoços',premold:'Pré-moldados',obras:'Obras',pu:'Sistema PU',propostas:'Propostas',maquinas:'Máquinas'};
+  function acOuvirPedidos(){if(AC.pedOuvindo||!isAdminUser())return;const N=acNuvem();if(!N)return;AC.pedOuvindo=true;
+    N.ouvir('acessos/pedidos',v=>{AC.pedidos=v||{};renderAcessos();acAvisaPedidos();},()=>{});
+    N.ouvir('acessos/registro',v=>{AC.registro=Object.values(v||{}).filter(x=>x&&x.em).sort((a,b)=>b.em-a.em).slice(0,40);renderAcessos();},()=>{});}
+  function acPedidosAbertos(){const out=[];Object.keys(AC.pedidos||{}).forEach(k=>Object.keys(AC.pedidos[k]||{}).forEach(id=>{const p=AC.pedidos[k][id];if(p&&p.estado==='aberto')out.push(Object.assign({k,id},p));}));return out.sort((a,b)=>a.em-b.em);}
+  function acNomeConta(email){const u=AC.atual&&AC.atual[String(email||'').toLowerCase()];return u?u.nome:String(email||'').split('@')[0];}
+  function acQuando(t){try{return new Date(t).toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});}catch(e){return '';}}
+  function acPedidosHTML(){const P=acPedidosAbertos();
+    let h='<div class="ac-bloco"><h4>Pedidos de autorização'+(P.length?' ('+P.length+')':'')+'</h4>';
+    if(!P.length)h+='<p class="ac-nota" style="margin:0">Nenhum pedido esperando. Quando alguém tentar uma ação que não tem, o pedido aparece aqui.</p>';
+    else h+=P.map(p=>'<div class="ac-ped"><div><b>'+escHtml(acNomeConta(p.por))+'</b> · '+escHtml(AC_SIS_NOME[p.sistema]||p.sistema)+' · <b>'+escHtml(p.acaoNome||p.acao)+'</b>'
+      +(p.desc?'<div>'+escHtml(p.desc)+'</div>':'')+'<p class="ac-nota">Motivo: '+escHtml(p.motivo||'—')+' · '+acQuando(p.em)+'</p></div>'
+      +'<div class="ac-ped-bt"><button type="button" class="btn-mini ghost" data-acnega="'+p.k+'|'+p.id+'">Negar</button><button type="button" class="btn-mini" data-acautoriza="'+p.k+'|'+p.id+'">Autorizar uma vez</button></div></div>').join('');
+    h+='</div>';
+    const G=AC.registro||[];
+    h+='<details class="ac-bloco"><summary style="cursor:pointer;font-weight:600">Registro das ações protegidas'+(G.length?' (últimas '+G.length+')':'')+'</summary><div class="ac-reg" style="margin-top:8px">'
+      +(G.length?G.map(r=>'<div>'+acQuando(r.em)+' · <b>'+escHtml(acNomeConta(r.por))+'</b> · '+escHtml(AC_SIS_NOME[r.sistema]||r.sistema)+' · '+escHtml(r.acaoNome||r.acao)+(r.desc?' · '+escHtml(r.desc):'')+(r.via==='autorizacao'?' · <span class="ac-selo ok">autorizado</span>':'')+'</div>').join(''):'<p class="ac-nota" style="margin:0">Nada registrado ainda.</p>')
+      +'</div></details>';
+    return h;}
+  function acResponde(kid,ok){const N=acNuvem();if(!N)return Promise.resolve(false);const [k,id]=kid.split('|'),p=((AC.pedidos||{})[k]||{})[id];if(!p)return Promise.resolve(false);
+    const agora=Date.now(),ate=agora+24*3600*1000,upd={};
+    upd['acessos/pedidos/'+k+'/'+id+'/estado']=ok?'autorizado':'negado';upd['acessos/pedidos/'+k+'/'+id+'/respEm']=agora;upd['acessos/pedidos/'+k+'/'+id+'/respPor']=CURRENT_EMAIL;
+    if(ok){upd['acessos/pedidos/'+k+'/'+id+'/ate']=ate;upd['acessos/usuarios/'+k+'/libera/'+p.sistema+'/'+p.acao]=ate;}
+    upd['acessos/historico/'+N.novaChave()]={em:agora,por:CURRENT_EMAIL,alteracoes:[(ok?'Autorizado uma vez':'Negado')+': '+acNomeConta(p.por)+' → '+(AC_SIS_NOME[p.sistema]||p.sistema)+' → '+(p.acaoNome||p.acao)+(p.desc?' ('+p.desc+')':'')]};
+    return Promise.resolve(N.gravar(upd)).then(()=>{toast(ok?'Autorizado. A pessoa refaz a ação (vale uma vez, por 24 h).':'Pedido negado.');return true;})
+      .catch(err=>{toast('Não foi gravado: '+((err&&err.message)||'sem permissão')+'.','err');return false;});}
+  /* aviso ao dono, uma vez por sessão, quando há pedido esperando */
+  function acAvisaPedidos(){const n=acPedidosAbertos().length;const b=document.querySelector('[data-stab="acessos"]');
+    if(b){b.dataset.pedidos=n||'';b.textContent=b.textContent.replace(/\s*\(\d+\)$/,'')+(n?' ('+n+')':'');}
+    if(n&&!AC.avisou){AC.avisou=true;toast(n+(n>1?' pedidos':' pedido')+' de autorização esperando: Configurações › Usuários e acessos.');}}
   function acSistemas(){return (typeof allSystems==='function'?allSystems(true):[]).filter(s=>/^[a-z]+$/.test(s.id));}
-  function acSelo(ok){return '<span class="ac-selo'+(ok?' ok':'')+'" title="'+(ok?'O bloqueio já funciona: o banco recusa.':'Ainda sem proteção no banco: entra nas próximas etapas.')+'">'+(ok?'protegido':'a implantar')+'</span>';}
+  function acSelo(ok){return '<span class="ac-selo'+(ok?' ok':'')+'" title="'+(ok?'Já funciona: quem não tem a ação vê \'Esta ação é do administrador\' e pode pedir autorização.':'Ainda sem proteção: entra nas próximas etapas.')+'">'+(ok?'funciona':'a implantar')+'</span>';}
   function renderAcessos(){
     const el=document.getElementById('ac-painel');if(!el||!isAdminUser())return;
     acOuvirTodos();if(!AC.orig)acMontar();
+    acOuvirPedidos();
     const U=AC.atual,us=Object.keys(U),e=AC.sel,u=U[e];
     let h='<p class="ac-nota">Só você vê este painel. Escolha a conta e marque o que ela pode usar. Cada ação mostra se o bloqueio <b>já funciona</b> ou ainda está <b>a implantar</b>: nada aqui finge uma proteção que ainda não existe.</p>'
+      +acPedidosHTML()
       +'<div class="ac-grid"><div class="ac-users">'
       +'<button type="button" class="ac-user" disabled title="O administrador não perde o acesso pelo painel: todos os sistemas, não pode ser alterado aqui"><em>administrador</em><b>Everton</b><span>todos os sistemas</span></button>'
       +us.map(k=>'<button type="button" class="ac-user'+(k===e?' on':'')+'" data-acuser="'+k+'"><b>'+escHtml(U[k].nome)+'</b><span>'+escHtml(k)+'</span><span>'+(U[k].salvo?'salvo':'perfil inicial, ainda não salvo')+'</span></button>').join('')
@@ -9479,7 +9527,7 @@ const APP_VER='v156';
     const lib=acSistemas().filter(s=>p.sistemas[s.id]);
     h+='<div class="ac-bloco"><h4>Operações e ações específicas</h4>'+(lib.length?lib.map(s=>{const id=s.id,op=p.ops[id]||{},ac=p.acoes[id]||{};
       return '<div class="ac-sis"><b>'+escHtml(s.name)+'</b><div class="ac-chips ac-ops">'+AC_OPS.map(([k,n])=>'<label class="ac-chk"><input type="checkbox" data-acop="'+id+'|'+k+'"'+(op[k]?' checked':'')+'> '+n+'</label>').join('')+'</div>'
-        +((AC_ACOES[id]||[]).length?'<div class="ac-acoes">'+AC_ACOES[id].map(([k,n])=>'<div class="ac-acao"><label class="ac-chk"><input type="checkbox" data-acacao="'+id+'|'+k+'"'+(ac[k]?' checked':'')+'> '+n+'</label>'+acSelo(false)+'</div>').join('')+'</div>':'')+'</div>';}).join(''):'<p class="ac-nota">Nenhum sistema liberado para esta conta.</p>')+'</div>';
+        +((AC_ACOES[id]||[]).length?'<div class="ac-acoes">'+AC_ACOES[id].map(([k,n])=>'<div class="ac-acao"><label class="ac-chk"><input type="checkbox" data-acacao="'+id+'|'+k+'"'+(ac[k]?' checked':'')+'> '+n+'</label>'+acSelo(acFunciona(id,k))+'</div>').join('')+'</div>':'')+'</div>';}).join(''):'<p class="ac-nota">Nenhum sistema liberado para esta conta.</p>')+'</div>';
     const D=acDiferencas();
     h+='<div class="ac-pe"><span class="ac-nota" style="margin:0;flex:1">'+(D.length?D.length+' alteração(ões) por salvar':'Sem alterações')+'</span>'
       +'<button type="button" class="btn-mini ghost" data-acdesfaz'+(D.length?'':' disabled')+'>Desfazer</button>'
@@ -9495,7 +9543,7 @@ const APP_VER='v156';
       /* perfil inicial ainda não salvo: entra inteiro, para a primeira gravação levar a conta toda */
       acSistemas().forEach(s=>{if(!!a.sistemas[s.id]!==!!b.sistemas[s.id]||(ini&&b.sistemas[s.id]))P(n+' → '+s.name,!!b.sistemas[s.id],AC_PROTEGIDO.sistema);
         AC_OPS.forEach(([k,l])=>{const x=!!(a.ops[s.id]||{})[k],y=!!(b.ops[s.id]||{})[k];if(x!==y&&b.sistemas[s.id])P(n+' → '+s.name+' → '+l,y,false);});
-        (AC_ACOES[s.id]||[]).forEach(([k,l])=>{const x=!!(a.acoes[s.id]||{})[k],y=!!(b.acoes[s.id]||{})[k];if(x!==y&&b.sistemas[s.id])P(n+' → '+s.name+' → '+l,y,false);});});
+        (AC_ACOES[s.id]||[]).forEach(([k,l])=>{const x=!!(a.acoes[s.id]||{})[k],y=!!(b.acoes[s.id]||{})[k];if(x!==y&&b.sistemas[s.id])P(n+' → '+s.name+' → '+l,y,acFunciona(s.id,k));});});
       AC_GAVETAS.forEach(([g,l])=>{if(!!a.gavetas[g]!==!!b.gavetas[g]||(ini&&b.gavetas[g]))P(n+' → gaveta '+l,!!b.gavetas[g],AC_PROTEGIDO.gaveta);});});
     return out;}
   document.addEventListener('click',ev=>{const t=ev.target;if(!t.closest||!t.closest('#ac-painel'))return;
@@ -9508,7 +9556,9 @@ const APP_VER='v156';
       if(em===AC_ADMIN||AC.atual[em]){toast('Essa conta já está na lista.','err');return;}
       AC.atual[em]={nome:nm||em.split('@')[0],p:{sistemas:{},gavetas:{},ops:{},acoes:{}},salvo:false};AC.orig[em]={nome:AC.atual[em].nome,p:{sistemas:{},gavetas:{},ops:{},acoes:{}},salvo:false,novo:true};
       AC.sel=em;AC.novo=false;renderAcessos();return;}
-    if(t.closest('[data-acsalva]')){acSalvar();return;}});
+    if(t.closest('[data-acsalva]')){acSalvar();return;}
+    const au=t.closest('[data-acautoriza]');if(au){au.disabled=true;acResponde(au.dataset.acautoriza,true);return;}
+    const ng=t.closest('[data-acnega]');if(ng){ng.disabled=true;acResponde(ng.dataset.acnega,false);return;}});
   /* grava só as contas que mudaram (ou que ainda estão no perfil inicial e
      entram na lista de mudanças) e o histórico, numa gravação só */
   function acSalvar(){const N=acNuvem(),D=acDiferencas();
@@ -9516,7 +9566,7 @@ const APP_VER='v156';
     const contas=new Set(D.map(x=>x.conta));Object.keys(AC.atual).forEach(e=>{if(!AC.atual[e].salvo&&D.some(x=>x.conta===e))contas.add(e);});
     if(!contas.size)return Promise.resolve(false);
     const agora=Date.now(),upd={};
-    contas.forEach(e=>{const u=AC.atual[e],p=acLimpa(u.p);upd['acessos/usuarios/'+acChave(e)]=Object.assign(p,{email:e,nome:u.nome,em:agora,por:CURRENT_EMAIL});});
+    contas.forEach(e=>{const u=AC.atual[e],p=acLimpa(u.p),lib=(AC.nuvem[e]||{}).libera;upd['acessos/usuarios/'+acChave(e)]=Object.assign(p,{email:e,nome:u.nome,em:agora,por:CURRENT_EMAIL},lib?{libera:lib}:{});});
     upd['acessos/historico/'+N.novaChave()]={em:agora,por:CURRENT_EMAIL,alteracoes:D.map(x=>x.t+': '+(x.v?'liberado':'bloqueado'))};
     return Promise.resolve(N.gravar(upd)).then(()=>{contas.forEach(e=>{AC.atual[e].salvo=true;});AC.orig=JSON.parse(JSON.stringify(AC.atual));AC.dif=false;renderAcessos();toast('Acessos salvos.');return true;})
       .catch(err=>{toast('Não foi salvo: '+((err&&err.message)||'sem permissão')+'. Confira se as regras novas foram coladas no Firebase.','err');return false;});}
@@ -9527,7 +9577,7 @@ const APP_VER='v156';
     else if(d.acop){const [s,k]=d.acop.split('|');p.ops[s][k]=t.checked;}
     else if(d.acacao){const [s,k]=d.acacao.split('|');p.acoes[s][k]=t.checked;}
     renderAcessos();});
-  window.rmAcessos={estado:()=>AC,diferencas:acDiferencas,render:renderAcessos,salvar:acSalvar,reinicia:()=>{if(AC.desliga)try{AC.desliga();}catch(e){}AC={orig:null,atual:null,sel:'engenharia@rmestruturas.com.br',dif:false,nuvem:{},carregado:false,desliga:null,novo:false};}};
+  window.rmAcessos={estado:()=>AC,diferencas:acDiferencas,render:renderAcessos,salvar:acSalvar,responde:acResponde,pedidos:acPedidosAbertos,ouvirPedidos:acOuvirPedidos,reinicia:()=>{if(AC.desliga)try{AC.desliga();}catch(e){}AC={orig:null,atual:null,sel:'engenharia@rmestruturas.com.br',dif:false,nuvem:{},carregado:false,desliga:null,novo:false};}};
   function setSettingsTab(t){
     if (!isAdminUser() && t !== 'aparencia') t = 'aparencia';
     document.querySelectorAll('.st-tab').forEach(b => b.classList.toggle('active', b.getAttribute('data-stab')===t));
@@ -13701,6 +13751,11 @@ const APP_VER='v156';
       + '.prc-tab tr:last-child td{border-bottom:0}.prc-tab .r{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}'
       + '.prc-tab .v{font-weight:700}.prc-tab tr.g td{background:color-mix(in srgb,var(--text) 4%,var(--card));font-size:12px;font-weight:700;color:var(--text-muted);letter-spacing:.04em;padding:7px 14px}'
       + '.prc-vazio{padding:28px;text-align:center;color:var(--text-muted)}.prc-nota{font-size:12px;color:var(--text-muted);margin-top:10px}'
+      + '.prc-mat{display:inline-block;font-size:11.5px;font-weight:700;padding:2px 9px;border-radius:999px;white-space:nowrap;border:1px solid var(--divider);color:var(--text-muted)}'
+      + '.prc-mat.galv{background:color-mix(in srgb,#2f80ed 16%,var(--card));color:color-mix(in srgb,#2f80ed 78%,var(--text));border-color:color-mix(in srgb,#2f80ed 45%,var(--card))}'
+      + '.prc-mat.inox{background:color-mix(in srgb,#14a37f 14%,var(--card));color:color-mix(in srgb,#14a37f 75%,var(--text));border-color:color-mix(in srgb,#14a37f 40%,var(--card))}'
+      + '.prc-tab tr.m-galv td:first-child{box-shadow:inset 3px 0 0 #2f80ed}.prc-tab tr.m-galv td{background:color-mix(in srgb,#2f80ed 5%,var(--card))}'
+      + '.prc-tab tr.prc-sug td{color:var(--accent-light,var(--text))}'
       + '@media (max-width:640px){.prc-tab td,.prc-tab th{padding:9px 8px}.prc-tab td.esp{white-space:nowrap}}';
     document.head.appendChild(e);
   }
@@ -13708,19 +13763,52 @@ const APP_VER='v156';
     if (!DADOS || !DADOS.em) return '';
     var d = new Date(DADOS.em); return d.toLocaleDateString('pt-BR');
   }
+  /* BUSCA: "30x92x30", "30 x 92 x 30" e "30X92X30" são a mesma coisa (o
+     espaço em volta do X não importa), e vale ir digitando: "30x9" já acha
+     os 30x9.. . Quando a medida não existe, sugere os perfis de medida mais
+     perto (30x92x30 -> 30x93x30), mantendo o resto do que foi digitado
+     (galv, 2,00...). */
+  var juntaX = function (t) { return norm(t).replace(/(\d)\s*[x×*]\s*(?=\d)/g, '$1x'); };
+  function material(x) { var g = norm(x.g); return /galv/.test(g) ? 'galv' : /inox/.test(g) ? 'inox' : /carbono/.test(g) ? 'carb' : ''; }
+  var MAT_NOME = { galv: 'Galvanizado', carb: 'Carbono', inox: 'Inox' };
+  function textoDe(x) { var e = String(x.e || ''); return juntaX([x.g, x.t, x.d, e.replace(',', '.'), e.replace('.', ','), MAT_NOME[material(x)] || ''].join(' ')); }
+  function medidas(t) { var m = String(t || '').match(/\d+(?:[.,]\d+)?(?:x\d+(?:[.,]\d+)?)+/); return m ? m[0].split('x').map(function (n) { return parseFloat(n.replace(',', '.')); }) : null; }
+  function filtra(lista) {
+    var t = juntaX(busca).split(/\s+/).filter(Boolean);
+    var ok = lista.filter(function (x) { var txt = textoDe(x); return t.every(function (p) { return txt.indexOf(p) >= 0; }); });
+    var sug = [];
+    if (!ok.length && aba === 'perfis') {
+      var mq = null, resto = [];
+      t.forEach(function (p) { var m = medidas(p); if (m && m.length > 1 && !mq) mq = m; else resto.push(p); });
+      if (mq) {
+        sug = lista.map(function (x) {
+          var md = medidas(juntaX(x.d)); if (!md || md.length !== mq.length) return null;
+          var txt = textoDe(x); if (!resto.every(function (p) { return txt.indexOf(p) >= 0; })) return null;
+          var dist = 0; md.forEach(function (v, i) { dist += Math.abs(v - mq[i]); });
+          return { x: x, dist: dist };
+        }).filter(function (o) { return o && o.dist <= Math.max(12, mq.reduce(function (a, b) { return a + b; }, 0) * .15); })
+          .sort(function (a, b) { return a.dist - b.dist; });
+        if (sug.length) { var lim = sug[0].dist; sug = sug.filter(function (o) { return o.dist <= lim + 6; }).slice(0, 12).map(function (o) { return o.x; }); }
+      }
+    }
+    return { ok: ok, sug: sug };
+  }
+  function linhaPerfil(x) {
+    var m = material(x);
+    return '<tr class="' + (m ? 'm-' + m : '') + '"><td>' + esc((x.t ? x.t + ' ' : '') + x.d) + '</td><td>' + (m ? '<span class="prc-mat ' + m + '">' + MAT_NOME[m] + '</span>' : '') + '</td><td class="esp">' + esc(x.e ? String(x.e).replace('.', ',') + ' mm' : '') + '</td><td class="r v">' + brl(x.v) + '</td></tr>';
+  }
   function linhas() {
-    var lista = (DADOS && Array.isArray(DADOS[aba])) ? DADOS[aba] : [];
-    var t = norm(busca).split(/\s+/).filter(Boolean);
-    var ok = lista.filter(function (x) {
-      var e = String(x.e || ''), txt = norm([x.g, x.t, x.d, e.replace(',', '.'), e.replace('.', ',')].join(' '));
-      return t.every(function (p) { return txt.indexOf(p) >= 0; });
-    });
-    if (!ok.length) return '<tr><td colspan="3" class="prc-vazio">' + (lista.length ? 'Nada encontrado para "' + esc(busca) + '".' : (ERRO || 'O catálogo ainda não foi publicado: ele sobe sozinho quando o Orçamento RM é aberto.')) + '</td></tr>';
+    var lista = (DADOS && Array.isArray(DADOS[aba])) ? DADOS[aba] : [], nc = aba === 'perfis' ? 4 : 3;
+    var F = filtra(lista), ok = F.ok;
+    if (!ok.length && F.sug.length) {
+      var mq = (juntaX(busca).match(/\d+(?:[.,]\d+)?(?:x\d+(?:[.,]\d+)?)+/) || [''])[0];
+      return '<tr class="g prc-sug"><td colspan="' + nc + '">Não há ' + esc(mq.replace(/x/g, ' x ')) + ' no catálogo. Perfis parecidos:</td></tr>' + F.sug.map(linhaPerfil).join('');
+    }
+    if (!ok.length) return '<tr><td colspan="' + nc + '" class="prc-vazio">' + (lista.length ? 'Nada encontrado para "' + esc(busca) + '".' : (ERRO || 'O catálogo ainda não foi publicado: ele sobe sozinho quando o Orçamento RM é aberto.')) + '</td></tr>';
     var html = '', g = null;
     ok.forEach(function (x) {
-      if (x.g !== g) { g = x.g; html += '<tr class="g"><td colspan="3">' + esc(g || 'Outros') + '</td></tr>'; }
-      html += aba === 'perfis'
-        ? '<tr><td>' + esc((x.t ? x.t + ' ' : '') + x.d) + '</td><td class="esp">' + esc(x.e ? String(x.e).replace('.', ',') + ' mm' : '') + '</td><td class="r v">' + brl(x.v) + '</td></tr>'
+      if (x.g !== g) { g = x.g; html += '<tr class="g"><td colspan="' + nc + '">' + esc(g || 'Outros') + '</td></tr>'; }
+      html += aba === 'perfis' ? linhaPerfil(x)
         : '<tr><td colspan="2">' + esc(x.d) + '</td><td class="r v">' + brl(x.v) + '</td></tr>';
     });
     return html;
@@ -13734,11 +13822,11 @@ const APP_VER='v156';
     var np = DADOS && DADOS.perfis ? DADOS.perfis.length : 0, nt = DADOS && DADOS.telhas ? DADOS.telhas.length : 0;
     b.innerHTML = '<div class="prc-cab"><div><div class="dash-greeting">Preços</div>'
       + '<div class="dash-sub">Custo do fornecedor (o menor) · consulta' + (quando() ? ' · atualizado em ' + quando() : '') + '</div></div></div>'
-      + '<div class="prc-barra"><input class="prc-busca" id="prc-busca" type="search" placeholder="Pesquisar: U 100, 2,00, sanduíche…" value="' + esc(busca) + '" aria-label="Pesquisar">'
+      + '<div class="prc-barra"><input class="prc-busca" id="prc-busca" type="search" placeholder="Pesquisar: 30x93x30, UE galv, 2,00, sanduíche…" value="' + esc(busca) + '" aria-label="Pesquisar">'
       + '<div class="prc-seg" role="group" aria-label="Catálogo"><button data-aba="perfis" class="' + (aba === 'perfis' ? 'on' : '') + '">Perfis (' + np + ')</button>'
       + '<button data-aba="telhas" class="' + (aba === 'telhas' ? 'on' : '') + '">Telhas (' + nt + ')</button></div></div>'
       + '<div class="prc-card"><table class="prc-tab"><thead><tr>'
-      + (aba === 'perfis' ? '<th>Perfil</th><th>Espessura</th><th class="r">Barra 6 m</th>' : '<th colspan="2">Telha</th><th class="r">Por metro</th>')
+      + (aba === 'perfis' ? '<th>Perfil</th><th>Material</th><th>Espessura</th><th class="r">Barra 6 m</th>' : '<th colspan="2">Telha</th><th class="r">Por metro</th>')
       + '</tr></thead><tbody id="prc-linhas">' + linhas() + '</tbody></table></div>'
       + '<div class="prc-nota">Valores de custo, sem impostos de venda nem margem. Mudou o preço no Orçamento RM, muda aqui.</div>';
     var i = q('#prc-busca');
