@@ -4193,21 +4193,28 @@ const t="160",e={LEFT:0,MIDDLE:1,RIGHT:2,ROTATE:0,DOLLY:1,PAN:2},n={ROTATE:0,PAN
    ser desenhados com WebGL (Three.js r160, embutido logo acima para
    funcionar sem internet, também no programa): aço com reflexo, chapa xadrez
    em relevo, piso de concreto e sombra de verdade.
-   - O motor antigo (desenho em SVG/canvas) continua: no papel (fichas e PDF),
-     onde o computador não tem WebGL e no botão "Motor: Clássico".
+   - No papel (fichas e PDF) também: a mesma imagem, com fundo branco e sem
+     sombra, piso nem neblina ("a qualidade de detalhe deveria aproveitar o
+     motor novo, apenas tirar questões de sombra").
+   - O motor antigo (desenho em SVG/canvas) fica só de reserva, sozinho:
+     computador sem WebGL ou o motor novo falhando. Não há botão ("qual a
+     necessidade de manter o antigo?").
    - A geometria é a mesma do motor antigo -- só muda quem desenha.
-   - Escolha lembrada neste aparelho (rm_3d_motor). Teste leitor-motor-3d. */
+   Teste leitor-motor-3d. */
 window.RMGL=(function(){
-  let pT=null,okGL=null;
+  let pT=null,okGL=null,TT=null;
   function three(){if(!pT){const el=document.getElementById('rmThreeSrc');
-    pT=el?import(URL.createObjectURL(new Blob([el.textContent],{type:'text/javascript'}))):Promise.reject(new Error('sem Three.js'));}return pT;}
+    pT=el?import(URL.createObjectURL(new Blob([el.textContent],{type:'text/javascript'}))).then(T=>(TT=T)):Promise.reject(new Error('sem Three.js'));}return pT;}
+  /* carrega logo depois de abrir, para o papel (que é síncrono) já ter o motor */
+  setTimeout(()=>{try{if(suporta())three().catch(()=>{});}catch(e){}},1200);
   function suporta(){if(okGL===null){try{const c=document.createElement('canvas');okGL=!!(c.getContext('webgl2')||c.getContext('webgl'));}catch(e){okGL=false;}}return okGL;}
   function motor(){let m=null;try{m=localStorage.getItem('rm_3d_motor');}catch(e){}return m==='classico'?'classico':'novo';}
   function ativo(){return motor()==='novo'&&suporta();}
   function define(m){try{localStorage.setItem('rm_3d_motor',m==='classico'?'classico':'novo');}catch(e){}
     document.querySelectorAll('[data-motor3d]').forEach(b=>{b.textContent='Motor: '+(motor()==='novo'?'Novo':'Clássico');});
     window.dispatchEvent(new CustomEvent('rm-3d-fundo',{detail:'motor'}));}
-  function botao(cls){if(!suporta())return '';return '<button type="button"'+(cls?' class="'+cls+'"':'')+' data-motor3d title="Novo: aço, reflexo e sombra de verdade (WebGL). Clássico: o desenho de antes.">Motor: '+(motor()==='novo'?'Novo':'Clássico')+'</button>';}
+  /* sem botão na tela: o clássico é só reserva (define fica para os testes) */
+  function botao(){return '';}
   document.addEventListener('click',e=>{const b=e.target&&e.target.closest&&e.target.closest('[data-motor3d]');if(b){e.preventDefault();e.stopPropagation();define(motor()==='novo'?'classico':'novo');}},true);
   /* texturas feitas aqui (nada baixado) */
   function texXadrez(T){const c=document.createElement('canvas');c.width=c.height=256;const g=c.getContext('2d');g.fillStyle='#808080';g.fillRect(0,0,256,256);
@@ -4234,13 +4241,7 @@ window.RMGL=(function(){
         const cena=new T.Scene(),c3=new T.PerspectiveCamera(32,1,.05,2000);
         const sol=new T.DirectionalLight(0xfff6e8,3);sol.castShadow=true;sol.shadow.mapSize.set(2048,2048);sol.shadow.bias=-0.0004;sol.shadow.normalBias=0.02;sol.shadow.radius=4;
         cena.add(sol);cena.add(sol.target);const hemi=new T.HemisphereLight(0xdfe8f2,0x5a5550,.9);cena.add(hemi);const apoio=new T.DirectionalLight(0xffffff,.55);cena.add(apoio);
-        const rg=texRuido(T,180,60),tx=texXadrez(T);
-        const M={u:new T.MeshStandardMaterial({color:0xa7b0b9,metalness:.45,roughness:.48,roughnessMap:rg,envMapIntensity:1.4,side:T.DoubleSide}),
-          x:new T.MeshStandardMaterial({color:0xd2d6da,metalness:.5,roughness:.4,bumpMap:tx,bumpScale:3,roughnessMap:rg,envMapIntensity:1.4,side:T.DoubleSide}),
-          z:new T.MeshStandardMaterial({color:0xc2c8cd,metalness:.5,roughness:.45,envMapIntensity:1.4,side:T.DoubleSide}),
-          t:new T.MeshStandardMaterial({color:0xdde2e7,metalness:.7,roughness:.25,envMapIntensity:1.6}),
-          q:new T.MeshStandardMaterial({color:0xb7bfc6,metalness:.6,roughness:.35,envMapIntensity:1.4}),
-          em:new T.MeshStandardMaterial({color:0xf24619,metalness:.3,roughness:.5})};
+        const M=materiais(T);
         const piso=new T.Mesh(new T.CircleGeometry(120,64),new T.MeshStandardMaterial({color:0x9a9da1,map:texRuido(T,120,90,60),roughness:.92,metalness:0}));
         piso.rotation.x=-Math.PI/2;piso.receiveShadow=true;cena.add(piso);
         V=box._rmgl={T,R,cena,cam:c3,sol,hemi,apoio,M,piso,cv,pm:new T.PMREMGenerator(R),geo:null,grupo:null,estilo:null};
@@ -4248,16 +4249,7 @@ window.RMGL=(function(){
       /* a peça: monta só quando a geometria muda */
       if(V.geo!==geo){
         if(V.grupo){V.cena.remove(V.grupo);V.grupo.traverse(o=>{if(o.geometry)o.geometry.dispose();});}
-        const G=new T.Group(),mm=.001,grupos={};
-        (geo.F||[]).forEach(f=>{const k=V.M[f.c]?f.c:'u';(grupos[k]=grupos[k]||[]).push(f);});
-        Object.keys(grupos).forEach(k=>{const pos=[],uv=[];
-          grupos[k].forEach(f=>{const P=f.pts;const tri=(a,b,c)=>[a,b,c].forEach(i=>{const q=P[i];pos.push(q[0]*mm,q[1]*mm,q[2]*mm);uv.push((q[0]+q[1])/90,q[2]/90);});tri(0,1,2);if(P.length>3)tri(0,2,3);});
-          const g=new T.BufferGeometry();g.setAttribute('position',new T.Float32BufferAttribute(pos,3));g.setAttribute('uv',new T.Float32BufferAttribute(uv,2));g.computeVertexNormals();
-          const me=new T.Mesh(g,V.M[k]);me.castShadow=me.receiveShadow=true;G.add(me);});
-        const Y=new T.Vector3(0,1,0);
-        (geo.T||[]).forEach(t=>{const a=new T.Vector3(...t.a).multiplyScalar(mm),b=new T.Vector3(...t.b).multiplyScalar(mm),d=b.clone().sub(a),L=d.length();if(L<1e-6)return;
-          const r=(t.d||20)*mm/2,gg=t.q?new T.BoxGeometry(r*2,L,r*2):new T.CylinderGeometry(r,r,L,t.em?14:18,1,!t.em);
-          const me=new T.Mesh(gg,t.em?V.M.em:t.q?V.M.q:V.M.t);me.position.copy(a).addScaledVector(d,.5);me.quaternion.setFromUnitVectors(Y,d.normalize());me.castShadow=me.receiveShadow=true;G.add(me);});
+        const G=montaGrupo(T,V.M,geo);
         V.cena.add(G);V.grupo=G;V.geo=geo;
         const cx=new T.Box3().setFromObject(G);V.cen=cx.getCenter(new T.Vector3());V.tam=cx.getSize(new T.Vector3());V.min=cx.min;
         V.piso.position.set(V.cen.x,cx.min.y-.001,V.cen.z);
@@ -4273,21 +4265,72 @@ window.RMGL=(function(){
       /* câmera: a mesma vista do motor antigo (az, el, zoom) */
       const w=Math.max(10,box.clientWidth),h=Math.max(10,box.clientHeight),k=window.rmImprimindoAlta||Math.min(2,window.devicePixelRatio||1);
       V.R.setPixelRatio(k);V.R.setSize(w,h,false);V.cam.aspect=w/h;
-      const az=cam.az,el=Math.max(-1.45,Math.min(1.45,cam.el)),ca=Math.cos(az),sa=Math.sin(az),ce=Math.cos(el),se=Math.sin(el);
-      const d=new T.Vector3(-sa*ce,se,ca*ce),raio=Math.max(V.tam.x,V.tam.y,V.tam.z)*.62;
-      const dist=raio/Math.sin(T.MathUtils.degToRad(V.cam.fov/2))*Math.max(1,1/V.cam.aspect)*.95/Math.max(.2,cam.zoom||1);
-      V.cam.position.copy(V.cen).addScaledVector(d,dist);V.cam.near=Math.max(.01,dist/200);V.cam.far=dist*40;V.cam.updateProjectionMatrix();V.cam.lookAt(V.cen);
+      const el=posCamera(T,V.cam,V.cen,V.tam,cam);
       V.apoio.position.copy(V.cam.position);
       /* o sol fica do lado de quem olha, alto, para a sombra cair atrás da peça */
-      const sd=new T.Vector3(-sa*.6,1,ca*.6).normalize().multiplyScalar(Math.max(V.tam.x,V.tam.z,V.tam.y)*2.5);V.sol.position.copy(V.cen).add(sd);
+      const sa=Math.sin(cam.az),ca=Math.cos(cam.az),sd=new T.Vector3(-sa*.6,1,ca*.6).normalize().multiplyScalar(Math.max(V.tam.x,V.tam.z,V.tam.y)*2.5);V.sol.position.copy(V.cen).add(sd);
       V.piso.visible=el>-0.01;
       V.R.render(V.cena,V.cam);
       return V;
     });
   }
-  /* imagem do 3D (para a ficha/PDF, se um dia quiser) */
-  function imagem(box){const V=box&&box._rmgl;return V?V.cv.toDataURL('image/png'):'';}
-  return {suporta,ativo,motor,define,botao,vista,imagem,three};
+  function materiais(T){const rg=texRuido(T,180,60),tx=texXadrez(T);
+    return {u:new T.MeshStandardMaterial({color:0xa7b0b9,metalness:.45,roughness:.48,roughnessMap:rg,envMapIntensity:1.4,side:T.DoubleSide}),
+      x:new T.MeshStandardMaterial({color:0xd2d6da,metalness:.5,roughness:.4,bumpMap:tx,bumpScale:3,roughnessMap:rg,envMapIntensity:1.4,side:T.DoubleSide}),
+      z:new T.MeshStandardMaterial({color:0xc2c8cd,metalness:.5,roughness:.45,envMapIntensity:1.4,side:T.DoubleSide}),
+      t:new T.MeshStandardMaterial({color:0xdde2e7,metalness:.7,roughness:.25,envMapIntensity:1.6}),
+      q:new T.MeshStandardMaterial({color:0xb7bfc6,metalness:.6,roughness:.35,envMapIntensity:1.4}),
+      em:new T.MeshStandardMaterial({color:0xf24619,metalness:.3,roughness:.5})};}
+  function montaGrupo(T,M,geo){const G=new T.Group(),mm=.001,grupos={};
+    (geo.F||[]).forEach(f=>{const k=M[f.c]?f.c:'u';(grupos[k]=grupos[k]||[]).push(f);});
+    Object.keys(grupos).forEach(k=>{const pos=[],uv=[];
+      grupos[k].forEach(f=>{const P=f.pts;const tri=(a,b,c)=>[a,b,c].forEach(i=>{const q=P[i];pos.push(q[0]*mm,q[1]*mm,q[2]*mm);uv.push((q[0]+q[1])/90,q[2]/90);});tri(0,1,2);if(P.length>3)tri(0,2,3);});
+      const g=new T.BufferGeometry();g.setAttribute('position',new T.Float32BufferAttribute(pos,3));g.setAttribute('uv',new T.Float32BufferAttribute(uv,2));g.computeVertexNormals();
+      const me=new T.Mesh(g,M[k]);me.castShadow=me.receiveShadow=true;G.add(me);});
+    const Y=new T.Vector3(0,1,0);
+    (geo.T||[]).forEach(t=>{const a=new T.Vector3(...t.a).multiplyScalar(mm),b=new T.Vector3(...t.b).multiplyScalar(mm),d=b.clone().sub(a),L=d.length();if(L<1e-6)return;
+      const r=(t.d||20)*mm/2,gg=t.q?new T.BoxGeometry(r*2,L,r*2):new T.CylinderGeometry(r,r,L,t.em?14:18,1,!t.em);
+      const me=new T.Mesh(gg,t.em?M.em:t.q?M.q:M.t);me.position.copy(a).addScaledVector(d,.5);me.quaternion.setFromUnitVectors(Y,d.normalize());me.castShadow=me.receiveShadow=true;G.add(me);});
+    return G;}
+  /* a câmera do motor antigo (az, el, zoom) em perspectiva; devolve o el usado */
+  function posCamera(T,c3,cen,tam,cam){
+    const az=cam.az,el=Math.max(-1.45,Math.min(1.45,cam.el)),ca=Math.cos(az),sa=Math.sin(az),ce=Math.cos(el),se=Math.sin(el);
+    const d=new T.Vector3(-sa*ce,se,ca*ce),raio=Math.max(tam.x,tam.y,tam.z)*.62;
+    const dist=raio/Math.sin(T.MathUtils.degToRad(c3.fov/2))*Math.max(1,1/c3.aspect)*.95/Math.max(.2,cam.zoom||1);
+    c3.position.copy(cen).addScaledVector(d,dist);c3.near=Math.max(.01,dist/200);c3.far=dist*40;c3.updateProjectionMatrix();c3.lookAt(cen);
+    return el;}
+  /* PAPEL: a mesma peça no motor novo, fundo branco, sem sombra nem piso.
+     Síncrono (as fichas montam o HTML na hora): precisa do motor já
+     carregado; sem ele devolve '' e quem chamou usa o desenho de antes. A
+     imagem sai recortada no que tem desenho. */
+  let PAP=null;
+  function papel(geo,cam,largura){
+    const T=TT;if(!T||!suporta()||!geo)return '';
+    try{
+      if(!PAP){const cv=document.createElement('canvas');const R=new T.WebGLRenderer({canvas:cv,antialias:true,preserveDrawingBuffer:true,alpha:false});
+        R.toneMapping=T.ACESFilmicToneMapping;R.outputColorSpace=T.SRGBColorSpace;R.shadowMap.enabled=false;
+        const cena=new T.Scene();cena.background=new T.Color(0xffffff);const pm=new T.PMREMGenerator(R);
+        cena.environment=pm.fromEquirectangular(ceu(T,'#9fb6cf','#eef2f6')).texture;
+        cena.add(new T.HemisphereLight(0xf2f5f8,0x8a8784,1.1));const luz=new T.DirectionalLight(0xffffff,2.2);cena.add(luz);cena.add(luz.target);
+        PAP={R,cena,luz,cam:new T.PerspectiveCamera(32,1,.05,2000),M:materiais(T),geo:null,grupo:null,cv};}
+      if(PAP.geo!==geo){if(PAP.grupo){PAP.cena.remove(PAP.grupo);PAP.grupo.traverse(o=>{if(o.geometry)o.geometry.dispose();});}
+        PAP.grupo=montaGrupo(T,PAP.M,geo);PAP.cena.add(PAP.grupo);PAP.geo=geo;}
+      const cx=new T.Box3().setFromObject(PAP.grupo),cen=cx.getCenter(new T.Vector3()),tam=cx.getSize(new T.Vector3());
+      const k=Math.max(2,window.rmImprimindoAlta||2),w=Math.round(largura||760),h=Math.round(w*.8);
+      PAP.R.setPixelRatio(k);PAP.R.setSize(w,h,false);PAP.cam.aspect=w/h;posCamera(T,PAP.cam,cen,tam,cam);
+      const sa=Math.sin(cam.az),ca=Math.cos(cam.az);PAP.luz.position.copy(cen).add(new T.Vector3(-sa*.6,1,ca*.6).normalize().multiplyScalar(Math.max(tam.x,tam.y,tam.z)*2.5));PAP.luz.target.position.copy(cen);
+      PAP.R.render(PAP.cena,PAP.cam);
+      /* recorta o branco em volta */
+      const W=PAP.cv.width,H=PAP.cv.height,o=document.createElement('canvas');o.width=W;o.height=H;const g=o.getContext('2d');g.drawImage(PAP.cv,0,0);
+      const d=g.getImageData(0,0,W,H).data;let x0=W,x1=0,y0=H,y1=0;
+      for(let y=0;y<H;y+=2)for(let x=0;x<W;x+=2){const i=(y*W+x)*4;if(d[i]<246||d[i+1]<246||d[i+2]<246){if(x<x0)x0=x;if(x>x1)x1=x;if(y<y0)y0=y;if(y>y1)y1=y;}}
+      if(x1<=x0||y1<=y0)return '';
+      const m=Math.round(8*k);x0=Math.max(0,x0-m);y0=Math.max(0,y0-m);x1=Math.min(W,x1+m);y1=Math.min(H,y1+m);
+      const c2=document.createElement('canvas');c2.width=x1-x0;c2.height=y1-y0;c2.getContext('2d').drawImage(o,x0,y0,x1-x0,y1-y0,0,0,x1-x0,y1-y0);
+      return c2.toDataURL('image/png');
+    }catch(e){return '';}
+  }
+  return {suporta,ativo,motor,define,botao,vista,papel,three,pronto:()=>!!TT};
 })();
 </script>
 
@@ -24854,6 +24897,8 @@ function pinta3D(box,papel){
       .catch(()=>{try{localStorage.setItem('rm_3d_motor','classico');}catch(_){}pinta3D(box);});
     return '';}
   if(box&&box._rmgl){box._rmgl.R.dispose();box._rmgl=null;}
+  if(papel&&window.RMGL&&RMGL.ativo()){const im=RMGL.papel(S3,{az:0.62,el:0.34,zoom:1},typeof papel==='number'?papel:760);
+    if(im)return '<img class="es-3d es-3d-img" src="'+im+'" alt="Escada em 3D" style="display:block;width:100%;height:auto">';}
   const az=papel?0.62:V.az,el=papel?0.34:V.el,pj=p=>proj3(p,az,el);
   const it=S3.F.map(f=>{const q=f.pts.map(pj),A=f.pts[0],B=f.pts[1],C=f.pts[2];
     const u=[B[0]-A[0],B[1]-A[1],B[2]-A[2]],v=[C[0]-A[0],C[1]-A[1],C[2]-A[2]];
@@ -30463,7 +30508,7 @@ if('serviceWorker' in navigator && location.protocol.startsWith('http')){
 }
 </script>
 <script>/* versão publicada (PADRAO_RM.md §3): sobe a cada publicação, junto com o CACHE do sw.js */
-const APP_VER='v266';
+const APP_VER='v267';
 </script>
 <script id="rmVersaoBloco">
 /* ===== SELO DE VERSÃO — igual em todos os sistemas (PADRAO_RM.md §3) =====
