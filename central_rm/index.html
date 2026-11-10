@@ -1263,6 +1263,7 @@ var RM_FONTE="@font-face{font-family:'Satoshi';src:url(data:font/woff2;base64,d0
   .ab-des .t{fill:none;stroke:var(--ab-traco);stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
   .ab-des .t.f{stroke:var(--ab-apoio);stroke-width:1.5}
   .ab-des .t.a{stroke:var(--ab-marca);stroke-width:2.6}
+  .ab-des .t.fx{stroke:var(--ab-apoio);stroke-width:1.4;opacity:.9}
   .ab-rodape{position:absolute;left:6cqw;right:6cqw;bottom:min(4cqw,6cqh);display:flex;justify-content:space-between;font-size:.85cqw;letter-spacing:.2em;color:var(--text-muted);font-weight:700}
   /* --ab-t: o tempo da abertura, o mesmo para todos (Configurações, só o dono); o desenho termina dentro dele */
   .ab .ab-des .t{stroke-dasharray:1;stroke-dashoffset:1;animation:abTraco calc(var(--ab-t,1.6s)*.4) cubic-bezier(.45,.05,.25,1) forwards;animation-delay:calc(var(--ab-t,1.6s)*.1 + var(--i)*var(--ab-t,1.6s)*.5)}
@@ -4753,7 +4754,7 @@ try { var _e = localStorage.getItem('rm_estilo_ultimo'); if (_e === 'viva' || _e
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js" crossorigin="anonymous"></script>
 
 <script>/* versão publicada (PADRAO_RM.md §3): sobe a cada publicação, junto com o CACHE do sw.js */
-const APP_VER='v153';
+const APP_VER='v154';
 </script>
 <script>
   /* ===== LOGIN (Firebase Authentication) =====
@@ -6968,16 +6969,35 @@ const APP_VER='v153';
       L(500,52,500,326,'f');L(492,52,508,52,'f');L(492,326,508,326,'f');
       L(62,352,246,352,'f');L(62,344,62,360,'f');L(246,344,246,360,'f');
     },
-    corte(){ // tesoura com as pontas fechadas no perfil do banzo
-      const y0=262,yp=200,yc=96,x0=40,x1=480,xm=260,n=8;
-      const yt=x=>x<=xm?yp-(x-x0)*(yp-yc)/(xm-x0):yp-(x1-x)*(yp-yc)/(x1-xm);
-      L(x0,y0,x1,y0);P([[x0,yp],[xm,yc],[x1,yp]]);
-      const xs=[];for(let i=0;i<=n;i++)xs.push(x0+(x1-x0)*i/n);
-      xs.forEach((x,i)=>{if(i>0&&i<n)L(x,y0,x,yt(x),'f')});
-      for(let i=0;i<n;i++){const a=xs[i],b=xs[i+1];if(b<=xm)L(a,y0,b,yt(b),'f');else L(b,y0,a,yt(a),'f')}
-      [x0,x1].forEach(x=>{L(x-4,y0,x-4,yp,'a');L(x+4,y0,x+4,yp,'a')});
-      L(x0,302,x1,302,'f');L(x0,292,x0,312,'f');L(x1,292,x1,312,'f');P([[52,297],[40,302],[52,307]],'f');P([[468,297],[480,302],[468,307]],'f');
-      L(18,y0,18,yp,'f');L(10,y0,26,y0,'f');L(10,yp,26,yp,'f');
+    corte(){ // tesoura do Leitor + a telha apoiada sobre ela, em 3D, e o fechamento na frente
+      /* "um formato desse na tesoura e também um telhado em 3D: a telha
+         cobrindo a parte de cima da tesoura e vindo telha de fechamento para
+         a frente dela" -- e a telha como na obra: uma chapa reta deitada em
+         cima do banzo, do beiral (passando da ponta) até a cumeeira, não
+         acompanhando o desenho da tesoura. A ordem do desenho é a da
+         montagem: a tesoura, as telhas (faixa por faixa, da frente para o
+         fundo), a cumeeira e, por último, o fechamento na frente. */
+      const yb=318,ye=292,rise=104,x0=34,xm=232,x1=430,vx=64,vy=-50,bei=18,esp=6;
+      const yt=x=>x<=xm?ye-(x-x0)*rise/(xm-x0):ye-(x1-x)*rise/(x1-xm);
+      const r=v=>Math.round(v*10)/10, ytop=yt(xm);
+      // tesoura: banzo de baixo, banzo de cima até as pontas, montantes e diagonais
+      L(x0,yb,x1,yb);P([[x0,yb],[x0,ye],[xm,ytop],[x1,ye],[x1,yb]]);
+      const n=6, xs=[], xd=[];
+      for(let i=0;i<=n;i++){xs.push(x0+(xm-x0)*i/n);xd.push(x1-(x1-xm)*i/n);}
+      xs.slice(1).forEach((x,i)=>L(r(x),yb,r(x),r(yt(x)),i==0?'a':''));xd.slice(1,-1).forEach((x,i)=>L(r(x),yb,r(x),r(yt(x)),i==0?'a':''));
+      for(let i=0;i<n;i++){L(r(xs[i]),yb,r(xs[i+1]),r(yt(xs[i+1])),'f');L(r(xd[i]),yb,r(xd[i+1]),r(yt(xd[i+1])),'f');}
+      // a telha: chapa reta deitada no banzo, do beiral à cumeeira
+      const ty=x=>yt(x)-2; // a mesma inclinação do banzo, passando da ponta no beiral
+      const a0=x0-bei, a1=x1+bei, F=[[a0,ty(a0)],[xm,ty(xm)],[a1,ty(a1)]];
+      const sobe=(q,dx,dy)=>q.map(p=>[r(p[0]+dx),r(p[1]+dy)]);
+      // espessura da telha na frente e as faixas indo para o fundo
+      P(sobe(F,0,0));P(sobe(F,0,-esp));L(a0,r(F[0][1]),a0,r(F[0][1]-esp));L(a1,r(F[2][1]),a1,r(F[2][1]-esp));
+      const nf=7;
+      for(let k=1;k<=nf;k++){const f=k/nf;P(sobe(F,vx*f,vy*f-esp),k==nf?'':'f');}
+      [F[0],F[2]].forEach(q=>L(q[0],r(q[1]-esp),r(q[0]+vx),r(q[1]-esp+vy)));
+      L(xm,r(F[1][1]-esp),r(xm+vx),r(F[1][1]-esp+vy),'a');
+      // fechamento na frente da tesoura: as telhas em pé, até o banzo de cima
+      for(let x=x0+8;x<x1-4;x+=22) [x,x+5].forEach(z=>L(z,yb,z,r(yt(z)+3),'fx'));
     },
     maquinas(){ // máquina de solda com cabo + furadeira
       caixa(60,150,210,150,90);R(80,175,70,40,4,'a');C(195,195,14);C(240,195,14);L(195,183,195,195);L(240,195,250,186);
