@@ -1449,10 +1449,12 @@ table.items td.l{text-align:left}
   table.items td.l .sub .cp-tag{display:inline;margin:0;font-size:12px}
   table.items td.l .sub .cp-tag::before{content:' · ';color:var(--muted)}
   /* as mesmas larguras em Perfis, Telhas e Outros: Descrição, Total e as ações alinhadas de um grupo ao outro */
+  .sec-sum{font-weight:600;letter-spacing:0;text-transform:none;color:var(--muted);font-size:12.5px;margin-left:2px}
+}
+@media screen and (min-width:721px){
   .tblwrap table.items thead th.l{width:30%}
   .tblwrap table.items thead th:nth-last-child(2){width:124px}
   .tblwrap table.items thead th:last-child{width:92px}
-  .sec-sum{font-weight:600;letter-spacing:0;text-transform:none;color:var(--muted);font-size:12.5px;margin-left:2px}
 }
 @media screen and (hover:hover){
   table.items tr:not(:hover):not(:focus-within) .obs-in:placeholder-shown{display:none}
@@ -1563,7 +1565,9 @@ table.items tbody tr.dragover td{box-shadow:inset 0 2px 0 var(--red)}
   .sheet:not(.supplier) .meta .fld:has(#q_numero),.sheet:not(.supplier) .meta .fld:has(#q_data){grid-column:span 6}
   .add-abas button{flex:1;padding:9px 6px}
   .add-dica{display:none}
-  .frete-card{max-width:none}
+  .frete-card{max-width:none;flex:1 1 auto;width:100%}
+  .foot{flex-direction:column;align-items:stretch}
+  .foot .totbox{width:100%}
 }
 
 .foot .totbox{width:320px;max-width:100%}
@@ -2548,10 +2552,16 @@ body:not(.orc-em-orcamento) .orc-bar { display: none; }
 .orc-imp-p .orc-secs { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 0; padding: 0; border: 0; }
 .orc-imp-p .orc-secs label { opacity: 1; min-height: 24px; }
 .orc-imp-p .so-cel { display: none; }
+#bar_add { display: none; }
+.cp-pend { color: var(--warn, #B54708); font-weight: 650; }
+/* celular estreito: sem a palavra TOTAL, para caberem Cliente, + e Salvar */
+@media (max-width: 430px) { .orc-bar .tot.grand .k { display: none; } .orc-bar .tot.grand { padding-left: 12px; padding-right: 12px; } }
 @media (max-width: 1250px) { .orc-bar .t-aux:first-child, .orc-bar .t-aux:first-child + .sep { display: none; } }
 @media (max-width: 760px) {
   .orc-bar { gap: 8px; padding: 8px 10px; }
   .orc-bar .t-aux, .orc-bar .sep, #bar_novo, #bar_painel { display: none !important; }
+  #bar_add { display: inline-flex; align-items: center; justify-content: center; white-space: nowrap; min-width: 44px; padding-left: 10px; padding-right: 10px; font-size: 0; }
+  #bar_add::before { content: '+'; font-size: 22px; font-weight: 600; line-height: 1; }
   .orc-bar .tot.grand .v { font-size: 17px; }
   .orc-bar .so-pc { display: none; }
   .orc-imp .imp-txt { display: none; }
@@ -8839,7 +8849,7 @@ function updateSemPrecoBanner(n){
   ensureCfg(); const b=document.getElementById('alertSemPrecoBanner'); if(!b)return;
   if(S.cfg.alertSemPreco!==false && n>0){
     b.style.display='block';
-    b.textContent='⚠ '+n+' item(ns) com cotação pendente. Total parcial: complete os dados em Fornecedor por item.';
+    b.textContent='⚠ '+n+' item(ns) com cotação pendente. Total parcial: complete os dados em Conferir fornecedores.';
   } else b.style.display='none';
 }
 function renderAjustes(){
@@ -10308,7 +10318,7 @@ function applyImport(){
    publicacao, e ha uma prova automatica que falha se um subir sem o outro.
    Assim o numero na tela e' o mesmo do arquivo que o aparelho guardou, e
    dizer "estou na v15" passa a significar alguma coisa. */
-const APP_VER='v150';
+const APP_VER='v151';
 (function(){ try{ const p=document.getElementById('verPill'); if(p)p.textContent=APP_VER; }catch(e){} })();
 /* Versao nova assumiu com a pagina aberta: avisa, em vez de recarregar por
    conta propria e jogar fora um orcamento pela metade. */
@@ -13382,7 +13392,7 @@ function cpGroupCard(chave,rows){
 }
 function cpRender(){
  const rows=cpRows();let host=document.getElementById('cpPanel');
- if(!host){host=document.createElement('details');host.id='cpPanel';host.className='cp-panel no-print';host.open=true;const sheet=document.querySelector('.sheet');if(!sheet)return;sheet.appendChild(host);}
+ if(!host){host=document.createElement('details');host.id='cpPanel';host.className='cp-panel no-print';host.open=false;const sheet=document.querySelector('.sheet');if(!sheet)return;sheet.appendChild(host);}
  const sums={};let pending=rows.filter(r=>cpCalc(r.l,r.p,r.k,null,r).semPreco).length;
  const chaves=['metalica','telha-termica','telha-simples','cumeeira'];
  rows.forEach(r=>{const ch=cpGroupKey(r.l,r.p,r.k);if(!chaves.includes(ch))chaves.push(ch);});
@@ -13413,7 +13423,7 @@ function cpRender(){
  let ps=document.getElementById('cpPrintStatus');if(!ps){ps=document.createElement('div');ps.id='cpPrintStatus';ps.className='cp-print-status';document.querySelector('.sheet').insertBefore(ps,document.querySelector('.sheetfoot'));}ps.textContent=pending?'TOTAL PARCIAL — '+pending+' item(ns) com preço pendente.':'';
  const summary=Object.entries(sums).map(([f,s])=>'<tr><td>'+escapeAttr(f)+'</td><td>'+s.count+' item(ns)</td><td>'+brl(s.total)+(s.pending?' · '+s.pending+' pendente(s)':'')+(freteDoFornecedor(f)>0?'<small>+ frete '+brl(freteDoFornecedor(f))+' = '+brl(s.total+freteDoFornecedor(f))+'</small>':'')+'</td><td>'+(s.matched?cpDelta({delta:s.delta,ref:s.ref,supplier:f,refNome:s.refNome}):'Sem comparação')+'<small>'+s.matched+'/'+s.count+' item(ns) comparável(is)</small></td></tr>').join('');
  const comparableBase=rows.length;
- host.innerHTML='<summary>Fornecedor por grupo e por item <span style="font-weight:465">· '+rows.length+' itens</span></summary><p class="cp-note">Primeiro escolha o fornecedor do grupo. Para telhas, informe um único R$/m²; o sistema usa a área de cada medida. Se uma linha tiver condição diferente, use “Cotar / comparar” nela: a exceção individual sempre prevalece.</p>'+(groupsHTML?'<h4 style="margin:14px 0 4px">Cotação por grupo</h4><div class="cp-groups">'+groupsHTML+'</div>':'')+(pending?'<div class="cp-warn">Total parcial: '+pending+' item(ns) aguardam cotação. Não considere o total como compra fechada.</div>':'')+'<h4 style="margin:14px 0 4px">Exceções e conferência por item</h4><div class="cp-scroll"><table class="cp-table"><thead><tr><th>Item / nomenclatura</th><th>Fornecedor</th><th>Base de cobrança</th><th>Custo e referência</th></tr></thead><tbody>'+body+'</tbody></table></div>'+(!rows.length?'<p class="cp-note">Adicione perfis ou telhas acima para começar.</p>':'')+'<h4 style="margin:18px 0 4px">Resumo por fornecedor</h4><div class="cp-scroll"><table class="cp-table">'+summary+'</table></div><div class="cp-total">'+(comparable?cpDelta({delta,ref:refSum}):'Sem itens comparáveis')+' · '+comparable+'/'+comparableBase+' itens comparados</div><p class="cp-note">Comparação dos materiais antes de frete e desconto. Cumeeiras ficam isoladas das telhas térmicas. Itens de categoria usam o preço de cada fornecedor do banco de dados, sem o acréscimo de venda; avulsos usam o valor digitado na linha.</p>';
+ host.innerHTML='<summary>Conferir fornecedores <span style="font-weight:465">· por grupo e por item · '+rows.length+' itens</span>'+(pending?' <span class="cp-pend">· '+pending+' pendente(s)</span>':'')+'</summary><p class="cp-note">Primeiro escolha o fornecedor do grupo. Para telhas, informe um único R$/m²; o sistema usa a área de cada medida. Se uma linha tiver condição diferente, use “Cotar / comparar” nela: a exceção individual sempre prevalece.</p>'+(groupsHTML?'<h4 style="margin:14px 0 4px">Cotação por grupo</h4><div class="cp-groups">'+groupsHTML+'</div>':'')+(pending?'<div class="cp-warn">Total parcial: '+pending+' item(ns) aguardam cotação. Não considere o total como compra fechada.</div>':'')+'<h4 style="margin:14px 0 4px">Exceções e conferência por item</h4><div class="cp-scroll"><table class="cp-table"><thead><tr><th>Item / nomenclatura</th><th>Fornecedor</th><th>Base de cobrança</th><th>Custo e referência</th></tr></thead><tbody>'+body+'</tbody></table></div>'+(!rows.length?'<p class="cp-note">Adicione perfis ou telhas acima para começar.</p>':'')+'<h4 style="margin:18px 0 4px">Resumo por fornecedor</h4><div class="cp-scroll"><table class="cp-table">'+summary+'</table></div><div class="cp-total">'+(comparable?cpDelta({delta,ref:refSum}):'Sem itens comparáveis')+' · '+comparable+'/'+comparableBase+' itens comparados</div><p class="cp-note">Comparação dos materiais antes de frete e desconto. Cumeeiras ficam isoladas das telhas térmicas. Itens de categoria usam o preço de cada fornecedor do banco de dados, sem o acréscimo de venda; avulsos usam o valor digitado na linha.</p>';
  let report=document.getElementById('cpReport');if(!report){report=document.createElement('div');report.id='cpReport';report.className='cp-report';document.querySelector('.sheet').insertBefore(report,document.querySelector('.sheetfoot'));}
  report.innerHTML='<h3>Mapa interno de compras</h3><p>Custos de materiais antes de frete e desconto'+(pending?' · TOTAL PARCIAL: '+pending+' cotação(ões) pendente(s)':'')+'</p><table><thead><tr><th>Item / quantidade / comprimento</th><th>Fornecedor</th><th>Largura / peso</th><th>Custo</th><th>Referência</th><th>Comparação</th></tr></thead><tbody>'+rows.map(r=>{const c=cpCalc(r.l,r.p,r.k,null,r),ou=r.k==='c'||r.k==='a';return '<tr><td>'+escapeAttr(r.k==='p'?r.p.grupo+' '+r.p.dims+' #'+r.p.esp:cpRowLabel(r))+'<br>'+(ou?num(r.l.qtd,0)+' '+escapeAttr(r.k==='c'?(r.p.unidade||'un'):'un'):num(r.l.qtd,0)+' × '+num(r.l.comp||r.p.comp,0)+' mm')+'</td><td>'+escapeAttr(c.supplier||'—')+'</td><td>'+(r.k==='p'?(c.larg!=null?num(c.larg,2)+' mm':'—')+' / '+(c.pesoKnown?num(c.pesoTot,2)+' kg':'—'):ou?(c.preco?brl(c.preco)+'/un':'—'):num(c.metros,2)+' m')+'</td><td>'+(c.semPreco?'Pendente':brl(c.tot))+'</td><td>'+(c.ref==null?'Sem referência':brl(c.ref))+'</td><td>'+cpDelta(c)+(c.warning?'<br>'+escapeAttr(c.warning):'')+'</td></tr>';}).join('')+otherReport+'</tbody></table><p>'+(comparable?cpDelta({delta,ref:refSum}):'Sem comparação')+' · '+comparable+'/'+comparableBase+' itens comparáveis.</p>';
 }
@@ -14489,9 +14499,10 @@ initAuth();
       SECOES.map(function (x) {
         return '<label><input type="checkbox" data-sec="' + x[0] + '" checked>' + x[1] + '</label>';
       }).join('') + '</span>' +
-      '<div class="so-cel"><button id="bar_novo_cel">Novo orçamento</button><button id="bar_painel_cel">Fornecedor por item</button></div>' +
+      '<div class="so-cel"><button id="bar_novo_cel">Novo orçamento</button><button id="bar_painel_cel">Conferir fornecedores</button></div>' +
       '</div></details>' +
-      '<button id="bar_painel">Fornecedor por item</button>' +
+      '<button id="bar_painel">Conferir fornecedores</button>' +
+      '<button class="so-cel-b" id="bar_add" title="Adicionar item" aria-label="Adicionar item">+ Item</button>' +
       '<button class="pri" id="bar_salvar">Salvar<span class="so-pc"> orçamento</span></button>';
     document.body.appendChild(bar);
 
@@ -14508,6 +14519,15 @@ initAuth();
     liga('bar_novo_cel', function () { fechaImp(); try { novoDaAba(); } catch (e) { } });
     liga('bar_painel', function () { try { enviarParaPainel(); } catch (e) { } });
     liga('bar_painel_cel', function () { fechaImp(); try { enviarParaPainel(); } catch (e) { } });
+    /* NO CELULAR, "+ ITEM" (fase 3 da tela, nov/2026): a barra de adicionar
+       fica no alto e a lista cresce para baixo -- este botão leva de volta à
+       busca da aba escolhida, de qualquer ponto da lista. Teste
+       orcamento-layout-fase3. */
+    liga('bar_add', function () { fechaImp(); try { if (window.orcAba) orcAba('orc'); } catch (e) { }
+      var z = $('addZone'); if (!z) return; z.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      var a = 'perfil'; try { a = localStorage.getItem('orc_aba_add') || 'perfil'; } catch (e) { }
+      var i = $({ perfil: 'searchPerfil', telha: 'searchTelha', outros: 'searchCat' }[a] || 'searchPerfil');
+      setTimeout(function () { try { if (i) i.focus({ preventScroll: true }); } catch (e) { } }, 350); });
     liga('bar_salvar', function () { try { if ((window.ORC_ABA || 'orc') === 'cnm' && window.cnmSalvar) cnmSalvar(); else salvarOrcamento(); } catch (e) { } });
     (function () {
       var sel = $('orcPrintMode'), lbl = $('orcImpLbl'), cel = $('orcImpCel');
