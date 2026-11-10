@@ -2231,6 +2231,9 @@ html.d3aberto,body.d3aberto{overflow:hidden}
 #d3ov .d3top select,#tl3ov .d3top select{max-width:340px;padding:6px 8px;border:1px solid var(--line);
   border-radius:8px;background:var(--surface);color:var(--ink);font-size:14px;font-weight:505}
 #d3ov .d3corpo,#tl3ov .d3corpo{flex:1;display:flex;min-height:0}
+#d3ov.d3cheia .d3lado,#d3ov.d3cheia .d3leg,#d3ov.d3cheia .d3aju,#d3ov.d3cheia .d3tit p{display:none}
+#d3ov.d3cheia .d3top{padding:6px 12px}
+#d3ov.d3cheia .d3tela{min-height:0}
 #d3ov .d3tela,#tl3ov .d3tela{flex:1;position:relative;min-width:0;background:#20252b}
 #d3ov canvas,#tl3ov canvas{width:100%;height:100%;display:block;cursor:grab;touch-action:none}
 #d3ov canvas:active,#tl3ov canvas:active{cursor:grabbing}
@@ -4387,7 +4390,7 @@ window.RMGL=(function(){
     (geo.T || []).forEach((t, i) => {
       const a = new T.Vector3(...t.a).multiplyScalar(mm), b = new T.Vector3(...t.b).multiplyScalar(mm), d = b.clone().sub(a), L = d.length(); if (L < 1e-8) return;
       const p = parteVista(V, t.pid || 'tubo-' + i, t.pnome || 'Tubo'), r = (t.d || 20) * mm / 2, k = t.em ? 'em' : t.q ? 'q' : 't';
-      [a, b].forEach(q => { p.box.expandByPoint(q.clone().addScalar(r)); p.box.expandByPoint(q.clone().addScalar(-r)); });
+      [a, b].forEach(q => { p.box.expandByPoint(q.clone().addScalar(r)); p.box.expandByPoint(q.clone().addScalar(-r)); }); (p.pontas || (p.pontas = [])).push(a.clone(), b.clone());
       boneco.position.copy(a).addScaledVector(d, .5); boneco.quaternion.setFromUnitVectors(Y, d.normalize()); boneco.scale.set(r * 2, L, r * 2); boneco.updateMatrix();
       if (!tubos.has(k)) tubos.set(k, []); tubos.get(k).push({ p, m: boneco.matrix.clone() });
     });
@@ -4398,11 +4401,56 @@ window.RMGL=(function(){
     V.cen = tot.getCenter(new T.Vector3()); V.tam = tot.getSize(new T.Vector3()); V.pan.set(0, 0, 0);
     V.piso.position.set(V.cen.x, tot.min.y - .002, V.cen.z);
     const s = Math.max(V.tam.x, V.tam.y, V.tam.z, .5);
-    /* explodida: cada peça sai do centro, mais para o lado e para cima */
-    V.partes.forEach(p => { const c = p.box.getCenter(new T.Vector3()).sub(V.cen); p.offset.set(c.x * .35, Math.max(.12, c.y * .35 + .15), c.z * .75); });
+    explodeVista(V, s);
     Object.assign(V.sol.shadow.camera, { left: -s * 1.4, right: s * 1.4, top: s * 1.4, bottom: -s * 1.4, near: .1, far: s * 8 }); V.sol.shadow.camera.updateProjectionMatrix();
     V.geo = geo; V.selecionada = null; V.isolada = null; V.explodir = V.explosao = 0; V.bar.querySelector('input').value = 0;
     iluminaVista(V); aplicaPartes(V); infoVista(V);
+  }
+  /* explodida por camadas: antes cada peça saía do centro na proporção da
+     posição, e os tubos de um lado (que têm quase o mesmo centro) saíam
+     juntos, grudados. Agora degraus sobem, perfis vão para fora e cada
+     família do guarda-corpo (poste, barra, travessa, tubo superior,
+     corrimão, suporte, emenda) vai para a sua camada, mais longe e mais alta;
+     as travessas empilhadas ainda abrem entre si. "Para fora" = do degrau
+     mais próximo para a peça, no plano, então vale também na escada em L. */
+  const EXP_FAMILIA = ['Perfil lateral', 'Poste', 'Barra vertical', 'Travessa do guarda-corpo', 'Tubo superior', 'Corrimão interno', 'Corrimão de parede', 'Suporte do corrimão', 'Suporte', 'Emenda de barra', 'Emenda', 'Tubo'];
+  function explodeVista(V, s) {
+    const T = V.T, u = Math.min(.35, Math.max(.12, s * .07)), base = [], resto = [];
+    const fam = p => { const n = String(p.nome || '').split(' · ')[0]; return EXP_FAMILIA.find(f => n.startsWith(f)) || n; };
+    V.partes.forEach(p => (/^(Degrau|Patamar|Fechamento)/.test(fam(p)) ? base : resto).push(p));
+    if (!base.length) {   /* não é escada: o jeito antigo */
+      V.partes.forEach(p => { const c = p.box.getCenter(new T.Vector3()).sub(V.cen); p.offset.set(c.x * .35, Math.max(.12, c.y * .35 + .15), c.z * .75); }); return; }
+    const cb = base.map(p => p.box);
+    base.forEach(p => p.offset.set(0, u * .6, 0));
+    const camadas = [...new Set(resto.map(fam))].sort((a, b) => { const i = x => { const k = EXP_FAMILIA.indexOf(x); return k < 0 ? EXP_FAMILIA.length : k; }; return i(a) - i(b); });
+    const grupos = new Map();
+    resto.forEach(p => { const c = p.box.getCenter(new T.Vector3()); let m = null, dm = Infinity;
+      /* ponto mais próximo na BORDA do degrau/patamar (não o centro): sobre o
+         patamar o centro ficava à frente e o pedaço saía na direção errada */
+      cb.forEach(bx => { const q = new T.Vector3(Math.min(Math.max(c.x, bx.min.x), bx.max.x), bx.max.y, Math.min(Math.max(c.z, bx.min.z), bx.max.z));
+        const d = (q.x - c.x) ** 2 + (q.z - c.z) ** 2 + 1e-6 * (q.y - c.y) ** 2; if (d < dm) { dm = d; m = q; } });
+      let fx = c.x - m.x, fz = c.z - m.z, n = Math.hypot(fx, fz);
+      if (n < 1e-3) { fx = c.x - V.cen.x; fz = c.z - V.cen.z; n = Math.hypot(fx, fz) || 1; if (n === 1 && !fx && !fz) fx = 1; }
+      p._fora = [fx / n, fz / n]; p._h = c.y - m.y;   /* altura acima do degrau: a mesma em todos os pedaços de uma travessa inclinada */
+      const lado = (p.nome.includes('esquerd') ? 'e' : p.nome.includes('direit') ? 'd' : '') + '|' + fam(p);
+      if (!grupos.has(lado)) grupos.set(lado, []); grupos.get(lado).push(p); });
+    grupos.forEach(lista => {
+      /* peças da mesma família e lado em alturas diferentes (travessas) abrem entre si */
+      /* a família inteira do mesmo lado anda na mesma direção (média): um
+         pedaço sobre o patamar não sai para outro lado que o resto da barra */
+      let gx = 0, gz = 0; lista.forEach(p => { gx += p._fora[0]; gz += p._fora[1]; }); const gn = Math.hypot(gx, gz);
+      if (gn > .2 * lista.length) lista.forEach(p => { p._fora = [gx / gn, gz / gn]; });
+      /* pedaços que se encostam (trecho inclinado + ponta reta do patamar) são
+         a mesma barra: andam juntos, pela altura do pedaço maior */
+      const pai = lista.map((_, i) => i), raiz = i => pai[i] === i ? i : (pai[i] = raiz(pai[i]));
+      const toca = (p, q) => (p.pontas || []).some(a => (q.pontas || []).some(b => a.distanceTo(b) < .03));
+      for (let i = 0; i < lista.length; i++) for (let j = i + 1; j < lista.length; j++) if (toca(lista[i], lista[j])) pai[raiz(i)] = raiz(j);
+      const tam = p => p.box.getSize(new T.Vector3()).length(), maior = new Map();
+      lista.forEach((p, i) => { const k = raiz(i); if (!maior.has(k) || tam(p) > tam(maior.get(k))) maior.set(k, p); });
+      const fx = new Map(); lista.forEach((p, i) => fx.set(p, Math.round(maior.get(raiz(i))._h / .06)));
+      const faixa = p => fx.get(p), alturas = [...new Set(lista.map(faixa))].sort((a, b) => a - b);
+      lista.forEach(p => { const L = camadas.indexOf(fam(p)) + 1, r = alturas.length > 1 && alturas.length < 12 ? alturas.indexOf(faixa(p)) : 0;
+        p.offset.set(p._fora[0] * u * .9 * L, u * (.35 + .25 * L) + r * u * .35, p._fora[1] * u * .9 * L); delete p._fora; delete p._h; }); });
   }
   function aplicaPartes(V) {
     const T = V.T, zero = new T.Vector3(), mat = new T.Matrix4();
@@ -11986,6 +12034,7 @@ function det3dAbrir(secoes){
         '<select id="d3est"></select>'+
         '<button class="btn ghost" id="d3img">\u2b07 Imagem</button>'+
         '<button class="btn ghost" id="d3exp">\u2b07 3D para enviar</button>'+
+        '<button class="btn ghost" id="d3amp" aria-pressed="false">\u26f6 Ampliar</button>'+
         '<button class="btn ghost" id="d3x">Fechar</button></div>'+
       '<div class="d3corpo"><div class="d3tela"><canvas id="d3cv"></canvas>'+
         '<div class="d3bar" id="d3bar">'+
@@ -12047,8 +12096,12 @@ function det3dAbrir(secoes){
     ov.querySelectorAll('#d3bar [data-v]').forEach(b=>b.onclick=()=>det3dVista(b.dataset.v));
     det3dInterage();
     if(window.ResizeObserver)new ResizeObserver(()=>{det3dReenquadra();det3dDesenha();}).observe(document.getElementById('d3cv').parentElement);
+    /* ampliar (como na escada): some a lateral, a legenda e a ajuda, e o 3D
+       ocupa a tela; Esc ou o mesmo botão voltam */
+    document.getElementById('d3amp').onclick=()=>det3dAmplia(!ov.classList.contains('d3cheia'));
     document.addEventListener('keydown',e=>{
-      if(e.key==='Escape'&&document.getElementById('d3ov')?.classList.contains('on'))det3dFechar();});
+      const o=document.getElementById('d3ov'); if(e.key!=='Escape'||!o||!o.classList.contains('on'))return;
+      if(o.classList.contains('d3cheia'))det3dAmplia(false); else det3dFechar();});
   }
   document.getElementById('d3est').innerHTML=ss.map((s,i)=>'<option value="'+i+'">Estrutura '+
     escapeHtml(s.letra||'')+' · '+escapeHtml(s.nomeFicha||('Estrutura '+s.letra))+'</option>').join('');
@@ -12062,8 +12115,14 @@ function det3dAbrir(secoes){
   document.getElementById('d3est').value=String(i);
   det3dCarrega(i);
 }
+function det3dAmplia(on){
+  const ov=document.getElementById('d3ov'),b=document.getElementById('d3amp'); if(!ov)return;
+  ov.classList.toggle('d3cheia',on); if(b){b.textContent=on?'\u2715 Fechar ampliação':'\u26f6 Ampliar';b.setAttribute('aria-pressed',String(!!on));}
+  requestAnimationFrame(()=>{det3dReenquadra();det3dDesenha();});
+}
 function det3dFechar(){
-  const ov=document.getElementById('d3ov'); if(ov)ov.classList.remove('on');
+  const ov=document.getElementById('d3ov'); if(ov)ov.classList.remove('on','d3cheia');
+  const b=document.getElementById('d3amp'); if(b){b.textContent='\u26f6 Ampliar';b.setAttribute('aria-pressed','false');}
   document.body.classList.remove('d3aberto'); document.documentElement.classList.remove('d3aberto');
 }
 /* ===================== COMPARTILHAR O 3D =====================
@@ -25310,6 +25369,11 @@ const css=document.createElement('style');css.textContent=`
 #pane-esc textarea{font:inherit;font-size:14px;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink);text-transform:none;letter-spacing:0;font-weight:500;min-width:0;resize:vertical}
 #pane-esc input,#pane-esc select{font:inherit;font-size:14px;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink);text-transform:none;letter-spacing:0;font-weight:500;min-width:0}
 #pane-esc input:focus,#pane-esc select:focus{outline:2px solid var(--red-soft);border-color:var(--red)}
+/* campos sempre alinhados: com o nome do campo em 2 linhas a caixa descia e
+   ficava fora da linha da vizinha. A caixa vai para a base da célula, e
+   caixa de texto e de escolha têm a mesma altura. */
+#pane-esc .es-f>label>input:not([type=checkbox]):not([type=radio]),#pane-esc .es-f>label>select{margin-top:auto}
+#pane-esc input:not([type=checkbox]):not([type=radio]):not([type=range]),#pane-esc select{height:38px;box-sizing:border-box}
 #pane-esc .es-tr{display:grid;grid-template-columns:110px repeat(3,minmax(0,1fr)) auto;gap:8px;align-items:end;padding:10px 0;border-top:1px solid var(--line)}
 #pane-esc .es-tr:first-child{border-top:0}
 #pane-esc .es-tr b{font-size:13px;align-self:center}
@@ -30881,7 +30945,7 @@ if('serviceWorker' in navigator && location.protocol.startsWith('http')){
 }
 </script>
 <script>/* versão publicada (PADRAO_RM.md §3): sobe a cada publicação, junto com o CACHE do sw.js */
-const APP_VER='v272';
+const APP_VER='v273';
 </script>
 <script id="rmVersaoBloco">
 /* ===== SELO DE VERSÃO — igual em todos os sistemas (PADRAO_RM.md §3) =====
