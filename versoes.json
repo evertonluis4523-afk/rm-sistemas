@@ -20,7 +20,7 @@
   "versao": "v46"
  },
  "central_rm": {
-  "commit": "4988000",
+  "commit": "53a237d",
   "versao": "v153"
  },
  "controle_cheques": {
@@ -28,8 +28,8 @@
   "versao": "v78"
  },
  "controle_compras": {
-  "commit": "7bb4867",
-  "versao": "v78"
+  "commit": "61f7a46",
+  "versao": "v79"
  },
  "controle_obras": {
   "commit": "332ac59",
@@ -40,8 +40,8 @@
   "versao": "v263"
  },
  "orcamento-rm": {
-  "commit": "cb5007b",
-  "versao": "v151"
+  "commit": "1890c98",
+  "versao": "v152"
  },
  "propostas_rm": {
   "commit": "098b07a",

@@ -1395,6 +1395,13 @@ body.pm-fornecedor .sheetfoot .ft-fornecedor{display:inline}
 .search-in:focus-within{border-color:var(--red);background:#fff;box-shadow:0 0 0 3px var(--red-soft)}
 .search-in svg{width:16px;height:16px;color:var(--muted);flex:none}
 .search-in input{flex:1;border:0;outline:0;background:transparent;font-size:14px;font-family:var(--mono);font-weight:500}
+/* O REALCE DO FOCO NUM LUGAR SÓ: a caixa da busca já acende por fora, e o
+   tema comum acendia também o campo de dentro -- a "linha laranja dentro da
+   caixa de texto". Nos campos do cabeçalho (sem borda própria) o foco vira
+   um traço embaixo da célula. Teste foco-sem-linha-dentro. */
+html .search-in input:focus{box-shadow:none}
+@media screen{html .meta .fld input:focus{box-shadow:none}
+  .meta .fld:focus-within{box-shadow:inset 0 -2px 0 var(--red)}}
 .chips{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}
 .qadd{display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap}
 .qadd .grow{flex:1 1 150px}
@@ -10318,7 +10325,7 @@ function applyImport(){
    publicacao, e ha uma prova automatica que falha se um subir sem o outro.
    Assim o numero na tela e' o mesmo do arquivo que o aparelho guardou, e
    dizer "estou na v15" passa a significar alguma coisa. */
-const APP_VER='v151';
+const APP_VER='v152';
 (function(){ try{ const p=document.getElementById('verPill'); if(p)p.textContent=APP_VER; }catch(e){} })();
 /* Versao nova assumiu com a pagina aberta: avisa, em vez de recarregar por
    conta propria e jogar fora um orcamento pela metade. */
