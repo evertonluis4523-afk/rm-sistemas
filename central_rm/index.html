@@ -1360,6 +1360,30 @@ var RM_FONTE="@font-face{font-family:'Satoshi';src:url(data:font/woff2;base64,d0
   .settings-body::-webkit-scrollbar-thumb { background: var(--divider); border-radius: 2px; }
 
   .settings-section { margin-bottom: 24px; }
+  /* ===== USUÁRIOS E ACESSOS (só o dono) ===== */
+  .ac-grid{display:flex;flex-direction:column;gap:14px}
+  .ac-users{display:flex;gap:6px;overflow-x:auto;padding-bottom:2px}
+  .ac-user{flex:1 0 150px;display:flex;flex-direction:column;gap:2px;text-align:left;padding:10px 12px;border:1px solid var(--divider);border-radius:var(--rm-raio);background:var(--card);color:var(--text);font:inherit;cursor:pointer}
+  .ac-user b{font-size:13px}.ac-user span{font-size:11px;color:var(--text-muted);overflow-wrap:anywhere}
+  .ac-user.on{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
+  .ac-add{border-style:dashed}.ac-chips input{min-width:0;flex:1 1 180px}
+  .ac-user em{font-style:normal;font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--accent)}
+  .ac-bloco{border:1px solid var(--divider);border-radius:var(--rm-raio);background:var(--card);padding:14px;margin-bottom:12px}
+  .ac-bloco h4{margin:0 0 10px;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--text-muted);font-weight:700}
+  .ac-chips{display:flex;flex-wrap:wrap;gap:6px 14px}
+  .ac-chk{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--text);cursor:pointer}
+  .ac-chk input{accent-color:var(--accent);width:15px;height:15px}
+  .ac-sis{border-top:1px solid var(--divider);padding:10px 0}.ac-sis:first-of-type{border-top:0;padding-top:0}
+  .ac-sis>b{display:block;font-size:13px;margin-bottom:6px}
+  .ac-acoes{display:flex;flex-direction:column;gap:6px;margin-top:10px;padding-left:2px}
+  .ac-acao{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:12.5px}.ac-acao .ac-chk{flex:1;min-width:0}.ac-acao .ac-selo{flex:none}
+  .ac-selo{font-size:10px;font-weight:700;letter-spacing:.04em;padding:2px 7px;border-radius:999px;white-space:nowrap;border:1px solid var(--divider);color:var(--text-muted)}
+  .ac-selo.ok{color:var(--rm-ok);border-color:currentColor}
+  .ac-nota{font-size:12px;color:var(--text-muted);margin:0 0 12px;line-height:1.5}
+  .ac-pe{display:flex;gap:8px;flex-wrap:wrap;align-items:center;justify-content:flex-end;margin-top:6px}
+  .ac-dif{margin:10px 0 0;padding:10px 12px;border-radius:var(--rm-raio);background:var(--active-bg);font-size:12.5px;line-height:1.7}
+  .ac-dif .lib{color:var(--rm-ok);font-weight:700}.ac-dif .blq{color:var(--rm-perigo);font-weight:700}
+  
 
   .settings-label {
     font-size: 11px;
@@ -4404,6 +4428,7 @@ try { var _e = localStorage.getItem('rm_estilo_ultimo'); if (_e === 'viva' || _e
         <button class="st-tab" data-stab="categorias" onclick="setSettingsTab('categorias')">Categorias</button>
         <button class="st-tab" data-stab="backup" onclick="setSettingsTab('backup')">Backup</button>
         <button class="st-tab" data-stab="caepi" onclick="setSettingsTab('caepi')">Certificados (CA)</button>
+        <button class="st-tab" data-stab="acessos" onclick="setSettingsTab('acessos')">Usuários e acessos</button>
       </div>
 
       <div class="st-pane active" data-pane="aparencia">
@@ -4586,6 +4611,7 @@ try { var _e = localStorage.getItem('rm_estilo_ultimo'); if (_e === 'viva' || _e
         </div>
       </div>
 
+      <div class="st-pane" data-pane="acessos"><div id="ac-painel"></div></div>
       <div class="st-pane" data-pane="caepi">
         <div class="settings-section">
           <div class="settings-label">Base oficial de CA</div>
@@ -4754,7 +4780,7 @@ try { var _e = localStorage.getItem('rm_estilo_ultimo'); if (_e === 'viva' || _e
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js" crossorigin="anonymous"></script>
 
 <script>/* versão publicada (PADRAO_RM.md §3): sobe a cada publicação, junto com o CACHE do sw.js */
-const APP_VER='v154';
+const APP_VER='v155';
 </script>
 <script>
   /* ===== LOGIN (Firebase Authentication) =====
@@ -4809,8 +4835,49 @@ const APP_VER='v154';
     // a arquiteta monta as propostas e os contratos, e só isso
     'arquitetarm@rmestruturas.com.br': ['propostas']
   };
+  /* ACESSOS NA NUVEM (painel "Usuários e acessos", só o dono). Cada conta lê
+     o PRÓPRIO cadastro em acessos/usuarios/<e-mail com vírgula no lugar do
+     ponto> e a Central obedece a ele ao vivo: tirar um sistema fecha a aba
+     aberta. Sem cadastro salvo para a conta, vale o mapa abaixo (o acesso de
+     antes) -- as regras do Firebase fazem o mesmo, então nada muda até o
+     dono salvar o painel. Se a leitura falhar, fica o último cadastro
+     guardado neste aparelho; nunca mais que isso. O administrador não passa
+     por aqui: tem tudo, sempre. Teste central-acessos-nuvem. */
+  let MEU_ACESSO = null, _acDesliga = null;
+  function acChave(e) { return String(e || '').trim().toLowerCase().replace(/\./g, ','); }
+  function acNuvem() {
+    if (window.__acNuvem) return window.__acNuvem;
+    try { if (!window.firebase || !firebase.database) return null; } catch (e) { return null; }
+    return {
+      ouvir(caminho, cb, erro) { const r = firebase.database().ref(caminho), f = sn => cb(sn.val()); r.on('value', f, erro || function () { }); return () => r.off('value', f); },
+      gravar(upd) { return firebase.database().ref().update(upd); },
+      novaChave() { return firebase.database().ref().push().key; }
+    };
+  }
+  function acessoDaConta() { return (!CURRENT_EMAIL || isAdminUser()) ? null : MEU_ACESSO; }
+  function ouvirMeuAcesso() {
+    if (_acDesliga) { try { _acDesliga(); } catch (e) { } _acDesliga = null; }
+    MEU_ACESSO = null;
+    if (!CURRENT_EMAIL || isAdminUser()) return;
+    const k = acChave(CURRENT_EMAIL), guarda = 'rm_acesso:' + k;
+    try { const c = JSON.parse(localStorage.getItem(guarda) || 'null'); if (c && c.sistemas) MEU_ACESSO = c; } catch (e) { }
+    const N = acNuvem(); if (!N) return;
+    _acDesliga = N.ouvir('acessos/usuarios/' + k, v => {
+      MEU_ACESSO = (v && typeof v === 'object') ? v : null;
+      try { if (MEU_ACESSO) localStorage.setItem(guarda, JSON.stringify(MEU_ACESSO)); else localStorage.removeItem(guarda); } catch (e) { }
+      aplicarMeuAcesso();
+    });
+  }
+  /* depois de mudar: some o que saiu, inclusive a aba já aberta */
+  function aplicarMeuAcesso() {
+    try { openTabs.slice().forEach(t => { if (/^[a-z]+$/.test(t.id) && !isAllowedSystem(t.id) && typeof closeTab === 'function') closeTab(t.id); }); } catch (e) { }
+    try { render(); } catch (e) { }
+    try { ['__docAjustar', '__etiqAjustar', '__prcAjustar'].forEach(f => { if (typeof window[f] === 'function') window[f](); }); } catch (e) { }
+  }
+  window.rmMeuAcesso = { ouvir: ouvirMeuAcesso, aplicar: aplicarMeuAcesso, chave: acChave, atual: () => MEU_ACESSO };
   function isAllowedSystem(id) {
     if (!CURRENT_EMAIL) return false;
+    const ac = acessoDaConta(); if (ac) return !!(ac.sistemas && ac.sistemas[id]);
     const list = CENTRAL_ACCESS[CURRENT_EMAIL.toLowerCase()];
     if (list === undefined) return false; // e-mail não cadastrado aqui → fecha por padrão
     if (list === null) return true;        // acesso a todos
@@ -4826,8 +4893,13 @@ const APP_VER='v154';
   // quem estiver aqui. Os demais seguem com o quadro de post-its. Os dados
   // continuam por conta -- cada login com a sua agenda e os seus contatos.
   const AGENDA_ACCESS = ['engenharia@rmestruturas.com.br'];
+  function acGaveta(g, lista) {
+    if (isAdminUser()) return true;
+    const ac = acessoDaConta(); if (ac) return !!(ac.gavetas && ac.gavetas[g]);
+    return !!CURRENT_EMAIL && lista.includes(CURRENT_EMAIL.toLowerCase());
+  }
   function agendaCompleta() {
-    return isAdminUser() || (!!CURRENT_EMAIL && AGENDA_ACCESS.includes(CURRENT_EMAIL.toLowerCase()));
+    return acGaveta('agenda', AGENDA_ACCESS);
   }
   // Gaveta Documentos: o dono e quem estiver aqui. Tambem so' interface --
   // os nos rm_documentos e rm_documentos_arq sao fechados pela regra do
@@ -4839,12 +4911,8 @@ const APP_VER='v154';
   /* PREÇOS: catálogo de consulta (custo do fornecedor, o menor) publicado pelo
      Orçamento RM em catalogo_precos. Só leitura. */
   const PRECOS_ACCESS = ['arquitetarm@rmestruturas.com.br'];
-  function podePrecos() {
-    return isAdminUser() || (!!CURRENT_EMAIL && PRECOS_ACCESS.includes(CURRENT_EMAIL.toLowerCase()));
-  }
-  function podeEtiquetas() {
-    return isAdminUser() || (!!CURRENT_EMAIL && ETIQ_ACCESS.includes(CURRENT_EMAIL.toLowerCase()));
-  }
+  function podePrecos() { return acGaveta('precos', PRECOS_ACCESS); }
+  function podeEtiquetas() { return acGaveta('etiquetas', ETIQ_ACCESS); }
   /* CENTRAL ENXUTA: conta que só usa o próprio sistema (a arquiteta, no
      Propostas e Contratos). Ela não precisa -- e não deve ver -- o painel da
      empresa: números de cheques, contas, obras, gráficos, o Acompanhamento
@@ -4857,9 +4925,7 @@ const APP_VER='v154';
   }
   window.rmCentralEnxuta = centralEnxuta;
   function aplicarCentralEnxuta() { document.body.classList.toggle('central-enxuta', centralEnxuta()); }
-  function podeDocumentos() {
-    return isAdminUser() || (!!CURRENT_EMAIL && DOCS_ACCESS.includes(CURRENT_EMAIL.toLowerCase()));
-  }
+  function podeDocumentos() { return acGaveta('documentos', DOCS_ACCESS); }
   // Preferências de aparência (tema, densidade, marca d'água) ficam por
   // CONTA, não por aparelho — assim a Bianca pode ajustar do jeito dela
   // sem mudar o que você vê quando logar no mesmo computador.
@@ -6685,6 +6751,7 @@ const APP_VER='v154';
       loginGuardarAoEntrar(user);
       const err = document.getElementById('lock-error'); if (err) err.textContent = '';
       const lbl = document.getElementById('set-account-email'); if (lbl) lbl.textContent = CURRENT_EMAIL;
+      ouvirMeuAcesso();
       loadAppearanceForUser();
       loadGreetingForUser(user);
       atualizaNomeDaConta(user);
@@ -6705,6 +6772,7 @@ const APP_VER='v154';
       if (!centralEnxuta()) startAniversariosWatch();
     } else {
       CURRENT_EMAIL = null;
+      ouvirMeuAcesso();
       document.body.classList.remove('central-enxuta');
       /* A foto sai junto com a sessao: senao a proxima pessoa a abrir no
          mesmo computador veria a cara da anterior no canto. */
@@ -7177,7 +7245,7 @@ const APP_VER='v154';
      Leitor DWG (corte_estruturas), o Controle de Compras (compras_rm -- só a
      caixa de entrada entrava), o Sistema PU (controle_metalica e
      controle_pu), os Pré-Moldados, as Máquinas e a contabilidade do Recibos. */
-  const NOS_DADOS = ['recibos', 'recibos_diretorio', 'recibos_contabilidade', 'recibos_resultados', 'central_resultados', 'central_config', 'obras_rm', 'obras_rm_historico', 'contas_pagar', 'contas_pagar_acesso',
+  const NOS_DADOS = ['acessos', 'recibos', 'recibos_diretorio', 'recibos_contabilidade', 'recibos_resultados', 'central_resultados', 'central_config', 'obras_rm', 'obras_rm_historico', 'contas_pagar', 'contas_pagar_acesso',
     'compras_inbox', 'compras_rm', 'cheques', 'orcamentos_cadastro', 'almocos', 'almocos_totais',
     'faltas_horas', 'perfitec-pedidos', 'central_lembretes', 'rm_documentos',
     'corte_estruturas', 'controle_metalica', 'controle_pu', 'pre_moldados', 'maquinas_rm',
@@ -7702,7 +7770,7 @@ const APP_VER='v154';
        de uma vez. As novas trazem as partes (as imagens vão com os anexos). */
     { nome: 'Propostas e Contratos', nos: ['propostas_rm/docs', 'propostas_rm/config', 'propostas_rm/modelo', 'propostas_rm/listas', 'propostas_rm/resumo', 'propostas_rm/imagens', 'propostas_rm'] },
     { nome: 'Estoque de Máquinas', nos: ['maquinas_rm'] },
-    { nome: 'Central (lembretes e documentos)', nos: ['central_lembretes', 'rm_documentos', 'rm_documentos_arq', 'central_resultados', 'central_config'] },
+    { nome: 'Central (lembretes e documentos)', nos: ['central_lembretes', 'rm_documentos', 'rm_documentos_arq', 'central_resultados', 'central_config', 'acessos'] },
   ];
   window.BACKUP_SISTEMAS = BACKUP_SISTEMAS;
   window.__bkNos = NOS_DADOS.concat(NOS_ANEXOS);
@@ -9332,10 +9400,133 @@ const APP_VER='v154';
   // não é o que protege os dados dos sistemas em si.
   function applySettingsAccess(){
     const admin = isAdminUser();
-    document.querySelectorAll('.st-tab[data-stab="sistemas"], .st-tab[data-stab="categorias"], .st-tab[data-stab="backup"], .st-tab[data-stab="caepi"]')
+    document.querySelectorAll('.st-tab[data-stab="sistemas"], .st-tab[data-stab="categorias"], .st-tab[data-stab="backup"], .st-tab[data-stab="caepi"], .st-tab[data-stab="acessos"]')
       .forEach(b => b.style.display = admin ? '' : 'none');
     if (!admin) setSettingsTab('aparencia');
   }
+  /* ===== USUÁRIOS E ACESSOS =====
+     Proposta "Controle de acessos RM": só o dono (admin único, que não perde
+     o próprio acesso) libera sistemas, gavetas, operações e ações para cada
+     conta. ESTA É A PRIMEIRA ETAPA (a tela): o perfil inicial de cada conta
+     reproduz o acesso de hoje + a proposta aprovada, e cada ação mostra se a
+     proteção JÁ funciona ou ainda está "a implantar" -- nenhum controle finge
+     um bloqueio que não existe. Salvar grava acessos/usuarios/<conta> (as
+     regras do Firebase consultam esse cadastro para abrir cada sistema e
+     cada gaveta) e uma linha em acessos/historico (quem, quando, o quê), que
+     ninguém reescreve. Conta sem cadastro salvo mostra o perfil inicial e
+     segue com o acesso de antes até o primeiro Salvar. */
+  const AC_ADMIN='evertonluis4523@gmail.com';
+  const AC_GAVETAS=[['agenda','Agenda'],['documentos','Documentos'],['etiquetas','Etiquetas'],['precos','Preços']];
+  const AC_OPS=[['consultar','Consultar'],['cadastrar','Cadastrar'],['editar','Editar em aberto'],['excluir','Excluir']];
+  /* ações específicas de cada sistema; o padrão é o perfil Engenharia */
+  const AC_ACOES={
+    contas:[['pagar','Registrar pagamento'],['excluir_conta','Excluir conta'],['reabrir_pag','Reabrir pagamento'],['valor_pago','Alterar valor de conta paga']],
+    recibos:[['recibos','Gerar recibos e relatórios'],['salario','Alterar salário-base'],['banco','Alterar dados bancários'],['excluir_recibo','Excluir recibo'],['reabrir_ciclo','Reabrir ciclo fechado'],['importa_sal','Importar alterações salariais']],
+    almocos:[['lancar','Lançar e corrigir períodos em aberto'],['preco','Alterar preço da refeição'],['excluir_per','Excluir período'],['mudar_fechado','Modificar período fechado']],
+    premold:[['calcular','Fazer cálculos'],['tabelas','Alterar tabelas-base e coeficientes'],['custos','Alterar parâmetros de custo']],
+    obras:[['acompanhar','Atualizar acompanhamento e documentos'],['contrato','Alterar valor contratual aprovado'],['excluir_obra','Excluir obra'],['fin_fechado','Alterar registro financeiro fechado']],
+    pu:[['lancar','Lançamentos operacionais'],['custos','Alterar parâmetros de custo'],['mudar_fechado','Modificar período fechado']],
+    propostas:[['elaborar','Criar e editar propostas em elaboração'],['documentos','Gerar documentos'],['contrato_aprov','Alterar contrato aprovado']],
+    maquinas:[['movimentar','Movimentações, empréstimos e devoluções'],['manutencao','Registrar manutenção'],['baixa','Baixa definitiva'],['historico','Alterar histórico']]
+  };
+  /* o que cada ação libera por padrão (true) -- a coluna "Permitido" da
+     proposta; o resto começa bloqueado ("Restrito ao administrador") */
+  const AC_PADRAO_ACAO={pagar:1,recibos:1,lancar:1,calcular:1,acompanhar:1,elaborar:1,documentos:1,movimentar:1,manutencao:1};
+  function acPerfil(sis,gav,excluirEm){const o={sistemas:{},gavetas:{},ops:{},acoes:{}};
+    sis.forEach(id=>{o.sistemas[id]=true;o.ops[id]={consultar:true,cadastrar:true,editar:true,excluir:(excluirEm||[]).includes(id)};
+      o.acoes[id]={};(AC_ACOES[id]||[]).forEach(([k])=>{o.acoes[id][k]=!!AC_PADRAO_ACAO[k];});});
+    gav.forEach(g=>{o.gavetas[g]=true;});return o;}
+  const AC_INICIAL=()=>({
+    'engenharia@rmestruturas.com.br':{nome:'Engenharia',p:acPerfil(['contas','recibos','almocos','premold','obras','pu'],['agenda','documentos','etiquetas'])},
+    'arquitetarm@rmestruturas.com.br':{nome:'Arquitetura',p:acPerfil(['propostas'],['precos'])},
+    'rudimar.nunes@universo.univates.br':{nome:'Rudimar',p:acPerfil(['maquinas'],[])}
+  });
+  /* hoje só o acesso ao SISTEMA inteiro e às gavetas é protegido de fato (a
+     regra do banco por conta); operações e ações ainda não */
+  const AC_PROTEGIDO={sistema:true,gaveta:true};
+  let AC={orig:null,atual:null,sel:'engenharia@rmestruturas.com.br',dif:false,nuvem:{},carregado:false,desliga:null,novo:false};
+  function acLimpa(p){const o={sistemas:{},gavetas:{},ops:{},acoes:{}};p=p||{};
+    Object.keys(p.sistemas||{}).forEach(k=>{if(p.sistemas[k])o.sistemas[k]=true;});Object.keys(p.gavetas||{}).forEach(k=>{if(p.gavetas[k])o.gavetas[k]=true;});
+    ['ops','acoes'].forEach(c=>Object.keys(p[c]||{}).forEach(sid=>{o[c][sid]={};Object.keys(p[c][sid]||{}).forEach(k=>{o[c][sid][k]=!!p[c][sid][k];});}));return o;}
+  /* monta o que o painel mostra: o salvo na nuvem por cima do perfil inicial */
+  function acMontar(){const base=AC_INICIAL(),U={};
+    Object.keys(base).forEach(e=>{const n=AC.nuvem[e];U[e]=n?{nome:n.nome||base[e].nome,p:acLimpa(n),salvo:true}:{nome:base[e].nome,p:base[e].p,salvo:false};});
+    Object.keys(AC.nuvem).forEach(e=>{if(!U[e]&&e!==AC_ADMIN){const n=AC.nuvem[e];U[e]={nome:n.nome||e,p:acLimpa(n),salvo:true};}});
+    AC.orig=U;AC.atual=JSON.parse(JSON.stringify(U));if(!U[AC.sel])AC.sel=Object.keys(U)[0];}
+  function acOuvirTodos(){if(AC.desliga||AC.ouvindo||!isAdminUser())return;AC.ouvindo=true;const N=acNuvem();
+    if(!N){AC.carregado=true;acMontar();return;}
+    AC.desliga=N.ouvir('acessos/usuarios',v=>{const m={};Object.values(v||{}).forEach(x=>{if(x&&x.email)m[String(x.email).toLowerCase()]=x;});
+      AC.nuvem=m;AC.carregado=true;const sujo=AC.atual&&acDiferencas().length;if(!sujo)acMontar();renderAcessos();},
+      ()=>{AC.carregado=true;AC.erro=true;acMontar();renderAcessos();});}
+  function acSistemas(){return (typeof allSystems==='function'?allSystems(true):[]).filter(s=>/^[a-z]+$/.test(s.id));}
+  function acSelo(ok){return '<span class="ac-selo'+(ok?' ok':'')+'" title="'+(ok?'O bloqueio já funciona: o banco recusa.':'Ainda sem proteção no banco: entra nas próximas etapas.')+'">'+(ok?'protegido':'a implantar')+'</span>';}
+  function renderAcessos(){
+    const el=document.getElementById('ac-painel');if(!el||!isAdminUser())return;
+    acOuvirTodos();if(!AC.orig)acMontar();
+    const U=AC.atual,us=Object.keys(U),e=AC.sel,u=U[e];
+    let h='<p class="ac-nota">Só você vê este painel. Escolha a conta e marque o que ela pode usar. Cada ação mostra se o bloqueio <b>já funciona</b> ou ainda está <b>a implantar</b>: nada aqui finge uma proteção que ainda não existe.</p>'
+      +'<div class="ac-grid"><div class="ac-users">'
+      +'<button type="button" class="ac-user" disabled title="O administrador não perde o acesso pelo painel: todos os sistemas, não pode ser alterado aqui"><em>administrador</em><b>Everton</b><span>todos os sistemas</span></button>'
+      +us.map(k=>'<button type="button" class="ac-user'+(k===e?' on':'')+'" data-acuser="'+k+'"><b>'+escHtml(U[k].nome)+'</b><span>'+escHtml(k)+'</span><span>'+(U[k].salvo?'salvo':'perfil inicial, ainda não salvo')+'</span></button>').join('')
+      +'<button type="button" class="ac-user ac-add" data-acnovo><b>+ Conta</b><span>liberar para outro e-mail</span></button></div>'
+      +(AC.novo?'<div class="ac-bloco"><h4>Nova conta</h4><div class="ac-chips"><input id="ac-novo-email" type="email" placeholder="e-mail do login" autocomplete="off"><input id="ac-novo-nome" placeholder="nome (ex.: Compras)" autocomplete="off"><button type="button" class="btn-mini" data-acnovook>Adicionar</button></div><p class="ac-nota" style="margin:8px 0 0">A conta entra sem nenhum sistema. Marque o que ela pode usar e salve.</p></div>':'')
+      +(AC.erro?'<p class="ac-nota" style="color:var(--rm-perigo)">Não foi possível ler os acessos salvos (as regras novas já foram coladas no Firebase?). O painel mostra o perfil inicial.</p>':'')
+      +'<div>';
+    const p=u.p;
+    h+='<div class="ac-bloco"><h4>Sistemas</h4><div class="ac-chips">'+acSistemas().map(s=>'<label class="ac-chk"><input type="checkbox" data-acsis="'+s.id+'"'+(p.sistemas[s.id]?' checked':'')+'> '+escHtml(s.name)+'</label>').join('')+'</div></div>';
+    h+='<div class="ac-bloco"><h4>Gavetas</h4><div class="ac-chips">'+AC_GAVETAS.map(([g,n])=>'<label class="ac-chk"><input type="checkbox" data-acgav="'+g+'"'+(p.gavetas[g]?' checked':'')+'> '+n+'</label>').join('')+'</div></div>';
+    const lib=acSistemas().filter(s=>p.sistemas[s.id]);
+    h+='<div class="ac-bloco"><h4>Operações e ações específicas</h4>'+(lib.length?lib.map(s=>{const id=s.id,op=p.ops[id]||{},ac=p.acoes[id]||{};
+      return '<div class="ac-sis"><b>'+escHtml(s.name)+'</b><div class="ac-chips">'+AC_OPS.map(([k,n])=>'<label class="ac-chk"><input type="checkbox" data-acop="'+id+'|'+k+'"'+(op[k]?' checked':'')+'> '+n+'</label>').join('')+'</div>'
+        +((AC_ACOES[id]||[]).length?'<div class="ac-acoes">'+AC_ACOES[id].map(([k,n])=>'<div class="ac-acao"><label class="ac-chk"><input type="checkbox" data-acacao="'+id+'|'+k+'"'+(ac[k]?' checked':'')+'> '+n+'</label>'+acSelo(false)+'</div>').join('')+'</div>':'')+'</div>';}).join(''):'<p class="ac-nota">Nenhum sistema liberado para esta conta.</p>')+'</div>';
+    const D=acDiferencas();
+    h+='<div class="ac-pe"><span class="ac-nota" style="margin:0;flex:1">'+(D.length?D.length+' alteração(ões) por salvar':'Sem alterações')+'</span>'
+      +'<button type="button" class="btn-mini ghost" data-acdesfaz'+(D.length?'':' disabled')+'>Desfazer</button>'
+      +'<button type="button" class="btn-mini" data-acrevisa'+(D.length?'':' disabled')+'>Revisar e salvar</button></div>';
+    if(AC.dif&&D.length)h+='<div class="ac-dif" id="ac-dif">'+D.map(x=>escHtml(x.t)+': <span class="'+(x.v?'lib':'blq')+'">'+(x.v?'liberado':'bloqueado')+'</span>'+(x.prot?'':' <span class="ac-selo">a implantar</span>')).join('<br>')
+      +'<div class="ac-pe"><button type="button" class="btn-mini" data-acsalva>Confirmar</button></div></div>';
+    h+='</div></div>';
+    el.innerHTML=h;
+  }
+  function acDiferencas(){const out=[];if(!AC.orig)return out;
+    Object.keys(AC.atual).forEach(e=>{const a=AC.orig[e].p,b=AC.atual[e].p,n=AC.atual[e].nome;
+      const ini=!AC.atual[e].salvo&&!AC.orig[e].novo,P=(t,v,prot)=>out.push({conta:e,t,v,prot});
+      /* perfil inicial ainda não salvo: entra inteiro, para a primeira gravação levar a conta toda */
+      acSistemas().forEach(s=>{if(!!a.sistemas[s.id]!==!!b.sistemas[s.id]||(ini&&b.sistemas[s.id]))P(n+' → '+s.name,!!b.sistemas[s.id],AC_PROTEGIDO.sistema);
+        AC_OPS.forEach(([k,l])=>{const x=!!(a.ops[s.id]||{})[k],y=!!(b.ops[s.id]||{})[k];if(x!==y&&b.sistemas[s.id])P(n+' → '+s.name+' → '+l,y,false);});
+        (AC_ACOES[s.id]||[]).forEach(([k,l])=>{const x=!!(a.acoes[s.id]||{})[k],y=!!(b.acoes[s.id]||{})[k];if(x!==y&&b.sistemas[s.id])P(n+' → '+s.name+' → '+l,y,false);});});
+      AC_GAVETAS.forEach(([g,l])=>{if(!!a.gavetas[g]!==!!b.gavetas[g]||(ini&&b.gavetas[g]))P(n+' → gaveta '+l,!!b.gavetas[g],AC_PROTEGIDO.gaveta);});});
+    return out;}
+  document.addEventListener('click',ev=>{const t=ev.target;if(!t.closest||!t.closest('#ac-painel'))return;
+    const us=t.closest('[data-acuser]');if(us){AC.sel=us.dataset.acuser;AC.dif=false;renderAcessos();return;}
+    if(t.closest('[data-acdesfaz]')){AC.atual=JSON.parse(JSON.stringify(AC.orig));Object.keys(AC.atual).forEach(k=>{if(AC.orig[k].novo&&!AC.orig[k].salvo){delete AC.atual[k];delete AC.orig[k];}});if(!AC.atual[AC.sel])AC.sel=Object.keys(AC.atual)[0];AC.dif=false;renderAcessos();return;}
+    if(t.closest('[data-acrevisa]')){AC.dif=true;renderAcessos();const d=document.getElementById('ac-dif');if(d)d.scrollIntoView({block:'nearest'});return;}
+    if(t.closest('[data-acnovo]')){AC.novo=!AC.novo;renderAcessos();const i=document.getElementById('ac-novo-email');if(i)i.focus();return;}
+    if(t.closest('[data-acnovook]')){const em=String((document.getElementById('ac-novo-email')||{}).value||'').trim().toLowerCase(),nm=String((document.getElementById('ac-novo-nome')||{}).value||'').trim();
+      if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(em)){toast('Escreva o e-mail do login da conta.','err');return;}
+      if(em===AC_ADMIN||AC.atual[em]){toast('Essa conta já está na lista.','err');return;}
+      AC.atual[em]={nome:nm||em.split('@')[0],p:{sistemas:{},gavetas:{},ops:{},acoes:{}},salvo:false};AC.orig[em]={nome:AC.atual[em].nome,p:{sistemas:{},gavetas:{},ops:{},acoes:{}},salvo:false,novo:true};
+      AC.sel=em;AC.novo=false;renderAcessos();return;}
+    if(t.closest('[data-acsalva]')){acSalvar();return;}});
+  /* grava só as contas que mudaram (ou que ainda estão no perfil inicial e
+     entram na lista de mudanças) e o histórico, numa gravação só */
+  function acSalvar(){const N=acNuvem(),D=acDiferencas();
+    if(!N){toast('Sem conexão com a nuvem: nada foi salvo.','err');return Promise.resolve(false);}
+    const contas=new Set(D.map(x=>x.conta));Object.keys(AC.atual).forEach(e=>{if(!AC.atual[e].salvo&&D.some(x=>x.conta===e))contas.add(e);});
+    if(!contas.size)return Promise.resolve(false);
+    const agora=Date.now(),upd={};
+    contas.forEach(e=>{const u=AC.atual[e],p=acLimpa(u.p);upd['acessos/usuarios/'+acChave(e)]=Object.assign(p,{email:e,nome:u.nome,em:agora,por:CURRENT_EMAIL});});
+    upd['acessos/historico/'+N.novaChave()]={em:agora,por:CURRENT_EMAIL,alteracoes:D.map(x=>x.t+': '+(x.v?'liberado':'bloqueado'))};
+    return Promise.resolve(N.gravar(upd)).then(()=>{contas.forEach(e=>{AC.atual[e].salvo=true;});AC.orig=JSON.parse(JSON.stringify(AC.atual));AC.dif=false;renderAcessos();toast('Acessos salvos.');return true;})
+      .catch(err=>{toast('Não foi salvo: '+((err&&err.message)||'sem permissão')+'. Confira se as regras novas foram coladas no Firebase.','err');return false;});}
+  document.addEventListener('change',ev=>{const t=ev.target;if(!t.closest||!t.closest('#ac-painel'))return;
+    const p=AC.atual[AC.sel].p,d=t.dataset;
+    if(d.acsis){p.sistemas[d.acsis]=t.checked;if(t.checked&&!p.ops[d.acsis]){const q=acPerfil([d.acsis],[]);p.ops[d.acsis]=q.ops[d.acsis];p.acoes[d.acsis]=q.acoes[d.acsis];}}
+    else if(d.acgav)p.gavetas[d.acgav]=t.checked;
+    else if(d.acop){const [s,k]=d.acop.split('|');p.ops[s][k]=t.checked;}
+    else if(d.acacao){const [s,k]=d.acacao.split('|');p.acoes[s][k]=t.checked;}
+    renderAcessos();});
+  window.rmAcessos={estado:()=>AC,diferencas:acDiferencas,render:renderAcessos,salvar:acSalvar,reinicia:()=>{if(AC.desliga)try{AC.desliga();}catch(e){}AC={orig:null,atual:null,sel:'engenharia@rmestruturas.com.br',dif:false,nuvem:{},carregado:false,desliga:null,novo:false};}};
   function setSettingsTab(t){
     if (!isAdminUser() && t !== 'aparencia') t = 'aparencia';
     document.querySelectorAll('.st-tab').forEach(b => b.classList.toggle('active', b.getAttribute('data-stab')===t));
@@ -9355,7 +9546,7 @@ const APP_VER='v154';
     const mc = localStorage.getItem(prefKey('rm_marca')) || 'laranja';
     document.querySelectorAll('[data-marca-chip]').forEach(b =>
       b.classList.toggle('active', b.getAttribute('data-marca-chip') === mc));
-    if (isAdminUser()) { renderSystemsManager(); renderCatColors(); renderBackup(); renderCaepi(); }
+    if (isAdminUser()) { renderSystemsManager(); renderCatColors(); renderBackup(); renderCaepi(); renderAcessos(); }
   }
   // Carrega tema/densidade/marca d'água da conta que acabou de logar (ver
   // onAuthStateChanged). Antes disso não dá pra saber a chave certa —
@@ -13116,6 +13307,7 @@ const APP_VER='v154';
       if (dv && dv.style.display !== 'none') { dv.style.display = 'none'; try { showDashboard(); } catch (e) {} }
     }
   }
+  window.__docAjustar = ajustarVisibilidade;
 
   function iniciar(n) {
     if (!q('[data-docs]') || typeof firebase === 'undefined') {
@@ -13462,6 +13654,7 @@ const APP_VER='v154';
     if (!pode) { var ev = q('#etiq-view'); if (ev && ev.style.display !== 'none') { ev.style.display = 'none'; try { showDashboard(); } catch (e) {} } }
     else montado = false; // outra conta pode ter outra lista guardada
   }
+  window.__etiqAjustar = ajustarVisibilidade;
   window.__etqTeste = { ajustarVisibilidade: ajustarVisibilidade, ajuste: ajuste, docHTML: docHTML, st: st, imprimir: imprimir };
   function iniciar(n) {
     if (!q('[data-etiq]') || typeof firebase === 'undefined') {
@@ -13584,6 +13777,7 @@ const APP_VER='v154';
     }
   }
   window.__prcTeste = { dados: function (d) { DADOS = d; render(); }, ajustar: ajustar };
+  window.__prcAjustar = ajustar;
   function iniciar(n) {
     if (!q('[data-precos]') || typeof firebase === 'undefined') { if ((n || 0) < 60) setTimeout(function () { iniciar((n || 0) + 1); }, 400); return; }
     ajustar();
