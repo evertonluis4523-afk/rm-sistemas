@@ -948,7 +948,11 @@ function vigiaCorpo(){
   }catch(e){}
 }
 
-function tomOk(t){ return t==='suave'||t==='nitido'||t==='jarvis'?t:'forte'; }
+/* O JARVIS É SÓ DO DONO. A Central grava rm_jarvis_dono='1' quando quem
+   entrou é o dono (e apaga para os outros); sem ela o Jarvis vira o escuro
+   e o botão pula do escuro para o claro. Teste tema-jarvis-so-dono. */
+function jarvisOk(){ try{ return localStorage.getItem('rm_jarvis_dono')==='1'; }catch(e){ return false; } }
+function tomOk(t){ return t==='suave'||t==='nitido'||(t==='jarvis'&&jarvisOk())?t:'forte'; }
 /* AS CANTONEIRAS DO JARVIS. O derivador acerta as cores; o que faz o HUD é
    o desenho: cantoneira ciano nos cartões, o fio da barra do alto, a grade
    fina no fundo. Sem abertura e sem reator -- isso é da Central --, para
@@ -993,7 +997,7 @@ function pinta(t,tom){
   var m=modo(t,tom);
   if(bt){ bt.textContent = m==='escuro' ? '●' : m==='suave' ? '◐' : m==='nitido' ? '◒' : m==='jarvis' ? '◎' : '◑';
           bt.title = m==='jarvis' ? 'Tema Jarvis — clique para o claro'
-                   : m==='escuro' ? 'Tema escuro — clique para o Jarvis'
+                   : m==='escuro' ? (jarvisOk() ? 'Tema escuro — clique para o Jarvis' : 'Tema escuro — clique para o claro')
                    : m==='suave'  ? 'Tema escuro suave — clique para o escuro nítido'
                    : m==='nitido' ? 'Tema escuro nítido — clique para o escuro'
                                   : 'Tema claro — clique para o escuro suave'; }
@@ -1024,7 +1028,7 @@ window.rmTemaModo=function(){ return modo(lido(),tomLido()); };
    escuro -- e o Jarvis por último, antes de voltar ao claro */
 window.rmTemaAlterna=function(){
   var m=window.rmTemaModo();
-  return window.rmTema(m==='claro' ? 'suave' : m==='suave' ? 'nitido' : m==='nitido' ? 'escuro' : m==='escuro' ? 'jarvis' : 'claro');
+  return window.rmTema(m==='claro' ? 'suave' : m==='suave' ? 'nitido' : m==='nitido' ? 'escuro' : m==='escuro' && jarvisOk() ? 'jarvis' : 'claro');
 };
 
 window.addEventListener('storage',function(e){ if(e.key===CHAVE||e.key===CHAVE_TOM) pinta(lido(),tomLido()); });
@@ -5750,7 +5754,7 @@ fbInit();
 /* Sobe junto com o nome do cache do sw.js, sempre: se um subir sem o outro,
    o numero na tela deixa de significar alguma coisa. Ha uma prova automatica
    que falha quando os dois discordam. */
-const APP_VER='v100';
+const APP_VER='v101';
 (function(){var p=document.getElementById('verPill'); if(p)p.textContent=APP_VER;})();
 if('serviceWorker' in navigator){
   if(location.protocol.startsWith('http')){ navigator.serviceWorker.register('./sw.js').catch(()=>{}); }
