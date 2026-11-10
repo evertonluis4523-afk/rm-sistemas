@@ -1314,8 +1314,8 @@ var RM_FONTE="@font-face{font-family:'Satoshi';src:url(data:font/woff2;base64,d0
   }
 
   .settings-panel {
-    width: 480px;
-    max-width: 92vw;
+    width: 760px;
+    max-width: 94vw;
     max-height: 85vh;
     background: var(--sidebar);
     border: 1px solid var(--divider);
@@ -1362,20 +1362,21 @@ var RM_FONTE="@font-face{font-family:'Satoshi';src:url(data:font/woff2;base64,d0
   .settings-section { margin-bottom: 24px; }
   /* ===== USUÁRIOS E ACESSOS (só o dono) ===== */
   .ac-grid{display:flex;flex-direction:column;gap:14px}
-  .ac-users{display:flex;gap:6px;overflow-x:auto;padding-bottom:2px}
-  .ac-user{flex:1 0 150px;display:flex;flex-direction:column;gap:2px;text-align:left;padding:10px 12px;border:1px solid var(--divider);border-radius:var(--rm-raio);background:var(--card);color:var(--text);font:inherit;cursor:pointer}
+  .ac-users{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px}
+  .ac-user{min-width:0;display:flex;flex-direction:column;gap:2px;text-align:left;padding:10px 12px;border:1px solid var(--divider);border-radius:var(--rm-raio);background:var(--card);color:var(--text);font:inherit;cursor:pointer}
   .ac-user b{font-size:13px}.ac-user span{font-size:11px;color:var(--text-muted);overflow-wrap:anywhere}
   .ac-user.on{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
-  .ac-add{border-style:dashed}.ac-chips input{min-width:0;flex:1 1 180px}
+  .ac-add{border-style:dashed}.ac-novo{display:flex;flex-wrap:wrap;gap:8px}.ac-novo input{min-width:0;flex:1 1 200px}
   .ac-user em{font-style:normal;font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--accent)}
   .ac-bloco{border:1px solid var(--divider);border-radius:var(--rm-raio);background:var(--card);padding:14px;margin-bottom:12px}
   .ac-bloco h4{margin:0 0 10px;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--text-muted);font-weight:700}
-  .ac-chips{display:flex;flex-wrap:wrap;gap:6px 14px}
-  .ac-chk{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--text);cursor:pointer}
-  .ac-chk input{accent-color:var(--accent);width:15px;height:15px}
+  .ac-chips{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:8px 16px}
+  .ac-chk{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text);cursor:pointer;text-align:left;line-height:1.3}
+  .ac-chk input[type=checkbox]{accent-color:var(--accent);width:16px;height:16px;flex:none;margin:0}
   .ac-sis{border-top:1px solid var(--divider);padding:10px 0}.ac-sis:first-of-type{border-top:0;padding-top:0}
   .ac-sis>b{display:block;font-size:13px;margin-bottom:6px}
-  .ac-acoes{display:flex;flex-direction:column;gap:6px;margin-top:10px;padding-left:2px}
+  .ac-acoes{display:flex;flex-direction:column;gap:8px;margin-top:10px}
+  .ac-ops{grid-template-columns:repeat(4,minmax(0,1fr))}@media (max-width:560px){.ac-ops{grid-template-columns:repeat(2,minmax(0,1fr))}}
   .ac-acao{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:12.5px}.ac-acao .ac-chk{flex:1;min-width:0}.ac-acao .ac-selo{flex:none}
   .ac-selo{font-size:10px;font-weight:700;letter-spacing:.04em;padding:2px 7px;border-radius:999px;white-space:nowrap;border:1px solid var(--divider);color:var(--text-muted)}
   .ac-selo.ok{color:var(--rm-ok);border-color:currentColor}
@@ -2308,7 +2309,7 @@ var RM_FONTE="@font-face{font-family:'Satoshi';src:url(data:font/woff2;base64,d0
   .topbar { height: 52px; }
 
   /* ===== CONFIGURAÇÕES PRO ===== */
-  .settings-tabs { display:flex; gap:4px; margin-bottom:18px; border-bottom:1px solid var(--divider); }
+  .settings-tabs { display:flex; flex-wrap:wrap; gap:4px; margin-bottom:18px; border-bottom:1px solid var(--divider); }
   .st-tab { background:none; border:0; padding:9px 12px; font-family:var(--font); font-size:14px; font-weight:600; color:var(--text-muted); cursor:pointer; border-bottom:2px solid transparent; margin-bottom:-1px; }
   .st-tab:hover { color:var(--text); }
   .st-tab.active { color:var(--text); border-bottom-color:var(--accent); }
@@ -4780,7 +4781,7 @@ try { var _e = localStorage.getItem('rm_estilo_ultimo'); if (_e === 'viva' || _e
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js" crossorigin="anonymous"></script>
 
 <script>/* versão publicada (PADRAO_RM.md §3): sobe a cada publicação, junto com o CACHE do sw.js */
-const APP_VER='v155';
+const APP_VER='v156';
 </script>
 <script>
   /* ===== LOGIN (Firebase Authentication) =====
@@ -9469,7 +9470,7 @@ const APP_VER='v155';
       +'<button type="button" class="ac-user" disabled title="O administrador não perde o acesso pelo painel: todos os sistemas, não pode ser alterado aqui"><em>administrador</em><b>Everton</b><span>todos os sistemas</span></button>'
       +us.map(k=>'<button type="button" class="ac-user'+(k===e?' on':'')+'" data-acuser="'+k+'"><b>'+escHtml(U[k].nome)+'</b><span>'+escHtml(k)+'</span><span>'+(U[k].salvo?'salvo':'perfil inicial, ainda não salvo')+'</span></button>').join('')
       +'<button type="button" class="ac-user ac-add" data-acnovo><b>+ Conta</b><span>liberar para outro e-mail</span></button></div>'
-      +(AC.novo?'<div class="ac-bloco"><h4>Nova conta</h4><div class="ac-chips"><input id="ac-novo-email" type="email" placeholder="e-mail do login" autocomplete="off"><input id="ac-novo-nome" placeholder="nome (ex.: Compras)" autocomplete="off"><button type="button" class="btn-mini" data-acnovook>Adicionar</button></div><p class="ac-nota" style="margin:8px 0 0">A conta entra sem nenhum sistema. Marque o que ela pode usar e salve.</p></div>':'')
+      +(AC.novo?'<div class="ac-bloco"><h4>Nova conta</h4><div class="ac-novo"><input id="ac-novo-email" type="email" placeholder="e-mail do login" autocomplete="off"><input id="ac-novo-nome" placeholder="nome (ex.: Compras)" autocomplete="off"><button type="button" class="btn-mini" data-acnovook>Adicionar</button></div><p class="ac-nota" style="margin:8px 0 0">A conta entra sem nenhum sistema. Marque o que ela pode usar e salve.</p></div>':'')
       +(AC.erro?'<p class="ac-nota" style="color:var(--rm-perigo)">Não foi possível ler os acessos salvos (as regras novas já foram coladas no Firebase?). O painel mostra o perfil inicial.</p>':'')
       +'<div>';
     const p=u.p;
@@ -9477,7 +9478,7 @@ const APP_VER='v155';
     h+='<div class="ac-bloco"><h4>Gavetas</h4><div class="ac-chips">'+AC_GAVETAS.map(([g,n])=>'<label class="ac-chk"><input type="checkbox" data-acgav="'+g+'"'+(p.gavetas[g]?' checked':'')+'> '+n+'</label>').join('')+'</div></div>';
     const lib=acSistemas().filter(s=>p.sistemas[s.id]);
     h+='<div class="ac-bloco"><h4>Operações e ações específicas</h4>'+(lib.length?lib.map(s=>{const id=s.id,op=p.ops[id]||{},ac=p.acoes[id]||{};
-      return '<div class="ac-sis"><b>'+escHtml(s.name)+'</b><div class="ac-chips">'+AC_OPS.map(([k,n])=>'<label class="ac-chk"><input type="checkbox" data-acop="'+id+'|'+k+'"'+(op[k]?' checked':'')+'> '+n+'</label>').join('')+'</div>'
+      return '<div class="ac-sis"><b>'+escHtml(s.name)+'</b><div class="ac-chips ac-ops">'+AC_OPS.map(([k,n])=>'<label class="ac-chk"><input type="checkbox" data-acop="'+id+'|'+k+'"'+(op[k]?' checked':'')+'> '+n+'</label>').join('')+'</div>'
         +((AC_ACOES[id]||[]).length?'<div class="ac-acoes">'+AC_ACOES[id].map(([k,n])=>'<div class="ac-acao"><label class="ac-chk"><input type="checkbox" data-acacao="'+id+'|'+k+'"'+(ac[k]?' checked':'')+'> '+n+'</label>'+acSelo(false)+'</div>').join('')+'</div>':'')+'</div>';}).join(''):'<p class="ac-nota">Nenhum sistema liberado para esta conta.</p>')+'</div>';
     const D=acDiferencas();
     h+='<div class="ac-pe"><span class="ac-nota" style="margin:0;flex:1">'+(D.length?D.length+' alteração(ões) por salvar':'Sem alterações')+'</span>'
@@ -9531,6 +9532,7 @@ const APP_VER='v155';
     if (!isAdminUser() && t !== 'aparencia') t = 'aparencia';
     document.querySelectorAll('.st-tab').forEach(b => b.classList.toggle('active', b.getAttribute('data-stab')===t));
     document.querySelectorAll('.st-pane').forEach(p => p.classList.toggle('active', p.getAttribute('data-pane')===t));
+    const sb = document.querySelector('.settings-body'); if (sb) sb.scrollTop = 0;   // aba nova abre do começo
   }
   function renderSettings(){
     applySettingsAccess();
