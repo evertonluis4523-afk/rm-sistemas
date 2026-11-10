@@ -2847,6 +2847,7 @@ body:not(.com-doc) .docs-card,body:not(.com-doc) .ed-grid{display:none}
 .ficha .linha input,.ficha .linha select{padding:7px 9px;font-size:13.5px}
 .val,.pct{text-align:right;font-variant-numeric:tabular-nums}
 .chk{display:flex;align-items:center;gap:4px;margin:0;font-size:12px;white-space:nowrap;color:var(--muted)}
+.partes-papel{display:flex;flex-wrap:wrap;gap:6px 18px;padding:6px 0 2px}.partes-papel .chk{font-size:13px;color:var(--ink)}
 .ficha .chk input{width:auto}
 .grupo>.btn,.sec-b>.btn{align-self:flex-start}
 .nota{margin:0;font-size:12px;color:var(--muted)}
@@ -3706,6 +3707,7 @@ function novoDoc(tipo) {
     met: [{ titulo: '', linhas: MET_CAMPOS.map(k => ({ k, v: '' })) }],
     comp: clone(m.complementares).map(c => Object.assign({ valor: 0 }, c)),
     compCfg: { mostrar: true, somar: true, pct: 0 },
+    papel: papelPadrao(),
     prazoDias: 120,
     pagProp: clone(m.pagamentoProposta).map(x => Object.assign({ forma: '', bem: '' }, x)),
     valores: m.valores.map(e => ({ etapa: e, valor: 0, opcional: false, contrato: true, mostrar: true, cortesia: false })),
@@ -3742,6 +3744,7 @@ function normalizar(d) {
   o.pre = lista(d.pre).map(g => ({ titulo: g.titulo || '', itens: lista(g.itens).map(i => ({ desc: i.desc || '', qtd: i.qtd == null ? '' : String(i.qtd), un: i.un || 'un' })) }));
   o.met = lista(d.met).map(g => ({ titulo: g.titulo || '', linhas: lista(g.linhas).map(l => ({ k: l.k || '', v: l.v || '' })) }));
   o.comp = d.comp ? lista(d.comp).map(c => ({ item: c.item || '', sit: SITUACOES[c.sit] ? c.sit : 'incluso', valor: lerValor(c.valor) })) : b.comp;
+  o.papel = Object.assign(papelPadrao(), d.papel || {});
   o.compCfg = { mostrar: !(d.compCfg && d.compCfg.mostrar === false), somar: !(d.compCfg && d.compCfg.somar === false), pct: lerValor(d.compCfg && d.compCfg.pct) };
   o.pagProp = d.pagProp ? lista(d.pagProp).map(p => ({ pct: lerValor(p.pct), quando: p.quando || '', forma: p.forma || '', bem: p.bem || '' })) : b.pagProp;
   o.valores = d.valores ? lista(d.valores).map(v => ({ etapa: v.etapa || '', valor: lerValor(v.valor), opcional: !!v.opcional, contrato: v.contrato !== false, mostrar: v.mostrar !== false, cortesia: !!v.cortesia })) : b.valores;
@@ -3795,7 +3798,7 @@ function totalCnm(d) { return centavos(cnmItens(d).reduce((s, x) => s + cnmFinal
 function compContam(d) { return (d.comp || []).filter(c => c.sit !== 'nao' && c.sit !== 'cortesia' && lerValor(c.valor)); }
 function compFinal(d, c) { return comAcrescimo(d, c.valor, d.compCfg && d.compCfg.pct); }
 function totalComp(d) { return centavos(compContam(d).reduce((s, c) => s + compFinal(d, c), 0)); }
-function compNoTotal(d) { return d.compCfg && d.compCfg.somar === false ? 0 : totalComp(d); }
+function compNoTotal(d) { return (d.compCfg && d.compCfg.somar === false) || !noPapel(d, 'comp') ? 0 : totalComp(d); } /* fora do papel: fora do total também */
 function cnmNoTotal(d) { return d.cnm && d.cnm.somar !== false ? totalCnm(d) : 0; }
 /* TOTAL DIGITADO E ACRÉSCIMO (%), em Valores. O total digitado vale mesmo
    sem as etapas com valor: substitui a soma (etapas, chave na mão e itens
@@ -3930,7 +3933,7 @@ function textoBlocos(txt, v) {
 }
 function qtdTxt(i) { const q = String(i.qtd || '').trim(); return q ? q + ' ' + (i.un || '') : ''; }
 function blocosEstrutura(d) {
-  return { pre: d.pre.filter(g => g.itens.some(i => i.desc.trim())), met: d.met.filter(g => g.linhas.some(l => l.v.trim())) };
+  return { pre: noPapel(d, 'pre') ? d.pre.filter(g => g.itens.some(i => i.desc.trim())) : [], met: noPapel(d, 'met') ? d.met.filter(g => g.linhas.some(l => l.v.trim())) : [] };
 }
 function tabPre(g) {
   return { t: 'tab', cols: [{ t: 'Item' }, { t: 'Quantidade', dir: true, w: 22 }], linhas: g.itens.filter(i => i.desc.trim()).map(i => [i.desc, qtdTxt(i)]) };
@@ -3946,6 +3949,13 @@ function blocosServico(x, v) {
   if (its.length) out.push({ t: 'tab', cols: [{ t: 'Item' }, { t: 'Qtd', dir: true, w: 18 }], linhas: its.map(i => [i.desc, qtdTxt(i)]) });
   return out;
 }
+/* PARTES NO PAPEL: cada subtítulo marcado sai na proposta e no contrato
+   (tela, PDF e Word); desmarcado, sai dos dois sem apagar o texto -- ex.:
+   uma obra só de cobertura, sem fundações. "Ao lado de selecionar, caixas
+   selecionáveis na proposta, não em configurações." Teste propostas-partes-papel. */
+const PARTES_PAPEL = [['resp', 'Responsabilidade técnica'], ['compet', 'Competências do contratante'], ['pre', 'Estrutura pré-moldada'], ['fund', 'Fundações'], ['met', 'Estrutura metálica'], ['comp', 'Itens complementares']];
+function papelPadrao() { const o = {}; PARTES_PAPEL.forEach(([k]) => { o[k] = true; }); return o; }
+function noPapel(d, k) { return !(d.papel && d.papel[k] === false); }
 function blocosProposta(d) {
   const v = vars(d), t = d.textos, bl = [];
   const tot = totalProposta(d), opc = d.valores.filter(x => x.opcional && !x.cortesia && lerValor(x.valor)), digitado = totManual(d) > 0;
@@ -3956,13 +3966,13 @@ function blocosProposta(d) {
   bl.push(...textoBlocos(d.descricao, v));
   let n = 0;
   const sec = txt => bl.push({ t: 'h2', n: ++n, txt });
-  if (t.responsabilidade.trim()) { sec('Responsabilidade técnica'); bl.push(...textoBlocos(t.responsabilidade, v)); }
-  if (t.competencias.trim()) { sec('Competências do contratante'); bl.push(...textoBlocos(t.competencias, v)); }
+  if (noPapel(d, 'resp') && t.responsabilidade.trim()) { sec('Responsabilidade técnica'); bl.push(...textoBlocos(t.responsabilidade, v)); }
+  if (noPapel(d, 'compet') && t.competencias.trim()) { sec('Competências do contratante'); bl.push(...textoBlocos(t.competencias, v)); }
   const { pre, met } = blocosEstrutura(d);
   if (pre.length) { sec('Estrutura pré-moldada'); pre.forEach(g => { if (g.titulo.trim()) bl.push({ t: 'cap', txt: g.titulo }); bl.push(tabPre(g)); }); }
-  if (t.fundacoes.trim() || t.fundacoesObs.trim()) { sec('Fundações'); bl.push(...textoBlocos(t.fundacoes, v)); if (t.fundacoesObs.trim()) bl.push({ t: 'obs', runs: runs(troca(t.fundacoesObs, v)) }); }
+  if (noPapel(d, 'fund') && (t.fundacoes.trim() || t.fundacoesObs.trim())) { sec('Fundações'); bl.push(...textoBlocos(t.fundacoes, v)); if (t.fundacoesObs.trim()) bl.push({ t: 'obs', runs: runs(troca(t.fundacoesObs, v)) }); }
   if (met.length) { sec('Estrutura metálica'); met.forEach(g => { if (g.titulo.trim()) bl.push({ t: 'cap', txt: g.titulo }); bl.push(tabMet(g)); }); }
-  const comp = d.comp.filter(c => c.item.trim());
+  const comp = noPapel(d, 'comp') ? d.comp.filter(c => c.item.trim()) : [];
   const totComp = totalComp(d), compVal = totComp > 0 && d.compCfg.mostrar !== false;
   if (comp.length) {
     sec('Itens complementares');
@@ -4392,9 +4402,9 @@ function blocosContrato(d) {
   bl.push({ t: 'p', runs: [{ t: '1.2. ', b: true }, { t: 'A estrutura encomendada pelo CONTRATANTE tem as seguintes especificações:' }] });
   const { pre, met } = blocosEstrutura(d);
   if (pre.length) { bl.push({ t: 'h3', txt: 'Estrutura pré-moldada' }); pre.forEach(g => { if (g.titulo.trim()) bl.push({ t: 'cap', txt: g.titulo }); bl.push(tabPre(g)); }); }
-  if (d.textos.fundacoes.trim()) { bl.push({ t: 'h3', txt: 'Fundações' }); bl.push(...textoBlocos(d.textos.fundacoes, v)); if (d.textos.fundacoesObs.trim()) bl.push({ t: 'obs', runs: runs(troca(d.textos.fundacoesObs, v)) }); }
+  if (noPapel(d, 'fund') && d.textos.fundacoes.trim()) { bl.push({ t: 'h3', txt: 'Fundações' }); bl.push(...textoBlocos(d.textos.fundacoes, v)); if (d.textos.fundacoesObs.trim()) bl.push({ t: 'obs', runs: runs(troca(d.textos.fundacoesObs, v)) }); }
   if (met.length) { bl.push({ t: 'h3', txt: 'Estrutura metálica' }); met.forEach(g => { if (g.titulo.trim()) bl.push({ t: 'cap', txt: g.titulo }); bl.push(tabMet(g)); }); }
-  const comp = d.comp.filter(x => x.item.trim());
+  const comp = noPapel(d, 'comp') ? d.comp.filter(x => x.item.trim()) : [];
   if (comp.length) { bl.push({ t: 'h3', txt: 'Itens complementares' }); bl.push({ t: 'tab', cols: [{ t: 'Item' }, { t: 'Situação', w: 32 }], linhas: comp.map(x => [x.item, { t: x.sit === 'nao' ? 'Não incluso no contrato' : 'Incluso no contrato', fraco: x.sit === 'nao' }]) }); }
   /* os serviços da chave na mão, cada um com o seu título, como no
      contrato de chave na mão da RM */
@@ -4731,6 +4741,8 @@ function fichaHTML(d) {
     + campo('Tratamento na proposta', '<select data-p="tratamento">' + ['Prezado Senhor', 'Prezada Senhora', 'Prezados Senhores', ''].map(t => '<option value="' + t + '"' + (d.tratamento === t ? ' selected' : '') + '>' + (t || '(sem saudação)') + '</option>').join('') + '</select>'));
   h += secao('Obra e proposta', '<div class="g2">' + campo('Tipo', '<select data-p="tipo" data-re="1">' + Object.keys(TIPOS).map(k => '<option value="' + k + '"' + (d.tipo === k ? ' selected' : '') + '>' + TIPOS[k] + '</option>').join('') + '</select>')
     + campo('Título no papel', inp('titulo', d.titulo, { ph: TITULO_TIPO[d.tipo] || TITULO_TIPO.padrao, rot: 'Título no papel' })) + '</div>'
+    + campo('Partes no papel (proposta e contrato)', '<div class="partes-papel">' + PARTES_PAPEL.map(([k, r]) => '<label class="chk"><input type="checkbox" data-p="papel.' + k + '" data-re="1"' + (noPapel(d, k) ? ' checked' : '') + '> ' + r + '</label>').join('') + '</div>')
+    + '<p class="nota">Desmarcada, a parte sai da proposta e do contrato (tela, PDF e Word) e o texto fica guardado; marcando de novo, volta.</p>'
     + '<div class="g2">' + campo('Município da obra', inp('obra.cidade', d.obra.cidade, { ph: 'ex.: Santa Cruz do Sul/RS' })) + campo('Endereço da obra', inp('obra.endereco', d.obra.endereco)) + '</div>'
     + '<div class="g3">' + campo('Data da proposta', inp('data', d.data, { type: 'date' })) + campo('Validade (dias)', inp('validade', d.validade, { tipo: 'num', mode: 'numeric' })) + campo('Prazo de entrega (dias)', inp('prazoDias', d.prazoDias, { tipo: 'num', mode: 'numeric' })) + '</div>'
     + campo('Descrição da estrutura', area('descricao', d.descricao, 5, 'Descrição da estrutura')));
@@ -4744,7 +4756,7 @@ function fichaHTML(d) {
     pre += bt('preItem', '＋ Peça', { i, cls: 'btn btn-ghost btn-sm' }) + '</div>';
   });
   h += secao('Estrutura pré-moldada', pre + bt('preGrupo', '＋ Volume', { cls: 'btn btn-ghost btn-sm' }));
-  h += secao('Fundações', area('textos.fundacoes', d.textos.fundacoes, 4, 'Fundações') + campo('Observação em destaque', area('textos.fundacoesObs', d.textos.fundacoesObs, 3, 'Observação das fundações')), { aberta: false });
+  h += secao('Fundações', area('textos.fundacoes', d.textos.fundacoes, 4, 'Fundações') + campo('Observação em destaque', area('textos.fundacoesObs', d.textos.fundacoesObs, 3, 'Observação das fundações')), { aberta: false, extra: noPapel(d, 'fund') ? '' : 'fora do papel' });
   let met = '';
   d.met.forEach((g, i) => {
     met += '<div class="grupo"><div class="grupo-cab">' + inp('met.' + i + '.titulo', g.titulo, { ph: 'Volume (ex.: alpendre das docas)', rot: 'Nome do volume' }) + bt('metDel', '✕', { i, rot: 'Excluir volume', cls: 'icon-btn del' }) + '</div>';
@@ -6873,7 +6885,7 @@ if ('serviceWorker' in navigator) {
 })();
 </script>
 <script>/* versão publicada (PADRAO_RM.md §3): sobe a cada publicação, junto com o CACHE do sw.js */
-const APP_VER='v43';
+const APP_VER='v44';
 </script>
 <script id="rmVersaoBloco">
 /* ===== SELO DE VERSÃO — igual em todos os sistemas (PADRAO_RM.md §3) =====
