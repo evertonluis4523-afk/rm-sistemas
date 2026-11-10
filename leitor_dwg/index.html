@@ -24004,7 +24004,7 @@ const padrao=()=>({v:2,nome:'',
     topo:{nome:'Tubo redondo 2"',d:50.8,esp:1.2},macica:{nome:'Barra maciça 1/2"',d:12.7,alt:50},v:2,
     poste:{nome:'Tubo quadrado 40×40',d:40,esp:2,alt:1300,max:2000},modelo:'continuo',dobra:'esquadria',passa:50,raio:120},
   patamar:{abaF:50,abaT:50,chapa:1200},
-  pedido:{v:2,fornecedor:'',obra:'',numero:'',resp:'',entrega:'',obs:'',sec:{degraus:true,patamar:true,tubos:true,perfil:true},extras:[]},
+  pedido:{v:2,fornecedor:'',obra:'',numero:'',resp:'',entrega:'',obs:'',sec:{degraus:true,patamar:true,tubos:true,macica:true,perfil:true},extras:[]},
   barra:6000});
 /* a v2 escolhia só o corrimão: os dois lados, um ou nenhum */
 const ladosDe=l=>{l=String(l);return {esq:{gc:false,corr:l==='2'||l==='esq'},dir:{gc:false,corr:l==='2'||l==='dir'}};};
@@ -24882,7 +24882,7 @@ function render(){
     +'<div class="es-card" id="esPed"><h3>Pedido de compra</h3><div class="es-f">'
     +campo('Fornecedor','pedido.fornecedor',PD.fornecedor,{txt:1})+campo('Obra / Cliente','pedido.obra',PD.obra,{txt:1})+campo('Nº do pedido','pedido.numero',PD.numero,{txt:1})
     +campo('Responsável','pedido.resp',PD.resp,{txt:1})+'<label>Previsão de entrega<input type="date" data-g="pedido.entrega" value="'+esc(PD.entrega)+'"></label></div>'
-    +'<div class="es-ped-sec">'+PED_SEC.map(([k,n])=>'<label class="es-ck2"><input type="checkbox" data-ps="'+k+'"'+(PD.sec[k]?' checked':'')+'> '+n+'</label>').join('')+'</div>'
+    +'<div class="es-ped-sec">'+PED_SEC.map(([k,n])=>'<label class="es-ck2"><input type="checkbox" data-ps="'+k+'"'+(PD.sec[k]!==false?' checked':'')+'> '+n+'</label>').join('')+'</div>'
     +'<div id="esPedTab"></div>'
     +'<div class="es-sub">Itens a mais</div><div id="esPedEx"></div><div class="es-add"><button type="button" class="btn ghost" id="esPedAdd">+ Item</button></div>'
     +'<label style="margin-top:12px">Observações<textarea data-g="pedido.obs" rows="2">'+esc(PD.obs)+'</textarea></label>'
@@ -24934,13 +24934,17 @@ const ab=document.querySelector('#abas .aba[data-aba="esc"]');if(ab)ab.addEventL
 let tRz=null;window.addEventListener('resize',()=>{clearTimeout(tRz);tRz=setTimeout(()=>{if(root.classList.contains('on'))pinta3D($('esV3'));},180);});
 
 /* ---------------------------- pedido de compra ---------------------------- */
-const PED_SEC=[['degraus','Degraus'],['patamar','Patamar'],['tubos','Tubos e barras'],['perfil','Perfil lateral']];
+/* "Barra maciça" com caixa própria: "algumas escadas já tenho estoque" --
+   desmarcada, a barra sai do pedido e os tubos continuam. Pedido antigo,
+   sem a caixa gravada, vem com ela marcada. Teste escada-pedido-macica. */
+const PED_SEC=[['degraus','Degraus'],['patamar','Patamar'],['tubos','Tubos'],['macica','Barra maciça'],['perfil','Perfil lateral']];
 function itensPedido(r){
   const e=st,D=e.degrau,S=e.pedido.sec,bar=Math.max(500,num(e.barra)||6000),it=[];
   if(S.degraus&&r.deg)it.push({sec:'Degraus',desc:'Degrau '+zTxt(D)+' em chapa xadrez esp. '+f1(D.esp)+' (corte e dobra)',med:f0(D.comp)+' mm',qtd:r.deg,un:'pç'});
   if(S.patamar)r.pecas.filter(p=>p.grupo==='p'||p.grupo==='pe').forEach(p=>it.push({sec:'Patamar',desc:p.desc+' · '+p.onde.toLowerCase()+' · chapa xadrez esp. '+f1(D.esp)+(p.grupo==='pe'?' (cortar à parte)':''),med:f0(p.w)+' × '+f0(p.l)+' mm',qtd:p.qtd,un:'pç'}));
   const porNome=gs=>{const L=r.pecas.filter(p=>gs.includes(p.grupo));return [...new Set(L.map(p=>p.desc))].map(n=>({n,b:barras(L.filter(p=>p.desc===n),bar)}));};
-  if(S.tubos)porNome(['c','gl','gc1','gt','gp','gb']).forEach(x=>it.push({sec:'Tubos e barras',desc:x.n,med:'barra de '+f0(bar)+' mm',qtd:x.b.n,un:'barra'}));
+  const mac=S.macica!==false;
+  if(S.tubos||mac)porNome((S.tubos?['c','gl','gc1','gt','gp']:[]).concat(mac?['gb']:[])).forEach(x=>it.push({sec:'Tubos e barras',desc:x.n,med:'barra de '+f0(bar)+' mm',qtd:x.b.n,un:'barra'}));
   if(S.tubos)r.pecas.filter(p=>p.grupo==='sp').forEach(p=>it.push({sec:'Tubos e barras',desc:p.desc+' (tubo Ø '+f1(e.corr.diam)+' mm)',med:'afastamento '+f0(p.mm)+' mm',qtd:p.qtd,un:'pç'}));
   if(S.perfil)porNome(['u']).forEach(x=>it.push({sec:'Perfil lateral',desc:x.n,med:'barra de '+f0(bar)+' mm',qtd:x.b.n,un:'barra'}));
   (e.pedido.extras||[]).filter(x=>String(x.desc||'').trim()).forEach(x=>it.push({sec:'Outros',desc:x.desc,med:x.med||'',qtd:num(x.qtd)||1,un:x.un||'pç'}));
@@ -30266,7 +30270,7 @@ if('serviceWorker' in navigator && location.protocol.startsWith('http')){
 }
 </script>
 <script>/* versão publicada (PADRAO_RM.md §3): sobe a cada publicação, junto com o CACHE do sw.js */
-const APP_VER='v263';
+const APP_VER='v264';
 </script>
 <script id="rmVersaoBloco">
 /* ===== SELO DE VERSÃO — igual em todos os sistemas (PADRAO_RM.md §3) =====
