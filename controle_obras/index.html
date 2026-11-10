@@ -3122,7 +3122,7 @@ async function persist(){
   catch(e){ mem[LS_KEY]=data; storageOK=false; updateWarn(); }
 }
 let saveT=null;
-function save(){ clearTimeout(saveT); saveT=setTimeout(persist,250); cloudPushSoon(); if(S.obras&&S.obras.some(o=>o.linkCliente)) linksAgendar(); }
+function save(){ clearTimeout(saveT); saveT=setTimeout(persist,250); cloudPushSoon(); if(S.obras&&S.obras.some(o=>o.linkCliente||o.linkConta)) linksAgendar(); }
 
 async function load(){
   let raw=null;
@@ -5051,7 +5051,7 @@ function envioObra(id){
   const nNF=(o.fornecedores||[]).filter(f=>f.anexo).length;
   ov.innerHTML='<div class="modal relpdf" role="dialog" aria-modal="true" aria-labelledby="relEscT">'
     +'<div class="mhead"><h2 id="relEscT">Enviar · '+esc(o.nome||'obra')+'</h2><button class="x" type="button" aria-label="Fechar">&times;</button></div>'
-    +'<div class="mbody"><button type="button" class="rel-op" id="relOpNF"><b>Com as notas fiscais</b><span>Para a contabilidade: abre no navegador, com o relatório da obra e '
+    +'<div class="mbody"><button type="button" class="rel-op" id="relOpNF"><b>Com as notas fiscais</b><span>Para a contabilidade: link para mandar no WhatsApp (ou o arquivo de antes), com o relatório da obra e '
     +(nNF?(nNF===1?'a NF anexada':'as '+nNF+' NFs anexadas'):'as NFs anexadas')+' para ver e baixar.</span></button>'
     +'<button type="button" class="rel-op" id="relOpPdf"><b>Relatório em PDF</b><span>No papel da empresa, para imprimir ou arquivar. Lista as notas, sem os arquivos.</span></button>'
     +'<button type="button" class="rel-op" id="relOpCli"><b>Para o cliente acompanhar</b><span>PDF no papel da empresa, escolhendo o que ocultar: parcelas recebidas e valores.</span></button></div></div>';
@@ -5059,7 +5059,7 @@ function envioObra(id){
   const fecha=()=>{ ov.classList.remove('open'); ov.innerHTML=''; };
   ov.querySelector('.x').onclick=fecha; ov.onclick=e=>{ if(e.target===ov) fecha(); };
   ov.querySelector('#relOpPdf').onclick=()=>{ fecha(); relObra(id); };
-  ov.querySelector('#relOpNF').onclick=()=>{ fecha(); envioObraComNF(id); };
+  ov.querySelector('#relOpNF').onclick=()=>envioContabilidade(id,ov,fecha);
   ov.querySelector('#relOpCli').onclick=()=>envioCliente(id,ov,fecha);
 }
 /* O QUE O CLIENTE VÊ. A escolha fica lembrada no aparelho para a próxima. */
@@ -5099,10 +5099,21 @@ function envioCliente(id,ov,fecha){
 const LINK_COL='obras_link', LINK_ARQ='obras_link_arq';
 const LINK_SITE='https://rm-estruturas.pages.dev/controle_obras/acompanhamento.html';
 const LINK_DIA=86400000;
+/* DOIS LINKS POR OBRA (nov/2026): o do cliente (o que ocultar é escolhido) e
+   o da contabilidade ("essa mesma forma ... quero na primeira opção de enviar
+   para a contabilidade") -- o relatório completo, todos os valores e as
+   parcelas, com a chave de cada nota. Cada um tem o seu código e a sua
+   validade. Teste obras-link-contabilidade. */
+const LINK_TIPOS={
+  cliente:{campo:'linkCliente',tit:'Link para o cliente',msg:o=>'Olá! Segue o acompanhamento da obra '+(o.nome||'')+', com as notas fiscais para ver e baixar: '},
+  conta:{campo:'linkConta',tit:'Link para a contabilidade',msg:o=>'Olá! Segue o relatório da obra '+(o.nome||'')+', com as notas fiscais para ver e baixar: '}
+};
+const LINK_CAMPOS=['linkCliente','linkConta'];
 function linkCodigo(){ const b=new Uint8Array(18); crypto.getRandomValues(b); return btoa(String.fromCharCode.apply(null,b)).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,''); }
 function linkUrl(lk){ return LINK_SITE+'?c='+lk.c; }
 function linkHash(t){ let h=5381; for(let i=0;i<t.length;i++) h=((h<<5)+h+t.charCodeAt(i))|0; return (h>>>0).toString(36)+'.'+t.length; }
-function linkDados(o,oc){
+function linkDados(o,oc,tipo){
+  const conta=tipo==='conta';
   const c=calcObra(o), V=(oc&&oc.valores)||'todos', valTodos=V==='todos', semPar=!!(oc&&oc.parcelas), n=v=>Number(v)||0;
   const resumo=[];
   if(valTodos){ resumo.push(['Valor da obra',n(o.valor)]); if(!semPar) resumo.push(['Recebido',n(c.recebido)],['A receber',n(c.faltaReceber)]);
@@ -5110,7 +5121,9 @@ function linkDados(o,oc){
   else if(V==='nota') resumo.push(['Total em nota',n(c.tiradoNota)]);
   const d={nome:o.nome||'',cliente:o.cliente?rmNomePt(o.cliente):'',ref:o.data||'',obs:o.obs||'',resumo:resumo,
     parcelas:semPar?null:(o.parcelas||[]).map(p=>({desc:p.desc||'',data:p.data||'',valor:valTodos?n(p.valor):null,forma:obRotulo(OB_FORMAS,p.forma)||'',ok:!!p.recebida})),
-    notas:(o.fornecedores||[]).map(f=>({fid:f.id,forn:f.nome||'',nf:f.numeroNF||'',data:f.dataNF||'',valor:valTodos?n(f.valor):null,arq:!!f.anexo,tipo:(f.anexo&&f.anexo.tipo)||''}))};
+    notas:(o.fornecedores||[]).map(f=>({fid:f.id,forn:f.nome||'',nf:f.numeroNF||'',data:f.dataNF||'',valor:valTodos?n(f.valor):null,arq:!!f.anexo,tipo:(f.anexo&&f.anexo.tipo)||'',
+      chave:conta?String(f.chave||'').replace(/[^0-9A-Za-z]/g,''):null}))};
+  if(conta) d.tipo='conta';
   return JSON.parse(JSON.stringify(d,(k,v)=>v===null?undefined:v));
 }
 let _linkT=null, _linkRodando=false;
@@ -5118,10 +5131,10 @@ function linksAgendar(){ clearTimeout(_linkT); _linkT=setTimeout(()=>linksPublic
 async function linksPublica(soObra,prog){
   if(!fdb||_linkRodando) return; _linkRodando=true; let mudou=false;
   try{
-    for(const o of S.obras){
-      const lk=o.linkCliente; if(!lk||!lk.c||(soObra&&o.id!==soObra)) continue;
+    for(const o of S.obras) for(const campo of LINK_CAMPOS){
+      const lk=o[campo]; if(!lk||!lk.c||(soObra&&o.id!==soObra)) continue;
       if(lk.expira<Date.now()) continue;
-      const meta=linkDados(o,lk.oc), h=linkHash(JSON.stringify(meta)+'|'+lk.expira);
+      const meta=linkDados(o,lk.oc,campo==='linkConta'?'conta':'cliente'), h=linkHash(JSON.stringify(meta)+'|'+lk.expira);
       if(h!==lk.h){ await fdb.ref(LINK_COL+'/'+lk.c).set(Object.assign({},meta,{em:Date.now(),expira:lk.expira})); lk.h=h; mudou=true; }
       lk.arqs=lk.arqs||{};
       const comArq=(o.fornecedores||[]).filter(f=>f.anexo), faltam=comArq.filter(f=>lk.arqs[f.id]!==((f.anexo.nome||'')+'|'+(f.anexo.tipo||'')));
@@ -5137,22 +5150,36 @@ async function linksPublica(soObra,prog){
   } finally { _linkRodando=false; }
   if(mudou) save();
 }
-async function linkDesliga(o){
-  const lk=o&&o.linkCliente; if(!lk) return;
+async function linkDesliga(o,campo){
+  campo=campo||'linkCliente';
+  const lk=o&&o[campo]; if(!lk) return;
   if(fdb){ try{ await fdb.ref(LINK_COL+'/'+lk.c).remove(); await fdb.ref(LINK_ARQ+'/'+lk.c).remove(); }catch(e){} }
-  delete o.linkCliente; save();
+  delete o[campo]; save();
 }
-function linkCliente(id,ov,fecha,oc){
+function envioContabilidade(id,ov,fecha){
+  const o=obraById(id); if(!o) return;
+  const lk=o.linkConta&&o.linkConta.expira>Date.now()?o.linkConta:null;
+  ov.querySelector('.mbody').innerHTML='<p class="oc-tit">Enviar para a contabilidade</p>'
+    +'<button type="button" class="rel-op" id="ctLink"><b>Link para a contabilidade</b><span>Abre no celular e no computador, com o relatório completo e os botões “Ver nota” e “Baixar” em cada nota. Nota lançada depois aparece sozinha.'+(lk?' Já existe um link ativo, válido até '+new Date(lk.expira).toLocaleDateString('pt-BR')+'.':'')+'</span></button>'
+    +'<button type="button" class="rel-op" id="ctArq"><b>Arquivo com as notas</b><span>O arquivo de antes (.html), com as notas dentro: abre no navegador do computador.</span></button>'
+    +'<div class="relpdf-acts oc-acts"><button class="btn-act" type="button" id="ctVolta">Voltar</button></div>';
+  ov.querySelector('#ctLink').onclick=()=>linkConta(id,ov,fecha);
+  ov.querySelector('#ctArq').onclick=()=>{ fecha(); envioObraComNF(id); };
+  ov.querySelector('#ctVolta').onclick=()=>envioObra(id);
+}
+function linkConta(id,ov,fecha){ linkCliente(id,ov,fecha,{parcelas:false,valores:'todos'},'conta'); }
+function linkCliente(id,ov,fecha,oc,tipo){
+  const T=LINK_TIPOS[tipo||'cliente'], campo=T.campo;
   const o=obraById(id); if(!o) return;
   if(!fdb){ toast('O link precisa da nuvem: entre com a sua conta e tente de novo','err'); return; }
-  let lk=o.linkCliente;
-  if(lk&&lk.expira<Date.now()){ linkDesliga(o); lk=null; }
-  if(!lk){ lk=o.linkCliente={c:linkCodigo(),oc:oc,criado:Date.now(),expira:Date.now()+90*LINK_DIA}; save(); }
+  let lk=o[campo];
+  if(lk&&lk.expira<Date.now()){ linkDesliga(o,campo); lk=null; }
+  if(!lk){ lk=o[campo]={c:linkCodigo(),oc:oc,criado:Date.now(),expira:Date.now()+90*LINK_DIA}; save(); }
   else if(JSON.stringify(lk.oc)!==JSON.stringify(oc)){ lk.oc=oc; save(); }
   const body=ov.querySelector('.mbody'), url=linkUrl(lk), ate=new Date(lk.expira).toLocaleDateString('pt-BR');
   const dias=Math.round((lk.expira-Date.now())/LINK_DIA);
-  const msg='Olá! Segue o acompanhamento da obra '+(o.nome||'')+', com as notas fiscais para ver e baixar: '+url;
-  body.innerHTML='<p class="oc-tit">Link para o cliente</p>'
+  const msg=T.msg(o)+url;
+  body.innerHTML='<p class="oc-tit">'+T.tit+'</p>'
     +'<p class="lk-st" id="lkSt">Preparando o link…</p>'
     +'<input class="lk-url" id="lkUrl" readonly value="'+esc(url)+'" aria-label="Link do acompanhamento">'
     +'<div class="lk-acts"><button class="btn-act save" type="button" id="lkCopia">Copiar link</button>'
@@ -5167,14 +5194,14 @@ function linkCliente(id,ov,fecha,oc){
   const st=body.querySelector('#lkSt');
   const publica=()=>{ st.textContent='Atualizando o link…';
     linksPublica(o.id,(k,n)=>{ st.textContent='Enviando as notas ('+k+' de '+n+')…'; })
-      .then(()=>{ st.innerHTML='<b>Link ativo</b> · '+((o.fornecedores||[]).length)+' nota(s) · o que você escolheu ocultar fica oculto'; })
+      .then(()=>{ st.innerHTML='<b>Link ativo</b> · '+((o.fornecedores||[]).length)+' nota(s) · '+(tipo==='conta'?'relatório completo, com todos os valores':'o que você escolheu ocultar fica oculto'); })
       .catch(()=>{ st.textContent='Não deu para atualizar o link agora (sem internet?). Ele tenta de novo sozinho.'; }); };
   publica();
   body.querySelector('#lkCopia').onclick=()=>{ (navigator.clipboard?navigator.clipboard.writeText(url):Promise.reject()).then(()=>toast('Link copiado'),()=>{ const i=body.querySelector('#lkUrl'); i.select(); try{ document.execCommand('copy'); toast('Link copiado'); }catch(e){} }); };
   body.querySelectorAll('input[name=lkVal]').forEach(r=>r.onchange=()=>{ lk.expira=Date.now()+(+r.value)*LINK_DIA; save(); body.querySelector('#lkAte').textContent=new Date(lk.expira).toLocaleDateString('pt-BR'); publica(); });
-  body.querySelector('#lkVolta').onclick=()=>envioCliente(id,ov,fecha);
-  body.querySelector('#lkDesliga').onclick=()=>{ if(!confirm('Desligar o link? Quem tiver o endereço não consegue mais abrir.'))return; linkDesliga(o).then(()=>{ toast('Link desligado'); fecha(); }); };
-  body.querySelector('#lkNovo').onclick=()=>{ if(!confirm('Gerar outro link? O endereço atual deixa de abrir.'))return; linkDesliga(o).then(()=>linkCliente(id,ov,fecha,oc)); };
+  body.querySelector('#lkVolta').onclick=()=>tipo==='conta'?envioContabilidade(id,ov,fecha):envioCliente(id,ov,fecha);
+  body.querySelector('#lkDesliga').onclick=()=>{ if(!confirm('Desligar o link? Quem tiver o endereço não consegue mais abrir.'))return; linkDesliga(o,campo).then(()=>{ toast('Link desligado'); fecha(); }); };
+  body.querySelector('#lkNovo').onclick=()=>{ if(!confirm('Gerar outro link? O endereço atual deixa de abrir.'))return; linkDesliga(o,campo).then(()=>linkCliente(id,ov,fecha,oc,tipo)); };
 }
 function envioClienteComNF(id,oc){
   const o=obraById(id); if(!o) return;
@@ -6556,7 +6583,7 @@ if('serviceWorker' in navigator){
 })();
 </script>
 <script>/* versão publicada (PADRAO_RM.md §3): sobe a cada publicação, junto com o CACHE do sw.js */
-const APP_VER='v110';
+const APP_VER='v111';
 </script>
 <script id="rmVersaoBloco">
 /* ===== SELO DE VERSÃO — igual em todos os sistemas (PADRAO_RM.md §3) =====
