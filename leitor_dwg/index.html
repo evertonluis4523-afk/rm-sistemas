@@ -4373,7 +4373,7 @@ window.RMGL=(function(){
         g.setAttribute('position',new T.Float32BufferAttribute(A.pos,3));g.setAttribute('color',new T.Float32BufferAttribute(A.cor,4));g.computeVertexNormals();
         const m=new T.Mesh(g,C.mat[k2]);m.castShadow=!o.papel;m.receiveShadow=true;m.frustumCulled=false;C.cena.add(m);C.malhas.push(m);});
       /* piso na cota mais baixa, com folga */
-      const cen=[0,1,2].map(i=>(mn[i]+mx[i])/2),tam=Math.max(mx[h[0]]-mn[h[0]],mx[h[1]]-mn[h[1]],1),ext=tam*.72;
+      const cen=[0,1,2].map(i=>(mn[i]+mx[i])/2),tam=Math.max(mx[h[0]]-mn[h[0]],mx[h[1]]-mn[h[1]],(mx[up]-mn[up])*.8,1),ext=tam*.72;
       const pz=mn[up]-Math.max(1,tam*.002),Pp=(a,b)=>{const q=[0,0,0];q[h[0]]=a;q[h[1]]=b;q[up]=pz;return q;};
       const cs=[Pp(cen[h[0]]-ext,cen[h[1]]-ext),Pp(cen[h[0]]+ext,cen[h[1]]-ext),Pp(cen[h[0]]+ext,cen[h[1]]+ext),Pp(cen[h[0]]-ext,cen[h[1]]+ext)];
       const pg=new T.BufferGeometry();pg.setAttribute('position',new T.Float32BufferAttribute([].concat(cs[0],cs[1],cs[2],cs[0],cs[2],cs[3]),3));
@@ -14818,7 +14818,13 @@ function tlh3dDesenha(){
   if(cv.height!==hq)cv.height=hq;
   const w=cv.width, h=cv.height;
   ctx.setTransform(1,0,0,1,0,0);
-  RM3D.fundo(ctx,w,h);
+  /* MOTOR NOVO: as chapas (e o piso e a sombra) vêm do WebGL, pintadas por
+     baixo no fim; recorte, juntas, rótulos e eixos continuam daqui, por cima.
+     O mesmo esquema da cobertura (RMGL.camada). */
+  let GL=null;
+  if(d&&T3.vista!=='perfil'&&window.RMGL&&RMGL.ativo()){
+    if(RMGL.pronto())GL=[];else if(!T3.glEspera){T3.glEspera=true;RMGL.three().then(()=>{T3.glEspera=false;try{tlh3dDesenha();}catch(e){}}).catch(()=>{});}}
+  if(GL)ctx.clearRect(0,0,w,h);else RM3D.fundo(ctx,w,h);
   if(!d)return;
   if(T3.vista==='perfil'){ tlh3dPerfilDesenha(ctx,w,h); return; }
   const E=tlh3dEscala(w,h);
@@ -14827,8 +14833,8 @@ function tlh3dDesenha(){
   if(!d.caixa){const mn=[1e15,1e15,1e15],mx=[-1e15,-1e15,-1e15];
     d.quads.forEach(q=>q.pts.forEach(p=>{for(let i=0;i<3;i++){if(p[i]<mn[i])mn[i]=p[i];if(p[i]>mx[i])mx[i]=p[i];}}));d.caixa={mn,mx};}
   const dpr=devicePixelRatio||1;
-  const grade=T3.pitch<-0.01?0:RM3D.chao(ctx,v=>{const g=tlh3dGira(v);return [X(g),Y(g)];},d.caixa.mn,d.caixa.mx,1,dpr);
-  if(!T3.arrastando&&T3.pitch>=-0.01)RM3D.sombra(ctx,v=>{const g=tlh3dGira(v);return [X(g),Y(g)];},d.quads.filter(q=>q.tipo!=='recorte').map(q=>q.pts),1,d.caixa.mn[1],0,'fechamento');
+  const grade=T3.pitch<-0.01?0:GL?RM3D.piso(d.caixa.mn,d.caixa.mx,1).grade:RM3D.chao(ctx,v=>{const g=tlh3dGira(v);return [X(g),Y(g)];},d.caixa.mn,d.caixa.mx,1,dpr);
+  if(!GL&&!T3.arrastando&&T3.pitch>=-0.01)RM3D.sombra(ctx,v=>{const g=tlh3dGira(v);return [X(g),Y(g)];},d.quads.filter(q=>q.tipo!=='recorte').map(q=>q.pts),1,d.caixa.mn[1],0,'fechamento');
   const realT=RM3D.real();
   const pr=d.quads.map(q=>{const V=q.pts.map(tlh3dGira);
     return {q,V,z:(V[0][2]+V[1][2]+V[2][2]+V[3][2])/4};}).sort((a,b)=>a.z-b.z);
@@ -14836,6 +14842,7 @@ function tlh3dDesenha(){
     ctx.beginPath(); V.forEach((v,i)=>{const x=X(v),y=Y(v); i?ctx.lineTo(x,y):ctx.moveTo(x,y);});
     ctx.closePath();
     if(q.tipo==='recorte'){ ctx.fillStyle='rgba(179,18,60,.55)'; ctx.fill(); return; }
+    if(GL){const b0=realT?(q.estreita?[206,212,218]:RM3D.ACO):(q.cor||(q.estreita?[214,170,110]:[178,186,194]));GL.push({p:q.pts,cor:'rgb('+b0.join(',')+')'});return;}
     const base=realT?(q.estreita?[206,212,218]:RM3D.ACO):(q.cor||(q.estreita?[214,170,110]:[178,186,194]));
     const rgb=k=>'rgb('+base.map(c=>Math.max(0,Math.min(255,Math.round(c*q.luz*k)))).join(',')+')';
     /* O brilho da onda e' um gradiente NOVO por quadrilatero -- numa obra
@@ -14884,6 +14891,11 @@ function tlh3dDesenha(){
   {const o=tlh3dGira([0,0,0]),e=v=>{const g=tlh3dGira(v);return [g[0]-o[0],-(g[1]-o[1]),g[2]-o[2]];};
    RM3D.gizmo(ctx,w,h,{X:e([1000,0,0]),Y:e([0,0,1000]),Z:e([0,1000,0])},dpr,document.getElementById('tl3bar'));
    RM3D.ultimo.fechamento={estilo:RM3D.estilo(),grade,escala:RM3D.escala(ctx,w,h,E.esc,dpr)};}
+  if(GL){const im=RMGL.camada(GL,v=>{const g=tlh3dGira(v);return [X(g),Y(g),g[2]];},w,h,1,{up:1,semPiso:T3.pitch<-0.01});
+    ctx.save();ctx.setTransform(1,0,0,1,0,0);ctx.globalCompositeOperation='destination-over';
+    if(im){if(im._espelho){ctx.translate(0,h);ctx.scale(1,-1);}ctx.drawImage(im,0,0,w,h);}
+    ctx.restore();ctx.save();ctx.globalCompositeOperation='destination-over';RM3D.fundo(ctx,w,h);ctx.restore();
+    RM3D.ultimo.fechamento.motor=im?'novo':'classico';}
 }
 /* O CORTE da telha, em escala verdadeira e com as cotas do perfil. Nao passa
    pela projecao 3D de proposito: vista de cima a chapa fica quase de fio, e
@@ -30615,7 +30627,7 @@ if('serviceWorker' in navigator && location.protocol.startsWith('http')){
 }
 </script>
 <script>/* versão publicada (PADRAO_RM.md §3): sobe a cada publicação, junto com o CACHE do sw.js */
-const APP_VER='v268';
+const APP_VER='v269';
 </script>
 <script id="rmVersaoBloco">
 /* ===== SELO DE VERSÃO — igual em todos os sistemas (PADRAO_RM.md §3) =====
