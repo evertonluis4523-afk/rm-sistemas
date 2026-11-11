@@ -2560,7 +2560,7 @@ function v3PecasAplica(){
 document.getElementById('v3MedBtn').addEventListener('click',e=>{ v3Medidas=!v3Medidas; e.currentTarget.classList.toggle('on',v3Medidas); });
 
 window.__v3Teste={cena:()=>({...v3HudInfo}),
-  dados:()=>linhasData.map(l=>({id:l.id,nome:l.nome,tipo:l.tipo,ml:l.ml})),
+  dados:()=>linhasData.map(l=>({id:l.id,nome:l.nome,tipo:l.tipo,ml:l.ml,app:l.app,junta:v3TipoJunta(l)})),
   trena:()=>({on:v3Trena.on,medidas:v3Trena.lista.map(m=>v3TrenaMm(m.a,m.b)),hov:v3Trena.hov&&v3Trena.hov.tipo,aberta:!!v3Trena.a}),
   tela:pt=>{ if(!cam||!wrap) return null; const r=wrap.getBoundingClientRect(), q=v3(pt).project(cam); return [r.left+(q.x+1)/2*r.width, r.top+(1-q.y)/2*r.height]; },linhas:()=>objs.map(o=>Array.from(o.line.geometry.attributes.position.array)),
   camera:()=>cam?cam.position.toArray():null, alvo:()=>ctrl?ctrl.target.toArray():null,
@@ -2630,13 +2630,29 @@ function v3Salva(){
    uma da outra e cobrindo mais da metade da menor. Acontece com peça
    duplicada no modelo (copiar e colar no mesmo lugar) -- e cada uma entrava
    no preço. A de id maior fica marcada como cópia da outra. */
+/* TOPO DA VIGA x TOPO DA PAREDE embaixo do piso (laje): a viga do mezanino
+   fica com o piso apoiado em cima e o PU vai nos 2 lados dela (ext_int);
+   só o topo da placa de parede (a laje encostando por cima) é 1 lado, a
+   linha interna embaixo da laje. O plugin 1.3.5 manda os dois com
+   junta 'laje_inferior' -- a viga volta a ser Viga aqui ('viga_superior'). */
+function v3EhTopoViga(l,pecas){
+  const nome=String(l.nome||''); if(!/·\s*topo\s*$/i.test(nome)) return false;
+  if(l.tipo==='Viga') return true;
+  if(l.tipo!=='Laje') return false;
+  const base=nome.replace(/\s*·\s*topo\s*$/i,'').trim(), ps=pecas||v3PecasDados;
+  if(Array.isArray(ps)){ const p=ps.find(x=>String(x.nome||'').trim()===base); if(p) return p.tipo==='Viga'; }
+  return /^viga\b/i.test(base);
+}
 function v3TipoJunta(l){
+  if(l.junta==='viga_superior'||v3EhTopoViga(l)) return 'viga_superior';
   if(l.tipo==='Laje') return 'laje_inferior';
   if(l.junta) return String(l.junta);
-  if((l.tipo==='Placa'||l.tipo==='Viga') && /·\s*topo\s*$/i.test(String(l.nome||''))) return 'laje_inferior';
+  if(l.tipo==='Placa' && /·\s*topo\s*$/i.test(String(l.nome||''))) return 'laje_inferior';
   return l.tipo==='Placa'?'placa_base':l.tipo==='Viga'?'viga_inferior':l.tipo==='Pilar'?'pilar_face':'padrao';
 }
-function v3AjustaJuntaLaje(l){
+function v3AjustaJuntaLaje(l,pecas){
+  if(l.junta!=='viga_superior'&&v3EhTopoViga(l,pecas))
+    return {...l,tipo:'Viga',junta:'viga_superior',app:(l.tipo==='Laje'||l.app==='int1')?'ext_int':(l.app||'ext_int')};
   return v3TipoJunta(l)==='laje_inferior'?{...l,tipo:'Laje',junta:'laje_inferior',app:'int1'}:l;
 }
 function v3DeslocamentoVisual(l,raio){
