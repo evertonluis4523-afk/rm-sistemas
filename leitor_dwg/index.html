@@ -27099,6 +27099,8 @@ html[data-theme="escuro"] .log-det>summary.err{color:var(--red)}.log-det>summary
 #tlov .tl-face select,#tlov .tl-face input[type=number]{padding:4px 7px;font-size:13px;border:1px solid var(--line);border-radius:7px;
   background:var(--surface-2);color:var(--ink);font-family:var(--mono)}
 #tlov .tl-face input[type=number]{width:78px}
+#tlov .tl-face .cob-f-tel select{max-width:230px;font-family:inherit}
+#tlov .cob-tel-t{text-align:left;background:var(--surface-2);color:var(--ink);font-size:12px;letter-spacing:.04em}
 #tlov .tl-face label{display:inline-flex;align-items:center;gap:5px;font-size:11px;color:var(--muted);text-transform:uppercase;
   letter-spacing:.07em;font-weight:700;white-space:nowrap}
 #tlov .tl-face .btn{padding:4px 10px;font-size:12.5px;font-weight:600}
@@ -27239,6 +27241,20 @@ html[data-theme="escuro"] .log-det>summary.err{color:var(--red)}.log-det>summary
       maxComp:t.bras?(brasMax(t.bras)||0):0,fabricante:t.bras?'Brastelha':(PRECOS.fornecedor||''),nota:'',orc:true,preco:t.preco,categoria:t.cat||''};
     return {...(CATALOGO.find(m=>m.id===COB.modelo)||CATALOGO[0]),orc:false,telhaId:''};
   }
+  /* TELHA POR FACE: a cobertura principal com uma telha, o alpendre ou a
+     fachada com outra. b.telha vazio = a principal (a do topo da tela);
+     'orc:<id>' ou 'local:<id>' = a escolhida para aquela face. */
+  function cobTelhaPrincipal(){const m=modeloAtual()||{};
+    return {chave:'',telhaId:m.telhaId||'',nome:m.nome||'Telha',util:inteiro(COB.util),termica:!!COB.termica};}
+  function cobTelhaDe(b){
+    const v=String((b&&b.telha)||'');if(!v)return null;
+    if(v.startsWith('orc:')){loadPrecos();const t=orcTelhaPorId(v.slice(4));if(!t)return null;
+      const nome=orcTelhaRotulo(t);return {chave:v,telhaId:String(t.id),nome,util:orcTelhaLarguraMm(t),termica:cobTermicaDoModelo({nome})};}
+    if(v.startsWith('local:')){const m=CATALOGO.find(x=>x.id===v.slice(6));if(!m)return null;
+      return {chave:v,telhaId:'',nome:m.nome,util:inteiro(m.util),termica:cobTermicaDoModelo(m)};}
+    return null;
+  }
+  function cobTelhaB(b){return cobTelhaDe(b)||cobTelhaPrincipal();}
   function salvaCatalogo(){try{localStorage.setItem('rm_telha_catalogo_v2',JSON.stringify(CATALOGO));}catch(_){}}
   function salvaCob(){
     try{localStorage.setItem('rm_cobertura_cfg_v1',JSON.stringify(COB));}catch(_){ }
@@ -27679,6 +27695,9 @@ html[data-theme="escuro"] .log-det>summary.err{color:var(--red)}.log-det>summary
        inferior  -> as pecas dividem o comprimento, sem folga entre elas
        superior da peca do beiral    = inferior + pingadeira
        superior das pecas de cima    = inferior + transpasse
+     O COMPRIMENTO DA TELHA (beiral, folga e ajustes ja' aplicados) E' O DA
+     CHAPA SUPERIOR: a pingadeira DESCONTA da inferior, nunca soma na
+     superior ("superior 10.640, inferior 10.590" com pingadeira de 50).
 
      ONDE CAI A EMENDA e escolha do projetista, porque ela tem de pousar numa
      terca. Por isso ha um campo para o comprimento da peca do beiral: com
@@ -28053,9 +28072,9 @@ html[data-theme="escuro"] .log-det>summary.err{color:var(--red)}.log-det>summary
     });
     if(erros.length)return {ok:false,modo:'planta',erros,avisos,aguas:[],blocos:[],lista:[]};
     const blocos=[],todas=[],aguas=[];
-    const grade=cobGradeCumeeira(blocosAtivos,util);
+    const grade=cobGradeCumeeira(blocosAtivos.filter(b=>!cobTelhaDe(b)),util);
     const montaBloco=(b,bi,gb)=>{
-      const erros=[],todas=[],aguas=[];
+      const erros=[],todas=[],aguas=[],T=cobTelhaB(b),util=T.util;
       const setores=cobSetores(b);if(!setores.length){erros.push(b.nome+': a cumeeira não divide o contorno.');return {erros};}
       const rb={...b,origIndex:COB.blocos.indexOf(b),setores:[]};
       setores.forEach((s,si)=>{
@@ -28075,8 +28094,8 @@ html[data-theme="escuro"] .log-det>summary.err{color:var(--red)}.log-det>summary
             final=Math.max(1,Math.ceil(geometrico+num(COB.beiral)-(f.tocaCumeeira?num(COB.cumeeira):0)-num(COB.ajusteObra)-num(b.ajuste)-.5));
           const pedido=Math.ceil(final/incAgr)*incAgr;
           let div,pecas;
-          if(COB.termica){
-            const infs=cobPecasTermica(pedido,COB.pecaBeiral,incAgr,COB.maxComp);
+          if(T.termica){
+            const infs=cobPecasTermica(Math.max(1,pedido-inteiro(COB.pingadeira)),COB.pecaBeiral,incAgr,COB.maxComp);   /* a pingadeira DESCONTA da inferior: a superior fica com o comprimento da telha */
             pecas=infs.map((v,i)=>({papel:cobPapelPeca(i,infs.length),inf:v,
               sup:v+(i===0?inteiro(COB.pingadeira):inteiro(COB.traspasse))}));
             div={partes:infs.length,medida:Math.max(...infs),cobertura:infs.reduce((q,v)=>q+v,0)};
@@ -28088,6 +28107,7 @@ html[data-theme="escuro"] .log-det>summary.err{color:var(--red)}.log-det>summary
           const perfilFinal=(f.perfilProj||[f.projecao]).map(v=>Math.max(0,v*fator+num(COB.beiral)-(f.tocaCumeeira?num(COB.cumeeira):0)-num(COB.ajusteObra)-num(b.ajuste)));
           const ordem=fi+1;
           const x={...f,bloco:bi,setor:si,ordem,geometrico,final,pedido,partes:div.partes,medida:div.medida,pecas,
+            telha:T.chave,telhaNome:T.nome,telhaId:T.telhaId,util,termica:T.termica,
             medida3d:!!s.medida3d,projecaoPlanta:s.medida3d?f.projecao/fatorIncl:f.projecao,
             sentido:cobSentidoFace(b),
             perfilFinal,minFinal:Math.min(...perfilFinal),maxFinal:Math.max(...perfilFinal),
@@ -28102,6 +28122,8 @@ html[data-theme="escuro"] .log-det>summary.err{color:var(--red)}.log-det>summary
     const reusosLargura=[];let sobras=null;
     blocosAtivos.forEach((b,bi)=>{
       let m=montaBloco(b,bi,grade.get(b));
+      const util=cobTelhaB(b).util;
+      if(sobras&&sobras.telha!==cobTelhaB(b).chave)sobras=null;
       if(COB.reusarLargura&&!grade.get(b)&&sobras&&sobras.length&&!m.erros.length){
         const larg=Math.min(...sobras.map(x=>x.sobra)),ex=cobEixos(b),us=b.poligono.map(p=>cobDot(p,ex.u));
         const gb=cobSentidoFace(b)==='rtl'?{rtl:Math.max(...us)+util-larg}:{ltr:Math.min(...us)-(util-larg)};
@@ -28123,14 +28145,15 @@ html[data-theme="escuro"] .log-det>summary.err{color:var(--red)}.log-det>summary
       if(m.erros.length){erros.push(...m.erros);return;}
       blocos.push(m.rb);todas.push(...m.todas);aguas.push(...m.aguas);
       const rbLocal=m.rb;
-      sobras=COB.reusarLargura?cobSobrasLargura(m.todas,util).map(x=>({...x,marcaFonte:(f,dest)=>{
+      sobras=COB.reusarLargura?Object.assign(cobSobrasLargura(m.todas,util).map(x=>({...x,marcaFonte:(f,dest)=>{
         rbLocal.setores.forEach(s=>s.faixas.forEach(g=>{if(g.codigo===f.codigo){g.reusoLarguraPara=f.reusoLarguraPara;g.reusoLarguraParaCurto=f.reusoLarguraParaCurto;g.reusoLarguraSobra=x.sobra;}}));
-        f.reusoLarguraSobra=x.sobra;}})):null;
+        f.reusoLarguraSobra=x.sobra;}})),{telha:cobTelhaB(b).chave}):null;
     });
     if(erros.length)return {ok:false,modo:'planta',erros,avisos,aguas,blocos,lista:[]};
     /* A ordem precisa existir antes de agrupar o pedido: as pecas obtidas de
        sobra deixam de ser compradas, mas continuam identificadas no plano. */
-    const reusos=cobPlanejaReuso(todas,util,e);
+    const porTelha=new Map();todas.forEach(x=>{const k=x.telha||'';if(!porTelha.has(k))porTelha.set(k,[]);porTelha.get(k).push(x);});
+    const reusos=[...porTelha.values()].flatMap(xs=>cobPlanejaReuso(xs,xs[0].util||util,e));
     const compradas=todas.filter(x=>!x.reusoDe&&!x.reusoLarguraDe);
     const grupos=new Map();
     /* Na telha termica cada peca da faixa vira uma LINHA do pedido, porque
@@ -28138,10 +28161,11 @@ html[data-theme="escuro"] .log-det>summary.err{color:var(--red)}.log-det>summary
        isso as duas cairiam no mesmo grupo e o fabricante receberia uma
        medida so' para cortar duas pecas distintas. */
     compradas.forEach(x=>{
-      if(COB.termica&&x.pecas&&x.pecas.length){
+      const tel={telha:x.telha||'',telhaNome:x.telhaNome,telhaId:x.telhaId,util:x.util};
+      if(x.termica&&x.pecas&&x.pecas.length){
         x.pecas.forEach(pc=>{
-          const kt=[x.blocoNome,x.setorNome,pc.sup,pc.inf,pc.papel,x.diagonal?'D':'R'].join('|');
-          if(!grupos.has(kt))grupos.set(kt,{agua:x.setorNome,mm:pc.sup,chapaSup:pc.sup,chapaInf:pc.inf,
+          const kt=[x.telha||'',x.blocoNome,x.setorNome,pc.sup,pc.inf,pc.papel,x.diagonal?'D':'R'].join('|');
+          if(!grupos.has(kt))grupos.set(kt,{...tel,agua:x.setorNome,mm:pc.sup,chapaSup:pc.sup,chapaInf:pc.inf,
             papel:pc.papel,qtd:0,faixas:0,partes:1,diagonal:x.diagonal,codigos:[],reusoPara:[],
             projecoes:[],foraCumeeira:false,sentido:x.sentido});
           const gt=grupos.get(kt);
@@ -28152,13 +28176,13 @@ html[data-theme="escuro"] .log-det>summary.err{color:var(--red)}.log-det>summary
         });
         return;
       }
-      const k=[x.blocoNome,x.setorNome,x.medida,x.partes,x.diagonal?'D':'R'].join('|');
-      if(!grupos.has(k))grupos.set(k,{agua:x.setorNome,mm:x.medida,qtd:0,faixas:0,partes:x.partes,diagonal:x.diagonal,codigos:[],reusoPara:[],projecoes:[],foraCumeeira:false,sentido:x.sentido});
+      const k=[x.telha||'',x.blocoNome,x.setorNome,x.medida,x.partes,x.diagonal?'D':'R'].join('|');
+      if(!grupos.has(k))grupos.set(k,{...tel,agua:x.setorNome,mm:x.medida,qtd:0,faixas:0,partes:x.partes,diagonal:x.diagonal,codigos:[],reusoPara:[],projecoes:[],foraCumeeira:false,sentido:x.sentido});
       const g=grupos.get(k);g.qtd+=x.partes*e;g.faixas+=e;g.codigos.push(x.codigo);
       g.projecoes.push(Math.round(x.projecaoPlanta==null?x.projecao:x.projecaoPlanta));g.foraCumeeira=g.foraCumeeira||!!x.foraCumeeira;g.medida3d=g.medida3d||!!x.medida3d;
       if(x.reusoPara)g.reusoPara.push(x.codigo+' → '+x.reusoPara);
     });
-    const lista=[...grupos.values()].sort((a,b)=>a.agua.localeCompare(b.agua,'pt-BR')||b.mm-a.mm).map(g=>{
+    const lista=[...grupos.values()].sort((a,b)=>(a.telha?1:0)-(b.telha?1:0)||String(a.telha).localeCompare(String(b.telha))||a.agua.localeCompare(b.agua,'pt-BR')||b.mm-a.mm).map(g=>{
       const p0=g.projecoes.reduce((a,v)=>Math.min(a,v),Infinity),p1=g.projecoes.reduce((a,v)=>Math.max(a,v),-Infinity),proj=p0===p1?mm(p0)+' mm':mm(p0)+'–'+mm(p1)+' mm';
       /* obs guarda a frase inteira -- ainda usada pelo CSV, que e' dado bruto
          para abrir em planilha e ali uma coluna a mais nao atrapalha. Mas a
@@ -28197,11 +28221,12 @@ html[data-theme="escuro"] .log-det>summary.err{color:var(--red)}.log-det>summary
     const areaCoberta=areaCobertaBase*e,perdaDiagonal=perdaDiagonalBase*e;
     /* Na termica o metro linear comprado e o da chapa SUPERIOR, que e a
        maior das duas -- e' ela que define o corte na perfiladeira. */
-    const metroDe=x=>(COB.termica&&x.pecas&&x.pecas.length)
+    const metroDe=x=>(x.termica&&x.pecas&&x.pecas.length)
       ? x.pecas.reduce((q,pc)=>q+pc.sup/1000,0) : x.partes*x.medida/1000;
     const metrosBrutos=todas.reduce((s,x)=>s+metroDe(x),0)*e;
     const metros=compradas.reduce((s,x)=>s+metroDe(x),0)*e;
-    const areaPedidoBruta=metrosBrutos*(util/1000),areaPedido=metros*(util/1000);
+    const areaDe=xs=>xs.reduce((s,x)=>s+metroDe(x)*(x.util||util)/1000,0)*e;
+    const areaPedidoBruta=areaDe(todas),areaPedido=areaDe(compradas);
     const economiaArea=Math.max(0,areaPedidoBruta-areaPedido),economiaMetros=Math.max(0,metrosBrutos-metros);
     /* A telha estreita da agua recuada nao e sobra nem engano: e o recorte
        que mantem a onda casada com o gomo do capote. Quem confere precisa
@@ -28288,6 +28313,11 @@ html[data-theme="escuro"] .log-det>summary.err{color:var(--red)}.log-det>summary
       }).join('')+brasOpcoesGrupo(COB.orcTelhaId);
     }
     return CATALOGO.map(m=>'<option value="local:'+h(m.id)+'"'+(!COB.orcTelhaId&&m.id===COB.modelo?' selected':'')+'>'+h(m.nome)+' · útil '+mm(m.util)+' mm · local</option>').join('')+brasOpcoesGrupo(COB.orcTelhaId);
+  }
+  function cobOpcoesTelhaFace(sel){
+    sel=String(sel||'');const ts=orcTelhasDisponiveis();
+    const ops=ts.length?ts.map(t=>['orc:'+t.id,t.desc+' · útil '+mm(orcTelhaLarguraMm(t))]):CATALOGO.map(m=>['local:'+m.id,m.nome+' · útil '+mm(m.util)]);
+    return '<option value="">Principal</option>'+ops.map(o=>'<option value="'+h(o[0])+'"'+(o[0]===sel?' selected':'')+'>'+h(o[1])+'</option>').join('');
   }
   function svgPreviewPlanta(r){
     const bs=r.ok?r.blocos:COB.blocos.map(b=>({...b,setores:[]}));
@@ -28428,7 +28458,7 @@ html[data-theme="escuro"] .log-det>summary.err{color:var(--red)}.log-det>summary
       if(faixas.length){
         const baixa=faixas[0],alta=faixas[faixas.length-1],meio=f=>V(cobLocalMundo(b,{x:(f.p0.x+f.p1.x)/2,y:(f.p0.y+f.p1.y)/2}));
         const pA=meio(baixa),pB=meio(alta),dir=cobSentidoFace(b),inicio=dir==='rtl'?pB:pA,fim=dir==='rtl'?pA:pB;
-        const ultima=dir==='rtl'?baixa:alta,sobra=ultima.largura<COB.util-1,orig=Number.isInteger(b.origIndex)?b.origIndex:bi;
+        const ultima=dir==='rtl'?baixa:alta,sobra=ultima.largura<(ultima.util||COB.util)-1,orig=Number.isInteger(b.origIndex)?b.origIndex:bi;
         /* O rotulo entra PARA DENTRO DA PROPRIA AGUA, andando do marcador na
            direcao do centro dela. Antes saia sempre 16 px para a direita: o
            marcador B fica na borda direita, e o "ULTIMA - SOBRA" dele ia
@@ -28645,6 +28675,7 @@ html[data-theme="escuro"] .log-det>summary.err{color:var(--red)}.log-det>summary
     const excluir=i=>'<button type="button" class="btn ghost tl-f-x" data-cob-excluir="'+i+'" title="Tira este grupo da leitura: terça, lateral ou qualquer face que veio junto sem ser telhado">× Excluir</button>';
     /* ajuste fino desta face, somado ao Ajuste da obra (o projeto tinha 4 mm
        de diferença de uma água para a outra que a obra não tem) */
+    const telhaFace=i=>'<label class="cob-f-tel">Telha <select data-cob-tel="'+i+'" aria-label="Telha desta face">'+cobOpcoesTelhaFace(COB.blocos[i].telha)+'</select></label>';
     const ajuste=i=>'<label title="Descontado das telhas desta face, além do Ajuste da obra. Negativo acrescenta.">Ajuste (mm) <input data-cob-aj="'+i+'" type="number" step="1" value="'+Math.round(num(COB.blocos[i].ajuste))+'"></label>';
     box.innerHTML='<div class="tl-faces-l">'+faixaExcl+(COB.blocos.length?COB.blocos.map((b,i)=>{
       if(b.origem==='sketchup'){
@@ -28654,7 +28685,7 @@ html[data-theme="escuro"] .log-det>summary.err{color:var(--red)}.log-det>summary
           '<span class="tl-f-d"><b>'+dec(area,2)+'</b> m²</span>'+
           '<span class="tl-f-d"><b>'+dec(b.inclinacao,1)+'</b>%</span>'+
           ((b.furos||[]).length?'<span class="tl-f-d" title="Recortes / vãos internos preservados">'+b.furos.length+(b.furos.length>1?' vãos':' vão')+'</span>':'')+
-          ajuste(i)+
+          telhaFace(i)+ajuste(i)+
           '<button type="button" class="btn ghost" data-cob-inverter="'+i+'" title="Inverte o sentido da montagem desta face">'+(sentido==='rtl'?'B → A':'A → B')+' ⇄</button>'+
           excluir(i)+
           (b.aviso?'<div class="cob-erro">'+h(b.aviso)+'</div>':'')+'</div>';
@@ -28666,7 +28697,7 @@ html[data-theme="escuro"] .log-det>summary.err{color:var(--red)}.log-det>summary
       return '<div class="tl-face" data-bi="'+i+'">'+campoNome(b,i)+'<span class="tl-f-d"><b>'+dec(area,1)+'</b> m² '+(COB.verdadeira&&COB.leitura!=='sketchup'?'no desenho':'em planta')+'</span>'+
         '<label>Cumeeira <select data-cob-ridge="'+i+'">'+(op||'<option value="">não reconhecida</option>')+'</select></label>'+
         '<label>Setores <select data-cob-uso="'+i+'"><option value="ambos"'+(b.uso==='ambos'?' selected':'')+'>A e B</option><option value="A"'+(b.uso==='A'?' selected':'')+'>Só A</option><option value="B"'+(b.uso==='B'?' selected':'')+'>Só B</option></select></label>'+
-        '<label>Incl. % <input data-cob-inc="'+i+'" type="number" min="0" step="0.1" value="'+num(b.inclinacao)+'"></label>'+ajuste(i)+
+        '<label>Incl. % <input data-cob-inc="'+i+'" type="number" min="0" step="0.1" value="'+num(b.inclinacao)+'"></label>'+telhaFace(i)+ajuste(i)+
         (b.aviso?'<div class="cob-erro">'+h(b.aviso)+'</div>':'')+
         (b.uso!=='ambos'?'<div class="cob-erro">Atenção: o setor '+(b.uso==='A'?'B':'A')+' está desativado neste bloco.</div>':'')+'</div>';
     }).join(''):'<div class="tl-face tl-nota">'+(COB.excluidas.length?'Todos os grupos foram excluídos da leitura. Use “Restaurar” acima.':'Nenhum bloco reconhecido. Use quadros fechados envolvendo cada planta e clique em “Reler medidas do DWG”.')+'</div>')+'</div>';
@@ -28686,6 +28717,9 @@ html[data-theme="escuro"] .log-det>summary.err{color:var(--red)}.log-det>summary
     }));
     box.querySelectorAll('[data-cob-inc]').forEach(s=>s.addEventListener('change',()=>{
       const b=COB.blocos[+s.dataset.cobInc];if(!b)return;b.inclinacao=Math.max(0,num(s.value));marcaPendente();
+    }));
+    box.querySelectorAll('[data-cob-tel]').forEach(s=>s.addEventListener('change',()=>{
+      const b=COB.blocos[+s.dataset.cobTel];if(!b)return;b.telha=s.value||'';marcaPendente();
     }));
     box.querySelectorAll('[data-cob-aj]').forEach(s=>s.addEventListener('change',()=>{
       const b=COB.blocos[+s.dataset.cobAj];if(!b)return;b.ajuste=Math.round(num(s.value));marcaPendente();
@@ -28846,7 +28880,7 @@ html[data-theme="escuro"] .log-det>summary.err{color:var(--red)}.log-det>summary
           '<div class="fld"><label>Transpasse se dividir (mm)</label><input id="cobTraspasse" type="number" min="0" value="'+inteiro(COB.traspasse)+'"></div>'+
           '<div class="fld cob-planta-only"><label>Agrupar comprimentos (mm)</label><input id="cobAgrupamento" type="number" min="1" step="1" value="'+inteiro(COB.agrupamento)+'" title="Arredonda sempre para cima no pedido"></div>'+
           '<div class="fld"><label>Chapas por telha</label><input id="cobTermicaInfo" value="'+(COB.termica?'Duas chapas (térmica / forro)':'Uma folha')+'" disabled title="Vem do nome da telha no cadastro: térmica ou forro = duas chapas; sem isso, uma folha"></div>'+
-          '<div class="fld cob-termica-only"><label>Pingadeira (mm)</label><input id="cobPingadeira" type="number" min="0" value="'+inteiro(COB.pingadeira)+'" title="Quanto a chapa de cima avança sobre a pingadeira, no beiral"></div>'+
+          '<div class="fld cob-termica-only"><label>Pingadeira (mm)</label><input id="cobPingadeira" type="number" min="0" value="'+inteiro(COB.pingadeira)+'" title="Descontada da chapa inferior. A superior fica com o comprimento da telha."></div>'+
           '<div class="fld cob-termica-only"><label>Peça do beiral (mm)</label><input id="cobPecaBeiral" type="number" min="0" value="'+inteiro(COB.pecaBeiral)+'" title="Chapa inferior da peça de baixo, onde cai a emenda. Zero divide igual."></div>'+
         '</div></div>'+
         (skpArq&&!temDwg?'':
@@ -29303,7 +29337,9 @@ html[data-theme="escuro"] .log-det>summary.err{color:var(--red)}.log-det>summary
        fornecedor compram por comprimento, e 14 de 2.091 numa face e 14 na
        outra são 28 telhas iguais -- não duas linhas. As faces e o recorte
        diagonal vão na observação da linha. */
-    const linhas=cobTotaisComprimento(r.lista).map(g=>({telhaId:m.telhaId,comp:g.x.mm,qtd:g.qtd,larguraUtilMm:COB.util,
+    const semCad=cobTotaisComprimento(r.lista).filter(g=>g.telha&&!g.x.telhaId);
+    if(semCad.length){alert('A telha "'+(semCad[0].x.telhaNome||'')+'" de uma face é do cadastro local. Escolha para ela uma telha do Orçamento RM.');return;}
+    const linhas=cobTotaisComprimento(r.lista).map(g=>({telhaId:g.telha?g.x.telhaId:m.telhaId,comp:g.x.mm,qtd:g.qtd,larguraUtilMm:g.x.util||COB.util,
       obs:'Cobertura · '+[...g.destinos].join(', ')+(g.diag?' · '+g.diag+' com ponta em ângulo (corte na obra)':'')}));
     const cum=cobCumeeiras(r),avulsos=[];
     if(cum&&cum.pecas){const cad=cumCadastro(cum.tipo),obs='Cumeeira '+cum.tipo+' · peças de '+cum.util+' mm (largura útil) · abas de '+cum.aba+' mm';
@@ -30000,7 +30036,7 @@ html[data-theme="escuro"] .log-det>summary.err{color:var(--red)}.log-det>summary
       if(C3.ficha)(b.setores||[]).forEach(s=>(s.faixas||[]).forEach(f=>{if(f.p0&&f.p1)fx3.push({a:cobLocalMundo(b,f.p0),b:cobLocalMundo(b,f.p1),f,st:s,bn:b.nome});}));
       const fx=(b.setores||[]).flatMap(s=>s.faixas||[]).slice().sort((a,z)=>a.ini-z.ini||a.segmento-z.segmento);
       if(fx.length&&!C3.ficha){const lo=fx[0],hi=fx[fx.length-1],mid=f=>cobLocalMundo(b,{x:(f.p0.x+f.p1.x)/2,y:(f.p0.y+f.p1.y)/2}),rtl=cobSentidoFace(b)==='rtl',last=rtl?lo:hi;
-        linhas.push({a:rtl?mid(hi):mid(lo),b:rtl?mid(lo):mid(hi),seq:true,fim:last.largura<COB.util-1?'SOBRA':'FIM'});}
+        linhas.push({a:rtl?mid(hi):mid(lo),b:rtl?mid(lo):mid(hi),seq:true,fim:last.largura<(last.util||COB.util)-1?'SOBRA':'FIM'});}
     });
     const todos=paineis.flatMap(x=>x.p);if(!todos.length)return;
     const min=todos.reduce((a,p)=>[Math.min(a[0],p[0]),Math.min(a[1],p[1]),Math.min(a[2],p[2])],[Infinity,Infinity,Infinity]);
@@ -30135,12 +30171,14 @@ html[data-theme="escuro"] .log-det>summary.err{color:var(--red)}.log-det>summary
     const m=new Map();
     (lista||[]).forEach(x=>{
       const termica=x.chapaSup!=null&&x.chapaInf!=null&&x.chapaSup!==x.chapaInf;
-      const k=termica?('t|'+x.chapaSup+'|'+x.chapaInf):('m|'+x.mm);
-      if(!m.has(k))m.set(k,{x,ord:termica?x.chapaSup:x.mm,qtd:0,diag:0,destinos:new Set()});
+      const k=(x.telha||'')+'#'+(termica?('t|'+x.chapaSup+'|'+x.chapaInf):('m|'+x.mm));
+      if(!m.has(k))m.set(k,{x,telha:x.telha||'',ord:termica?x.chapaSup:x.mm,qtd:0,diag:0,destinos:new Set()});
       const g=m.get(k);g.qtd+=x.qtd;if(x.tipo==='diagonal')g.diag+=x.qtd;g.destinos.add(x.agua);
     });
-    return [...m.values()].sort((a,b)=>b.ord-a.ord);
+    return [...m.values()].sort((a,b)=>(a.telha?1:0)-(b.telha?1:0)||a.telha.localeCompare(b.telha)||b.ord-a.ord);
   }
+  /* as telhas de uma leitura, na ordem: a principal primeiro */
+  function cobTelhasDoTotal(t){const v=new Map();t.forEach(g=>{if(!v.has(g.telha))v.set(g.telha,{chave:g.telha,nome:g.x.telhaNome||'',util:g.x.util,grupos:[]});v.get(g.telha).grupos.push(g);});return [...v.values()];}
   function cobTotaisHTML(lista,classe,reusos,reusosLargura){
     const t=cobTotaisComprimento(lista);if(!t.length)return '';
     const soma=t.reduce((s,g)=>s+g.qtd,0);
@@ -30152,8 +30190,9 @@ html[data-theme="escuro"] .log-det>summary.err{color:var(--red)}.log-det>summary
       (reusosLargura||[]).map(x=>h(x.destino)+' (sobra de '+h(x.fonte)+', '+x.sobra+' mm)').join(', ')+'</td></tr>':'';
     return '<table class="'+classe+'"><thead><tr><th colspan="4">Total para fabricar — somado por comprimento, todas as faces</th></tr>'+
       '<tr><th>Comprimento</th><th class="n">Quantidade</th><th class="n">Com ponta em ângulo</th><th>Faces</th></tr></thead><tbody>'+
-      t.map(g=>'<tr><td>'+cobFabCelulas(g.x).comprimento+'</td><td class="n"><b>'+g.qtd+'</b></td><td class="n">'+(g.diag||'—')+'</td>'+
-        '<td>'+[...g.destinos].map(h).join(', ')+'</td></tr>').join('')+
+      cobTelhasDoTotal(t).map((T,_,todas)=>(todas.length>1?'<tr><th colspan="4" class="cob-tel-t">'+h(T.nome)+' · útil '+mm(T.util)+' mm</th></tr>':'')+
+      T.grupos.map(g=>'<tr><td>'+cobFabCelulas(g.x).comprimento+'</td><td class="n"><b>'+g.qtd+'</b></td><td class="n">'+(g.diag||'—')+'</td>'+
+        '<td>'+[...g.destinos].map(h).join(', ')+'</td></tr>').join('')).join('')+
       '</tbody><tfoot><tr><td><b>Total</b></td><td class="n"><b>'+soma+'</b></td><td class="n">'+
       (t.reduce((s,g)=>s+g.diag,0)||'—')+'</td><td></td></tr>'+sobra+sobraL+'</tfoot></table>';
   }
@@ -30445,16 +30484,18 @@ html[data-theme="escuro"] .log-det>summary.err{color:var(--red)}.log-det>summary
       '<div class="rm-dagua" aria-hidden="true"><img src="'+LOGO_MARCA_DAGUA+'" alt=""></div>'+
       '<div class="rm-head"><div class="rm-logo">'+logo+'</div><div class="rm-co">'+rmTimbre2()+'</div></div>'+'<div class="doc-tag tb2-tipo">Pedido de telhas ao fabricante</div>'+
       '<div class="rm-body"><div class="rm-obra"><span>Obra / Cliente</span><b>'+h(nomeObra())+'</b><span class="rm-date">'+data+'</span></div>'+
-      '<div class="cob-fab-mod"><div><span>Telha</span><b>'+h(telha)+'</b><small>largura útil '+mm(COB.util)+' mm'+(COB.termica?' · térmica (chapa sup. e inf.)':'')+'</small></div>'+
+      '<div class="cob-fab-mod"><div><span>Telha</span><b>'+h(telha)+'</b><small>largura útil '+mm(COB.util)+' mm'+(COB.termica?' · térmica (chapa sup. e inf.)':'')+'</small>'+
+        cobTelhasDoTotal(tot).filter(T=>T.chave).map(T=>'<b style="margin-top:4px">'+h(T.nome)+'</b><small>largura útil '+mm(T.util)+' mm · '+h([...new Set(T.grupos.flatMap(g=>[...g.destinos]))].join(', '))+'</small>').join('')+'</div>'+
         '<div><span>Cumeeira</span><b>'+(cum&&cum.pecas?h(cad?cad.desc:'Cumeeira '+cum.tipo):'—')+'</b>'+(cum&&cum.pecas?'<small>'+cum.pecas+' peças de '+mm(cum.util)+' mm · aba de '+cum.aba+' mm</small>':'')+'</div>'+
         '<div><span>Fabricante</span><b>'+h(COB.fabricante||m.fabricante||'a definir')+'</b></div></div>'+
       '<div class="cob-fab-esb">'+svgEsbocoFabricante(r)+
         '<div class="cob-fab-leg">Seta: sentido de montagem, a partir do <b>INÍCIO</b> · linhas finas: divisão das telhas · tracejado laranja: cumeeira · A e B: águas</div>'+
         svgDetalheCumeeira(r,cum)+'</div>'+
       '<div class="cob-fab-quebra"></div>'+
-      '<h3>Telhas</h3><table class="cob-tab cob-fab-tab"><thead><tr><th class="n">Comprimento</th><th class="n">Quantidade</th></tr></thead><tbody>'+
-        tot.map(g=>'<tr><td class="n">'+cobFabCelulas(g.x).comprimento+'</td><td class="n"><b>'+g.qtd+'</b></td></tr>').join('')+
-        '</tbody><tfoot><tr><td>Total</td><td class="n">'+soma+' peças · '+dec(ml,2)+' m</td></tr></tfoot></table>'+
+      cobTelhasDoTotal(tot).map((T,_,todas)=>{const so=T.grupos.reduce((a,g)=>a+g.qtd,0),ml2=T.grupos.reduce((a,g)=>a+g.qtd*num(g.x.chapaSup!=null?g.x.chapaSup:g.x.mm),0)/1000;
+        return '<h3>'+(todas.length>1?'Telhas · '+h(T.nome)+' <small>útil '+mm(T.util)+' mm</small>':'Telhas')+'</h3><table class="cob-tab cob-fab-tab"><thead><tr><th class="n">Comprimento</th><th class="n">Quantidade</th></tr></thead><tbody>'+
+        T.grupos.map(g=>'<tr><td class="n">'+cobFabCelulas(g.x).comprimento+'</td><td class="n"><b>'+g.qtd+'</b></td></tr>').join('')+
+        '</tbody><tfoot><tr><td>Total</td><td class="n">'+so+' peças · '+dec(ml2,2)+' m</td></tr></tfoot></table>';}).join('')+
       (cum&&cum.pecas?'<h3>Cumeeira</h3><table class="cob-tab cob-fab-tab"><thead><tr><th>Modelo</th><th class="n">Comprimento</th><th class="n">Quantidade</th></tr></thead><tbody>'+
         '<tr><td>'+h(cad?cad.desc:'Cumeeira '+cum.tipo)+'</td><td class="n">'+mm(cum.util)+' mm</td><td class="n"><b>'+cum.pecas+'</b></td></tr></tbody></table>':'')+
       (ru?'<h3>Rufo</h3><table class="cob-tab cob-fab-tab"><thead><tr><th>Item</th><th class="n">Comprimento</th><th class="n">Quantidade</th></tr></thead><tbody>'+
@@ -31124,7 +31165,7 @@ if('serviceWorker' in navigator && location.protocol.startsWith('http')){
 }
 </script>
 <script>/* versão publicada (PADRAO_RM.md §3): sobe a cada publicação, junto com o CACHE do sw.js */
-const APP_VER='v276';
+const APP_VER='v277';
 </script>
 <script id="rmVersaoBloco">
 /* ===== SELO DE VERSÃO — igual em todos os sistemas (PADRAO_RM.md §3) =====
@@ -31234,6 +31275,14 @@ const APP_VER='v276';
         im.className = cc[k].className; if (cc[k].id) im.id = cc[k].id; cc[k].parentNode.replaceChild(im, cc[k]); } catch(e){}
     }
     Array.prototype.forEach.call(clone.querySelectorAll('script'), function(s){ s.parentNode && s.parentNode.removeChild(s); });
+    /* imagem em arquivo (o logo da Medicao da PU e' ./rm-logo.svg): o PDF e'
+       montado fora da pagina, onde o caminho relativo nao acha nada e o logo
+       saia quebrado. Vai o endereco completo, e um <base> para o resto. */
+    Array.prototype.forEach.call(clone.querySelectorAll('img[src]'), function(im){
+      var u = im.getAttribute('src'); if (!u || /^(data|blob):/i.test(u)) return;
+      try { im.setAttribute('src', new URL(u, document.baseURI).href); } catch(e){}
+    });
+    try { var hd = clone.querySelector('head'); if (hd && !hd.querySelector('base')) { var bs = document.createElement('base'); bs.setAttribute('href', document.baseURI); hd.insertBefore(bs, hd.firstChild); } } catch(e){}
     return '<!DOCTYPE html>' + clone.outerHTML;
   }
   var ocupado = false;

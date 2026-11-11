@@ -5762,7 +5762,7 @@ fbInit();
 /* Sobe junto com o nome do cache do sw.js, sempre: se um subir sem o outro,
    o numero na tela deixa de significar alguma coisa. Ha uma prova automatica
    que falha quando os dois discordam. */
-const APP_VER='v103';
+const APP_VER='v104';
 (function(){var p=document.getElementById('verPill'); if(p)p.textContent=APP_VER;})();
 if('serviceWorker' in navigator){
   if(location.protocol.startsWith('http')){ navigator.serviceWorker.register('./sw.js').catch(()=>{}); }
@@ -6768,6 +6768,14 @@ setTimeout(fitGrid, 300);
         im.className = cc[k].className; if (cc[k].id) im.id = cc[k].id; cc[k].parentNode.replaceChild(im, cc[k]); } catch(e){}
     }
     Array.prototype.forEach.call(clone.querySelectorAll('script'), function(s){ s.parentNode && s.parentNode.removeChild(s); });
+    /* imagem em arquivo (o logo da Medicao da PU e' ./rm-logo.svg): o PDF e'
+       montado fora da pagina, onde o caminho relativo nao acha nada e o logo
+       saia quebrado. Vai o endereco completo, e um <base> para o resto. */
+    Array.prototype.forEach.call(clone.querySelectorAll('img[src]'), function(im){
+      var u = im.getAttribute('src'); if (!u || /^(data|blob):/i.test(u)) return;
+      try { im.setAttribute('src', new URL(u, document.baseURI).href); } catch(e){}
+    });
+    try { var hd = clone.querySelector('head'); if (hd && !hd.querySelector('base')) { var bs = document.createElement('base'); bs.setAttribute('href', document.baseURI); hd.insertBefore(bs, hd.firstChild); } } catch(e){}
     return '<!DOCTYPE html>' + clone.outerHTML;
   }
   var ocupado = false;
