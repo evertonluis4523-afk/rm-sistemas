@@ -17,7 +17,21 @@ module RM_DeteccaoPU
     dims = [bb.width.abs, bb.height.abs, bb.depth.abs]
     axis = dims.each_with_index.min_by { |v, _i| v }[1]
     v = [Geom::Vector3d.new(1,0,0), Geom::Vector3d.new(0,1,0), Geom::Vector3d.new(0,0,1)][axis].transform(world_t)
-    v.length > 0 && v.z.abs / v.length >= 0.995
+    return false unless v.length > 0 && v.z.abs / v.length >= 0.995
+    # LAJE É NIVELADA: topo e fundo são faces horizontais (juntas, ~2x a
+    # planta). O telhado e a marquise são grupos sem nome, chatos e
+    # deitados também, mas inclinados -- nenhuma face nivelada -- e entravam
+    # como "PLACA DEITADA (AUTOMATICA)", com linhas de PU nos pilares na
+    # altura do telhado.
+    faces = entities.grep(Sketchup::Face)
+    return false if faces.empty?
+    planta = (bounds[1] - bounds[0]).abs * (bounds[3] - bounds[2]).abs
+    nivelada = faces.sum do |f|
+      n = f.normal.transform(world_t)
+      l = n.length
+      l > 0 && n.z.abs / l >= 0.9998 ? f.area(world_t) : 0.0
+    end
+    nivelada >= planta * 0.9
   end
 
   # Remover o chão depois da coleta completa: a ordem dos grupos não importa.

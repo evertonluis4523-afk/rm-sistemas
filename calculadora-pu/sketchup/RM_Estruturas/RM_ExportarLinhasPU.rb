@@ -18,7 +18,7 @@ load File.join(File.dirname(__FILE__), 'deteccao_pu.rb')
 
 module RM_LinhasPU
 
-  VERSAO = '1.3.6'
+  VERSAO = '1.3.7'
 
   INCHES_TO_M  = 0.0254
   ADJACENCIA_M = 0.50
