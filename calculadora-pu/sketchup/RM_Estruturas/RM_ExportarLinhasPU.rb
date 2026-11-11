@@ -17,7 +17,7 @@ require 'json'
 
 module RM_LinhasPU
 
-  VERSAO = '1.2.0'
+  VERSAO = '1.3.0'
 
   INCHES_TO_M  = 0.0254
   ADJACENCIA_M = 0.50
@@ -68,10 +68,14 @@ module RM_LinhasPU
                         parent_t = Geom::Transformation.new)
     entities.each do |e|
       case e
-      when Sketchup::ComponentInstance
-        nome    = e.definition.name.strip
+      when Sketchup::ComponentInstance, Sketchup::Group
         world_t = parent_t * e.transformation
-        if estrutural?(nome)
+        defn    = e.respond_to?(:definition) ? e.definition : nil
+        # o nome vale na definição (componente) e também na própria peça:
+        # um GRUPO chamado "PLACA" (ou a instância renomeada) era ignorado
+        nome = [defn && defn.name, e.respond_to?(:name) ? e.name : nil]
+               .compact.map { |x| x.to_s.strip }.find { |x| !x.empty? && estrutural?(x) }
+        if nome && defn
           t      = tipo(nome)
           bounds = world_bounds(e.definition, world_t)
           dx = (bounds[1]-bounds[0]).abs
@@ -85,11 +89,8 @@ module RM_LinhasPU
           else              placas  << rec
           end
         else
-          coletar_tudo(e.definition.entities, pilares, placas, vigas, world_t)
+          coletar_tudo(e.is_a?(Sketchup::Group) ? e.entities : defn.entities, pilares, placas, vigas, world_t)
         end
-      when Sketchup::Group
-        coletar_tudo(e.entities, pilares, placas, vigas,
-                     parent_t * e.transformation)
       end
     end
   end
@@ -108,6 +109,57 @@ module RM_LinhasPU
   # encostado embaixo mas com placa mais baixa na mesma parede está por cima
   # de um vão: não leva linha. Sem nenhuma placa embaixo na parede: inteira
   # (apoiada em algo que não foi modelado). Volta [a0,a1] no eixo da placa.
+  # ── PLACA DEITADA SOBRE A VIGA (piso de mezanino, laje) ──
+  # "Não leu as linhas superiores da viga: tem uma placa apoiada sobre a
+  # viga, ali vai PU interno e externo." A placa deitada (mais fina na
+  # altura que na planta) não tem junta de base como a de parede: a junta
+  # é o TOPO de cada viga em que ela se apoia. Volta [[viga, a0, a1], ...]
+  # no eixo da viga.
+  def self.deitada?(b)
+    (b[5]-b[4]).abs < [(b[1]-b[0]).abs, (b[3]-b[2]).abs].min
+  end
+  def self.topos_viga(vigas, placas)
+    tol = TOL_JUNTA_M / INCHES_TO_M; out = []
+    vigas.each do |v|
+      vx0,vx1,vy0,vy1,_vz0,vz1 = v[:bounds]; em_x = (vx1-vx0).abs >= (vy1-vy0).abs
+      ivs = []
+      placas.each do |p|
+        b = p[:bounds]
+        next unless deitada?(b) && (b[4]-vz1).abs <= tol
+        ox = [b[1],vx1].min - [b[0],vx0].max; oy = [b[3],vy1].min - [b[2],vy0].max
+        next unless ox > 0 && oy > 0
+        ivs << (em_x ? [[b[0],vx0].max, [b[1],vx1].min] : [[b[2],vy0].max, [b[3],vy1].min])
+      end
+      merge_intervals(ivs).each { |a0, a1| out << [v, a0, a1] } unless ivs.empty?
+    end
+    out
+  end
+
+  # A PAREDE QUE ENCOSTA EMBAIXO DO PISO: o topo da placa de parede que
+  # toca a face de baixo da placa deitada também é junta ("aqui também";
+  # "em baixo, e nada na parte superior do piso"). Volta [[placa, a0, a1]]
+  # no eixo da placa de parede.
+  def self.topos_parede(placas)
+    tol = TOL_JUNTA_M / INCHES_TO_M; adj = ADJACENCIA_M / INCHES_TO_M; out = []
+    deitadas = placas.select { |q| deitada?(q[:bounds]) }
+    return out if deitadas.empty?
+    placas.each do |p|
+      b = p[:bounds]; next if deitada?(b)
+      em_x = (b[1]-b[0]).abs >= (b[3]-b[2]).abs
+      ivs = []
+      deitadas.each do |d|
+        q = d[:bounds]
+        next unless (q[4] - b[5]).abs <= tol
+        g = em_x ? [q[2]-b[3], b[2]-q[3], 0].max : [q[0]-b[1], b[0]-q[1], 0].max
+        next if g > adj
+        i0, i1 = em_x ? [[q[0], b[0]].max, [q[1], b[1]].min] : [[q[2], b[2]].max, [q[3], b[3]].min]
+        ivs << [i0, i1] if i1 > i0
+      end
+      merge_intervals(ivs).each { |a0, a1| out << [p, a0, a1] } unless ivs.empty?
+    end
+    out
+  end
+
   TOL_JUNTA_M = 0.05
   def self.trechos_base_placa(p, placas, vigas)
     x0,x1,y0,y1,z0,_z1 = p[:bounds]
@@ -125,6 +177,7 @@ module RM_LinhasPU
     (placas + vigas).each do |q|
       next if q.equal?(p)
       b = q[:bounds]
+      next if deitada?(b)   # em cima do piso não leva PU
       next unless perto.call(b)
       i0, i1 = ao_longo.call(b)
       next unless i1 > i0
@@ -142,6 +195,7 @@ module RM_LinhasPU
 
     # ── PLACAS: linha horizontal na base (junta inferior) ────
     placas.each do |p|
+      next if deitada?(p[:bounds])   # deitada: a junta é o topo da viga (abaixo)
       x0,x1,y0,y1,z0,z1 = p[:bounds]
       dx = (x1-x0).abs; dy = (y1-y0).abs
       z_base = z0   # base da placa = onde o PU é aplicado
@@ -252,6 +306,34 @@ module RM_LinhasPU
                       ml: ml, app: 'ext_int', incluir: true }
         end
       end
+    end
+
+    # ── VIGAS: topo onde uma placa deitada se apoia (Line D) ──
+    topos_viga(vigas, placas).each do |viga, a0, a1|
+      vx0,vx1,vy0,vy1,_vz0,vz1 = viga[:bounds]
+      ml = ((a1-a0)*INCHES_TO_M).round(3)
+      next if ml < 0.05
+      if (vx1-vx0).abs >= (vy1-vy0).abs
+        vc = (vy0+vy1)/2.0; p1 = pt(a0,vc,vz1); p2 = pt(a1,vc,vz1)
+      else
+        vc = (vx0+vx1)/2.0; p1 = pt(vc,a0,vz1); p2 = pt(vc,a1,vz1)
+      end
+      linhas << { id: id+=1, nome: "#{viga[:nome]} · topo", tipo: 'Viga',
+                  pt1: p1, pt2: p2, ml: ml, app: 'ext_int', incluir: true }
+    end
+
+    # ── PAREDE: topo da placa que encosta embaixo do piso ──
+    topos_parede(placas).each do |pl, a0, a1|
+      x0,x1,y0,y1,_z0,z1 = pl[:bounds]
+      ml = ((a1-a0)*INCHES_TO_M).round(3)
+      next if ml < 0.05
+      if (x1-x0).abs >= (y1-y0).abs
+        c = (y0+y1)/2.0; p1 = pt(a0,c,z1); p2 = pt(a1,c,z1)
+      else
+        c = (x0+x1)/2.0; p1 = pt(c,a0,z1); p2 = pt(c,a1,z1)
+      end
+      linhas << { id: id+=1, nome: "#{pl[:nome]} · topo", tipo: 'Placa',
+                  pt1: p1, pt2: p2, ml: ml, app: 'ext_int', incluir: true }
     end
 
     linhas

@@ -81,11 +81,14 @@ module RM_ExportarPU
                         parent_t = Geom::Transformation.new)
     entities.each do |e|
       case e
-      when Sketchup::ComponentInstance
-        nome    = e.definition.name.strip
+      when Sketchup::ComponentInstance, Sketchup::Group
         world_t = parent_t * e.transformation
-
-        if estrutural?(nome)
+        defn    = e.respond_to?(:definition) ? e.definition : nil
+        # o nome vale na definição (componente) e também na própria peça:
+        # um GRUPO chamado "PLACA" (ou a instância renomeada) era ignorado
+        nome = [defn && defn.name, e.respond_to?(:name) ? e.name : nil]
+               .compact.map { |x| x.to_s.strip }.find { |x| !x.empty? && estrutural?(x) }
+        if nome && defn
           t      = tipo(nome)
           bounds = world_bounds(e.definition, world_t)
           rec    = { nome: nome.upcase, tipo: t, bounds: bounds }
@@ -96,12 +99,8 @@ module RM_ExportarPU
           end
         else
           # Não é estrutural → entra dentro para buscar elementos aninhados
-          coletar_tudo(e.definition.entities, pilares, placas, vigas, world_t)
+          coletar_tudo(e.is_a?(Sketchup::Group) ? e.entities : defn.entities, pilares, placas, vigas, world_t)
         end
-
-      when Sketchup::Group
-        coletar_tudo(e.entities, pilares, placas, vigas,
-                     parent_t * e.transformation)
       end
     end
   end
@@ -224,6 +223,57 @@ module RM_ExportarPU
   # encostado embaixo mas com placa mais baixa na mesma parede está por cima
   # de um vão: não leva linha. Sem nenhuma placa embaixo na parede: inteira
   # (apoiada em algo que não foi modelado). Volta [a0,a1] no eixo da placa.
+  # ── PLACA DEITADA SOBRE A VIGA (piso de mezanino, laje) ──
+  # "Não leu as linhas superiores da viga: tem uma placa apoiada sobre a
+  # viga, ali vai PU interno e externo." A placa deitada (mais fina na
+  # altura que na planta) não tem junta de base como a de parede: a junta
+  # é o TOPO de cada viga em que ela se apoia. Volta [[viga, a0, a1], ...]
+  # no eixo da viga.
+  def self.deitada?(b)
+    (b[5]-b[4]).abs < [(b[1]-b[0]).abs, (b[3]-b[2]).abs].min
+  end
+  def self.topos_viga(vigas, placas)
+    tol = TOL_JUNTA_M / INCHES_TO_M; out = []
+    vigas.each do |v|
+      vx0,vx1,vy0,vy1,_vz0,vz1 = v[:bounds]; em_x = (vx1-vx0).abs >= (vy1-vy0).abs
+      ivs = []
+      placas.each do |p|
+        b = p[:bounds]
+        next unless deitada?(b) && (b[4]-vz1).abs <= tol
+        ox = [b[1],vx1].min - [b[0],vx0].max; oy = [b[3],vy1].min - [b[2],vy0].max
+        next unless ox > 0 && oy > 0
+        ivs << (em_x ? [[b[0],vx0].max, [b[1],vx1].min] : [[b[2],vy0].max, [b[3],vy1].min])
+      end
+      merge_intervals(ivs).each { |a0, a1| out << [v, a0, a1] } unless ivs.empty?
+    end
+    out
+  end
+
+  # A PAREDE QUE ENCOSTA EMBAIXO DO PISO: o topo da placa de parede que
+  # toca a face de baixo da placa deitada também é junta ("aqui também";
+  # "em baixo, e nada na parte superior do piso"). Volta [[placa, a0, a1]]
+  # no eixo da placa de parede.
+  def self.topos_parede(placas)
+    tol = TOL_JUNTA_M / INCHES_TO_M; adj = ADJACENCIA_M / INCHES_TO_M; out = []
+    deitadas = placas.select { |q| deitada?(q[:bounds]) }
+    return out if deitadas.empty?
+    placas.each do |p|
+      b = p[:bounds]; next if deitada?(b)
+      em_x = (b[1]-b[0]).abs >= (b[3]-b[2]).abs
+      ivs = []
+      deitadas.each do |d|
+        q = d[:bounds]
+        next unless (q[4] - b[5]).abs <= tol
+        g = em_x ? [q[2]-b[3], b[2]-q[3], 0].max : [q[0]-b[1], b[0]-q[1], 0].max
+        next if g > adj
+        i0, i1 = em_x ? [[q[0], b[0]].max, [q[1], b[1]].min] : [[q[2], b[2]].max, [q[3], b[3]].min]
+        ivs << [i0, i1] if i1 > i0
+      end
+      merge_intervals(ivs).each { |a0, a1| out << [p, a0, a1] } unless ivs.empty?
+    end
+    out
+  end
+
   TOL_JUNTA_M = 0.05
   def self.trechos_base_placa(p, placas, vigas)
     x0,x1,y0,y1,z0,_z1 = p[:bounds]
@@ -241,6 +291,7 @@ module RM_ExportarPU
     (placas + vigas).each do |q|
       next if q.equal?(p)
       b = q[:bounds]
+      next if deitada?(b)   # em cima do piso não leva PU
       next unless perto.call(b)
       i0, i1 = ao_longo.call(b)
       next unless i1 > i0
@@ -310,9 +361,13 @@ module RM_ExportarPU
     end
 
     # ── Placas ──
+    # base (junta embaixo) + topo, onde a placa de parede encosta embaixo do piso
+    topo_pl = Hash.new(0.0)
+    topos_parede(placas).each { |pl, a0, a1| topo_pl[pl.object_id] += (a1 - a0) * INCHES_TO_M }
     placas.each do |r|
+      next if deitada?(r[:bounds])   # deitada: conta no topo da viga
       # a base só conta onde encontra outra peça (trechos_base_placa)
-      ml    = trechos_base_placa(r, placas, vigas).sum { |a0, a1| (a1 - a0) * INCHES_TO_M }.round(3)
+      ml    = (trechos_base_placa(r, placas, vigas).sum { |a0, a1| (a1 - a0) * INCHES_TO_M } + topo_pl[r.object_id]).round(3)
       next if ignorar?(r[:nome], ml)
       chave = "#{r[:nome]}|#{ml.round(2)}"
       acum[chave] ||= { nome: r[:nome], tipo: 'Placa', ml: ml,
@@ -322,8 +377,11 @@ module RM_ExportarPU
     end
 
     # ── Vigas ──
+    topo = Hash.new(0.0)
+    topos_viga(vigas, placas).each { |vg, a0, a1| topo[vg.object_id] += (a1 - a0) * INCHES_TO_M }
     vigas.each do |v|
-      ml    = ml_viga(v, placas)
+      # embaixo (placa de parede abaixo) + em cima (placa deitada apoiada)
+      ml    = (ml_viga(v, placas.reject { |q| deitada?(q[:bounds]) }) + topo[v.object_id]).round(3)
       next if ignorar?(v[:nome], ml)
       chave = "#{v[:nome]}|#{ml.round(2)}"
       acum[chave] ||= { nome: v[:nome], tipo: 'Viga', ml: ml,
