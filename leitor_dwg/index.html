@@ -27174,7 +27174,7 @@ html[data-theme="escuro"] .log-det>summary.err{color:var(--red)}.log-det>summary
   ];
   const COB_PADRAO={modelo:'tp40-043',orcTelhaId:'',util:980,fabricante:'',cor:'',aguas:2,sentido:'ltr',
     leitura:'planta',plantaVersao:5,inclinacao:10,agrupamento:10,blocos:[],reaproveitar:false,
-    comprimento:0,projA:0,desnA:0,projB:0,desnB:0,beiral:150,cumeeira:50,
+    comprimento:0,projA:0,desnA:0,projB:0,desnB:0,beiral:150,cumeeira:50,ajusteObra:0,
     maxComp:0,traspasse:200,estruturas:1,confirmada:false,desenhoSig:'',fonte:'',obs:'',sketchupNome:'',
     termica:false,pingadeira:50,pecaBeiral:0,parafM2:3,verdadeira:false,reusarLargura:false};
 
@@ -27919,8 +27919,12 @@ html[data-theme="escuro"] .log-det>summary.err{color:var(--red)}.log-det>summary
           maior=positivos.length?Math.max(...positivos):central.comprimento;
         const p0=cobPontoUV(eixos,meio,central.v0),p1=cobPontoUV(eixos,meio,central.v1);
         let tocaCumeeira=central.tocaCumeeira;
+        /* SketchUp: a ponta de cima da água (o topo) também leva a folga --
+           antes só a que encostava numa aresta comum a duas águas, e numa
+           água só (ou águas sem aresta comum no arquivo) a folga não descontava */
         if(bloco.medida3d&&Array.isArray(bloco.arestasCompartilhadas))
-          tocaCumeeira=bloco.arestasCompartilhadas.some(a=>cobDistSeg(p0,a.a,a.b)<12);
+          {const vs=bloco.poligono.map(q=>cobDot(q,eixos.v)),tol=Math.max(1,(Math.max(...vs)-Math.min(...vs))*.0001)+1;   /* a linha-base fica 1 margem acima do topo */
+          tocaCumeeira=(central.foraCumeeira!==true&&Math.abs(central.v0-eixos.v0)<=tol)||bloco.arestasCompartilhadas.some(a=>cobDistSeg(p0,a.a,a.b)<12);}
         faixas.push({indice:i,segmento,ini,fim,largura:fim-ini,projecao:central.comprimento,
           minProjecao:menor,maxProjecao:maior,diagonal:maior-menor>10,perfilProj,perfilPos,
           tocaCumeeira,foraCumeeira:central.foraCumeeira,p0,p1,pPedido:{x:p1.x,y:p1.y},
@@ -28068,7 +28072,7 @@ html[data-theme="escuro"] .log-det>summary.err{color:var(--red)}.log-det>summary
                que, sempre para cima, viravam 1 cm a mais na peça. Com 1 mm a
                tolerância cortava para BAIXO: 6.299,9999 virava 6.299 e a cota
                4.830,94 virava 4.830 -- telha mais curta que o desenho. */
-            final=Math.max(1,Math.ceil(geometrico+num(COB.beiral)-(f.tocaCumeeira?num(COB.cumeeira):0)-.5));
+            final=Math.max(1,Math.ceil(geometrico+num(COB.beiral)-(f.tocaCumeeira?num(COB.cumeeira):0)-num(COB.ajusteObra)-num(b.ajuste)-.5));
           const pedido=Math.ceil(final/incAgr)*incAgr;
           let div,pecas;
           if(COB.termica){
@@ -28081,7 +28085,7 @@ html[data-theme="escuro"] .log-det>summary.err{color:var(--red)}.log-det>summary
             if(div.erro){erros.push(div.erro);return;}
             pecas=null;
           }
-          const perfilFinal=(f.perfilProj||[f.projecao]).map(v=>Math.max(0,v*fator+num(COB.beiral)-(f.tocaCumeeira?num(COB.cumeeira):0)));
+          const perfilFinal=(f.perfilProj||[f.projecao]).map(v=>Math.max(0,v*fator+num(COB.beiral)-(f.tocaCumeeira?num(COB.cumeeira):0)-num(COB.ajusteObra)-num(b.ajuste)));
           const ordem=fi+1;
           const x={...f,bloco:bi,setor:si,ordem,geometrico,final,pedido,partes:div.partes,medida:div.medida,pecas,
             medida3d:!!s.medida3d,projecaoPlanta:s.medida3d?f.projecao/fatorIncl:f.projecao,
@@ -28243,7 +28247,7 @@ html[data-theme="escuro"] .log-det>summary.err{color:var(--red)}.log-det>summary
     const aguas=[];
     const faz=(id,proj,desn)=>{
       const geometrico=Math.hypot(num(proj),num(desn));
-      const final=Math.max(1,Math.ceil(geometrico+num(COB.beiral)-num(COB.cumeeira)));
+      const final=Math.max(1,Math.ceil(geometrico+num(COB.beiral)-num(COB.cumeeira)-num(COB.ajusteObra)));
       const div=divideComprimento(final,COB.maxComp,COB.traspasse);
       if(div.erro){erros.push(div.erro);return;}
       const pecas=faixas*div.partes*e,metros=pecas*div.medida/1000;
@@ -28639,6 +28643,9 @@ html[data-theme="escuro"] .log-det>summary.err{color:var(--red)}.log-det>summary
       (COB.excluidas.length>1?' grupos excluídos':' grupo excluído')+' da leitura:</b> '+COB.excluidas.map(b=>h(b.nome)).join(', ')+'</span>'+
       '<button type="button" class="btn ghost" data-cob-restaurar>↺ Restaurar</button></div>':'';
     const excluir=i=>'<button type="button" class="btn ghost tl-f-x" data-cob-excluir="'+i+'" title="Tira este grupo da leitura: terça, lateral ou qualquer face que veio junto sem ser telhado">× Excluir</button>';
+    /* ajuste fino desta face, somado ao Ajuste da obra (o projeto tinha 4 mm
+       de diferença de uma água para a outra que a obra não tem) */
+    const ajuste=i=>'<label title="Descontado das telhas desta face, além do Ajuste da obra. Negativo acrescenta.">Ajuste (mm) <input data-cob-aj="'+i+'" type="number" step="1" value="'+Math.round(num(COB.blocos[i].ajuste))+'"></label>';
     box.innerHTML='<div class="tl-faces-l">'+faixaExcl+(COB.blocos.length?COB.blocos.map((b,i)=>{
       if(b.origem==='sketchup'){
         const area=b.area3d!=null?b.area3d:(Math.abs(cobArea(b.poligono))-(b.furos||[]).reduce((s,f)=>s+Math.abs(cobArea(f)),0))/1e6;
@@ -28647,6 +28654,7 @@ html[data-theme="escuro"] .log-det>summary.err{color:var(--red)}.log-det>summary
           '<span class="tl-f-d"><b>'+dec(area,2)+'</b> m²</span>'+
           '<span class="tl-f-d"><b>'+dec(b.inclinacao,1)+'</b>%</span>'+
           ((b.furos||[]).length?'<span class="tl-f-d" title="Recortes / vãos internos preservados">'+b.furos.length+(b.furos.length>1?' vãos':' vão')+'</span>':'')+
+          ajuste(i)+
           '<button type="button" class="btn ghost" data-cob-inverter="'+i+'" title="Inverte o sentido da montagem desta face">'+(sentido==='rtl'?'B → A':'A → B')+' ⇄</button>'+
           excluir(i)+
           (b.aviso?'<div class="cob-erro">'+h(b.aviso)+'</div>':'')+'</div>';
@@ -28658,7 +28666,7 @@ html[data-theme="escuro"] .log-det>summary.err{color:var(--red)}.log-det>summary
       return '<div class="tl-face" data-bi="'+i+'">'+campoNome(b,i)+'<span class="tl-f-d"><b>'+dec(area,1)+'</b> m² '+(COB.verdadeira&&COB.leitura!=='sketchup'?'no desenho':'em planta')+'</span>'+
         '<label>Cumeeira <select data-cob-ridge="'+i+'">'+(op||'<option value="">não reconhecida</option>')+'</select></label>'+
         '<label>Setores <select data-cob-uso="'+i+'"><option value="ambos"'+(b.uso==='ambos'?' selected':'')+'>A e B</option><option value="A"'+(b.uso==='A'?' selected':'')+'>Só A</option><option value="B"'+(b.uso==='B'?' selected':'')+'>Só B</option></select></label>'+
-        '<label>Incl. % <input data-cob-inc="'+i+'" type="number" min="0" step="0.1" value="'+num(b.inclinacao)+'"></label>'+
+        '<label>Incl. % <input data-cob-inc="'+i+'" type="number" min="0" step="0.1" value="'+num(b.inclinacao)+'"></label>'+ajuste(i)+
         (b.aviso?'<div class="cob-erro">'+h(b.aviso)+'</div>':'')+
         (b.uso!=='ambos'?'<div class="cob-erro">Atenção: o setor '+(b.uso==='A'?'B':'A')+' está desativado neste bloco.</div>':'')+'</div>';
     }).join(''):'<div class="tl-face tl-nota">'+(COB.excluidas.length?'Todos os grupos foram excluídos da leitura. Use “Restaurar” acima.':'Nenhum bloco reconhecido. Use quadros fechados envolvendo cada planta e clique em “Reler medidas do DWG”.')+'</div>')+'</div>';
@@ -28678,6 +28686,9 @@ html[data-theme="escuro"] .log-det>summary.err{color:var(--red)}.log-det>summary
     }));
     box.querySelectorAll('[data-cob-inc]').forEach(s=>s.addEventListener('change',()=>{
       const b=COB.blocos[+s.dataset.cobInc];if(!b)return;b.inclinacao=Math.max(0,num(s.value));marcaPendente();
+    }));
+    box.querySelectorAll('[data-cob-aj]').forEach(s=>s.addEventListener('change',()=>{
+      const b=COB.blocos[+s.dataset.cobAj];if(!b)return;b.ajuste=Math.round(num(s.value));marcaPendente();
     }));
     box.querySelectorAll('[data-cob-uso]').forEach(s=>s.addEventListener('change',()=>{
       const b=COB.blocos[+s.dataset.cobUso];if(!b)return;b.uso=['A','B'].includes(s.value)?s.value:'ambos';marcaPendente();
@@ -28830,7 +28841,8 @@ html[data-theme="escuro"] .log-det>summary.err{color:var(--red)}.log-det>summary
       '</div>'+
         '<div class="tl-bloco"><div class="tl-bloco-t">Cobertura</div><div class="tl-campos">'+
           '<div class="fld"><label>Avanço no beiral (mm)</label><input id="cobBeiral" type="number" min="0" value="'+inteiro(COB.beiral)+'" title="Medido no sentido da telha"></div>'+
-          '<div class="fld"><label>Folga na cumeeira (mm)</label><input id="cobCumeeira" type="number" min="0" value="'+inteiro(COB.cumeeira)+'" title="Descontada do comprimento inclinado"></div>'+
+          '<div class="fld"><label>Folga na cumeeira (mm)</label><input id="cobCumeeira" type="number" min="0" value="'+inteiro(COB.cumeeira)+'" title="Recuo da telha antes da cumeeira: descontado do comprimento, nunca somado"></div>'+
+          '<div class="fld"><label>Ajuste da obra (mm)</label><input id="cobAjusteObra" type="number" step="1" value="'+Math.round(num(COB.ajusteObra))+'" title="Diferença entre o projeto e a medida da obra (ou da tesoura), descontada de cada telha. Negativo acrescenta."></div>'+
           '<div class="fld"><label>Transpasse se dividir (mm)</label><input id="cobTraspasse" type="number" min="0" value="'+inteiro(COB.traspasse)+'"></div>'+
           '<div class="fld cob-planta-only"><label>Agrupar comprimentos (mm)</label><input id="cobAgrupamento" type="number" min="1" step="1" value="'+inteiro(COB.agrupamento)+'" title="Arredonda sempre para cima no pedido"></div>'+
           '<div class="fld"><label>Chapas por telha</label><input id="cobTermicaInfo" value="'+(COB.termica?'Duas chapas (térmica / forro)':'Uma folha')+'" disabled title="Vem do nome da telha no cadastro: térmica ou forro = duas chapas; sem isso, uma folha"></div>'+
@@ -28920,7 +28932,7 @@ html[data-theme="escuro"] .log-det>summary.err{color:var(--red)}.log-det>summary
     ligaNumero('cobUtil','util',true);ligaNumero('cobComprimento','comprimento',true);
     ligaNumero('cobProjA','projA',true);ligaNumero('cobDesnA','desnA',true);
     ligaNumero('cobProjB','projB',true);ligaNumero('cobDesnB','desnB',true);
-    ligaNumero('cobBeiral','beiral',true);ligaNumero('cobCumeeira','cumeeira',true);
+    ligaNumero('cobBeiral','beiral',true);ligaNumero('cobCumeeira','cumeeira',true);ligaNumero('cobAjusteObra','ajusteObra',true);
     ligaNumero('cobMax','maxComp',true);ligaNumero('cobTraspasse','traspasse',true);
     ligaNumero('cobPingadeira','pingadeira',true);ligaNumero('cobPecaBeiral','pecaBeiral',true);
     atualizaTermica();
@@ -30387,6 +30399,27 @@ html[data-theme="escuro"] .log-det>summary.err{color:var(--red)}.log-det>summary
     });
     return '<svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="Esboço da cobertura com o sentido de montagem" style="font-family:Arial,Helvetica,sans-serif">'+g+seta+'</svg>';
   }
+  /* Detalhe da cumeeira no pedido: a telha para antes do eixo (a folga,
+     um recuo -- não soma) e a cumeeira cobre por cima. Fora de escala. */
+  function svgDetalheCumeeira(r,cum){
+    const fol=Math.round(num(COB.cumeeira));if(!(fol>0))return '';
+    if((r.blocos||[]).length&&!(r.blocos||[]).some(b=>(b.setores||[]).some(st=>(st.faixas||[]).some(f=>f.tocaCumeeira))))return '';
+    const dois=cum?(cum.linhas||[]).some(l=>l.dois):COB.aguas===2,tem=!!(cum&&cum.pecas);
+    /* fora de escala: g é a folga desenhada */
+    const W=dois?640:420,cx=dois?W/2:W-60,ty=70,tg=.18,L=230,g=44,yd=ty+70,x0=cx-g,H=ty+100;
+    const telha=sx=>'<line x1="'+(cx+sx*(g+L))+'" y1="'+(ty+L*tg)+'" x2="'+(cx+sx*g)+'" y2="'+ty+'" stroke="#141414" stroke-width="8"/>';
+    const tick=x=>'<line x1="'+(x-6)+'" y1="'+(yd+6)+'" x2="'+(x+6)+'" y2="'+(yd-6)+'" stroke="#d53309" stroke-width="2"/>';
+    let o='<line x1="'+cx+'" y1="8" x2="'+cx+'" y2="'+(yd+16)+'" stroke="#d53309" stroke-width="1.5" stroke-dasharray="8 5"/>'+telha(-1)+(dois?telha(1):'');
+    if(tem){const a=150,yc=ty-16;
+      o+='<polyline points="'+(cx-a)+','+(yc+a*tg)+' '+cx+','+(yc-6)+(dois?' '+(cx+a)+','+(yc+a*tg):'')+'" fill="none" stroke="#6b7280" stroke-width="5"/>'+
+        '<text x="'+(dois?cx+12:cx-12)+'" y="'+(yc-16)+'" font-size="16" font-weight="700" fill="#555" text-anchor="'+(dois?'start':'end')+'">cumeeira</text>';}
+    else o+='<text x="'+(cx-12)+'" y="22" font-size="16" font-weight="700" fill="#555" text-anchor="end">topo</text>';
+    o+='<line x1="'+x0+'" y1="'+(ty+10)+'" x2="'+x0+'" y2="'+(yd+10)+'" stroke="#d53309" stroke-width="1"/>'+
+      '<line x1="'+(x0-16)+'" y1="'+yd+'" x2="'+(cx+16)+'" y2="'+yd+'" stroke="#d53309" stroke-width="1.5"/>'+tick(x0)+tick(cx)+
+      '<text x="'+(x0-22)+'" y="'+(yd+6)+'" font-size="19" font-weight="800" fill="#d53309" text-anchor="end">'+fol+' mm</text>'+
+      '<text x="'+(cx-g-L*.72)+'" y="'+(ty+L*.72*tg+28)+'" font-size="16" font-weight="700" fill="#555" text-anchor="middle">telha</text>';
+    return '<div class="cob-fab-det"><b>Folga na cumeeira: '+fol+' mm</b><svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="Detalhe da folga na cumeeira" style="font-family:Arial,Helvetica,sans-serif">'+o+'</svg></div>';
+  }
   function documentoCobertura(){
     const r=calculaCobertura();if(!COB.confirmada||!r.ok)return;
     const pa=document.getElementById('printArea');if(!pa)return;const m=modeloAtual(),data=new Date().toLocaleDateString('pt-BR');
@@ -30403,6 +30436,7 @@ html[data-theme="escuro"] .log-det>summary.err{color:var(--red)}.log-det>summary
       '#printArea .cob-fab .cob-fab-mod b{display:block;font-size:15px;line-height:1.25;color:#141414}#printArea .cob-fab .cob-fab-mod small{display:block;font-size:11px;color:#555;margin-top:2px}'+
       '#printArea .cob-fab .cob-fab-esb svg{width:100%;height:auto;max-height:185mm;display:block;margin:0 auto}'+
       '#printArea .cob-fab .cob-fab-leg{font-size:11px;color:#555;text-align:center;margin-top:6px}'+
+      '#printArea .cob-fab .cob-fab-det{max-width:120mm;margin:8px auto 0;border:1px solid #d6dade;border-radius:6px;padding:6px 10px}#printArea .cob-fab .cob-fab-det b{display:block;font-size:12px}#printArea .cob-fab .cob-fab-det svg{width:100%;height:auto;display:block}'+
       '#printArea .cob-fab .cob-fab-quebra{break-after:page;page-break-after:always;height:0}'+
       '#printArea .cob-fab h3{font-size:13px;letter-spacing:.06em;text-transform:uppercase;margin:14px 0 6px;color:#141414}'+
       '#printArea .cob-fab .cob-fab-tab{width:100%;max-width:520px}#printArea .cob-fab .cob-fab-tab td,#printArea .cob-fab .cob-fab-tab th{font-size:13px}'+
@@ -30415,7 +30449,8 @@ html[data-theme="escuro"] .log-det>summary.err{color:var(--red)}.log-det>summary
         '<div><span>Cumeeira</span><b>'+(cum&&cum.pecas?h(cad?cad.desc:'Cumeeira '+cum.tipo):'—')+'</b>'+(cum&&cum.pecas?'<small>'+cum.pecas+' peças de '+mm(cum.util)+' mm · aba de '+cum.aba+' mm</small>':'')+'</div>'+
         '<div><span>Fabricante</span><b>'+h(COB.fabricante||m.fabricante||'a definir')+'</b></div></div>'+
       '<div class="cob-fab-esb">'+svgEsbocoFabricante(r)+
-        '<div class="cob-fab-leg">Seta: sentido de montagem, a partir do <b>INÍCIO</b> · linhas finas: divisão das telhas · tracejado laranja: cumeeira · A e B: águas</div></div>'+
+        '<div class="cob-fab-leg">Seta: sentido de montagem, a partir do <b>INÍCIO</b> · linhas finas: divisão das telhas · tracejado laranja: cumeeira · A e B: águas</div>'+
+        svgDetalheCumeeira(r,cum)+'</div>'+
       '<div class="cob-fab-quebra"></div>'+
       '<h3>Telhas</h3><table class="cob-tab cob-fab-tab"><thead><tr><th class="n">Comprimento</th><th class="n">Quantidade</th></tr></thead><tbody>'+
         tot.map(g=>'<tr><td class="n">'+cobFabCelulas(g.x).comprimento+'</td><td class="n"><b>'+g.qtd+'</b></td></tr>').join('')+
@@ -31089,7 +31124,7 @@ if('serviceWorker' in navigator && location.protocol.startsWith('http')){
 }
 </script>
 <script>/* versão publicada (PADRAO_RM.md §3): sobe a cada publicação, junto com o CACHE do sw.js */
-const APP_VER='v275';
+const APP_VER='v276';
 </script>
 <script id="rmVersaoBloco">
 /* ===== SELO DE VERSÃO — igual em todos os sistemas (PADRAO_RM.md §3) =====
