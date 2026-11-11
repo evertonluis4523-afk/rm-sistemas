@@ -72,19 +72,21 @@
   /* Nav buttons */
   .topbar-nav{display:flex;align-items:center;flex:1;height:100%;padding:0 6px;gap:0;}
   .tb-btn{
-    height:58px;padding:0 14px;background:none;border:none;color:var(--gray-2);
-    font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;
-    display:flex;align-items:center;gap:5px;white-space:nowrap;
+    height:58px;padding:0 9px;background:none;border:none;color:var(--gray-2);
+    font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;
+    display:flex;align-items:center;gap:6px;white-space:nowrap;
     transition:color .15s,background .15s;text-decoration:none;border-radius:0;
     border-bottom:2px solid transparent;
   }
   .tb-btn:hover{color:var(--ink);background:var(--line-2);}
+  /* ícones da barra: traço de 15 px na cor do texto, como nos outros sistemas (nunca emoji) */
+  .tb-btn svg,.btn-print svg,.tb-mais-m svg{width:15px;height:15px;flex:none}
   .tb-btn.danger:hover{color:#FF6060;}
   /* Right area */
   .topbar-right{display:flex;align-items:center;height:100%;padding:0 16px;border-left:1px solid var(--line);flex-shrink:0;}
   .btn-print{
     background:var(--red);color:#fff;border:none;border-radius:8px;
-    padding:9px 18px;font-size:12px;font-weight:700;cursor:pointer;
+    padding:9px 18px;font-size:14px;font-weight:700;cursor:pointer;
     font-family:inherit;display:flex;align-items:center;gap:6px;
     transition:background .15s;white-space:nowrap;
   }
@@ -499,7 +501,7 @@ tr.aberto>td>.grp-arrow{transform:rotate(45deg);}
 .tb-mais summary{list-style:none;height:100%;}
 .tb-mais summary::-webkit-details-marker{display:none;}
 .tb-mais-m{position:absolute;top:100%;left:0;background:var(--card);border:1px solid var(--line);border-radius:10px;box-shadow:0 10px 30px rgba(0,0,0,.12);padding:6px;z-index:300;min-width:250px;}
-.tb-mais-m button{display:block;width:100%;text-align:left;border:0;background:none;font:inherit;font-size:13px;padding:8px 10px;border-radius:7px;cursor:pointer;color:var(--ink);}
+.tb-mais-m button{display:flex;align-items:center;gap:8px;width:100%;text-align:left;border:0;background:none;font:inherit;font-size:13px;padding:8px 10px;border-radius:7px;cursor:pointer;color:var(--ink);}
 .tb-mais-m button:hover{background:var(--line-2);}
 @media(max-width:1100px){
   .pu-grid{grid-template-columns:1fr;}
@@ -1815,20 +1817,20 @@ else comeca();
     <span class="brand-title">Controle de PU</span>
   </div>
   <div class="topbar-nav">
-    <a href="index.html" class="tb-btn" style="text-decoration:none;">📋 Painel de Obras</a>
-    <button class="tb-btn" onclick="abrirViewer3D()">🔍 Viewer 3D</button>
-    <button class="tb-btn" onclick="$('topImportFile').click()">⬆ Importar</button>
+    <a href="index.html" class="tb-btn" style="text-decoration:none;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>Painel de Obras</a>
+    <button class="tb-btn" onclick="abrirViewer3D()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><path d="M3.27 6.96L12 12.01l8.73-5.05M12 22.08V12"/></svg>Viewer 3D</button>
+
     <input type="file" id="topImportFile" accept=".json,application/json,text/plain" onchange="importarDados(event)" style="display:none">
-    <button class="tb-btn" onclick="enviarAoPainel()" title="Enviar os valores desta medição ao Painel de Obras">📤 Enviar ao painel</button>
-    <button class="tb-btn" onclick="novaObra()">✚ Nova obra</button>
+    <button class="tb-btn" onclick="enviarAoPainel()" title="Enviar os valores desta medição ao Painel de Obras"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4 20-7z"/></svg>Enviar ao painel</button>
+    <button class="tb-btn" onclick="novaObra()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>Nova obra</button>
     <span id="saveStatus" class="save-status" style="margin-left:8px;font-size:11px;"></span>
     <span id="fbBadge" class="fb-badge" style="opacity:0;"><span class="fb-dot"></span><span id="fbBadgeText"></span></span>
     <details class="tb-mais"><summary class="tb-btn">Mais ▾</summary>
-      <div class="tb-mais-m"><button type="button" onclick="exportarDados();this.closest('details').open=false">⬇ Exportar arquivo da obra (.json)</button></div>
+      <div class="tb-mais-m"><button type="button" onclick="$('topImportFile').click();this.closest('details').open=false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 9l5-5 5 5"/><path d="M12 4v12"/></svg>Importar arquivo da obra (.json)</button><button type="button" onclick="exportarDados();this.closest('details').open=false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg>Exportar arquivo da obra (.json)</button></div>
     </details>
   </div>
   <div class="topbar-right">
-    <button class="btn-print" onclick="window.print()">🖨 Imprimir / PDF</button>
+    <button class="btn-print" onclick="window.print()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>Imprimir / PDF</button>
   </div>
 </div>
 
