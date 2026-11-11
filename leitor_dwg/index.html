@@ -12817,6 +12817,11 @@ try{const g=JSON.parse(localStorage.getItem('rm_telha_cfg')||'null');
       util:+g.util||TLH.util, passo:+g.passo||TLH.passo, altura:+g.altura||TLH.altura,
       maxComp:+g.maxComp||0, traspasse:g.traspasse!=null&&+g.traspasse>=0?+g.traspasse:200,
       fabricante:String(g.fabricante||'')});}catch(e){}
+/* ajuste da obra no fechamento: obra salva antes da v280 tinha o positivo
+   descontando; agora soma (positivo acrescenta, negativo desconta) */
+function tlhAjusteSinal(cfg){if(!cfg||cfg.ajusteSinal)return;
+  if(cfg.ajusteObra!=null)TLH.ajusteObra=-(+cfg.ajusteObra||0);
+  if(cfg.ajustesFace){const a={};Object.keys(cfg.ajustesFace).forEach(k=>{a[k]=-(+cfg.ajustesFace[k]||0);});TLH.ajustesFace=a;}}
 function telhaGuarda(){
   try{localStorage.setItem('rm_telha_cfg',JSON.stringify(
     {perfil:TLH.perfil,telhaId:TLH.telhaId||'',util:TLH.util,passo:TLH.passo,altura:TLH.altura,maxComp:TLH.maxComp,
@@ -13521,7 +13526,7 @@ function telhaPreenche(f){
        desenha -- nao precisam do contorno nem da funcao yEm. */
     /* AJUSTE DA OBRA: o que a medida da obra (ou da tesoura) tem a menos que
        o projeto -- o geral e o desta parede (pelo nome, sobrevive à releitura) */
-    const mm=Math.round(alto-pe)-Math.round((+TLH.ajusteObra||0)+(+((TLH.ajustesFace||{})[f.nome])||0));
+    const mm=Math.round(alto-pe)+Math.round((+TLH.ajusteObra||0)+(+((TLH.ajustesFace||{})[f.nome])||0));
     if(mm>0)out.push({x0,x1,larg,mm,queda,porta:!!ab,face:f.nome,
       yA:f.yEm(x0),yB:f.yEm(x1),pe});
     /* JANELA: se a abertura nao vai ao chao, sobra parede EMBAIXO dela e ali
@@ -13991,7 +13996,7 @@ function telhaAcessAvulsos(){
 }
 function telhaPinta(){
   const el=document.getElementById('tlLista'); if(!el)return;
-  setTimeout(telhaAcessPinta,0);
+  setTimeout(telhaAcessPinta,0);tlhPrevia();
   const e=Math.max(1,TLH.estruturas), t=telhaTotais();
   document.getElementById('tlTot').innerHTML=tlKpisHTML(t.pecas,t.metros,t.m2,t.perdaPct);
   const td=document.getElementById('tlTotDet');
@@ -14127,7 +14132,7 @@ function telhaPinta(){
       '<span class="tl-f-d"><b>'+((f.xFim-f.xIni)/1000).toFixed(2).replace('.',',')+'</b> m de base</span>'+
       '<span class="tl-f-d"><b>'+(f.telhas.length*e)+'</b> telhas</span>'+
       '<span class="tl-f-d"'+(abTit?' title="'+escAttr(abTit)+'"':'')+'>'+ab+'</span>'+
-      '<label class="tl-f-aj" title="Descontado das telhas desta parede, além do Ajuste da obra. Negativo acrescenta.">Ajuste (mm) <input data-tlh-aj="'+i+'" type="number" step="1" value="'+Math.round(+((TLH.ajustesFace||{})[f.nome])||0)+'"></label>'+
+      '<label class="tl-f-aj" title="Somado às telhas desta parede, além do Ajuste da obra: positivo acrescenta, negativo desconta">Ajuste (mm) <input data-tlh-aj="'+i+'" type="number" step="1" value="'+Math.round(+((TLH.ajustesFace||{})[f.nome])||0)+'"></label>'+
       (skpF?'<button type="button" class="btn ghost tl-f-x" data-tlh-excluir="'+i+'" title="Tira este grupo da leitura: terça, cobertura ou qualquer face que veio junto sem ser parede">× Excluir</button>':'')+
       tlhAberturasHTML(f,i)+
       '</div>';
@@ -14297,7 +14302,7 @@ function telhaAbrir(){
         '<div class="fld"><label>Comprimento máximo (mm)</label><input id="tlMax" type="number" min="0" step="100" value="'+TLH.maxComp+'" title="Telha mais comprida que isto sai dividida em partes iguais, com transpasse. Zero = não divide."></div>'+
         '<div class="fld"><label>Transpasse se dividir (mm)</label><input id="tlTraspasse" type="number" min="0" step="10" value="'+Math.round(TLH.traspasse||0)+'"></div>'+
         '<div class="fld"><label>Estruturas iguais</label><input id="tlEst" type="number" min="1" step="1" value="'+TLH.estruturas+'" title="Quantas vezes este conjunto de faces se repete na obra"></div>'+
-        '<div class="fld"><label>Ajuste da obra (mm)</label><input id="tlAjusteObra" type="number" step="1" value="'+Math.round(+TLH.ajusteObra||0)+'" title="Diferença entre o projeto e a medida da obra, descontada de cada telha. Negativo acrescenta."></div>'+
+        '<div class="fld"><label>Ajuste da obra (mm)</label><input id="tlAjusteObra" type="number" step="1" value="'+Math.round(+TLH.ajusteObra||0)+'" title="Somado a cada telha: positivo acrescenta, negativo desconta (a obra mede menos que o projeto)"></div>'+
       '</div>'+
         '<div class="tl-bloco"><div class="tl-bloco-t">Itens avulsos</div>'+
           '<div class="ct-avulso">'+
@@ -14311,7 +14316,7 @@ function telhaAbrir(){
           '<div class="tl-avlista" id="tlAvLista"></div>'+
         '</div>'+
       '</div>'+
-      '<div class="tl-sec"><div class="tl-sec-t">Faces</div><div id="tlFaces"></div></div>'+
+      '<div class="tl-sec"><div class="tl-sec-t">Faces</div><button type="button" class="tl-prev" id="tlPrev" title="Abrir o 3D das telhas" hidden></button><div id="tlFaces"></div></div>'+
       '<div class="tl-sec"><div class="tl-sec-t">Resultado</div>'+
         '<div id="tlAvisos"></div>'+
         '<div class="tl-kpis" id="tlTot"></div>'+
@@ -14349,6 +14354,7 @@ function telhaAbrir(){
     document.getElementById('tlMax').oninput=e=>{TLH.maxComp=Math.max(0,parseInt(e.target.value,10)||0);refaz();};
     document.getElementById('tlTraspasse').oninput=e=>{TLH.traspasse=Math.max(0,parseInt(e.target.value,10)||0);refaz();};
     document.getElementById('tlEst').oninput=e=>{TLH.estruturas=Math.max(1,parseInt(e.target.value,10)||1);telhaPinta();};
+    {const pv=document.getElementById('tlPrev');if(pv)pv.onclick=()=>tlh3dAbrir();}
     document.getElementById('tlAjusteObra').addEventListener('change',e=>{TLH.ajusteObra=Math.round(num(e.target.value)||0);refaz();});
     document.getElementById('tlAvAdd').onclick=telhaAddAvulso;
     ['tlAvRot','tlAvMm','tlAvQtd'].forEach(id=>{const el=document.getElementById(id);
@@ -14406,7 +14412,7 @@ function telhaSalvarObra(){
     perfilRot:telhaRotuloAtual(),
     cfg:{perfil:TLH.perfil,telhaId:TLH.telhaId||'',util:TLH.util,passo:TLH.passo,altura:TLH.altura,
          maxComp:TLH.maxComp,traspasse:TLH.traspasse,estruturas:TLH.estruturas,
-         ajusteObra:Math.round(+TLH.ajusteObra||0),ajustesFace:JSON.parse(JSON.stringify(TLH.ajustesFace||{})),
+         ajusteSinal:2,ajusteObra:Math.round(+TLH.ajusteObra||0),ajustesFace:JSON.parse(JSON.stringify(TLH.ajustesFace||{})),
          aberturas:JSON.parse(JSON.stringify(TLH.aberturas||{ajustes:{},manuais:{}})),
          avulsos:JSON.parse(JSON.stringify(TLH.avulsos||[]))},
     resumo:{chapas:t.pecas,pecas:t.telhas,m2:+t.m2.toFixed(2),
@@ -14438,7 +14444,7 @@ function telhaContinuarObra(i){
      !confirm('Abrir esta obra substitui o desenho que está na tela agora. Continuar?'))return;
   const c=o.tel.cru;
   if(c.sketchup&&c.doc){
-    Object.assign(TLH,o.tel.cfg||{});TLH.avulsos=JSON.parse(JSON.stringify((o.tel.cfg&&o.tel.cfg.avulsos)||[]));
+    Object.assign(TLH,o.tel.cfg||{});tlhAjusteSinal(o.tel.cfg);TLH.avulsos=JSON.parse(JSON.stringify((o.tel.cfg&&o.tel.cfg.avulsos)||[]));
     const faces=tlhImportaSketchup(c.doc,c.nome||o.obra||'Fechamento salvo.rmfecha');
     tlhAtivaArquivoSketchup(c.nome||o.obra||'Fechamento salvo.rmfecha',faces.length);
     const ob=document.getElementById('obra');if(ob){ob.value=o.obra||'';try{save();}catch(_){}}
@@ -14452,7 +14458,7 @@ function telhaContinuarObra(i){
   unitF=c.unitF||1;
   const us=document.getElementById('unit');
   if(us){ us.value=String(unitF); }
-  Object.assign(TLH,o.tel.cfg||{});
+  Object.assign(TLH,o.tel.cfg||{});tlhAjusteSinal(o.tel.cfg);
   TLH.avulsos=JSON.parse(JSON.stringify((o.tel.cfg&&o.tel.cfg.avulsos)||[]));
   telhaGuarda();
   const ob=document.getElementById('obra'); if(ob){ob.value=o.obra||'';try{save();}catch(_){}}
@@ -14790,6 +14796,7 @@ function telhaFichaHTML(){
     +'#printArea .tmf table{width:100%;border-collapse:collapse;font-size:9pt;margin:0}.tmf tr{background:none}#printArea .tmf th{background:none;border:0;font-weight:700;text-align:left;font-size:7.5pt;color:#777;text-transform:uppercase;letter-spacing:.05em;border-bottom:.3mm solid #141414;padding:1mm}'
     +'#printArea .tmf td{border:0;font-size:9pt;font-weight:400;color:#141414;padding:.6mm 1mm;border-bottom:.15mm solid #ddd;vertical-align:top;white-space:nowrap}#printArea .tmf td.tmf-ob,#printArea .tmf td.tmf-cod{white-space:normal}#printArea .tmf td.tmf-ob{font-size:7pt;color:#555}#printArea .tmf td.r,#printArea .tmf th.r{text-align:right}#printArea .tmf td b{font-size:10pt}.tmf-ob{font-size:7.5pt;color:#555}'
     +'.tmf-ok{display:inline-block;width:3.2mm;height:3.2mm;border:.25mm solid #141414;border-radius:.6mm}'
+    +'.tmf-3d{min-height:0;height:100%;display:flex;align-items:center;justify-content:center;overflow:hidden}.tmf-3d img{width:100%;height:100%;object-fit:contain;display:block}'
     +'.tmf-pe{display:flex;justify-content:space-between;gap:6mm;font-size:7.5pt;color:#777;border-top:.2mm solid #ccc;padding-top:1.5mm}'
     +'#printArea .tmf-sep td{font-size:10pt;padding:1.2mm 1mm}.tmf-cod span{white-space:nowrap}'
     +'.tmf-corpo.longa{grid-template-columns:1fr;grid-template-rows:auto 1fr}.tmf-corpo.longa svg{max-height:65mm}.tmf-corpo.longa .tmf-lst{columns:3;column-gap:6mm}.tmf-l{display:grid;grid-template-columns:11mm 12mm 1fr 4mm;gap:1.5mm;align-items:baseline;font-size:8.5pt;padding:.4mm 0;border-bottom:.15mm solid #ddd;break-inside:avoid}.tmf-l b{text-align:right;font-size:9.5pt}.tmf-l .tmf-ob{font-size:7pt;color:#555}</style>';
@@ -14882,7 +14889,13 @@ function telhaFichaHTML(){
     cols.forEach(c=>{const g=grupos[grupos.length-1];if(g.length&&g.length+c.length>alvo+1&&grupos.length<nPartes)grupos.push([]);grupos[grupos.length-1].push(...c);});
     return grupos.map((g,i)=>folha(f,g,i+1,grupos.length)).join('');
   };
-  return css+sep+faces.map(folhas).join('');
+  const img3d=tlh3dImagem();
+  const pag3d=img3d?'<article class="tmf">'+topo('FECHAMENTO · MONTAGEM EM 3D',
+      '<span>Telha:</span> <b>'+escapeHtml(rot)+'</b> · <b>'+totalQtd+'</b> chapas · <b>'+faces.length+'</b> parede(s)'+vezes,
+      'Referência de onde fica cada parede. Os códigos e as medidas estão nas folhas seguintes.')
+    +'<div class="tmf-3d"><img src="'+img3d+'" alt="Fechamento em 3D, com as paredes no lugar"></div>'
+    +'<div class="tmf-pe"><span>Paredes: '+faces.map(f=>'<b>'+f.letra+'</b> '+escapeHtml(f.nome)).join(' · ')+'</span><span>Medidas em mm</span></div></article>':'';
+  return css+pag3d+sep+faces.map(folhas).join('');
 }
 async function telhaFichaMontador(){
   const pa=document.getElementById('printArea'); if(!pa)return;
@@ -15119,7 +15132,8 @@ function tlh3dDesenha(){
   let GL=null;
   if(d&&T3.vista!=='perfil'&&window.RMGL&&RMGL.ativo()){
     if(RMGL.pronto())GL=[];else if(!T3.glEspera){T3.glEspera=true;RMGL.three().then(()=>{T3.glEspera=false;try{tlh3dDesenha();}catch(e){}}).catch(()=>{});}}
-  if(GL)ctx.clearRect(0,0,w,h);else RM3D.fundo(ctx,w,h);
+  const papelBranco=()=>{ctx.fillStyle='#fff';ctx.fillRect(0,0,w,h);};   /* T3.papel: a ficha impressa */
+  if(GL)ctx.clearRect(0,0,w,h);else if(T3.papel)papelBranco();else RM3D.fundo(ctx,w,h);
   if(!d)return;
   if(T3.vista==='perfil'){ tlh3dPerfilDesenha(ctx,w,h); return; }
   const E=tlh3dEscala(w,h);
@@ -15186,10 +15200,10 @@ function tlh3dDesenha(){
   {const o=tlh3dGira([0,0,0]),e=v=>{const g=tlh3dGira(v);return [g[0]-o[0],-(g[1]-o[1]),g[2]-o[2]];};
    RM3D.gizmo(ctx,w,h,{X:e([1000,0,0]),Y:e([0,0,1000]),Z:e([0,1000,0])},dpr,document.getElementById('tl3bar'));
    RM3D.ultimo.fechamento={estilo:RM3D.estilo(),grade,escala:RM3D.escala(ctx,w,h,E.esc,dpr)};}
-  if(GL){const im=RMGL.camada(GL,v=>{const g=tlh3dGira(v);return [X(g),Y(g),g[2]];},w,h,1,{up:1,semPiso:T3.pitch<-0.01});
+  if(GL){const im=RMGL.camada(GL,v=>{const g=tlh3dGira(v);return [X(g),Y(g),g[2]];},w,h,1,{up:1,semPiso:T3.pitch<-0.01||!!T3.papel,papel:!!T3.papel});
     ctx.save();ctx.setTransform(1,0,0,1,0,0);ctx.globalCompositeOperation='destination-over';
     if(im){if(im._espelho){ctx.translate(0,h);ctx.scale(1,-1);}ctx.drawImage(im,0,0,w,h);}
-    ctx.restore();ctx.save();ctx.globalCompositeOperation='destination-over';RM3D.fundo(ctx,w,h);ctx.restore();
+    ctx.restore();ctx.save();ctx.globalCompositeOperation='destination-over';if(T3.papel)papelBranco();else RM3D.fundo(ctx,w,h);ctx.restore();
     RM3D.ultimo.fechamento.motor=im?'novo':'classico';}
 }
 /* O CORTE da telha, em escala verdadeira e com as cotas do perfil. Nao passa
@@ -15570,6 +15584,31 @@ fns+'\n'+
   a.download=nomeArquivoSeguro('Telhas 3D '+(ob||'obra'),100)+'.html';
   document.body.appendChild(a); a.click();
   setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},2000);
+}
+/* 3D DA FICHA DO MONTADOR: o mesmo desenho do botão 3D (conjunto em posição
+   real, quando veio do SketchUp; senão a primeira parede), num canvas fora
+   da tela, sem mexer no que estava aberto. Teste leitor-fechamento-ficha-3d. */
+function tlh3dImagem(o){
+  o=o||{};if(!TLH.faces.length)return null;
+  const velho=document.getElementById('tl3cv');if(velho)velho.id='tl3cv-aberto';
+  const cv=document.createElement('canvas');cv.id='tl3cv';cv.style.cssText='position:fixed;left:-99999px;top:0;width:'+(o.w||1500)+'px;height:'+(o.h||860)+'px';document.body.appendChild(cv);
+  const salvo={...T3},dpr0=window.rmImprimindoAlta;window.rmImprimindoAlta=o.dpr||1.6;
+  try{
+    T3.face=TLH.origem==='sketchup'?-1:0;T3.dados=T3.face<0?tlh3dMontaConjunto():tlh3dMonta();
+    T3.vista='iso';T3.yaw=-0.55;T3.pitch=0.30;T3.zoom=1;T3.px=T3.py=0;T3.enq=null;T3.arrastando=false;T3.papel=o.tela?false:true;
+    tlh3dDesenha();return cv.toDataURL('image/png');
+  }catch(e){console.warn('3D da ficha do fechamento:',e);return null;}
+  finally{Object.assign(T3,salvo);window.rmImprimindoAlta=dpr0;cv.remove();if(velho)velho.id='tl3cv';}
+}
+/* PRÉVIA DA LEITURA NA TELA: o 3D do conjunto, pequeno, em cima da lista de
+   faces -- como a prévia da cobertura. Refeita (com folga) a cada leitura ou
+   ajuste; um clique abre o 3D inteiro. Teste leitor-fechamento-previa. */
+let TLH_PREV_T=0;
+function tlhPrevia(){
+  clearTimeout(TLH_PREV_T);
+  TLH_PREV_T=setTimeout(()=>{const b=document.getElementById('tlPrev');if(!b)return;
+    const im=TLH.faces.length?tlh3dImagem({w:1200,h:330,dpr:1.2,tela:true}):null;
+    b.hidden=!im;b.innerHTML=im?'<img src="'+im+'" alt="Prévia da leitura em 3D"><span>Abrir o 3D</span>':'';},250);
 }
 function tlh3dSalvarPNG(){
   const cv=document.getElementById('tl3cv'); if(!cv)return;
@@ -27099,6 +27138,9 @@ html[data-theme="escuro"] .log-det>summary.err{color:var(--red)}.log-det>summary
 #tlov .tl-face select,#tlov .tl-face input[type=number]{padding:4px 7px;font-size:13px;border:1px solid var(--line);border-radius:7px;
   background:var(--surface-2);color:var(--ink);font-family:var(--mono)}
 #tlov .tl-face input[type=number]{width:78px}
+#tlov .tl-prev{display:block;position:relative;width:100%;margin:0 0 10px;padding:0;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--surface-2);cursor:zoom-in}
+#tlov .tl-prev img{display:block;width:100%;height:auto}
+#tlov .tl-prev span{position:absolute;right:8px;bottom:8px;padding:4px 9px;border-radius:7px;background:rgba(20,26,32,.8);color:#eef2f6;font-size:12px;font-weight:600}
 #tlov .tl-face .cob-f-tel select{max-width:230px;font-family:inherit}
 #tlov .cob-tel-t{text-align:left;background:var(--surface-2);color:var(--ink);font-size:12px;letter-spacing:.04em}
 #tlov .tl-face label{display:inline-flex;align-items:center;gap:5px;font-size:11px;color:var(--muted);text-transform:uppercase;
@@ -27176,7 +27218,7 @@ html[data-theme="escuro"] .log-det>summary.err{color:var(--red)}.log-det>summary
   ];
   const COB_PADRAO={modelo:'tp40-043',orcTelhaId:'',util:980,fabricante:'',cor:'',aguas:2,sentido:'ltr',
     leitura:'planta',plantaVersao:5,inclinacao:10,agrupamento:10,blocos:[],reaproveitar:false,
-    comprimento:0,projA:0,desnA:0,projB:0,desnB:0,beiral:150,cumeeira:50,ajusteObra:0,
+    comprimento:0,projA:0,desnA:0,projB:0,desnB:0,beiral:150,cumeeira:50,ajusteObra:0,ajusteSinal:2,
     maxComp:0,traspasse:200,estruturas:1,confirmada:false,desenhoSig:'',fonte:'',obs:'',sketchupNome:'',
     termica:false,pingadeira:50,pecaBeiral:0,parafM2:3,verdadeira:false,reusarLargura:false};
 
@@ -27207,6 +27249,8 @@ html[data-theme="escuro"] .log-det>summary.err{color:var(--red)}.log-det>summary
       COB_MIGRAR_AB=inteiro(x.plantaVersao)<2;
       COB_MIGRAR_GEOM=inteiro(x.plantaVersao)<5;
       Object.assign(COB,x);
+      /* ajuste da obra: até a v279 o positivo DESCONTAVA; agora soma */
+      if(!x.ajusteSinal){if(num(COB.ajusteObra))COB.ajusteObra=-num(COB.ajusteObra);(COB.blocos||[]).forEach(b=>{if(num(b.ajuste))b.ajuste=-num(b.ajuste);});COB.ajusteSinal=2;}
     }
   }catch(_){ }
   if(!CATALOGO.some(m=>m.id===COB.modelo))COB.modelo=CATALOGO[0].id;
@@ -28091,7 +28135,7 @@ html[data-theme="escuro"] .log-det>summary.err{color:var(--red)}.log-det>summary
                que, sempre para cima, viravam 1 cm a mais na peça. Com 1 mm a
                tolerância cortava para BAIXO: 6.299,9999 virava 6.299 e a cota
                4.830,94 virava 4.830 -- telha mais curta que o desenho. */
-            final=Math.max(1,Math.ceil(geometrico+num(COB.beiral)-(f.tocaCumeeira?num(COB.cumeeira):0)-num(COB.ajusteObra)-num(b.ajuste)-.5));
+            final=Math.max(1,Math.ceil(geometrico+num(COB.beiral)-(f.tocaCumeeira?num(COB.cumeeira):0)+num(COB.ajusteObra)+num(b.ajuste)-.5));
           const pedido=Math.ceil(final/incAgr)*incAgr;
           let div,pecas;
           if(T.termica){
@@ -28104,7 +28148,7 @@ html[data-theme="escuro"] .log-det>summary.err{color:var(--red)}.log-det>summary
             if(div.erro){erros.push(div.erro);return;}
             pecas=null;
           }
-          const perfilFinal=(f.perfilProj||[f.projecao]).map(v=>Math.max(0,v*fator+num(COB.beiral)-(f.tocaCumeeira?num(COB.cumeeira):0)-num(COB.ajusteObra)-num(b.ajuste)));
+          const perfilFinal=(f.perfilProj||[f.projecao]).map(v=>Math.max(0,v*fator+num(COB.beiral)-(f.tocaCumeeira?num(COB.cumeeira):0)+num(COB.ajusteObra)+num(b.ajuste)));
           const ordem=fi+1;
           const x={...f,bloco:bi,setor:si,ordem,geometrico,final,pedido,partes:div.partes,medida:div.medida,pecas,
             telha:T.chave,telhaNome:T.nome,telhaId:T.telhaId,util,termica:T.termica,
@@ -28272,7 +28316,7 @@ html[data-theme="escuro"] .log-det>summary.err{color:var(--red)}.log-det>summary
     const aguas=[];
     const faz=(id,proj,desn)=>{
       const geometrico=Math.hypot(num(proj),num(desn));
-      const final=Math.max(1,Math.ceil(geometrico+num(COB.beiral)-num(COB.cumeeira)-num(COB.ajusteObra)));
+      const final=Math.max(1,Math.ceil(geometrico+num(COB.beiral)-num(COB.cumeeira)+num(COB.ajusteObra)));
       const div=divideComprimento(final,COB.maxComp,COB.traspasse);
       if(div.erro){erros.push(div.erro);return;}
       const pecas=faixas*div.partes*e,metros=pecas*div.medida/1000;
@@ -28678,7 +28722,7 @@ html[data-theme="escuro"] .log-det>summary.err{color:var(--red)}.log-det>summary
     /* ajuste fino desta face, somado ao Ajuste da obra (o projeto tinha 4 mm
        de diferença de uma água para a outra que a obra não tem) */
     const telhaFace=i=>'<label class="cob-f-tel">Telha <select data-cob-tel="'+i+'" aria-label="Telha desta face">'+cobOpcoesTelhaFace(COB.blocos[i].telha)+'</select></label>';
-    const ajuste=i=>'<label title="Descontado das telhas desta face, além do Ajuste da obra. Negativo acrescenta.">Ajuste (mm) <input data-cob-aj="'+i+'" type="number" step="1" value="'+Math.round(num(COB.blocos[i].ajuste))+'"></label>';
+    const ajuste=i=>'<label title="Somado às telhas desta face, além do Ajuste da obra: positivo acrescenta, negativo desconta">Ajuste (mm) <input data-cob-aj="'+i+'" type="number" step="1" value="'+Math.round(num(COB.blocos[i].ajuste))+'"></label>';
     box.innerHTML='<div class="tl-faces-l">'+faixaExcl+(COB.blocos.length?COB.blocos.map((b,i)=>{
       if(b.origem==='sketchup'){
         const area=b.area3d!=null?b.area3d:(Math.abs(cobArea(b.poligono))-(b.furos||[]).reduce((s,f)=>s+Math.abs(cobArea(f)),0))/1e6;
@@ -28882,7 +28926,7 @@ html[data-theme="escuro"] .log-det>summary.err{color:var(--red)}.log-det>summary
         '<div class="tl-bloco"><div class="tl-bloco-t">Cobertura</div><div class="tl-campos">'+
           '<div class="fld"><label>Avanço no beiral (mm)</label><input id="cobBeiral" type="number" min="0" value="'+inteiro(COB.beiral)+'" title="Medido no sentido da telha"></div>'+
           '<div class="fld"><label>Folga na cumeeira (mm)</label><input id="cobCumeeira" type="number" min="0" value="'+inteiro(COB.cumeeira)+'" title="Recuo da telha antes da cumeeira: descontado do comprimento, nunca somado"></div>'+
-          '<div class="fld"><label>Ajuste da obra (mm)</label><input id="cobAjusteObra" type="number" step="1" value="'+Math.round(num(COB.ajusteObra))+'" title="Diferença entre o projeto e a medida da obra (ou da tesoura), descontada de cada telha. Negativo acrescenta."></div>'+
+          '<div class="fld"><label>Ajuste da obra (mm)</label><input id="cobAjusteObra" type="number" step="1" value="'+Math.round(num(COB.ajusteObra))+'" title="Somado a cada telha: positivo acrescenta, negativo desconta (ex.: −254 quando a obra mede 254 mm a menos que o projeto)"></div>'+
           '<div class="fld"><label>Transpasse se dividir (mm)</label><input id="cobTraspasse" type="number" min="0" value="'+inteiro(COB.traspasse)+'"></div>'+
           '<div class="fld cob-planta-only"><label>Agrupar comprimentos (mm)</label><input id="cobAgrupamento" type="number" min="1" step="1" value="'+inteiro(COB.agrupamento)+'" title="Arredonda sempre para cima no pedido"></div>'+
           '<div class="fld"><label>Chapas por telha</label><input id="cobTermicaInfo" value="'+(COB.termica?'Duas chapas (térmica / forro)':'Uma folha')+'" disabled title="Vem do nome da telha no cadastro: térmica ou forro = duas chapas; sem isso, uma folha"></div>'+
@@ -31215,7 +31259,7 @@ if('serviceWorker' in navigator && location.protocol.startsWith('http')){
 }
 </script>
 <script>/* versão publicada (PADRAO_RM.md §3): sobe a cada publicação, junto com o CACHE do sw.js */
-const APP_VER='v279';
+const APP_VER='v280';
 </script>
 <script id="rmVersaoBloco">
 /* ===== SELO DE VERSÃO — igual em todos os sistemas (PADRAO_RM.md §3) =====

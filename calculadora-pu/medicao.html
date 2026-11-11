@@ -2002,6 +2002,8 @@ else comeca();
 #v3d-canvas-wrap.v3-cheia{position:fixed!important;inset:0!important;z-index:9000!important;width:auto!important;height:auto!important;flex:none!important}
 #viewer3d .v3bar select{width:auto!important;flex:none!important;min-width:0;border:1px solid rgba(255,255,255,.16);background:rgba(20,26,32,.85);color:#e9ecef;font:inherit;font-size:13px;border-radius:7px;padding:5px 8px}
 #viewer3d .v3bar select option{color:#16181c;background:#fff}
+#viewer3d .v3bar .v3exp{display:flex;align-items:center;gap:7px;color:#e9ecef;font-size:13px;border:1px solid rgba(255,255,255,.16);border-radius:7px;padding:4px 9px;background:rgba(20,26,32,.85)}
+#viewer3d .v3bar .v3exp input{width:90px;accent-color:#f58236}
 #v3d-canvas-wrap canvas{display:block;cursor:grab;touch-action:none;}
 #v3d-canvas-wrap canvas:active{cursor:grabbing;}
 #viewer3d .v3bar{position:absolute;left:12px;top:12px;display:flex;flex-wrap:wrap;gap:6px;align-items:center;
@@ -2173,6 +2175,7 @@ else comeca();
         <button type="button" data-fundo3d title="Trocar o fundo do 3D: escuro, claro ou blueprint">Fundo: Escuro</button>
         <select id="v3Luz" aria-label="Iluminação" title="Iluminação do 3D (a mesma escolha do Leitor DWG)"><option value="dia">Luz do dia</option><option value="estudio">Luz de estúdio</option></select>
         <button type="button" id="v3AmpBtn" title="Ampliar o 3D na tela inteira (Esc fecha)">⛶ Ampliar</button>
+        <label class="v3exp" title="Afasta as peças (só a vista: medidas e preço não mudam)">Explodir <input id="v3Expl" type="range" min="0" max="100" value="0" aria-label="Afastar as peças"></label>
         <button id="v3boxBtn" onclick="v3ToggleBoxSel()" title="Arraste um retângulo para marcar ou desmarcar as linhas de dentro">Seleção<span class="lg"> por área</span></button>
       </div>
       <div class="v3leg">
@@ -2536,9 +2539,41 @@ document.getElementById('v3MedBtn').addEventListener('click',e=>{ v3Medidas=!v3M
 window.__v3Teste={cena:()=>({...v3HudInfo}),linhas:()=>objs.map(o=>Array.from(o.line.geometry.attributes.position.array)),
   camera:()=>cam?cam.position.toArray():null, alvo:()=>ctrl?ctrl.target.toArray():null,
   motor:()=>({aces:!!ren&&ren.toneMapping===THREE.ACESFilmicToneMapping,sombra:!!ren&&ren.shadowMap.enabled,ambiente:!!(sc&&sc.environment),piso:!!(v3Piso&&v3Piso.parent),
-    luz:v3LuzAtual(),solF:v3Sol?v3Sol.intensity:0,aco:!!(v3PecasGrp&&v3PecasGrp.children.some(o=>o.isMesh&&o.material.isMeshStandardMaterial)),
+    luz:v3LuzAtual(),solF:v3Sol?v3Sol.intensity:0,partes:v3Partes.length,expl:v3ExplK,
+    distPilares:(()=>{const ps=v3Partes.filter(p=>p.itens[0]&&p.itens[0].o.isMesh);if(ps.length<2)return 0;const a=ps[0].itens[0].o.position,b=ps[ps.length-1].itens[0].o.position;return a.distanceTo(b);})(),
+    tubosNaPeca:objs.length?objs.every(o=>{const pt=v3Partes.find(p=>p.itens.some(it=>it.o===o.tubo));const it=pt&&pt.itens.find(x=>x.o===o.tubo);return !!it&&it.o.position.clone().sub(it.p).distanceTo(pt.itens[0].o.position.clone().sub(pt.itens[0].p))<1e-6;}):null,aco:!!(v3PecasGrp&&v3PecasGrp.children.some(o=>o.isMesh&&o.material.isMeshStandardMaterial)),
     sombraPeca:!!(v3PecasGrp&&v3PecasGrp.children.some(o=>o.isMesh&&o.castShadow)),linhaSemTom:objs.length?objs.every(o=>o.tubo.material.toneMapped===false):null})};
 
+/* VISTA EXPLODIDA (como no Leitor): cada peça leva as linhas de PU dela
+   (a linha vai com a peça cuja caixa a contém, ou com a mais perto) e se
+   afasta do centro da obra. Só a vista: posição de verdade, medidas e preço
+   não mudam. A seleção e as medidas usam a posição do tubo, que anda junto. */
+let v3Partes=[], v3ExplK=0;
+function v3MontaPartes(){
+  v3Partes=[];v3ExplK=0;const sl=document.getElementById('v3Expl');if(sl)sl.value=0;
+  if(!v3Caixa) return;
+  const base=o=>({o,p:o.position.clone()});
+  if(v3PecasGrp){
+    const ch=v3PecasGrp.children;
+    for(let i=0;i<ch.length;i++){ const m=ch[i]; if(!m.isMesh) continue;
+      const ar=ch[i+1]&&ch[i+1].isLineSegments?ch[i+1]:null;
+      m.geometry.computeBoundingBox(); const bx=m.geometry.boundingBox.clone().translate(m.position).expandByScalar(.05);
+      v3Partes.push({c:m.position.clone(),bx,itens:[base(m)].concat(ar?[base(ar)]:[])}); }
+  }
+  objs.forEach(o=>{ const l=linhasData.find(x=>x.id===o.id); if(!l) return;
+    const mid=new THREE.Vector3().addVectors(v3(l.pt1),v3(l.pt2)).multiplyScalar(.5);
+    const pecas=v3Partes.filter(p=>p.bx);   /* sem peças no arquivo, cada linha é uma parte */
+    let pt=pecas.find(p=>p.bx.containsPoint(mid));
+    if(!pt&&pecas.length) pt=pecas.reduce((a,p)=>p.c.distanceTo(mid)<a.c.distanceTo(mid)?p:a);
+    if(!pt){ pt={c:mid,itens:[]}; v3Partes.push(pt); }
+    pt.itens.push(base(o.tubo),base(o.sph),base(o.line)); });
+}
+function v3Explode(k){
+  v3ExplK=k; if(!v3Caixa) return; const cen=v3Caixa.getCenter(new THREE.Vector3());
+  v3Partes.forEach(p=>{ const d=p.c.clone().sub(cen).multiplyScalar(k*1.2); p.itens.forEach(it=>it.o.position.copy(it.p).add(d)); });
+  if(ren) ren.shadowMap.needsUpdate=true;
+}
+{const ex=document.getElementById('v3Expl');if(ex)ex.addEventListener('input',()=>v3Explode(+ex.value/100));}
 /* luz do dia / estúdio e o Ampliar (como nos 3D do Leitor) */
 {const sl=document.getElementById('v3Luz');if(sl){sl.value=v3LuzAtual();sl.addEventListener('change',()=>{try{localStorage.setItem('rm_3d_luz',sl.value);}catch(e){}v3Ilumina();});}
  const ab=document.getElementById('v3AmpBtn'),wr=document.getElementById('v3d-canvas-wrap');
@@ -2658,7 +2693,7 @@ window.v3LoadJSON=function(json,fname,opc){
     sph.position.copy(mid); sph.quaternion.copy(q); sph.userData={id:l.id}; v3Cena.add(sph);
     objs.push({id:l.id,line,tubo,sph,len});
   });
-  v3SemTom(v3Cena); v3Ilumina();
+  v3SemTom(v3Cena); v3Ilumina(); v3MontaPartes();
   document.getElementById('v3vSk').style.display=v3Cam?'':'none';
   const pb=document.getElementById('v3PecasBtn'); pb.style.display=v3PecasGrp?'':'none'; v3PecasAplica();
   v3Vista(v3Vis==='sketchup'&&!v3Cam?'iso':v3Vis);
