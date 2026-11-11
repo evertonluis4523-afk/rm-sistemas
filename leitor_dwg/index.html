@@ -12808,6 +12808,7 @@ const TLH_PERFIS = {
 };
 const TLH = {perfil:'TP-40',telhaId:'', util:980, passo:196, altura:40, fabricante:'',
              maxComp:0, traspasse:200, estruturas:1, faces:[], avisos:[], avulsos:[],
+             ajusteObra:0, ajustesFace:{},
              aberturas:{ajustes:{},manuais:{}},
              origem:'dwg',sketchupFaces:[],sketchupNome:'',sketchupDoc:null,sketchupIgnoradas:0};
 try{const g=JSON.parse(localStorage.getItem('rm_telha_cfg')||'null');
@@ -13518,7 +13519,9 @@ function telhaPreenche(f){
     const queda=Math.round(Math.abs(f.yEm(x1)-f.yEm(x0)));
     /* yA/yB e pe viajam com a telha: assim o 3D -- e o HTML avulso, que so
        desenha -- nao precisam do contorno nem da funcao yEm. */
-    const mm=Math.round(alto-pe);
+    /* AJUSTE DA OBRA: o que a medida da obra (ou da tesoura) tem a menos que
+       o projeto -- o geral e o desta parede (pelo nome, sobrevive à releitura) */
+    const mm=Math.round(alto-pe)-Math.round((+TLH.ajusteObra||0)+(+((TLH.ajustesFace||{})[f.nome])||0));
     if(mm>0)out.push({x0,x1,larg,mm,queda,porta:!!ab,face:f.nome,
       yA:f.yEm(x0),yB:f.yEm(x1),pe});
     /* JANELA: se a abertura nao vai ao chao, sobra parede EMBAIXO dela e ali
@@ -14124,6 +14127,7 @@ function telhaPinta(){
       '<span class="tl-f-d"><b>'+((f.xFim-f.xIni)/1000).toFixed(2).replace('.',',')+'</b> m de base</span>'+
       '<span class="tl-f-d"><b>'+(f.telhas.length*e)+'</b> telhas</span>'+
       '<span class="tl-f-d"'+(abTit?' title="'+escAttr(abTit)+'"':'')+'>'+ab+'</span>'+
+      '<label class="tl-f-aj" title="Descontado das telhas desta parede, além do Ajuste da obra. Negativo acrescenta.">Ajuste (mm) <input data-tlh-aj="'+i+'" type="number" step="1" value="'+Math.round(+((TLH.ajustesFace||{})[f.nome])||0)+'"></label>'+
       (skpF?'<button type="button" class="btn ghost tl-f-x" data-tlh-excluir="'+i+'" title="Tira este grupo da leitura: terça, cobertura ou qualquer face que veio junto sem ser parede">× Excluir</button>':'')+
       tlhAberturasHTML(f,i)+
       '</div>';
@@ -14133,6 +14137,11 @@ function telhaPinta(){
      calculada desta face (t.face) -- sem isso a tabela de corte e a perda
      por face continuariam mostrando o nome antigo, porque foram calculadas
      uma vez e guardam o nome copiado, nao uma referencia viva. */
+  fx.querySelectorAll('[data-tlh-aj]').forEach(el=>el.addEventListener('change',()=>{
+    const f=TLH.faces[+el.dataset.tlhAj];if(!f)return;TLH.ajustesFace=TLH.ajustesFace||{};
+    const v=Math.round(num(el.value)||0);if(v)TLH.ajustesFace[f.nome]=v;else delete TLH.ajustesFace[f.nome];
+    telhaMonta();telhaPinta();
+  }));
   fx.querySelectorAll('[data-tlh-excluir]').forEach(bt=>bt.addEventListener('click',()=>{
     const f=TLH.faces[+bt.dataset.tlhExcluir]; if(!f)return;
     const k=TLH.sketchupFaces.indexOf(f); if(k<0)return;
@@ -14288,6 +14297,7 @@ function telhaAbrir(){
         '<div class="fld"><label>Comprimento máximo (mm)</label><input id="tlMax" type="number" min="0" step="100" value="'+TLH.maxComp+'" title="Telha mais comprida que isto sai dividida em partes iguais, com transpasse. Zero = não divide."></div>'+
         '<div class="fld"><label>Transpasse se dividir (mm)</label><input id="tlTraspasse" type="number" min="0" step="10" value="'+Math.round(TLH.traspasse||0)+'"></div>'+
         '<div class="fld"><label>Estruturas iguais</label><input id="tlEst" type="number" min="1" step="1" value="'+TLH.estruturas+'" title="Quantas vezes este conjunto de faces se repete na obra"></div>'+
+        '<div class="fld"><label>Ajuste da obra (mm)</label><input id="tlAjusteObra" type="number" step="1" value="'+Math.round(+TLH.ajusteObra||0)+'" title="Diferença entre o projeto e a medida da obra, descontada de cada telha. Negativo acrescenta."></div>'+
       '</div>'+
         '<div class="tl-bloco"><div class="tl-bloco-t">Itens avulsos</div>'+
           '<div class="ct-avulso">'+
@@ -14339,6 +14349,7 @@ function telhaAbrir(){
     document.getElementById('tlMax').oninput=e=>{TLH.maxComp=Math.max(0,parseInt(e.target.value,10)||0);refaz();};
     document.getElementById('tlTraspasse').oninput=e=>{TLH.traspasse=Math.max(0,parseInt(e.target.value,10)||0);refaz();};
     document.getElementById('tlEst').oninput=e=>{TLH.estruturas=Math.max(1,parseInt(e.target.value,10)||1);telhaPinta();};
+    document.getElementById('tlAjusteObra').addEventListener('change',e=>{TLH.ajusteObra=Math.round(num(e.target.value)||0);refaz();});
     document.getElementById('tlAvAdd').onclick=telhaAddAvulso;
     ['tlAvRot','tlAvMm','tlAvQtd'].forEach(id=>{const el=document.getElementById(id);
       if(el)el.addEventListener('keydown',e=>{if(e.key==='Enter')telhaAddAvulso();});});
@@ -14395,6 +14406,7 @@ function telhaSalvarObra(){
     perfilRot:telhaRotuloAtual(),
     cfg:{perfil:TLH.perfil,telhaId:TLH.telhaId||'',util:TLH.util,passo:TLH.passo,altura:TLH.altura,
          maxComp:TLH.maxComp,traspasse:TLH.traspasse,estruturas:TLH.estruturas,
+         ajusteObra:Math.round(+TLH.ajusteObra||0),ajustesFace:JSON.parse(JSON.stringify(TLH.ajustesFace||{})),
          aberturas:JSON.parse(JSON.stringify(TLH.aberturas||{ajustes:{},manuais:{}})),
          avulsos:JSON.parse(JSON.stringify(TLH.avulsos||[]))},
     resumo:{chapas:t.pecas,pecas:t.telhas,m2:+t.m2.toFixed(2),
@@ -19931,7 +19943,7 @@ window.__leitorTeste={
       sheets:p.sheets.map(s=>({w:s.width,n:s.placed.length,lot:s.lotKey,retalhos:RMChapas.retalhos(s,st.cfg)}))};},
   fechamento:()=>{const hex=c=>'#'+c.map(v=>v.toString(16).padStart(2,'0')).join(''),conj=tlh3dMontaConjunto();
     return {util:TLH.util,paredes:TLH.faces.map((f,i)=>({nome:f.nome,base:f.xFim-f.xIni,aberturas:(f.vergas||[]).filter(v=>!v.vao).length,
-      cor:hex(tlh3dCor(i,false,0)),telhas:f.telhas.length,area:Math.round((Number(f.area3d)||0)*10)/10,cortes:[...new Set(f.telhas.flatMap(t=>[t.x0-f.xIni,t.x1-f.xIni]))].sort((a,b)=>a-b)})),
+      cor:hex(tlh3dCor(i,false,0)),telhas:f.telhas.length,maiorMm:Math.max(0,...f.telhas.map(t=>t.mm)),area:Math.round((Number(f.area3d)||0)*10)/10,cortes:[...new Set(f.telhas.flatMap(t=>[t.x0-f.xIni,t.x1-f.xIni]))].sort((a,b)=>a-b)})),
       rotulos:((conj&&conj.rotulos)||[]).map(x=>{const ys=conj.quads.filter(q=>q.fi===x.i).flatMap(q=>q.pts.map(p=>p[1]));
         return {nome:x.nome,cor:hex(x.cor),acimaDoTopo:ys.length?Math.round(x.pos[1]-Math.max(...ys)):null};})};},
   cuKey:CU_KEY,
@@ -25064,6 +25076,11 @@ function mapa(Ld,ri){
 function estica(L,a,b){if(L.length<2)return L;const o=L.map(q=>q.slice()),m=o.length-1,u=(p,q)=>{const l=Math.hypot(q[0]-p[0],q[1]-p[1])||1;return [(q[0]-p[0])/l,(q[1]-p[1])/l];};
   const d0=u(o[0],o[1]),d1=u(o[m-1],o[m]);o[0]=[o[0][0]-a*d0[0],o[0][1]-a*d0[1]];o[m]=[o[m][0]+b*d1[0],o[m][1]+b*d1[1]];return o;}
 /* barras: peça maior que a barra vai com emenda (barras inteiras + o resto) */
+/* BARRA DO PERFIL LATERAL: tem fabricante que faz o perfil só até 3 m.
+   Com o campo preenchido o perfil é contado (e emendado) nessa barra; os
+   tubos continuam com a barra geral. Teste leitor-escada-perfil-barra-max. */
+function perfilBar(bar){const v=num(((st||{}).perfil||{}).barra);return v>0?Math.max(500,v):bar;}
+const barDe=(L,bar)=>L.some(p=>p.grupo==='u')?perfilBar(bar):bar;
 function barras(pecas,bar){
   const lista=[];let emendas=0;
   pecas.forEach(pc=>{for(let q=0;q<pc.qtd;q++){let r=pc.mm;while(r>bar){lista.push(bar);r-=bar;emendas++;}if(r>0)lista.push(r);}});
@@ -25448,22 +25465,22 @@ function trechoHTML(t,i){
 }
 /* lista de corte: só no papel (ficha do montador) */
 function listaHTML(r,bar){
-  const lin=r.pecas.filter(p=>!['z','p','pe','sp'].includes(p.grupo)),bn=[...new Set(lin.map(p=>p.desc))].map(n=>({n,b:barras(lin.filter(p=>p.desc===n),bar)}));
+  const lin=r.pecas.filter(p=>!['z','p','pe','sp'].includes(p.grupo)),bn=[...new Set(lin.map(p=>p.desc))].map(n=>{const L=lin.filter(p=>p.desc===n);return {n,bar:barDe(L,bar),b:barras(L,barDe(L,bar))};});
   const emd=bn.reduce((a,x)=>a+x.b.emendas,0);
   return '<div class="es-lista-wrap"><table><thead><tr><th>Peça</th><th>Trecho</th><th class="r">Comprimento</th><th class="r">Qtd.</th><th>Cortes</th></tr></thead><tbody>'
     +r.pecas.map(p=>'<tr data-gr="'+p.grupo+'"><td><b>'+esc(p.desc)+'</b></td><td>'+esc(p.onde)+'</td><td class="r"><b>'+f0(p.mm)+' mm</b></td><td class="r">'+p.qtd+'</td><td>'+esc(p.cortes)+'</td></tr>').join('')
     +'</tbody></table></div>'
-    +'<div class="es-bar">Barras de '+f0(bar)+' mm: '+bn.map(x=>'<b>'+x.b.n+'</b> de '+esc(x.n)).join(' · ')
+    +'<div class="es-bar">Barras de '+f0(bar)+' mm: '+bn.map(x=>'<b>'+x.b.n+'</b> de '+esc(x.n)+(x.bar!==bar?' (barra de '+f0(x.bar)+' mm)':'')).join(' · ')
     +(emd?' · <span style="color:#D53309">'+emd+' emenda(s): peça maior que a barra</span>':'')+'</div>';
 }
 function resultado(){
   st=norm(st);sol=null;
   const r=calcula(),bar=Math.max(500,num(st.barra)||6000),nl=nLados(st);
   const g=k=>r.pecas.filter(p=>p.grupo===k);
-  const bu=barras(g('u'),bar),bc=barras(g('c'),bar),G=r.gc;
+  const bu=barras(g('u'),perfilBar(bar)),bc=barras(g('c'),bar),G=r.gc;
   /* barras por tubo: peças do mesmo nome dividem as barras (corrimão e
      travessa do mesmo tubo saem juntos) */
-  const lin=r.pecas.filter(p=>!['z','p','pe','sp'].includes(p.grupo)),bn=[...new Set(lin.map(p=>p.desc))].map(n=>({n,b:barras(lin.filter(p=>p.desc===n),bar)}));
+  const lin=r.pecas.filter(p=>!['z','p','pe','sp'].includes(p.grupo)),bn=[...new Set(lin.map(p=>p.desc))].map(n=>{const L=lin.filter(p=>p.desc===n);return {n,b:barras(L,barDe(L,bar))};});
   const emd=bn.reduce((a,x)=>a+x.b.emendas,0);
   $('esDes').innerHTML=desenho(r,st);
   pinta3D($('esV3'));
@@ -25499,7 +25516,7 @@ function render(){
     +'<div class="es-sub">Chapa do patamar</div><div class="es-f">'+campo('Dobra da frente, para baixo (mm)','patamar.abaF',st.patamar.abaF)+campo('Dobra de trás, para cima (mm)','patamar.abaT',st.patamar.abaT)
     +campo('Largura da chapa xadrez (mm)','patamar.chapa',st.patamar.chapa)+'</div><div class="es-nota">A chapa do patamar vai até a largura da chapa xadrez; o resto e as dobras saem em extensões cortadas à parte e soldadas na RM.</div></div>'
     +'<div class="es-card"><h3>Perfil lateral (cobre a lateral do degrau)</h3><div class="es-f">'
-    +campo('Tipo de perfil','perfil.nome',P.nome,{txt:1})+campo('Altura (mm)','perfil.alt',P.alt)+campo('Aba (mm)','perfil.aba',P.aba)+campo('Espessura (mm)','perfil.esp',P.esp)+'</div>'
+    +campo('Tipo de perfil','perfil.nome',P.nome,{txt:1})+campo('Altura (mm)','perfil.alt',P.alt)+campo('Aba (mm)','perfil.aba',P.aba)+campo('Espessura (mm)','perfil.esp',P.esp)+campo('Barra máxima (mm)','perfil.barra',P.barra||'')+'</div>'
     +'<div class="es-nota" id="esCob"></div><div class="es-nota es-ruim" id="esAvisos" hidden></div></div>'
     +'<div class="es-card"><h3>Guarda-corpo e corrimão, por lado</h3>'
     +'<div class="es-ld" id="esLados"><span></span><b>Guarda-corpo</b><b>Corrimão na parede</b>'
@@ -25596,11 +25613,11 @@ function itensPedido(r){
   const e=st,D=e.degrau,S=e.pedido.sec,bar=Math.max(500,num(e.barra)||6000),it=[];
   if(S.degraus&&r.deg)it.push({sec:'Degraus',desc:'Degrau '+zTxt(D)+' em chapa xadrez esp. '+f1(D.esp)+' (corte e dobra)',med:f0(D.comp)+' mm',qtd:r.deg,un:'pç'});
   if(S.patamar)r.pecas.filter(p=>p.grupo==='p'||p.grupo==='pe').forEach(p=>it.push({sec:'Patamar',desc:p.desc+' · '+p.onde.toLowerCase()+' · chapa xadrez esp. '+f1(D.esp)+(p.grupo==='pe'?' (cortar à parte)':''),med:f0(p.w)+' × '+f0(p.l)+' mm',qtd:p.qtd,un:'pç'}));
-  const porNome=gs=>{const L=r.pecas.filter(p=>gs.includes(p.grupo));return [...new Set(L.map(p=>p.desc))].map(n=>({n,b:barras(L.filter(p=>p.desc===n),bar)}));};
+  const porNome=gs=>{const L=r.pecas.filter(p=>gs.includes(p.grupo));return [...new Set(L.map(p=>p.desc))].map(n=>{const M=L.filter(p=>p.desc===n);return {n,bar:barDe(M,bar),b:barras(M,barDe(M,bar))};});};
   const mac=S.macica!==false;
   if(S.tubos||mac)porNome((S.tubos?['c','gl','gc1','gt','gp']:[]).concat(mac?['gb']:[])).forEach(x=>it.push({sec:'Tubos e barras',desc:x.n,med:'barra de '+f0(bar)+' mm',qtd:x.b.n,un:'barra'}));
   if(S.tubos)r.pecas.filter(p=>p.grupo==='sp').forEach(p=>it.push({sec:'Tubos e barras',desc:p.desc+' (tubo Ø '+f1(e.corr.diam)+' mm)',med:'afastamento '+f0(p.mm)+' mm',qtd:p.qtd,un:'pç'}));
-  if(S.perfil)porNome(['u']).forEach(x=>it.push({sec:'Perfil lateral',desc:x.n,med:'barra de '+f0(bar)+' mm',qtd:x.b.n,un:'barra'}));
+  if(S.perfil)porNome(['u']).forEach(x=>it.push({sec:'Perfil lateral',desc:x.n,med:'barra de '+f0(x.bar)+' mm',qtd:x.b.n,un:'barra'}));
   (e.pedido.extras||[]).filter(x=>String(x.desc||'').trim()).forEach(x=>it.push({sec:'Outros',desc:x.desc,med:x.med||'',qtd:num(x.qtd)||1,un:x.un||'pç'}));
   return it;
 }
@@ -25737,7 +25754,7 @@ function desenhosPedido(r){
   const S=st.pedido.sec,D=st.degrau,bar=Math.max(500,num(st.barra)||6000);let h='';
   if(S.degraus&&r.deg)h+=dfDegrau(D);
   if(S.patamar&&r.pecas.some(p=>p.grupo==='p'))h+=dfPatamar(r.pecas,D);
-  if(S.perfil&&r.pecas.some(p=>p.grupo==='u'))h+=dfPerfil(st.perfil,bar);
+  if(S.perfil&&r.pecas.some(p=>p.grupo==='u'))h+=dfPerfil(st.perfil,perfilBar(bar));
   if(!h)return '';
   const cab='<h4 class="es-df-tit">Desenhos de fabricação (mm)</h4>';
   const i=h.indexOf('<div class="es-df">',1);   /* o título e o primeiro desenho andam juntos */
@@ -26918,23 +26935,6 @@ render();
   color:var(--muted);line-height:1.55;font-weight:530}
 #cob3ov .cob3leg span{display:flex;align-items:center;gap:7px;margin:5px 0}
 #cob3ov .cob3leg i{width:11px;height:11px;border-radius:2px;background:#F24619;flex:0 0 auto}
-#printArea .cob-pedido .cob-tab{width:100%;border-collapse:collapse;margin-top:10px}
-#printArea .cob-pedido .cob-tab th{font-size:11px;letter-spacing:.08em;text-transform:uppercase;
-  color:#6c7480;background:#f5f6f7;padding:5px 7px;border:0;border-bottom:1px solid #dadee3}
-#printArea .cob-pedido .cob-tab td{font-size:12px;padding:5px 7px;border:0;border-bottom:1px solid #eceef0;
-  color:#1d2127;font-weight:560}
-#printArea .cob-pedido .cob-tab .n{text-align:right;font-family:'JetBrains Mono',monospace;white-space:nowrap}
-#printArea .cob-pedido .cob-tab .c{text-align:center;white-space:nowrap}
-/* Selo curto para reta/diagonal, em vez da frase repetida em toda linha.
-   A explicacao de COMO se mede uma diagonal (pela ponta mais comprida,
-   dentro do contorno) fica uma unica vez no rodape -- e' regra da folha inteira, nao
-   fato de uma peca so'. */
-#printArea .cob-pedido .cob-tab .cob-badge{display:inline-block;padding:1px 6px;border-radius:999px;
-  font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;white-space:nowrap}
-#printArea .cob-pedido .cob-tab .cob-badge.reta{background:#eef2f5;color:#4e5660}
-#printArea .cob-pedido .cob-tab .cob-badge.diag{background:#fff0eb;color:#a92f0b}
-#printArea .cob-pedido .cob-tab .sub{display:block;font-size:11px;color:#9aa1a9;font-weight:520;margin-top:2px}
-#printArea .cob-pedido .cob-tab td[rowspan]{vertical-align:top;border-right:1px solid #eceef0}
 #printArea .cob-pedido .cob-obs{font-size:11px;color:#6c7480;line-height:1.5;margin-top:10px;
   padding-top:8px;border-top:1px solid #dadee3;font-weight:560}
 /* ===================== COBERTURA E FECHAMENTO NO MESMO MOLDE =====================
@@ -28866,6 +28866,8 @@ html[data-theme="escuro"] .log-det>summary.err{color:var(--red)}.log-det>summary
         '<div class="fld"><label>Telha do Orçamento RM</label><select id="cobModelo" title="O item, a cor e o preço vêm do cadastro do Orçamento RM">'+opcoesCatalogo()+'</select></div>'+
         '<div class="fld"><label>Largura útil (mm)</label><input id="cobUtil" type="number" min="1" value="'+inteiro(COB.util)+'"></div>'+
         '<div class="fld"><label>Fabricante</label><input id="cobFabricante" value="'+h(COB.fabricante)+'" placeholder="nome do fabricante" autocomplete="off"></div>'+
+        '<div class="fld tl-span2"><label>Fechamento</label><label class="cob-chk" title="As telhas da aba Fechamento (com o ajuste da obra de lá) entram no mesmo pedido ao fabricante"><input type="checkbox" id="cobComFech"'+(COB.comFechamento?' checked':'')+((TLH.faces||[]).length?'':' disabled')+'> '+
+          ((TLH.faces||[]).length?'Incluir as telhas do fechamento no pedido ('+TLH.faces.length+(TLH.faces.length>1?' paredes':' parede')+')':'Leia o fechamento na aba Fechamento para incluir no pedido')+'</label></div>'+
         (temBanco?'':'<div class="cob-planta-ajuda tl-span4">Banco do Orçamento RM não encontrado. Abra o Orçamento RM uma vez neste navegador; enquanto isso vale o cadastro local abaixo.</div>')+
       '</div>'+
       '<details class="tl-det cob-cat" id="cobCat"'+(temBanco?' style="display:none"':'')+'><summary>Cadastro local de contingência</summary><div class="cob-cat-corpo">'+
@@ -28970,6 +28972,7 @@ html[data-theme="escuro"] .log-det>summary.err{color:var(--red)}.log-det>summary
     ligaNumero('cobUtil','util',true);ligaNumero('cobComprimento','comprimento',true);
     ligaNumero('cobProjA','projA',true);ligaNumero('cobDesnA','desnA',true);
     ligaNumero('cobProjB','projB',true);ligaNumero('cobDesnB','desnB',true);
+    {const cf=document.getElementById('cobComFech');if(cf)cf.addEventListener('change',()=>{COB.comFechamento=cf.checked;salvaCob();});}
     ligaNumero('cobBeiral','beiral',true);ligaNumero('cobCumeeira','cumeeira',true);ligaNumero('cobAjusteObra','ajusteObra',true);
     ligaNumero('cobMax','maxComp',true);ligaNumero('cobTraspasse','traspasse',true);
     ligaNumero('cobPingadeira','pingadeira',true);ligaNumero('cobPecaBeiral','pecaBeiral',true);
@@ -30463,48 +30466,91 @@ html[data-theme="escuro"] .log-det>summary.err{color:var(--red)}.log-det>summary
       '<text x="'+(cx-g-L*.72)+'" y="'+(ty+L*.72*tg+28)+'" font-size="16" font-weight="700" fill="#555" text-anchor="middle">telha</text>';
     return '<div class="cob-fab-det"><b>Folga na cumeeira: '+fol+' mm</b><svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="Detalhe da folga na cumeeira" style="font-family:Arial,Helvetica,sans-serif">'+o+'</svg></div>';
   }
+  /* Detalhe da PINGADEIRA (térmica): na ponta de baixo da telha a chapa
+     superior vai até o fim e a inferior para antes -- a medida da inferior
+     é a da superior menos a pingadeira. Fora de escala. */
+  function svgDetalhePingadeira(tot){
+    const pg=Math.round(+COB.pingadeira||0);if(!(pg>0))return '';
+    if(!(tot||[]).some(g=>g.x.chapaSup!=null&&g.x.chapaInf!=null&&g.x.chapaSup!==g.x.chapaInf))return '';
+    const W=440,tg=.18,x1=380,g=46;   /* a telha desce para a direita, até o beiral */
+    const sup=x=>70+(x-60)*tg,inf=x=>sup(x)+16;
+    const xi=x1-g,yd=inf(x1)+40;
+    const tick=x=>'<line x1="'+(x-6)+'" y1="'+(yd+6)+'" x2="'+(x+6)+'" y2="'+(yd-6)+'" stroke="#d53309" stroke-width="2"/>';
+    let o='<line x1="60" y1="'+sup(60)+'" x2="'+x1+'" y2="'+sup(x1)+'" stroke="#141414" stroke-width="7"/>'+
+      '<line x1="60" y1="'+inf(60)+'" x2="'+xi+'" y2="'+inf(xi)+'" stroke="#6b7280" stroke-width="7"/>'+
+      '<text x="70" y="'+(sup(70)-10)+'" font-size="15" font-weight="700" fill="#141414">chapa superior</text>'+
+      '<text x="70" y="'+(inf(200)+22)+'" font-size="15" font-weight="700" fill="#555">chapa inferior</text>'+
+      '<text x="'+(x1+10)+'" y="'+(sup(x1)+5)+'" font-size="15" font-weight="700" fill="#555">beiral</text>'+
+      '<line x1="'+xi+'" y1="'+(inf(xi)+6)+'" x2="'+xi+'" y2="'+(yd+8)+'" stroke="#d53309" stroke-width="1"/>'+
+      '<line x1="'+x1+'" y1="'+(sup(x1)+6)+'" x2="'+x1+'" y2="'+(yd+8)+'" stroke="#d53309" stroke-width="1"/>'+
+      '<line x1="'+(xi-16)+'" y1="'+yd+'" x2="'+(x1+16)+'" y2="'+yd+'" stroke="#d53309" stroke-width="1.5"/>'+tick(xi)+tick(x1)+
+      '<text x="'+(xi-22)+'" y="'+(yd+6)+'" font-size="19" font-weight="800" fill="#d53309" text-anchor="end">'+pg+' mm</text>';
+    return '<div class="cob-fab-det"><b>Pingadeira: '+pg+' mm · inferior = superior − '+pg+' mm</b><svg viewBox="0 0 '+W+' '+(yd+20)+'" role="img" aria-label="Detalhe da pingadeira na ponta de baixo da telha" style="font-family:Arial,Helvetica,sans-serif">'+o+'</svg></div>';
+  }
+  /* as telhas do FECHAMENTO, para irem no mesmo pedido (opção na tela):
+     o cálculo é o da aba Fechamento, com o ajuste da obra dela */
+  function cobFechPedido(){
+    if(!COB.comFechamento||!Array.isArray(TLH.faces)||!TLH.faces.length)return null;
+    const e=Math.max(1,+TLH.estruturas||1),gs=telhaAgrupado();if(!gs.length)return null;
+    return {nome:telhaRotuloAtual(),util:TLH.util,grupos:gs.map(g=>({mm:g.mm,qtd:g.qtd*e,onde:(g.destinos||[]).map(d=>d.faixa)}))};
+  }
   function documentoCobertura(){
     const r=calculaCobertura();if(!COB.confirmada||!r.ok)return;
     const pa=document.getElementById('printArea');if(!pa)return;const m=modeloAtual(),data=new Date().toLocaleDateString('pt-BR');
     const logo=(typeof LOGO_RM!=='undefined'&&LOGO_RM)?'<img src="'+LOGO_RM+'" style="height:56px;display:block">':'<div style="font-weight:800;font-size:22px;color:#D53309">RM</div>';
     const tc=COB.orcTelhaId?orcTelhaPorId(COB.orcTelhaId):null,telha=(tc&&tc.desc)||m.nome;
     const cum=cobCumeeiras(r),cad=cum&&cum.pecas?cumCadastro(cum.tipo):null;
-    const tot=cobTotaisComprimento(r.lista),soma=tot.reduce((a,g)=>a+g.qtd,0);
-    const ml=tot.reduce((a,g)=>a+g.qtd*num(g.x.chapaSup!=null?g.x.chapaSup:g.x.mm),0)/1000;
-    const ru=cum&&cum.rufo&&cum.rufo.pecas?cum.rufo:null;
+    const tot=cobTotaisComprimento(r.lista),ru=cum&&cum.rufo&&cum.rufo.pecas?cum.rufo:null,fech=cobFechPedido();
+    const n0=v=>Math.round(v).toLocaleString('pt-BR');
+    /* uma tabela só, larga: cada telha é um título, e embaixo comprimento,
+       quantidade e onde vai */
+    const secao=(tit,util,linhas,soma,metros)=>'<tr class="cf-sec"><th colspan="3">'+tit+' <small>útil '+mm(util)+' mm</small></th></tr>'+linhas+
+      '<tr class="cf-tot"><td>Total</td><td class="q">'+soma+'</td><td>'+dec(metros,2)+' m</td></tr>';
+    const linhaCob=g=>{const t=g.x.chapaSup!=null&&g.x.chapaInf!=null&&g.x.chapaSup!==g.x.chapaInf;
+      return '<tr><td class="c">'+(t?n0(g.x.chapaSup)+' <small>sup.</small><br><span class="inf">'+n0(g.x.chapaInf)+' <small>inf.</small></span>':n0(g.x.mm))+'</td><td class="q">'+g.qtd+'</td><td class="o">'+h([...g.destinos].join(', '))+'</td></tr>';};
+    const telhasCob=cobTelhasDoTotal(tot).map(T=>{const so=T.grupos.reduce((a,g)=>a+g.qtd,0),mt=T.grupos.reduce((a,g)=>a+g.qtd*num(g.x.chapaSup!=null?g.x.chapaSup:g.x.mm),0)/1000;
+      return secao('Cobertura · '+h(T.nome),T.util,T.grupos.map(linhaCob).join(''),so,mt);}).join('');
+    const telhasFech=fech?secao('Fechamento · '+h(fech.nome),fech.util,fech.grupos.map(g=>'<tr><td class="c">'+n0(g.mm)+'</td><td class="q">'+g.qtd+'</td><td class="o">'+h(g.onde.join(', '))+'</td></tr>').join(''),
+      fech.grupos.reduce((a,g)=>a+g.qtd,0),fech.grupos.reduce((a,g)=>a+g.qtd*g.mm,0)/1000):'';
+    const img3d=cob3DImagem(r);
     pa.classList.remove('hide');
-    pa.innerHTML='<style>#printArea .cob-fab .cob-fab-mod{display:grid;grid-template-columns:1.6fr 1.4fr 1fr;gap:10px;margin:10px 0 12px}'+
-      '#printArea .cob-fab .cob-fab-mod>div{border:1px solid #d6dade;border-left:4px solid #D53309;border-radius:6px;padding:8px 11px}'+
+    pa.innerHTML='<style>#printArea .cob-fab .cob-fab-mod{display:grid;grid-template-columns:1.6fr 1.3fr 1fr;gap:10px;margin:8px 0 14px}'+
+      '#printArea .cob-fab .cob-fab-mod>div{border:1px solid #d6dade;border-left:4px solid #D53309;border-radius:6px;padding:7px 11px}'+
       '#printArea .cob-fab .cob-fab-mod span{display:block;font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:#6b7280}'+
-      '#printArea .cob-fab .cob-fab-mod b{display:block;font-size:15px;line-height:1.25;color:#141414}#printArea .cob-fab .cob-fab-mod small{display:block;font-size:11px;color:#555;margin-top:2px}'+
-      '#printArea .cob-fab .cob-fab-esb svg{width:100%;height:auto;max-height:185mm;display:block;margin:0 auto}'+
-      '#printArea .cob-fab .cob-fab-leg{font-size:11px;color:#555;text-align:center;margin-top:6px}'+
-      '#printArea .cob-fab .cob-fab-det{max-width:120mm;margin:8px auto 0;border:1px solid #d6dade;border-radius:6px;padding:6px 10px}#printArea .cob-fab .cob-fab-det b{display:block;font-size:12px}#printArea .cob-fab .cob-fab-det svg{width:100%;height:auto;display:block}'+
+      '#printArea .cob-fab .cob-fab-mod b{display:block;font-size:13.5px;line-height:1.25;color:#141414}#printArea .cob-fab .cob-fab-mod small{display:block;font-size:10.5px;color:#555;margin-top:1px}'+
+      '#printArea .cob-fab table.cf-tab{width:100%;border-collapse:collapse;margin:0 0 6px}'+
+      '#printArea .cob-fab .cf-tab th,#printArea .cob-fab .cf-tab td{border:0;border-bottom:1px solid #e3e6ea;padding:7px 10px;text-align:left;vertical-align:middle;background:none}'+
+      '#printArea .cob-fab .cf-tab thead th{font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:#6b7280;font-weight:700;border-bottom:1.5px solid #141414}'+
+      '#printArea .cob-fab .cf-tab .cf-sec th{font-size:13px;font-weight:800;color:#141414;background:#f4f5f7;border-bottom:1px solid #d6dade;padding-top:9px}#printArea .cob-fab .cf-sec small{font-weight:400;color:#555;font-size:11px;margin-left:6px}'+
+      '#printArea .cob-fab .cf-tab td.c{font-size:17px;font-weight:800;color:#141414;width:30%;white-space:nowrap}#printArea .cob-fab .cf-tab td.c small{font-size:10.5px;font-weight:600;color:#6b7280}#printArea .cob-fab .cf-tab td.c .inf{font-size:13px;font-weight:700;color:#555}'+
+      '#printArea .cob-fab .cf-tab td.q{font-size:19px;font-weight:800;color:#141414;width:18%;text-align:center}#printArea .cob-fab .cf-tab thead th.q{text-align:center}'+
+      '#printArea .cob-fab .cf-tab td.o{font-size:12px;color:#444}'+
+      '#printArea .cob-fab .cf-tab .cf-tot td{font-weight:700;font-size:12.5px;border-bottom:1.5px solid #141414}#printArea .cob-fab .cf-tab .cf-tot td.q{font-size:15px}'+
+      '#printArea .cob-fab h3{font-size:12.5px;letter-spacing:.06em;text-transform:uppercase;margin:12px 0 4px;color:#141414}'+
       '#printArea .cob-fab .cob-fab-quebra{break-after:page;page-break-after:always;height:0}'+
-      '#printArea .cob-fab h3{font-size:13px;letter-spacing:.06em;text-transform:uppercase;margin:14px 0 6px;color:#141414}'+
-      '#printArea .cob-fab .cob-fab-tab{width:100%;max-width:520px}#printArea .cob-fab .cob-fab-tab td,#printArea .cob-fab .cob-fab-tab th{font-size:13px}'+
-      '#printArea .cob-fab .cob-fab-tab tfoot td{border-top:1.5px solid #141414;font-weight:700}</style>'+
+      '#printArea .cob-fab .cob-fab-3d img{width:100%;height:auto;max-height:175mm;object-fit:contain;display:block;margin:0 auto}#printArea .cob-fab .cob-fab-esb svg{width:100%;height:auto;max-height:175mm;display:block;margin:0 auto}'+
+      '#printArea .cob-fab .cob-fab-leg{font-size:11px;color:#555;text-align:center;margin-top:4px}'+
+      '#printArea .cob-fab .cob-fab-dets{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:8px}#printArea .cob-fab .cob-fab-dets .cob-fab-det{flex:1 1 0;margin:0;max-width:none}#printArea .cob-fab .cob-fab-det{max-width:120mm;margin:8px auto 0;border:1px solid #d6dade;border-radius:6px;padding:6px 10px;break-inside:avoid}#printArea .cob-fab .cob-fab-det b{display:block;font-size:12px}#printArea .cob-fab .cob-fab-det svg{width:100%;height:auto;display:block}</style>'+
       '<div class="rm-sheet rc-sheet ct-pedido pt-folha cob-pedido cob-fab">'+
       '<div class="rm-dagua" aria-hidden="true"><img src="'+LOGO_MARCA_DAGUA+'" alt=""></div>'+
       '<div class="rm-head"><div class="rm-logo">'+logo+'</div><div class="rm-co">'+rmTimbre2()+'</div></div>'+'<div class="doc-tag tb2-tipo">Pedido de telhas ao fabricante</div>'+
       '<div class="rm-body"><div class="rm-obra"><span>Obra / Cliente</span><b>'+h(nomeObra())+'</b><span class="rm-date">'+data+'</span></div>'+
-      '<div class="cob-fab-mod"><div><span>Telha</span><b>'+h(telha)+'</b><small>largura útil '+mm(COB.util)+' mm'+(COB.termica?' · térmica (chapa sup. e inf.)':'')+'</small>'+
-        cobTelhasDoTotal(tot).filter(T=>T.chave).map(T=>'<b style="margin-top:4px">'+h(T.nome)+'</b><small>largura útil '+mm(T.util)+' mm · '+h([...new Set(T.grupos.flatMap(g=>[...g.destinos]))].join(', '))+'</small>').join('')+'</div>'+
-        '<div><span>Cumeeira</span><b>'+(cum&&cum.pecas?h(cad?cad.desc:'Cumeeira '+cum.tipo):'—')+'</b>'+(cum&&cum.pecas?'<small>'+cum.pecas+' peças de '+mm(cum.util)+' mm · aba de '+cum.aba+' mm</small>':'')+'</div>'+
+      '<div class="cob-fab-mod"><div><span>Telha</span><b>'+h(telha)+'</b>'+
+        cobTelhasDoTotal(tot).filter(T=>T.chave).map(T=>'<b style="margin-top:3px">'+h(T.nome)+'</b>').join('')+
+        (fech&&fech.nome!==telha?'<b style="margin-top:3px">'+h(fech.nome)+'</b><small>fechamento</small>':'')+'</div>'+
+        '<div><span>Cumeeira</span><b>'+(cum&&cum.pecas?h(cad?cad.desc:'Cumeeira '+cum.tipo):'—')+'</b>'+(cum&&cum.pecas?'<small>aba de '+cum.aba+' mm'+(num(COB.cumeeira)>0?' · folga '+mm(COB.cumeeira)+' mm':'')+'</small>':'')+'</div>'+
         '<div><span>Fabricante</span><b>'+h(COB.fabricante||m.fabricante||'a definir')+'</b></div></div>'+
-      '<div class="cob-fab-esb">'+svgEsbocoFabricante(r)+
-        '<div class="cob-fab-leg">Seta: sentido de montagem, a partir do <b>INÍCIO</b> · linhas finas: divisão das telhas · tracejado laranja: cumeeira · A e B: águas</div>'+
-        svgDetalheCumeeira(r,cum)+'</div>'+
+      '<table class="cf-tab"><thead><tr><th>Comprimento (mm)</th><th class="q">Quantidade</th><th>Onde vai</th></tr></thead><tbody>'+telhasCob+telhasFech+'</tbody></table>'+
+      (cum&&cum.pecas||ru?'<table class="cf-tab"><thead><tr><th>Acabamento</th><th class="q">Quantidade</th><th>Medida</th></tr></thead><tbody>'+
+        (cum&&cum.pecas?'<tr><td class="o"><b>'+h(cad?cad.desc:'Cumeeira '+cum.tipo)+'</b></td><td class="q">'+cum.pecas+'</td><td class="o">'+mm(cum.util)+' mm</td></tr>':'')+
+        (ru?'<tr><td class="o"><b>Rufo de topo</b> (aba '+RUFO_ABA+' mm)</td><td class="q">'+ru.pecas+'</td><td class="o">'+mm(ru.peca)+' mm</td></tr>':'')+'</tbody></table>':'')+
+      '<div class="cob-obs">Medidas em milímetros. Confirmar fabricação e prazo com a RM.'+(COB.obs?' Observação: '+h(COB.obs)+'.':'')+'</div>'+
       '<div class="cob-fab-quebra"></div>'+
-      cobTelhasDoTotal(tot).map((T,_,todas)=>{const so=T.grupos.reduce((a,g)=>a+g.qtd,0),ml2=T.grupos.reduce((a,g)=>a+g.qtd*num(g.x.chapaSup!=null?g.x.chapaSup:g.x.mm),0)/1000;
-        return '<h3>'+(todas.length>1?'Telhas · '+h(T.nome)+' <small>útil '+mm(T.util)+' mm</small>':'Telhas')+'</h3><table class="cob-tab cob-fab-tab"><thead><tr><th class="n">Comprimento</th><th class="n">Quantidade</th></tr></thead><tbody>'+
-        T.grupos.map(g=>'<tr><td class="n">'+cobFabCelulas(g.x).comprimento+'</td><td class="n"><b>'+g.qtd+'</b></td></tr>').join('')+
-        '</tbody><tfoot><tr><td>Total</td><td class="n">'+so+' peças · '+dec(ml2,2)+' m</td></tr></tfoot></table>';}).join('')+
-      (cum&&cum.pecas?'<h3>Cumeeira</h3><table class="cob-tab cob-fab-tab"><thead><tr><th>Modelo</th><th class="n">Comprimento</th><th class="n">Quantidade</th></tr></thead><tbody>'+
-        '<tr><td>'+h(cad?cad.desc:'Cumeeira '+cum.tipo)+'</td><td class="n">'+mm(cum.util)+' mm</td><td class="n"><b>'+cum.pecas+'</b></td></tr></tbody></table>':'')+
-      (ru?'<h3>Rufo</h3><table class="cob-tab cob-fab-tab"><thead><tr><th>Item</th><th class="n">Comprimento</th><th class="n">Quantidade</th></tr></thead><tbody>'+
-        '<tr><td>Rufo de topo (aba '+RUFO_ABA+' mm)</td><td class="n">'+mm(ru.peca)+' mm</td><td class="n"><b>'+ru.pecas+'</b></td></tr></tbody></table>':'')+
-      '<div class="cob-obs">Medidas em milímetros. Confirmar fabricação e prazo com a RM.'+(COB.obs?' Observação: '+h(COB.obs)+'.':'')+'</div></div></div>'+
+      '<h3>Vista do telhado</h3>'+
+      (img3d?'<div class="cob-fab-3d"><img src="'+img3d+'" alt="Telhado em 3D com as telhas e o sentido de montagem"></div>'+
+        '<div class="cob-fab-leg">Seta: sentido de montagem, a partir do <b>INÍCIO</b> · sobre cada telha: código e comprimento (mm)</div>'
+        :'<div class="cob-fab-esb">'+svgEsbocoFabricante(r)+'</div>')+
+      '<div class="cob-fab-dets">'+svgDetalheCumeeira(r,cum)+svgDetalhePingadeira(tot)+'</div></div></div>'+
       '<div style="margin-top:12px"><button class="btn" id="cobPrint">Imprimir / PDF</button> <button class="btn ghost" id="cobCloseDoc">Fechar</button></div>';
     document.getElementById('cobPrint').onclick=()=>sairEmPDF(nomeArquivoSeguro('Pedido de cobertura '+nomeObra(),100));
     document.getElementById('cobCloseDoc').onclick=()=>{pa.classList.add('hide');pa.innerHTML='';};
@@ -31169,7 +31215,7 @@ if('serviceWorker' in navigator && location.protocol.startsWith('http')){
 }
 </script>
 <script>/* versão publicada (PADRAO_RM.md §3): sobe a cada publicação, junto com o CACHE do sw.js */
-const APP_VER='v278';
+const APP_VER='v279';
 </script>
 <script id="rmVersaoBloco">
 /* ===== SELO DE VERSÃO — igual em todos os sistemas (PADRAO_RM.md §3) =====
