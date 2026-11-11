@@ -4612,6 +4612,228 @@ else poe();
 </script>
 <!-- /rm_nuvem -->
 <!-- /rm_padrao -->
+<style id="rmPortaEstilo">
+/* ===================== PORTA RM · bloco compartilhado =====================
+   Copia IDENTICA nos sistemas com login, do <style id="rmPortaEstilo"> ate o
+   fim do <script id="rmPortaBloco">. O mesmo desenho da porta da Central:
+   quem ja entrou neste aparelho ve a foto grande, o nome, o e-mail pela
+   metade e so' a senha. As cores saem do proprio cartao de cada sistema
+   (currentColor e transparencias), por isso serve no claro e no escuro. */
+.rmp-conta{display:none;flex-direction:column;align-items:center;text-align:center;width:100%;gap:0;margin:2px 0 4px}
+.rmp-foto{width:104px;height:104px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;
+  background:#4a3f3b center/cover no-repeat;outline:2px solid #F24619;outline-offset:3px;box-shadow:0 14px 32px rgba(0,0,0,.28);margin:20px 0 14px}
+.rmp-foto span{font-size:42px;font-weight:800;color:#fff;letter-spacing:-.02em;font-family:inherit}
+.rmp-foto.com-foto span{display:none}
+.rmp-sauda{font-size:13px;font-weight:600;opacity:.65}
+.rmp-nome{font-size:26px;font-weight:800;letter-spacing:-.02em;line-height:1.12;margin-top:2px;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rmp-chip{margin-top:10px;display:inline-flex;align-items:center;gap:8px;max-width:100%;padding:4px 4px 4px 12px;border-radius:999px;
+  background:rgba(127,127,127,.1);border:1px solid rgba(127,127,127,.22);box-sizing:border-box}
+.rmp-chip span{font-size:14px;font-weight:530;opacity:.85;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.rmp-link{font:inherit;cursor:pointer;border:0;background:none;color:inherit}
+.rmp-chip .rmp-link{flex:none;font-size:13px;font-weight:700;color:#C1310B;padding:6px 11px;border-radius:999px;background:rgba(242,70,24,.13)}
+.rmp-outra{display:none;width:100%;min-height:44px;font-size:14px;font-weight:600;margin-top:6px}
+.rmp-outra span{opacity:.7}.rmp-outra b{color:#C1310B;font-weight:700}
+.rmp-voltar{display:none;width:100%;min-height:40px;font-size:13px;font-weight:600;opacity:.7}
+.rmp-voltar.on{display:block}
+.rmp-lembrar{display:flex;align-items:center;gap:10px;min-height:40px;cursor:pointer;font-size:14px;font-weight:560;margin:2px 0 4px;position:relative;text-transform:none;letter-spacing:normal}
+.rmp-lembrar input{position:absolute;opacity:0;width:1px;height:1px;margin:0}
+.rmp-caixa{width:20px;height:20px;border-radius:6px;flex:none;display:flex;align-items:center;justify-content:center;
+  border:1.5px solid rgba(127,127,127,.45);color:transparent;box-sizing:border-box;transition:background .15s,border-color .15s}
+.rmp-lembrar input:checked+.rmp-caixa{background:#D53309;border-color:#D53309;color:#fff}
+.rmp-lembrar input:focus-visible+.rmp-caixa{box-shadow:0 0 0 3px rgba(242,70,24,.3)}
+.rmp-senha{position:relative;display:block;width:100%}
+.rmp-senha input{width:100%;box-sizing:border-box;padding-right:46px!important}
+.rmp-olho{position:absolute;right:2px;top:50%;transform:translateY(-50%);width:42px;height:42px;border:0;background:none;cursor:pointer;
+  color:inherit;opacity:.55;display:flex;align-items:center;justify-content:center;border-radius:10px}
+.rmp-olho[aria-pressed="true"]{color:#F24619;opacity:1}
+/* modo lembrado: a foto no lugar do logo, o nome do sistema vira uma linha
+   pequena em cima; some o campo do e-mail e a caixa de lembrar */
+.rmp-lembrado .rmp-conta{display:flex}
+.rmp-lembrado .rmp-outra{display:block}
+.rmp-lembrado .rmp-some,.rmp-lembrado .rmp-lembrar,.rmp-lembrado #loginLogo,.rmp-lembrado .lc-head>img,.rmp-lembrado .lc-head>svg{display:none!important}
+/* sem o logo, o rotulo da empresa e o nome do sistema centralizam (na PU o
+   rotulo era alinhado a direita, para ficar ao lado do logo) */
+.rmp-lembrado .lc-head>*{text-align:center}
+/* o icone do Entrar sem tamanho proprio enchia o botao inteiro (Compras) */
+#loginBtn svg{width:16px;height:16px;flex:none}
+/* 16px: o minimo para o iPhone nao ampliar a pagina ao tocar no campo */
+@media (pointer:coarse){#loginScreen input{font-size:16px!important}}
+</style>
+<script id="rmPortaBloco">
+(function(){
+  if (window.__rmPorta) return; window.__rmPorta = 1;
+  /* iPhone: sem zoom automatico ao tocar num campo (a pinca continua) */
+  try {
+    var ua = navigator.userAgent || '';
+    if (/iPhone|iPad|iPod/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1)) {
+      var mv = document.querySelector('meta[name="viewport"]');
+      if (mv && !/maximum-scale/.test(mv.content)) mv.setAttribute('content', mv.content + ', maximum-scale=1.0');
+    }
+  } catch(e){}
+
+  var tela = document.getElementById('loginScreen'); if (!tela) return;
+  var pass = tela.querySelector('input[type="password"]'); if (!pass) return;
+  var card = pass.closest('.login-card,.login-box') || tela;
+  var user = [].slice.call(card.querySelectorAll('input')).filter(function(i){ return i !== pass && i.type !== 'checkbox' && i.type !== 'hidden'; })[0];
+  var btn = document.getElementById('loginBtn') || card.querySelector('button');
+  if (!user || !btn) return;
+  var CHAVE = 'rm_login_lembrado';   // a mesma chave da Central (mesmo endereco na internet)
+
+  function lembrado(){ try { var v = JSON.parse(localStorage.getItem(CHAVE) || 'null'); return (v && v.email) ? v : null; } catch(e){ return null; } }
+  function fotos(){ try { return JSON.parse(localStorage.getItem('rm_avatares_dispositivo') || '{}'); } catch(e){ return {}; } }
+  function primeiroNome(nome, email){
+    var n = String(nome || '').trim().split(/\s+/)[0];
+    if (n) return n.charAt(0).toUpperCase() + n.slice(1);
+    var l = String(email || '').split('@')[0].split(/[._-]/)[0];
+    return l ? l.charAt(0).toUpperCase() + l.slice(1) : '';
+  }
+  function pelaMetade(email){
+    var p = String(email || '').split('@'); if (!p[1]) return email || '';
+    var l = p[0], m = l.length >= 6 ? 4 : Math.max(1, l.length - 2);
+    return l.slice(0, m) + '•••@' + p[1];
+  }
+  function saudacao(){ var h = new Date().getHours(); return h >= 5 && h < 12 ? 'Bom dia,' : (h >= 12 && h < 18 ? 'Boa tarde,' : 'Boa noite,'); }
+  function el(tag, cls, html){ var e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; return e; }
+
+  /* ---- montagem ---- */
+  // o campo do e-mail (com o rotulo dele) some no modo lembrado
+  var linhaUser = user.closest('.f,.field');
+  if (linhaUser && linhaUser.contains(pass)) linhaUser = null;
+  if (linhaUser) linhaUser.classList.add('rmp-some');
+  else { user.classList.add('rmp-some'); var lab = user.previousElementSibling; if (lab && lab.tagName === 'LABEL') lab.classList.add('rmp-some'); }
+
+  var conta = el('div', 'rmp-conta',
+    '<div class="rmp-foto" aria-hidden="true"><span></span></div>' +
+    '<div class="rmp-sauda"></div><div class="rmp-nome"></div>' +
+    '<div class="rmp-chip"><span></span><button type="button" class="rmp-link">Trocar</button></div>');
+  var head = card.querySelector('.lc-head');
+  if (head) head.appendChild(conta); else card.insertBefore(conta, card.firstChild);
+
+  var caixa = el('label', 'rmp-lembrar',
+    '<input type="checkbox" checked><span class="rmp-caixa" aria-hidden="true"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5 9-10"/></svg></span>Lembrar meu e-mail neste aparelho');
+  btn.parentNode.insertBefore(caixa, btn);
+  var outra = el('button', 'rmp-link rmp-outra', '<span>Não é você?</span> <b>Entrar com outra conta</b>'); outra.type = 'button';
+  var voltar = el('button', 'rmp-link rmp-voltar'); voltar.type = 'button';
+  btn.parentNode.insertBefore(voltar, btn.nextSibling);
+  btn.parentNode.insertBefore(outra, btn.nextSibling);
+
+  // olho para mostrar a senha
+  var envolve = el('span', 'rmp-senha');
+  pass.parentNode.insertBefore(envolve, pass); envolve.appendChild(pass);
+  var olho = el('button', 'rmp-olho', '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>');
+  olho.type = 'button'; olho.setAttribute('aria-label', 'Mostrar senha'); olho.setAttribute('aria-pressed', 'false');
+  envolve.appendChild(olho);
+  olho.addEventListener('click', function(){
+    var mostrar = pass.type === 'password'; pass.type = mostrar ? 'text' : 'password';
+    olho.setAttribute('aria-pressed', mostrar ? 'true' : 'false'); olho.setAttribute('aria-label', mostrar ? 'Esconder senha' : 'Mostrar senha');
+    pass.removeAttribute('readonly'); pass.focus();
+  });
+  if (user.type !== 'email') user.setAttribute('autocomplete', 'username');
+  pass.setAttribute('autocomplete', 'current-password');
+  pass.setAttribute('placeholder', 'Digite sua senha');
+
+  /* ---- modo ---- */
+  var modoLembrado = false, forcarForm = false;
+  function preparar(focar){
+    var lemb = forcarForm ? null : lembrado();
+    modoLembrado = !!lemb;
+    card.classList.toggle('rmp-lembrado', modoLembrado);
+    pass.value = ''; pass.type = 'password'; pass.setAttribute('readonly', '');
+    olho.setAttribute('aria-pressed', 'false'); olho.setAttribute('aria-label', 'Mostrar senha');
+    tocou = false;
+    var guardado = lembrado();
+    voltar.classList.toggle('on', !modoLembrado && !!guardado);
+    voltar.textContent = guardado ? '← Voltar para ' + (guardado.nome || pelaMetade(guardado.email)) : '';
+    var foto = conta.querySelector('.rmp-foto');
+    if (lemb) {
+      user.value = lemb.login || lemb.email;   // o doLogin do sistema le daqui, como sempre
+      conta.querySelector('.rmp-sauda').textContent = saudacao();
+      conta.querySelector('.rmp-nome').textContent = lemb.nome || primeiroNome('', lemb.email);
+      conta.querySelector('.rmp-chip span').textContent = pelaMetade(lemb.email);
+      var f = fotos()[String(lemb.email).toLowerCase()];
+      foto.classList.toggle('com-foto', !!f);
+      foto.style.backgroundImage = f ? 'url("' + f + '")' : '';
+      foto.querySelector('span').textContent = (lemb.nome || lemb.email || '?').charAt(0).toUpperCase();
+    } else {
+      caixa.querySelector('input').checked = true;
+    }
+    if (focar) setTimeout(function(){ var a = lemb ? pass : user; if (a === pass) pass.removeAttribute('readonly'); try { a.focus(); } catch(e){} }, 60);
+  }
+  function outraConta(){ forcarForm = true; user.value = ''; preparar(true); }
+
+  /* A FOTO E O NOME QUE A CENTRAL MANDA. No programa do PC a Central é um
+     arquivo local e os sistemas vêm do github.io: endereços diferentes, a
+     memória do navegador não é a mesma, e esta porta abria sem a sua foto.
+     A Central manda a conta de quem está nela ao abrir o sistema; só vale
+     vindo da janela mãe, e só grava e-mail, nome e foto -- senha nunca. */
+  window.addEventListener('message', function(ev){
+    var d = ev && ev.data;
+    if (!d || d.rm !== 'conta' || window.parent === window || ev.source !== window.parent) return;
+    var email = String(d.email || '').trim(); if (email.indexOf('@') < 1) return;
+    var k = email.toLowerCase();
+    try {
+      var m = fotos();
+      if (typeof d.foto === 'string' && /^data:image\//.test(d.foto)) m[k] = d.foto; else if (d.foto === null) delete m[k];
+      localStorage.setItem('rm_avatares_dispositivo', JSON.stringify(m));
+      var l = lembrado();
+      if (!l || String(l.email).toLowerCase() === k)
+        localStorage.setItem(CHAVE, JSON.stringify({ email: email, nome: (d.nome ? primeiroNome(d.nome, email) : '') || (l && l.nome) || '', login: (l && l.login) || undefined }));
+    } catch(e){}
+    if (!forcarForm) { try { preparar(false); } catch(e){} }
+  });
+  conta.querySelector('.rmp-chip .rmp-link').addEventListener('click', outraConta);
+  outra.addEventListener('click', outraConta);
+  voltar.addEventListener('click', function(){ forcarForm = false; preparar(true); });
+
+  /* ---- senha: nada entra sem voce pedir ----
+     Face ID / chaveiro / lista do navegador so' preenchem depois de um toque
+     seu, e isso vale. Barrado: o navegador encher a senha SOZINHO ao abrir a
+     porta, antes de qualquer toque (campo travado ate' o toque, e o que
+     chegar sem digitacao antes disso e' apagado). */
+  var tocou = false;
+  ['pointerdown','touchstart','keydown'].forEach(function(ev){ tela.addEventListener(ev, function(){ tocou = true; }, { capture: true, passive: true }); });
+  var destrava = function(){ pass.removeAttribute('readonly'); };
+  pass.addEventListener('pointerdown', destrava); pass.addEventListener('focus', destrava);
+  pass.addEventListener('input', function(e){ if (!tocou && (!e.inputType || e.inputType === 'insertReplacementText')) pass.value = ''; });
+  setTimeout(function(){ try { if (!tocou && (pass.matches(':autofill') || pass.matches(':-webkit-autofill'))) pass.value = ''; } catch(e){} }, 600);
+
+  /* ---- guardar o e-mail quando o login da' certo ----
+     A escolha (caixa) e o que foi digitado sao anotados no clique/Enter;
+     quem confirma que deu certo e' o proprio Firebase do sistema. */
+  var pedido = null;
+  function anota(){ pedido = { lembrar: modoLembrado ? true : caixa.querySelector('input').checked, login: user.value.trim() }; }
+  btn.addEventListener('click', anota, true);
+  card.addEventListener('keydown', function(e){ if (e.key === 'Enter' && (e.target === user || e.target === pass)) anota(); }, true);
+  function guardar(u){
+    var nome = primeiroNome(u.displayName, u.email), atual = lembrado();
+    var mesma = atual && String(atual.email).toLowerCase() === String(u.email).toLowerCase();
+    try {
+      if (pedido && pedido.lembrar) localStorage.setItem(CHAVE, JSON.stringify({ email: u.email, login: pedido.login || u.email, nome: nome }));
+      else if (pedido && !pedido.lembrar) { if (mesma) localStorage.removeItem(CHAVE); }
+      /* sessao que ja estava aberta: o perfil guardado pode ser o de antes
+         de trocar o nome, e regravava o antigo por cima do que a Central
+         mandou. Busca o perfil atual; sem internet, nao mexe. */
+      else if (mesma && typeof u.reload === 'function') u.reload().then(function(){
+        var n = String(u.displayName || '').trim() ? primeiroNome(u.displayName, u.email) : '', a = lembrado();
+        if (n && a && String(a.email).toLowerCase() === String(u.email).toLowerCase() && a.nome !== n) { a.nome = n; try { localStorage.setItem(CHAVE, JSON.stringify(a)); } catch(e){} if (!forcarForm) { try { preparar(false); } catch(e){} } }
+      }, function(){});
+    } catch(e){}
+    pedido = null;
+  }
+  window.__rmPortaGuardar = guardar;   // para a bateria de testes
+  var tentativas = 0;
+  (function escuta(){
+    try {
+      if (window.firebase && firebase.apps && firebase.apps.length && firebase.auth) {
+        firebase.auth().onAuthStateChanged(function(u){ if (u) guardar(u); else { forcarForm = false; preparar(true); } });
+        return;
+      }
+    } catch(e){}
+    if (++tentativas < 60) setTimeout(escuta, 500);
+  })();
+  preparar(false);
+})();
+</script>
 <script id="rmImpressaoBloco">
 /* ===================== IMPRESSAO RM · bloco compartilhado =====================
    Copia IDENTICA em todos os sistemas e na Central.
