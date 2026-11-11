@@ -1999,6 +1999,9 @@ else comeca();
 #viewer3d .v3b:hover{border-color:var(--gray-2);}
 #viewer3d .v3corpo{flex:1;display:flex;min-height:0;}
 #v3d-canvas-wrap{flex:1;position:relative;overflow:hidden;min-width:0;background:#20252b;}
+#v3d-canvas-wrap.v3-cheia{position:fixed!important;inset:0!important;z-index:9000!important;width:auto!important;height:auto!important;flex:none!important}
+#viewer3d .v3bar select{width:auto!important;flex:none!important;min-width:0;border:1px solid rgba(255,255,255,.16);background:rgba(20,26,32,.85);color:#e9ecef;font:inherit;font-size:13px;border-radius:7px;padding:5px 8px}
+#viewer3d .v3bar select option{color:#16181c;background:#fff}
 #v3d-canvas-wrap canvas{display:block;cursor:grab;touch-action:none;}
 #v3d-canvas-wrap canvas:active{cursor:grabbing;}
 #viewer3d .v3bar{position:absolute;left:12px;top:12px;display:flex;flex-wrap:wrap;gap:6px;align-items:center;
@@ -2013,8 +2016,8 @@ else comeca();
 #viewer3d .v3leg div{display:flex;align-items:center;gap:6px;}
 #viewer3d .v3leg i{width:10px;height:10px;border-radius:2px;display:inline-block;}
 #v3hud{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:1;}
-#v3nav{position:absolute;right:12px;bottom:52px;max-width:36%;text-align:right;font-size:12px;color:#8b939c;
-  line-height:1.5;pointer-events:none;font-weight:600;z-index:2;}
+#v3nav{position:absolute;right:12px;bottom:52px;max-width:36%;text-align:right;font-size:12px;color:#dfe5eb;
+  line-height:1.5;pointer-events:none;font-weight:600;z-index:2;background:rgba(20,26,32,.72);padding:4px 9px;border-radius:7px;}
 #v3tip{position:fixed;background:rgba(22,23,26,.95);border:1px solid rgba(255,255,255,.12);border-radius:8px;color:#e9ecef;
   padding:7px 11px;font-size:12px;pointer-events:none;display:none;z-index:1000;line-height:1.6;}
 #v3tip strong{font-size:13px;}
@@ -2168,6 +2171,8 @@ else comeca();
         <button id="v3PecasBtn" class="on" style="display:none" title="As peças lidas: translúcidas, sólidas ou ocultas">Peças<span class="lg" id="v3PecasModo">: translúcidas</span></button>
         <button id="v3MedBtn" title="Escreve os metros de cada linha no próprio 3D">Medidas</button>
         <button type="button" data-fundo3d title="Trocar o fundo do 3D: escuro, claro ou blueprint">Fundo: Escuro</button>
+        <select id="v3Luz" aria-label="Iluminação" title="Iluminação do 3D (a mesma escolha do Leitor DWG)"><option value="dia">Luz do dia</option><option value="estudio">Luz de estúdio</option></select>
+        <button type="button" id="v3AmpBtn" title="Ampliar o 3D na tela inteira (Esc fecha)">⛶ Ampliar</button>
         <button id="v3boxBtn" onclick="v3ToggleBoxSel()" title="Arraste um retângulo para marcar ou desmarcar as linhas de dentro">Seleção<span class="lg"> por área</span></button>
       </div>
       <div class="v3leg">
@@ -2385,18 +2390,55 @@ let HOME={p:[50,20,40],t:[15,5,10]},actId=-1,ready=false;
 /* tudo o que é da obra carregada (grade, eixos, peças) mora num grupo só,
    para trocar de arquivo sem sobrar nada do anterior */
 let v3Cena=null, v3PecasGrp=null, v3Cam=null, v3Caixa=null, v3Vis='iso';
+let v3Hemi=null, v3Sol=null, v3Apoio=null, v3Pm=null, v3Env=null, v3Piso=null;
+/* as duas luzes do motor novo; a escolha é a mesma do Leitor (rm_3d_luz) */
+const V3LUZ={dia:{sol:0xfff6e8,f:3.2,h:.9,ap:.6,env:['#6f9ccc','#dfe7ee']},estudio:{sol:0xfff4e7,f:2.4,h:.85,ap:1.2,env:['#8496aa','#d6dde5']}};
+function v3LuzAtual(){let l='dia';try{l=localStorage.getItem('rm_3d_luz')||'dia';}catch(e){}return V3LUZ[l]?l:'dia';}
+function v3Ceu(a,b){const c=document.createElement('canvas');c.width=2;c.height=256;const g=c.getContext('2d'),gr=g.createLinearGradient(0,0,0,256);
+  gr.addColorStop(0,a);gr.addColorStop(.55,b);gr.addColorStop(1,'#3a3a3a');g.fillStyle=gr;g.fillRect(0,0,2,256);
+  const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;t.mapping=THREE.EquirectangularReflectionMapping;return t;}
+function v3Concreto(rep){const c=document.createElement('canvas');c.width=c.height=512;const g=c.getContext('2d');g.fillStyle='#8a8d90';g.fillRect(0,0,512,512);
+  for(let i=0;i<9000;i++){const v=110+Math.random()*60;g.fillStyle='rgba('+v+','+v+','+(v+2)+','+(.08+Math.random()*.12)+')';g.fillRect(Math.random()*512,Math.random()*512,1+Math.random()*3,1+Math.random()*3);}
+  g.strokeStyle='rgba(40,40,40,.35)';g.lineWidth=2;g.strokeRect(0,0,512,512);
+  const t=new THREE.CanvasTexture(c);t.wrapS=t.wrapT=THREE.RepeatWrapping;t.repeat.set(rep,rep);t.colorSpace=THREE.SRGBColorSpace;t.anisotropy=8;return t;}
+/* acende a cena pela caixa da obra: sol fixo à esquerda, na frente e meio
+   baixo (o do Leitor), a sombra cobrindo a obra inteira */
+function v3Ilumina(){
+  if(!v3Sol||!v3Pm) return;
+  const L=V3LUZ[v3LuzAtual()], cx=v3Caixa||new THREE.Box3(new THREE.Vector3(-5,0,-5),new THREE.Vector3(5,3,5));
+  const cen=cx.getCenter(new THREE.Vector3()), tam=cx.getSize(new THREE.Vector3()), s=Math.max(tam.x,tam.y,tam.z,1);
+  if(v3Env) v3Env.dispose(); v3Env=v3Pm.fromEquirectangular(v3Ceu(L.env[0],L.env[1])); sc.environment=v3Env.texture;
+  v3Sol.color.set(L.sol); v3Sol.intensity=L.f; v3Hemi.intensity=L.h; v3Apoio.intensity=L.ap;
+  ren.toneMappingExposure=RM3D.estilo()==='claro'?1:1.05;
+  v3Sol.position.copy(cen).add(new THREE.Vector3(-5,10,7).normalize().multiplyScalar(s*2.5)); v3Sol.target.position.copy(cen);
+  const sc2=v3Sol.shadow.camera, r=s*1.2; sc2.left=-r; sc2.right=r; sc2.top=r; sc2.bottom=-r; sc2.near=s*.1; sc2.far=s*6; sc2.updateProjectionMatrix();
+  v3Apoio.position.copy(cen).add(new THREE.Vector3(s*1.6,s*.8,-s)); v3Apoio.target.position.copy(cen);
+  ren.shadowMap.needsUpdate=true;
+}
+/* cor de conferência não passa pelo tom de cinema: pilar, viga e placa
+   continuam com a cor exata da legenda */
+function v3SemTom(o){o.traverse(x=>{const m=x.material;if(!m)return;(Array.isArray(m)?m:[m]).forEach(k=>{if(k.isMeshBasicMaterial||k.isLineBasicMaterial){k.toneMapped=false;k.needsUpdate=true;}});});}
 
 function initSc(){
   wrap=document.getElementById('v3d-canvas-wrap');
   /* Fundo grafite, o mesmo da conferência 3D do Leitor DWG. Sem névoa e com
      o alcance da câmera medido pela obra: obra grande sumia no horizonte. */
   sc=new THREE.Scene(); sc.background=null;   /* o fundo é o do RM3D, no CSS do wrap */
-  sc.add(new THREE.HemisphereLight(0xffffff,0x3a414a,1.1));
-  const sol=new THREE.DirectionalLight(0xffffff,.6); sol.position.set(1,2,1.4); sc.add(sol);
+  /* MOTOR 3D NOVO (o mesmo visual dos 3D do Leitor DWG): luz do dia ou de
+     estúdio, reflexo do ambiente, aço nas peças, sombra de verdade no piso de
+     concreto e o tom de cinema (ACES). As linhas de PU ficam nas cores de
+     conferência, sem luz, para a leitura e a seleção continuarem iguais. */
+  v3Hemi=new THREE.HemisphereLight(0xdfe8f2,0x5a5550,.9); sc.add(v3Hemi);
+  v3Sol=new THREE.DirectionalLight(0xfff6e8,3.2); v3Sol.castShadow=true; v3Sol.shadow.mapSize.set(2048,2048);
+  v3Sol.shadow.bias=-0.0004; v3Sol.shadow.normalBias=0.02; v3Sol.shadow.radius=5; sc.add(v3Sol); sc.add(v3Sol.target);
+  v3Apoio=new THREE.DirectionalLight(0xffffff,.6); sc.add(v3Apoio); sc.add(v3Apoio.target);
   const W=wrap.clientWidth,H=wrap.clientHeight;
   cam=new THREE.PerspectiveCamera(40,W/H,.05,5000);
   cam.position.set(...HOME.p);
   ren=new THREE.WebGLRenderer({antialias:true,alpha:true}); ren.setClearColor(0x000000,0);
+  ren.toneMapping=THREE.ACESFilmicToneMapping; ren.outputColorSpace=THREE.SRGBColorSpace;
+  ren.shadowMap.enabled=true; ren.shadowMap.type=THREE.PCFSoftShadowMap; ren.shadowMap.autoUpdate=false;
+  v3Pm=new THREE.PMREMGenerator(ren);
   ren.setPixelRatio(Math.min(devicePixelRatio,2));
   ren.setSize(W,H);
   ren.domElement.style.cssText='position:absolute;top:0;left:0;width:100%;height:100%;';
@@ -2433,8 +2475,9 @@ function v3AplicaFundo(){
   if(v3GradeArgs&&v3Cena){
     if(v3Grade){ v3Cena.remove(v3Grade); v3Grade.geometry.dispose(); }
     const [gs,div,pos]=v3GradeArgs, c=V3GRADE[RM3D.estilo()]||V3GRADE.escuro;
-    v3Grade=new THREE.GridHelper(gs,div,c[0],c[1]); v3Grade.position.copy(pos); v3Cena.add(v3Grade);
+    v3Grade=new THREE.GridHelper(gs,div,c[0],c[1]); v3Grade.position.copy(pos); v3Grade.position.y+=.003; v3SemTom(v3Grade); v3Cena.add(v3Grade);
   }
+  v3Ilumina();
   document.querySelectorAll('[data-fundo3d]').forEach(b=>{b.textContent='Fundo: '+S.nome;});
 }
 window.addEventListener('rm-3d-fundo',v3AplicaFundo);
@@ -2482,7 +2525,8 @@ function v3PecasAplica(){
   if(v3PecasGrp){
     v3PecasGrp.visible=v3PecasModo!=='ocultas';
     v3PecasGrp.children.forEach(o=>{ if(!o.isMesh) return; const m=o.material, sol=v3PecasModo==='solidas';
-      m.transparent=!sol; m.opacity=sol?1:.22; m.depthWrite=sol; m.needsUpdate=true; });
+      m.transparent=!sol; m.opacity=sol?1:.22; m.depthWrite=sol; m.needsUpdate=true; o.castShadow=sol; o.receiveShadow=sol; });
+    if(ren) ren.shadowMap.needsUpdate=true;
   }
   const t=document.getElementById('v3PecasModo'); if(t) t.textContent=': '+V3MODOS_TXT[v3PecasModo];
   const b=document.getElementById('v3PecasBtn'); if(b) b.classList.toggle('on',v3PecasModo!=='ocultas');
@@ -2490,8 +2534,17 @@ function v3PecasAplica(){
 document.getElementById('v3MedBtn').addEventListener('click',e=>{ v3Medidas=!v3Medidas; e.currentTarget.classList.toggle('on',v3Medidas); });
 
 window.__v3Teste={cena:()=>({...v3HudInfo}),linhas:()=>objs.map(o=>Array.from(o.line.geometry.attributes.position.array)),
-  camera:()=>cam?cam.position.toArray():null, alvo:()=>ctrl?ctrl.target.toArray():null};
+  camera:()=>cam?cam.position.toArray():null, alvo:()=>ctrl?ctrl.target.toArray():null,
+  motor:()=>({aces:!!ren&&ren.toneMapping===THREE.ACESFilmicToneMapping,sombra:!!ren&&ren.shadowMap.enabled,ambiente:!!(sc&&sc.environment),piso:!!(v3Piso&&v3Piso.parent),
+    luz:v3LuzAtual(),solF:v3Sol?v3Sol.intensity:0,aco:!!(v3PecasGrp&&v3PecasGrp.children.some(o=>o.isMesh&&o.material.isMeshStandardMaterial)),
+    sombraPeca:!!(v3PecasGrp&&v3PecasGrp.children.some(o=>o.isMesh&&o.castShadow)),linhaSemTom:objs.length?objs.every(o=>o.tubo.material.toneMapped===false):null})};
 
+/* luz do dia / estúdio e o Ampliar (como nos 3D do Leitor) */
+{const sl=document.getElementById('v3Luz');if(sl){sl.value=v3LuzAtual();sl.addEventListener('change',()=>{try{localStorage.setItem('rm_3d_luz',sl.value);}catch(e){}v3Ilumina();});}
+ const ab=document.getElementById('v3AmpBtn'),wr=document.getElementById('v3d-canvas-wrap');
+ const amp=on=>{if(!wr||!ab)return;wr.classList.toggle('v3-cheia',on);ab.textContent=on?'✕ Fechar':'⛶ Ampliar';ab.title=on?'Voltar ao tamanho normal (Esc)':'Ampliar o 3D na tela inteira (Esc fecha)';window.dispatchEvent(new Event('resize'));};
+ if(ab)ab.addEventListener('click',()=>amp(!wr.classList.contains('v3-cheia')));
+ document.addEventListener('keydown',e=>{if(e.key==='Escape'&&wr&&wr.classList.contains('v3-cheia'))amp(false);});}
 let v3Arquivo='', v3Obra='', v3SalvaT=null, v3PecasDados=null;
 /* SketchUp é Z para cima; o three.js é Y para cima. Os dois são de mão
    direita, então a troca é (x, z, -y). Era (x, z, y): trocar dois eixos
@@ -2574,8 +2627,8 @@ window.v3LoadJSON=function(json,fname,opc){
   /* as peças lidas, em transparência (o plugin novo manda junto) */
   if(v3PecasDados){
     v3PecasGrp=new THREE.Group();
-    const mts={}, mt=t=>mts[t]||(mts[t]=new THREE.MeshLambertMaterial({color:V3PECA[t]||0xd7dce2,transparent:true,opacity:.22,depthWrite:false,
-      polygonOffset:true,polygonOffsetFactor:1,polygonOffsetUnits:1}));
+    const mts={}, mt=t=>mts[t]||(mts[t]=new THREE.MeshStandardMaterial({color:V3PECA[t]||0xd7dce2,metalness:.45,roughness:.48,envMapIntensity:1.4,
+      transparent:true,opacity:.22,depthWrite:false,polygonOffset:true,polygonOffsetFactor:1,polygonOffsetUnits:1}));
     const ma=new THREE.LineBasicMaterial({color:0x8b939c,transparent:true,opacity:.55});
     v3PecasDados.forEach(p=>{ if(!p.min||!p.max) return;
       const a=v3(p.min), b=v3(p.max), box=new THREE.Box3().setFromPoints([a,b]);
@@ -2586,6 +2639,8 @@ window.v3LoadJSON=function(json,fname,opc){
     });
     v3Cena.add(v3PecasGrp); v3PecasAplica();
   }
+  v3Piso=new THREE.Mesh(new THREE.CircleGeometry(Math.max(tam.x,tam.z,4)*1.6,64),new THREE.MeshStandardMaterial({map:v3Concreto(Math.max(4,Math.round(Math.max(tam.x,tam.z)/2))),roughness:.92,metalness:0}));
+  v3Piso.rotation.x=-Math.PI/2; v3Piso.position.set(centro.x,cx3.min.y-.004,centro.z); v3Piso.receiveShadow=true; v3Cena.add(v3Piso);
 
   /* linha de PU = tubo (a linha de 1 pixel quase não aparecia) + um cilindro
      invisível mais grosso para o clique pegar com folga */
@@ -2603,6 +2658,7 @@ window.v3LoadJSON=function(json,fname,opc){
     sph.position.copy(mid); sph.quaternion.copy(q); sph.userData={id:l.id}; v3Cena.add(sph);
     objs.push({id:l.id,line,tubo,sph,len});
   });
+  v3SemTom(v3Cena); v3Ilumina();
   document.getElementById('v3vSk').style.display=v3Cam?'':'none';
   const pb=document.getElementById('v3PecasBtn'); pb.style.display=v3PecasGrp?'':'none'; v3PecasAplica();
   v3Vista(v3Vis==='sketchup'&&!v3Cam?'iso':v3Vis);
