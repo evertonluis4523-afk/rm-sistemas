@@ -8063,10 +8063,11 @@ async function handle(file,aba){
     if(bc){bc.classList.toggle('hide',!COTAS.length);
       bc.textContent='\u27c2 Lista pelas cotas ('+COTAS.length+')';}
     if(aba==='tel'){
-      TLH.origem='dwg';TLH.sketchupFaces=[];TLH.sketchupNome='';TLH.sketchupDoc=null;
-      /* DWG aberto pela aba Telhas e' o desenho da vez: a cobertura sai do
-         modo SketchUp que ficou gravado de uma importacao anterior. */
-      try{if(window.rmCobertura&&window.rmCobertura.novoDesenho)window.rmCobertura.novoDesenho();}catch(_){}
+      /* DWG aberto pela aba Telhas e' o desenho do MODO da vez: no
+         fechamento ele substitui o SketchUp do fechamento; na cobertura, a
+         cobertura sai do modo SketchUp. O outro modo nao e' tocado. */
+      if(TLH.modo==='cobertura'){try{if(window.rmCobertura&&window.rmCobertura.novoDesenho)window.rmCobertura.novoDesenho();}catch(_){}}
+      else{TLH.origem='dwg';TLH.sketchupFaces=[];TLH.sketchupNome='';TLH.sketchupDoc=null;}
       try{telhaAbrir();}catch(_){}
     }
     abasPrepara();
@@ -8172,12 +8173,45 @@ document.querySelectorAll('#abas .aba').forEach(b=>
 
 /* Trocar de arquivo: esquece so' o desenho DESTA aba. O outro lado continua
    com o dele, que e' a razao de existirem duas. */
+/* FECHAMENTO E COBERTURA, CADA UM COM O SEU ARQUIVO. "Se eu tento usar
+   dois arquivos na aba telhas para pegar as medidas da cobertura e do
+   fechamento fico limitado": os dois modos dividiam a barra de arquivo, e
+   abrir a cobertura zerava o fechamento. Agora cada modo guarda o arquivo
+   dele (o desenho, o nome na barra e, no fechamento, as faces do SketchUp)
+   ao trocar de modo, e devolve ao voltar. */
+window.TEL_ARQ={fechamento:null,cobertura:null};
+const TEL_TLH_CHAVES=['origem','sketchupFaces','sketchupNome','sketchupDoc','sketchupExcluidas','sketchupDuplas','sketchupIgnoradas','sketchupPaineis','sketchupExtVersao'];
+function telModoAtual(){return TLH.modo==='cobertura'?'cobertura':'fechamento';}
+function telGuardaModo(m){
+  m=m||telModoAtual();
+  if(ABA.atual==='tel')abaGuardaDesenho();
+  const t=id=>(document.getElementById(id)||{}).textContent||'';
+  const tlh={};if(m==='fechamento')TEL_TLH_CHAVES.forEach(k=>{tlh[k]=TLH[k];});
+  TEL_ARQ[m]=ABA.arq.tel&&ABA.arq.tel.seg?{arq:ABA.arq.tel,nome:t('fbNameTel'),info:t('fbInfoTel'),n:t('abaTelN'),tlh}:null;
+}
+function telRestauraModo(m){
+  const r=TEL_ARQ[m],cur=ABA.arq.tel;
+  /* um DWG pode trazer a cobertura E o fechamento: ele continua valendo
+     para o outro modo enquanto este não tiver arquivo próprio. Só o arquivo
+     do SketchUp (.rmfecha / .rmcob) é de um modo só. */
+  if(!r&&cur&&cur.seg&&!cur.sketchup&&!cur.sketchupFechamento)return true;
+  ABA.arq.tel=r?r.arq:null;
+  const set=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v;};
+  set('fbNameTel',r?r.nome:'');set('fbInfoTel',r?r.info:'');set('abaTelN',r?r.n:'');
+  if(r&&m==='fechamento')TEL_TLH_CHAVES.forEach(k=>{if(k in r.tlh)TLH[k]=r.tlh[k];});
+  if(ABA.atual==='tel'){if(r)abaRestauraDesenho('tel');else{SEG=[];TXT=[];COTAS=[];}}
+  abaPinta();
+  return !!r;
+}
+window.telGuardaModo=telGuardaModo;window.telRestauraModo=telRestauraModo;
 function trocarArquivoDaAba(a){
   ABA.arq[a]=null;
   if(a===ABA.atual){ SEG=[];TXT=[];COTAS=[];
     if(a==='det'){FICHAS=[];CL=[];} }
   if(a==='tel'){
-    TLH.origem='dwg';TLH.sketchupFaces=[];TLH.sketchupNome='';TLH.sketchupDoc=null;
+    /* só o arquivo do modo aberto sai: o do outro modo fica guardado */
+    TEL_ARQ[telModoAtual()]=null;
+    if(telModoAtual()==='fechamento'){TLH.origem='dwg';TLH.sketchupFaces=[];TLH.sketchupNome='';TLH.sketchupDoc=null;}
     const ov=document.getElementById('tlov');
     if(ov){ov.classList.remove('on');delete ov.dataset.pronto;ov.innerHTML='';}
     const f=document.getElementById('fileTel'); if(f)f.value='';
@@ -13308,6 +13342,8 @@ function tlhInfoArquivo(qtd){
   const fi=document.getElementById('fbInfoTel');if(fi)fi.textContent=(TLH.sketchupPaineis?TLH.sketchupPaineis+' painéis juntados em '+(qtd||0)+' paredes':(qtd||0)+' faces verticais')+' · SketchUp 3D'+(TLH.sketchupIgnoradas?' · '+TLH.sketchupIgnoradas+' internas ignoradas':'')+(TLH.sketchupExtVersao?'':' · extensão antiga');
 }
 function tlhAtivaArquivoSketchup(nome,qtd){
+  /* abrir o fechamento com a cobertura na tela guarda a cobertura antes */
+  if(TLH.modo==='cobertura')telGuardaModo('cobertura');
   const arquivo=nome||'Fechamento SketchUp.rmfecha';TLH.modo='fechamento';
   try{localStorage.setItem('rm_telha_modo','fechamento');}catch(_){ }
   ABA.atual='tel';ABA.arq.tel={seg:[],txt:[],cotas:[],unitF:1,nome:arquivo,estilos:{},estiloUso:{},meta:{},faces:qtd||0,sketchupFechamento:true};
@@ -15060,7 +15096,11 @@ function tlh3dMonta(){
 function tlh3dMundo(f,x,y,z){
   const s=f.sketchup,o=s.origem,u=s.eixo,v=s.vertical,n=s.normal;
   const w=[o[0]+u[0]*x+v[0]*y+n[0]*z,o[1]+u[1]*x+v[1]*y+n[1]*z,o[2]+u[2]*x+v[2]*y+n[2]*z];
-  return [w[0],w[2],w[1]]; /* cena: X horizontal, Y vertical, Z profundidade */
+  /* cena: X horizontal, Y vertical, Z para quem olha. Era [x, z, y]: trocar
+     dois eixos inverte a mão do sistema e o fechamento saía ESPELHADO (a
+     frente no fundo; "a prévia aparece virada"). O Y do SketchUp vai para
+     longe de quem olha: -Z. */
+  return [w[0],w[2],-w[1]];
 }
 function tlh3dMontaConjunto(){
   const quads=[],linhas=[],rotulos=[];let fatorMax=1;
@@ -15157,8 +15197,8 @@ function tlh3dDesenha(){
   /* So' redimensiona quando muda de tamanho de verdade: escrever em
      cv.width realoca o buffer inteiro do canvas, e isso estava sendo
      feito a cada quadro do arrasto. */
-  const wq=Math.max(1,Math.round(cv.clientWidth*devicePixelRatio));
-  const hq=Math.max(1,Math.round(cv.clientHeight*devicePixelRatio));
+  const wq=Math.max(1,Math.round(cv.clientWidth*(window.rmImprimindoAlta||devicePixelRatio||1)));
+  const hq=Math.max(1,Math.round(cv.clientHeight*(window.rmImprimindoAlta||devicePixelRatio||1)));
   if(cv.width!==wq)cv.width=wq;
   if(cv.height!==hq)cv.height=hq;
   const w=cv.width, h=cv.height;
@@ -15178,7 +15218,7 @@ function tlh3dDesenha(){
   /* piso de engenharia na cota mais baixa das telhas (aqui Y sobe) */
   if(!d.caixa){const mn=[1e15,1e15,1e15],mx=[-1e15,-1e15,-1e15];
     d.quads.forEach(q=>q.pts.forEach(p=>{for(let i=0;i<3;i++){if(p[i]<mn[i])mn[i]=p[i];if(p[i]>mx[i])mx[i]=p[i];}}));d.caixa={mn,mx};}
-  const dpr=devicePixelRatio||1;
+  const dpr=(window.rmImprimindoAlta||devicePixelRatio||1);
   const grade=T3.pitch<-0.01?0:GL?RM3D.piso(d.caixa.mn,d.caixa.mx,1).grade:RM3D.chao(ctx,v=>{const g=tlh3dGira(v);return [X(g),Y(g)];},d.caixa.mn,d.caixa.mx,1,dpr);
   if(!GL&&!T3.arrastando&&T3.pitch>=-0.01)RM3D.sombra(ctx,v=>{const g=tlh3dGira(v);return [X(g),Y(g)];},d.quads.filter(q=>q.tipo!=='recorte').map(q=>q.pts),1,d.caixa.mn[1],0,'fechamento');
   const realT=RM3D.real();
@@ -15207,12 +15247,12 @@ function tlh3dDesenha(){
        quadrilatero -- a 15 mil, e' o que sobra de mais caro depois do
        gradiente. As juntas entre telhas continuam desenhadas (d.linhas),
        entao a estrutura nao some durante o giro. */
-    if(!T3.arrastando){ctx.strokeStyle='rgba(255,255,255,.075)';ctx.lineWidth=Math.max(0.65,devicePixelRatio*.45);ctx.stroke();}
+    if(!T3.arrastando){ctx.strokeStyle='rgba(255,255,255,.075)';ctx.lineWidth=Math.max(0.65,(window.rmImprimindoAlta||devicePixelRatio||1)*.45);ctx.stroke();}
   });
   (d.linhas||[]).forEach(l=>{
     const a=tlh3dGira(l.a),b=tlh3dGira(l.b);
     ctx.beginPath();ctx.moveTo(X(a),Y(a));ctx.lineTo(X(b),Y(b));
-    ctx.strokeStyle=realT?'rgba(20,24,30,.6)':'rgba(255,255,255,.72)';ctx.lineWidth=Math.max(1,devicePixelRatio*.8);ctx.stroke();
+    ctx.strokeStyle=realT?'rgba(20,24,30,.6)':'rgba(255,255,255,.72)';ctx.lineWidth=Math.max(1,(window.rmImprimindoAlta||devicePixelRatio||1)*.8);ctx.stroke();
   });
   /* NOME DE CADA GRUPO, FLUTUANDO NA PROPRIA PAREDE.
      So existe no Conjunto completo -- olhando uma face por vez o nome ja
@@ -15222,7 +15262,7 @@ function tlh3dDesenha(){
      pintada; o traco escuro por baixo da letra e' o halo de sempre, para o
      texto claro nao sumir em cima de uma parede clara. */
   (d.rotulos||[]).forEach(r=>{
-    const p=tlh3dGira(r.pos), x=X(p), y=Y(p), dpr=devicePixelRatio;
+    const p=tlh3dGira(r.pos), x=X(p), y=Y(p), dpr=(window.rmImprimindoAlta||devicePixelRatio||1);
     ctx.font='700 '+(12*dpr)+'px Satoshi, Arial, sans-serif';
     ctx.textAlign='center';
     ctx.lineWidth=3*dpr; ctx.strokeStyle='rgba(21,25,30,.85)';
@@ -15235,7 +15275,7 @@ function tlh3dDesenha(){
   });
   ctx.textAlign='start';
   {const o=tlh3dGira([0,0,0]),e=v=>{const g=tlh3dGira(v);return [g[0]-o[0],-(g[1]-o[1]),g[2]-o[2]];};
-   RM3D.gizmo(ctx,w,h,{X:e([1000,0,0]),Y:e([0,0,1000]),Z:e([0,1000,0])},dpr,document.getElementById('tl3bar'));
+   RM3D.gizmo(ctx,w,h,{X:e([1000,0,0]),Y:e(TLH.origem==='sketchup'?[0,0,-1000]:[0,0,1000]),Z:e([0,1000,0])},dpr,document.getElementById('tl3bar'));
    RM3D.ultimo.fechamento={estilo:RM3D.estilo(),grade,escala:RM3D.escala(ctx,w,h,E.esc,dpr)};}
   if(GL){const im=RMGL.camada(GL,v=>{const g=tlh3dGira(v);return [X(g),Y(g),g[2]];},w,h,1,{up:1,semPiso:T3.pitch<-0.01||!!T3.papel,papel:!!T3.papel});
     ctx.save();ctx.setTransform(1,0,0,1,0,0);ctx.globalCompositeOperation='destination-over';
@@ -15250,7 +15290,7 @@ function tlh3dDesenha(){
    proporcoes sao as de verdade, sem realce. */
 function tlh3dPerfilDesenha(ctx,w,h){
   const St=RM3D.S();
-  const dpr=devicePixelRatio, P=Math.max(1,TLH.passo), H=Math.max(1,TLH.altura);
+  const dpr=(window.rmImprimindoAlta||devicePixelRatio||1), P=Math.max(1,TLH.passo), H=Math.max(1,TLH.altura);
   const vista=P*2.5, m=70*dpr;
   const esc=Math.min((w-2*m)/vista,(h-2*m)/(H*5));
   const x0=(w-vista*esc)/2, yBase=h/2+H*esc*1.6;
@@ -15644,7 +15684,10 @@ let TLH_PREV_T=0;
 function tlhPrevia(){
   clearTimeout(TLH_PREV_T);
   TLH_PREV_T=setTimeout(()=>{const b=document.getElementById('tlPrev');if(!b)return;
-    const im=TLH.faces.length?tlh3dImagem({w:1200,h:330,dpr:1.2,tela:true}):null;
+    /* "qualidade extremamente baixa": era 1200 x 330 a 1,2x, esticada na
+       largura toda da tela. Agora no tamanho em que aparece, a 2x */
+    const L=Math.max(600,Math.round((b.parentElement&&b.parentElement.clientWidth)||1200)),A=Math.max(300,Math.round(L*.34));
+    const im=TLH.faces.length?tlh3dImagem({w:L,h:A,dpr:Math.max(2,window.devicePixelRatio||1),tela:true}):null;
     b.hidden=!im;b.innerHTML=im?'<img src="'+im+'" alt="Prévia da leitura em 3D"><span>Abrir o 3D</span>':'';},250);
 }
 function tlh3dSalvarPNG(){
@@ -20029,6 +20072,10 @@ window.__leitorTeste={
       cor:hex(tlh3dCor(i,false,0)),telhas:f.telhas.length,maiorMm:Math.max(0,...f.telhas.map(t=>t.mm)),utils:[...new Set(f.telhas.map(t=>t.util||TLH.util))],larguras:f.telhas.map(t=>t.larg),fundo3d:(()=>{const g=T3.face;T3.face=i;const d=tlh3dMonta();T3.face=g;const ys=d?d.quads.filter(q=>q.tipo==='telha').flatMap(q=>q.pts.map(p=>p[1])):[];return ys.length?Math.round(Math.min(...ys)):null;})(),estreitas:f.telhas.filter(t=>t.larg<(t.util||TLH.util)-2).length,area:Math.round((Number(f.area3d)||0)*10)/10,cortes:[...new Set(f.telhas.flatMap(t=>[t.x0-f.xIni,t.x1-f.xIni]))].sort((a,b)=>a-b)})),
       rotulos:((conj&&conj.rotulos)||[]).map(x=>{const ys=conj.quads.filter(q=>q.fi===x.i).flatMap(q=>q.pts.map(p=>p[1]));
         return {nome:x.nome,cor:hex(x.cor),acimaDoTopo:ys.length?Math.round(x.pos[1]-Math.max(...ys)):null};})};},
+  /* o 3D do fechamento não pode sair espelhado: a troca de eixos do
+     SketchUp para a cena tem de ser uma rotação (determinante +1) */
+  fechMaoDireita:()=>{const f={sketchup:{origem:[0,0,0],eixo:[1,0,0],vertical:[0,1,0],normal:[0,0,1]}},m=v=>tlh3dMundo(f,v[0],v[1],v[2]);
+    const a=m([1,0,0]),b=m([0,1,0]),c=m([0,0,1]);return a[0]*(b[1]*c[2]-b[2]*c[1])-a[1]*(b[0]*c[2]-b[2]*c[0])+a[2]*(b[0]*c[1]-b[1]*c[0]);},
   cuKey:CU_KEY,
   /* a conta do "cortar aqui" (mão de obra, horas): teste leitor-mao-de-obra-por-pessoa */
   custos:()=>{const cu=cuCalcular(dadosRelatorioCorte());return cu?{maoR:cu.maoR,retrabR:cu.retrabR,horasRelogio:cu.horasRelogio,horasPessoa:cu.horasPessoa,hora:cu.hora}:null;},
@@ -27662,7 +27709,8 @@ html[data-theme="escuro"] .log-det>summary.err{color:var(--red)}.log-det>summary
   }
   function cobAtivaArquivoSketchup(nome,qtd){
     const arquivo=nome||'Cobertura SketchUp.rmcob';
-    TLH.origem='dwg';TLH.sketchupFaces=[];TLH.sketchupNome='';TLH.sketchupDoc=null;
+    /* o fechamento aberto NÃO é apagado: fica guardado no modo dele */
+    if(TLH.modo!=='cobertura'&&window.telGuardaModo)window.telGuardaModo('fechamento');
     TLH.modo='cobertura';try{localStorage.setItem('rm_telha_modo','cobertura');}catch(_){ }
     /* Um .rmcob e uma fonte completa de trabalho, mesmo sem SEG de DWG.
        O vetor vazio intencional mantém a aba aberta no mesmo mecanismo usado
@@ -30717,11 +30765,14 @@ html[data-theme="escuro"] .log-det>summary.err{color:var(--red)}.log-det>summary
     }
   }
   function mudaModo(m,abrir=true){
-    TLH.modo=m==='cobertura'?'cobertura':'fechamento';
+    const antes=TLH.modo==='cobertura'?'cobertura':'fechamento',novo=m==='cobertura'?'cobertura':'fechamento';
+    if(novo!==antes&&window.telGuardaModo)window.telGuardaModo(antes);
+    TLH.modo=novo;
     try{localStorage.setItem('rm_telha_modo',TLH.modo);}catch(_){ }
     atualizaModo();
     const ov=document.getElementById('tlov');if(ov){ov.classList.remove('on');ov.innerHTML='';delete ov.dataset.pronto;delete ov.dataset.rmModo;}
     const vazio=document.getElementById('telVazio');if(vazio)vazio.classList.add('hide');
+    if(novo!==antes&&window.telRestauraModo)window.telRestauraModo(novo);
     if(abrir&&typeof ABA!=='undefined'&&ABA.arq&&ABA.arq.tel&&ABA.arq.tel.seg){try{telhaAbrir();}catch(e){console.warn(e);}}
   }
   function inicia(){
@@ -31353,7 +31404,7 @@ if('serviceWorker' in navigator && location.protocol.startsWith('http')){
 }
 </script>
 <script>/* versão publicada (PADRAO_RM.md §3): sobe a cada publicação, junto com o CACHE do sw.js */
-const APP_VER='v282';
+const APP_VER='v283';
 </script>
 <script id="rmVersaoBloco">
 /* ===== SELO DE VERSÃO — igual em todos os sistemas (PADRAO_RM.md §3) =====

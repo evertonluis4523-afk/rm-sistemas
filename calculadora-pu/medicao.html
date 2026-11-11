@@ -5467,4 +5467,35 @@ else poe();
     if (lib) {
       usadasAgora[s + '|' + a] = 1;   /* antes de gravar: o Firebase avisa a escuta na hora */
       grava('acessos/pedidos/' + E.k + '/' + lib, { usado: true, usadoEm: Date.now() }, 'update').catch(function () { });
-      if (E.pedidos[lib]) E.ped
+      if (E.pedidos[lib]) E.pedidos[lib].usado = true;
+      registra(s, a, info, 'autorizacao');
+      setTimeout(function () { delete usadasAgora[s + '|' + a]; fecha(s, a); }, atrasoFecha());
+      return true;
+    }
+    return false;
+  }
+  /* espera o cadastro chegar; se não pode, abre o pedido de autorização */
+  function exige(s, a, info) {
+    info = info || {};
+    return esperaCarregar().then(function () { return agora(s, a, info) || janela(s, a, info); });
+  }
+  /* a porta de cada ação protegida, para quem chama sem esperar: true =
+     segue já; false = não segue agora (abriu o pedido, ou o cadastro ainda
+     estava chegando -- aí, se puder, a ação é refeita sozinha por refaz) */
+  var passe = {};
+  function porta(s, a, info, refaz) {
+    var ch = s + '|' + a;
+    if (passe[ch]) { delete passe[ch]; return true; }
+    if (agora(s, a, info)) return true;
+    exige(s, a, info).then(function (ok) { if (ok && refaz) { passe[ch] = 1; try { refaz(); } finally { delete passe[ch]; } } });
+    return false;
+  }
+  window.RMAcesso = {
+    pode: pode, agora: agora, exige: exige, porta: porta, registra: registra, nome: nomeAcao,
+    ouvir: function (f) { E.ouvintes.push(f); },
+    estado: function () { return { email: E.email, carregado: E.carregado, reg: E.reg, pedidos: E.pedidos }; }
+  };
+})();
+</script>
+</body>
+</html>
