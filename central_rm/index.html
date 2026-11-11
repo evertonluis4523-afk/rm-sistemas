@@ -1364,9 +1364,16 @@ var RM_FONTE="@font-face{font-family:'Satoshi';src:url(data:font/woff2;base64,d0
   .ac-grid{display:flex;flex-direction:column;gap:14px}
   .ac-users{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px}
   .ac-user{min-width:0;display:flex;flex-direction:column;gap:2px;text-align:left;padding:10px 12px;border:1px solid var(--divider);border-radius:var(--rm-raio);background:var(--card);color:var(--text);font:inherit;cursor:pointer}
+  .ac-conta{display:flex;align-items:center;gap:10px;justify-content:space-between;padding:10px 12px;margin-bottom:10px;border:1px solid var(--divider);border-radius:var(--rm-raio);background:var(--card)}
+  .ac-conta>div{min-width:0;display:flex;flex-direction:column;gap:2px}.ac-conta b{font-size:14px}.ac-conta span{font-size:12px;color:var(--text-muted);overflow-wrap:anywhere}
+  .ac-perigo{color:var(--rm-perigo)!important;border-color:color-mix(in srgb,var(--rm-perigo) 40%,transparent)!important;flex:none}
+  .ac-hist summary{display:flex;align-items:baseline;gap:10px;cursor:pointer;list-style:none}.ac-hist summary::-webkit-details-marker{display:none}.ac-hist summary h4{margin:0}
+  .ac-hist summary::before{content:'▸';color:var(--text-muted)}.ac-hist[open] summary::before{content:'▾'}
+  .ac-hl{display:grid;grid-template-columns:96px minmax(0,1fr);gap:10px;padding:7px 0;border-top:1px solid var(--divider);font-size:12.5px}.ac-hl time{color:var(--text-muted);font-variant-numeric:tabular-nums}
+  #ac-novo-copia{min-width:0}
   .ac-user b{font-size:13px}.ac-user span{font-size:11px;color:var(--text-muted);overflow-wrap:anywhere}
   .ac-user.on{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
-  .ac-add{border-style:dashed}.ac-novo{display:flex;flex-wrap:wrap;gap:8px}.ac-novo input{min-width:0;flex:1 1 200px}
+  .ac-add{border-style:dashed}.ac-novo{display:flex;flex-wrap:wrap;gap:8px}.ac-novo input,.ac-novo select{min-width:0;flex:1 1 180px;height:38px;box-sizing:border-box;padding:7px 10px;border:1px solid var(--divider);border-radius:var(--rm-raio);background:var(--card);color:var(--text);font:inherit;font-size:14px}
   .ac-user em{font-style:normal;font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--accent)}
   .ac-bloco{border:1px solid var(--divider);border-radius:var(--rm-raio);background:var(--card);padding:14px;margin-bottom:12px}
   .ac-bloco h4{margin:0 0 10px;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--text-muted);font-weight:700}
@@ -4575,7 +4582,7 @@ try { var _e = localStorage.getItem('rm_estilo_ultimo'); if (_e === 'viva' || _e
             <input type="range" id="papelwin-op" min="10" max="50" step="1" value="25" aria-label="Intensidade do desenho no plano de fundo" oninput="papelWinGrava({op:+this.value/100})">
             <b id="papelwin-op-v">25%</b></div>
           <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:10px">
-            <button class="btn-mini" type="button" id="papelwin-aplicar" onclick="papelWinAplicar()">Aplicar como fundo da área de trabalho</button>
+            <button class="btn-mini" type="button" id="papelwin-aplicar" style="background-color:var(--rm-marca);color:#fff" onclick="papelWinAplicar()">Aplicar como fundo da área de trabalho</button>
           </div>
           <div id="protetor-nota" style="font-size:12px;color:var(--text-muted);margin-top:6px;line-height:1.45">Escolha o fundo e o tom: o programa desenha a imagem no tamanho da sua tela e coloca como plano de fundo do Windows. A cor da marca segue a escolhida em "Fundo da Central".</div>
           <div style="font-size:12px;color:var(--text-muted);margin-top:8px">Proteção de tela com a obra se montando: <button type="button" class="link-btn" onclick="protetorUsar()">usar no Windows</button> · <button type="button" class="link-btn" onclick="protetorVer()">ver agora</button></div>
@@ -4807,7 +4814,7 @@ try { var _e = localStorage.getItem('rm_estilo_ultimo'); if (_e === 'viva' || _e
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js" crossorigin="anonymous"></script>
 
 <script>/* versão publicada (PADRAO_RM.md §3): sobe a cada publicação, junto com o CACHE do sw.js */
-const APP_VER='v160';
+const APP_VER='v161';
 </script>
 <script>
   /* ===== LOGIN (Firebase Authentication) =====
@@ -4870,7 +4877,7 @@ const APP_VER='v160';
      dono salvar o painel. Se a leitura falhar, fica o último cadastro
      guardado neste aparelho; nunca mais que isso. O administrador não passa
      por aqui: tem tudo, sempre. Teste central-acessos-nuvem. */
-  let MEU_ACESSO = null, _acDesliga = null;
+  let MEU_ACESSO = null, _acDesliga = null, MEU_ACESSO_LIDO = false;
   function acChave(e) { return String(e || '').trim().toLowerCase().replace(/\./g, ','); }
   function acNuvem() {
     if (window.__acNuvem) return window.__acNuvem;
@@ -4878,13 +4885,14 @@ const APP_VER='v160';
     return {
       ouvir(caminho, cb, erro) { const r = firebase.database().ref(caminho), f = sn => cb(sn.val()); r.on('value', f, erro || function () { }); return () => r.off('value', f); },
       gravar(upd) { return firebase.database().ref().update(upd); },
+      ultimos(caminho, n, cb, erro) { const r = firebase.database().ref(caminho).orderByKey().limitToLast(n), f = sn => cb(sn.val()); r.on('value', f, erro || function () { }); return () => r.off('value', f); },
       novaChave() { return firebase.database().ref().push().key; }
     };
   }
   function acessoDaConta() { return (!CURRENT_EMAIL || isAdminUser()) ? null : MEU_ACESSO; }
   function ouvirMeuAcesso() {
     if (_acDesliga) { try { _acDesliga(); } catch (e) { } _acDesliga = null; }
-    MEU_ACESSO = null;
+    MEU_ACESSO = null; MEU_ACESSO_LIDO = false;
     /* o dono ouve os pedidos de autorização desde a entrada (aviso + contador) */
     if (CURRENT_EMAIL && isAdminUser()) setTimeout(() => { try { window.rmAcessos && rmAcessos.ouvirPedidos(); } catch (e) { } }, 1500);
     if (!CURRENT_EMAIL || isAdminUser()) return;
@@ -4892,7 +4900,7 @@ const APP_VER='v160';
     try { const c = JSON.parse(localStorage.getItem(guarda) || 'null'); if (c && c.sistemas) MEU_ACESSO = c; } catch (e) { }
     const N = acNuvem(); if (!N) return;
     _acDesliga = N.ouvir('acessos/usuarios/' + k, v => {
-      MEU_ACESSO = (v && typeof v === 'object') ? v : null;
+      MEU_ACESSO = (v && typeof v === 'object') ? v : null; MEU_ACESSO_LIDO = true;
       try { if (MEU_ACESSO) localStorage.setItem(guarda, JSON.stringify(MEU_ACESSO)); else localStorage.removeItem(guarda); } catch (e) { }
       aplicarMeuAcesso();
     });
@@ -4903,10 +4911,22 @@ const APP_VER='v160';
     try { render(); } catch (e) { }
     try { ['__docAjustar', '__etiqAjustar', '__prcAjustar'].forEach(f => { if (typeof window[f] === 'function') window[f](); }); } catch (e) { }
   }
+  /* último acesso (para o painel do dono): a conta grava a hora em que entrou */
+  function registraUltimoAcesso() {
+    if (!CURRENT_EMAIL || isAdminUser()) return;
+    const k = acChave(CURRENT_EMAIL), g = 'rm_visto:' + k;
+    try { if (Date.now() - (+localStorage.getItem(g) || 0) < 600000) return; localStorage.setItem(g, String(Date.now())); } catch (e) { }
+    try { if (window.__acVisto) { window.__acVisto(k); return; }
+      firebase.database().ref('acessos/visto/' + k).set({ em: firebase.database.ServerValue.TIMESTAMP }).catch(() => { }); } catch (e) { }
+  }
   window.rmMeuAcesso = { ouvir: ouvirMeuAcesso, aplicar: aplicarMeuAcesso, chave: acChave, atual: () => MEU_ACESSO };
   function isAllowedSystem(id) {
     if (!CURRENT_EMAIL) return false;
     const ac = acessoDaConta(); if (ac) return !!(ac.sistemas && ac.sistemas[id]);
+    /* a nuvem respondeu que esta conta não tem ficha (removida no painel ou
+       nunca liberada): sem acesso. A lista abaixo só vale antes de a nuvem
+       responder (abrir sem internet com a cópia antiga). */
+    if (MEU_ACESSO_LIDO && !isAdminUser()) return false;
     const list = CENTRAL_ACCESS[CURRENT_EMAIL.toLowerCase()];
     if (list === undefined) return false; // e-mail não cadastrado aqui → fecha por padrão
     if (list === null) return true;        // acesso a todos
@@ -4925,6 +4945,7 @@ const APP_VER='v160';
   function acGaveta(g, lista) {
     if (isAdminUser()) return true;
     const ac = acessoDaConta(); if (ac) return !!(ac.gavetas && ac.gavetas[g]);
+    if (MEU_ACESSO_LIDO) return false;
     return !!CURRENT_EMAIL && lista.includes(CURRENT_EMAIL.toLowerCase());
   }
   function agendaCompleta() {
@@ -6781,6 +6802,7 @@ const APP_VER='v160';
       const err = document.getElementById('lock-error'); if (err) err.textContent = '';
       const lbl = document.getElementById('set-account-email'); if (lbl) lbl.textContent = CURRENT_EMAIL;
       ouvirMeuAcesso();
+      registraUltimoAcesso();
       loadAppearanceForUser();
       loadGreetingForUser(user);
       atualizaNomeDaConta(user);
@@ -9500,11 +9522,9 @@ const APP_VER='v160';
     sis.forEach(id=>{o.sistemas[id]=true;o.ops[id]={consultar:true,cadastrar:true,editar:true,excluir:(excluirEm||[]).includes(id)};
       o.acoes[id]={};(AC_ACOES[id]||[]).forEach(([k])=>{o.acoes[id][k]=!!AC_PADRAO_ACAO[k];});});
     gav.forEach(g=>{o.gavetas[g]=true;});return o;}
-  const AC_INICIAL=()=>({
-    'engenharia@rmestruturas.com.br':{nome:'Engenharia',p:acPerfil(['contas','recibos','almocos','premold','obras','pu'],['agenda','documentos','etiquetas'])},
-    'arquitetarm@rmestruturas.com.br':{nome:'Arquitetura',p:acPerfil(['propostas'],['precos'])},
-    'rudimar.nunes@universo.univates.br':{nome:'Rudimar',p:acPerfil(['maquinas'],[])}
-  });
+  /* as contas vêm só da nuvem (o que foi salvo pelo painel): nenhum e-mail
+     fixo aqui. Removida no painel, a conta some e perde o acesso. */
+  const AC_INICIAL=()=>({});
   /* hoje só o acesso ao SISTEMA inteiro e às gavetas é protegido de fato (a
      regra do banco por conta); operações e ações ainda não */
   const AC_PROTEGIDO={sistema:true,gaveta:true};
@@ -9513,7 +9533,7 @@ const APP_VER='v160';
   const AC_FUNCIONA={contas:{pagar:1,excluir_conta:1,reabrir_pag:1,valor_pago:1},recibos:{salario:1,banco:1,excluir_recibo:1,reabrir_ciclo:1,importa_sal:1},
     almocos:{preco:1,mudar_fechado:1},premold:{tabelas:1,custos:1},obras:{contrato:1,excluir_obra:1,fin_fechado:1},pu:{custos:1},propostas:{contrato_aprov:1},maquinas:{baixa:1}};
   const acFunciona=(s,k)=>!!(AC_FUNCIONA[s]||{})[k];
-  let AC={orig:null,atual:null,sel:'engenharia@rmestruturas.com.br',dif:false,nuvem:{},carregado:false,desliga:null,novo:false};
+  let AC={orig:null,atual:null,sel:null,dif:false,nuvem:{},carregado:false,desliga:null,novo:false};
   function acLimpa(p){const o={sistemas:{},gavetas:{},ops:{},acoes:{}};p=p||{};
     Object.keys(p.sistemas||{}).forEach(k=>{if(p.sistemas[k])o.sistemas[k]=true;});Object.keys(p.gavetas||{}).forEach(k=>{if(p.gavetas[k])o.gavetas[k]=true;});
     ['ops','acoes'].forEach(c=>Object.keys(p[c]||{}).forEach(sid=>{o[c][sid]={};Object.keys(p[c][sid]||{}).forEach(k=>{o[c][sid][k]=!!p[c][sid][k];});}));return o;}
@@ -9521,7 +9541,7 @@ const APP_VER='v160';
   function acMontar(){const base=AC_INICIAL(),U={};
     Object.keys(base).forEach(e=>{const n=AC.nuvem[e];U[e]=n?{nome:n.nome||base[e].nome,p:acLimpa(n),salvo:true}:{nome:base[e].nome,p:base[e].p,salvo:false};});
     Object.keys(AC.nuvem).forEach(e=>{if(!U[e]&&e!==AC_ADMIN){const n=AC.nuvem[e];U[e]={nome:n.nome||e,p:acLimpa(n),salvo:true};}});
-    AC.orig=U;AC.atual=JSON.parse(JSON.stringify(U));if(!U[AC.sel])AC.sel=Object.keys(U)[0];}
+    AC.orig=U;AC.atual=JSON.parse(JSON.stringify(U));if(!U[AC.sel])AC.sel=Object.keys(U)[0]||null;}
   function acOuvirTodos(){if(AC.desliga||AC.ouvindo||!isAdminUser())return;AC.ouvindo=true;const N=acNuvem();
     if(!N){AC.carregado=true;acMontar();return;}
     AC.desliga=N.ouvir('acessos/usuarios',v=>{const m={};Object.values(v||{}).forEach(x=>{if(x&&x.email)m[String(x.email).toLowerCase()]=x;});
@@ -9536,6 +9556,22 @@ const APP_VER='v160';
       ()=>{AC.ouvindo=false;AC.desliga=null;AC.tentativas=(AC.tentativas||0)+1;
         if(AC.tentativas<=5){setTimeout(acOuvirTodos,1500*AC.tentativas);if(AC.leu)return;}
         AC.carregado=true;AC.erro=!AC.leu;if(!acSujo())acMontar();renderAcessos();});}
+  /* último acesso de cada conta e histórico das alterações (só leitura) */
+  function acOuvirExtras(){if(AC.extras||!isAdminUser())return;const N=acNuvem();if(!N)return;AC.extras=true;
+    N.ouvir('acessos/visto',v=>{AC.visto=v||{};renderAcessos();});
+    const hist=v=>{AC.hist=Object.values(v||{}).filter(x=>x&&x.em).sort((a,b)=>b.em-a.em).slice(0,15);renderAcessos();};
+    if(N.ultimos)N.ultimos('acessos/historico',15,hist);else N.ouvir('acessos/historico',hist);}
+  const acQuandoRel=t=>{if(!t)return '';const d=new Date(t),h=new Date(),dd=x=>new Date(x.getFullYear(),x.getMonth(),x.getDate()),dias=Math.round((dd(h)-dd(d))/864e5),hm=String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');
+    return dias===0?'hoje '+hm:dias===1?'ontem '+hm:String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')+(d.getFullYear()!==h.getFullYear()?'/'+d.getFullYear():'')+' '+hm;};
+  const acVisto=e=>{const v=(AC.visto||{})[acChave(e)];return v&&v.em?'último acesso: '+acQuandoRel(v.em):'ainda não entrou';};
+  /* remover: apaga a ficha da conta (ela perde todos os sistemas e gavetas) */
+  function acRemover(e){const u=AC.atual[e];if(!u)return;
+    const tira=()=>{delete AC.atual[e];delete AC.orig[e];delete AC.nuvem[e];if(AC.sel===e)AC.sel=Object.keys(AC.atual)[0]||null;renderAcessos();};
+    if(!u.salvo){tira();return;}
+    rmPergunta({titulo:'Remover o acesso de '+u.nome+'?',texto:e+' perde todos os sistemas e gavetas na hora. Dá para liberar de novo depois, pelo + Conta.',ok:'Remover acesso',cancelar:'Cancelar',aoOk:()=>{
+      const N=acNuvem();if(!N){toast('Sem conexão com a nuvem: nada foi removido.','err');return;}
+      const upd={};upd['acessos/usuarios/'+acChave(e)]=null;upd['acessos/historico/'+N.novaChave()]={em:Date.now(),por:CURRENT_EMAIL,alteracoes:[u.nome+' ('+e+'): acesso removido']};
+      Promise.resolve(N.gravar(upd)).then(()=>{tira();toast('Acesso de '+u.nome+' removido.');}).catch(err=>toast('Não foi removido: '+((err&&err.message)||'sem permissão'),'err'));}});}
   /* PEDIDOS DE AUTORIZAÇÃO (etapa 3): quem não tem a ação pede; o dono
      autoriza UMA vez (aquela ação, aquele item, por 24 h) ou nega. A
      autorização vai para acessos/usuarios/<conta>/libera (o banco confere)
@@ -9574,7 +9610,7 @@ const APP_VER='v160';
   function acSelo(ok){return '<span class="ac-selo'+(ok?' ok':'')+'" title="'+(ok?'Já funciona: quem não tem a ação vê \'Esta ação é do administrador\' e pode pedir autorização.':'Ainda sem proteção: entra nas próximas etapas.')+'">'+(ok?'funciona':'a implantar')+'</span>';}
   function renderAcessos(){
     const el=document.getElementById('ac-painel');if(!el||!isAdminUser())return;
-    acOuvirTodos();acOuvirPedidos();
+    acOuvirTodos();acOuvirPedidos();acOuvirExtras();
     /* sem os acessos salvos lidos, marcar aqui partiria do perfil inicial e o
        Salvar gravaria por cima do que está na nuvem: espera chegar */
     if(!AC.carregado){el.innerHTML='<p class="ac-nota">Carregando os acessos salvos…</p>';return;}
@@ -9585,12 +9621,14 @@ const APP_VER='v160';
       +acPedidosHTML()
       +'<div class="ac-grid"><div class="ac-users">'
       +'<button type="button" class="ac-user" disabled title="O administrador não perde o acesso pelo painel: todos os sistemas, não pode ser alterado aqui"><em>administrador</em><b>Everton</b><span>todos os sistemas</span></button>'
-      +us.map(k=>'<button type="button" class="ac-user'+(k===e?' on':'')+'" data-acuser="'+k+'"><b>'+escHtml(U[k].nome)+'</b><span>'+escHtml(k)+'</span><span>'+(U[k].salvo?'salvo':'perfil inicial, ainda não salvo')+'</span></button>').join('')
+      +us.map(k=>'<button type="button" class="ac-user'+(k===e?' on':'')+'" data-acuser="'+k+'"><b>'+escHtml(U[k].nome)+'</b><span>'+escHtml(k)+'</span><span>'+(U[k].salvo?acVisto(k):'nova, ainda não salva')+'</span></button>').join('')
       +'<button type="button" class="ac-user ac-add" data-acnovo><b>+ Conta</b><span>liberar para outro e-mail</span></button></div>'
-      +(AC.novo?'<div class="ac-bloco"><h4>Nova conta</h4><div class="ac-novo"><input id="ac-novo-email" type="email" placeholder="e-mail do login" autocomplete="off"><input id="ac-novo-nome" placeholder="nome (ex.: Compras)" autocomplete="off"><button type="button" class="btn-mini" data-acnovook>Adicionar</button></div><p class="ac-nota" style="margin:8px 0 0">A conta entra sem nenhum sistema. Marque o que ela pode usar e salve.</p></div>':'')
-      +(AC.erro?'<p class="ac-nota" style="color:var(--rm-perigo)">Não foi possível ler os acessos salvos (as regras novas já foram coladas no Firebase?). O painel mostra o perfil inicial.</p>':'')
+      +(AC.novo?'<div class="ac-bloco"><h4>Nova conta</h4><div class="ac-novo"><input id="ac-novo-email" type="email" placeholder="e-mail do login" autocomplete="off"><input id="ac-novo-nome" placeholder="nome (ex.: Compras)" autocomplete="off"><select id="ac-novo-copia" aria-label="Copiar o acesso de"><option value="">sem nenhum sistema</option>'+us.filter(k=>U[k].salvo).map(k=>'<option value="'+escHtml(k)+'">igual a '+escHtml(U[k].nome)+'</option>').join('')+'</select><button type="button" class="btn-mini" data-acnovook>Adicionar</button></div><p class="ac-nota" style="margin:8px 0 0">A conta entra sem nenhum sistema, ou com o mesmo acesso da conta escolhida. Ajuste o que precisar e salve.</p></div>':'')
+      +(AC.erro?'<p class="ac-nota" style="color:var(--rm-perigo)">Não foi possível ler os acessos salvos (as regras novas já foram coladas no Firebase?).</p>':'')
       +'<div>';
+    if(!u){el.innerHTML=h+'<p class="ac-nota">Nenhuma conta liberada ainda. Clique em <b>+ Conta</b> para liberar um e-mail.</p></div></div>'+acHistHTML();return;}
     const p=u.p;
+    h+='<div class="ac-conta"><div><b>'+escHtml(u.nome)+'</b><span>'+escHtml(e)+(u.salvo?' · '+acVisto(e):'')+'</span></div><button type="button" class="btn-mini ghost ac-perigo" data-acremove="'+escHtml(e)+'">Remover acesso</button></div>';
     h+='<div class="ac-bloco"><h4>Sistemas</h4><div class="ac-chips">'+acSistemas().map(s=>'<label class="ac-chk"><input type="checkbox" data-acsis="'+s.id+'"'+(p.sistemas[s.id]?' checked':'')+'> '+escHtml(s.name)+'</label>').join('')+'</div></div>';
     h+='<div class="ac-bloco"><h4>Gavetas</h4><div class="ac-chips">'+AC_GAVETAS.map(([g,n])=>'<label class="ac-chk"><input type="checkbox" data-acgav="'+g+'"'+(p.gavetas[g]?' checked':'')+'> '+n+'</label>').join('')+'</div></div>';
     const lib=acSistemas().filter(s=>p.sistemas[s.id]);
@@ -9604,9 +9642,13 @@ const APP_VER='v160';
       +'<button type="button" class="btn-mini" data-acsalva'+(D.length&&!AC.salvando?'':' disabled')+'>'+(AC.salvando?'Salvando…':'Salvar')+'</button></div>';
     if(AC.erroSalvar)h+='<p class="ac-nota" style="color:var(--rm-perigo)">Não foi salvo: '+escHtml(AC.erroSalvar)+'</p>';
     if(AC.dif&&D.length)h+='<div class="ac-dif" id="ac-dif">'+D.map(x=>escHtml(x.t)+': <span class="'+(x.v?'lib':'blq')+'">'+(x.v?'liberado':'bloqueado')+'</span>'+(x.prot?'':' <span class="ac-selo">a implantar</span>')).join('<br>')+'</div>';
-    h+='</div></div>';
+    h+='</div></div>'+acHistHTML();
     el.innerHTML=h;
   }
+  function acHistHTML(){const L=AC.hist||[];if(!L.length)return '';
+    return '<details class="ac-bloco ac-hist"><summary><h4>Histórico das alterações</h4><span class="ac-nota" style="margin:0">últimas '+L.length+'</span></summary>'
+      +L.map(x=>{const a=Array.isArray(x.alteracoes)?x.alteracoes:Object.values(x.alteracoes||{});
+        return '<div class="ac-hl"><time>'+acQuandoRel(x.em)+'</time><div>'+a.slice(0,6).map(t=>escHtml(String(t))).join('<br>')+(a.length>6?'<br><span class="ac-nota" style="margin:0">+ '+(a.length-6)+' alteração(ões)</span>':'')+'</div></div>';}).join('')+'</details>';}
   /* o que a pessoa mudou e ainda não confirmou (o perfil inicial sem mudança não conta) */
   function acSujo(){if(!AC.orig||!AC.atual)return false;return Object.keys(AC.atual).some(e=>!AC.orig[e]||(AC.orig[e].novo&&!AC.atual[e].salvo)||JSON.stringify(acLimpa(AC.atual[e].p))!==JSON.stringify(acLimpa(AC.orig[e].p)));}
   function acDiferencas(){const out=[];if(!AC.orig)return out;
@@ -9626,9 +9668,11 @@ const APP_VER='v160';
     if(t.closest('[data-acnovook]')){const em=String((document.getElementById('ac-novo-email')||{}).value||'').trim().toLowerCase(),nm=String((document.getElementById('ac-novo-nome')||{}).value||'').trim();
       if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(em)){toast('Escreva o e-mail do login da conta.','err');return;}
       if(em===AC_ADMIN||AC.atual[em]){toast('Essa conta já está na lista.','err');return;}
-      AC.atual[em]={nome:nm||em.split('@')[0],p:{sistemas:{},gavetas:{},ops:{},acoes:{}},salvo:false};AC.orig[em]={nome:AC.atual[em].nome,p:{sistemas:{},gavetas:{},ops:{},acoes:{}},salvo:false,novo:true};
+      const cp=String((document.getElementById('ac-novo-copia')||{}).value||''),base=cp&&AC.atual[cp]?acLimpa(AC.atual[cp].p):{sistemas:{},gavetas:{},ops:{},acoes:{}};
+      AC.atual[em]={nome:nm||em.split('@')[0],p:base,salvo:false};AC.orig[em]={nome:AC.atual[em].nome,p:{sistemas:{},gavetas:{},ops:{},acoes:{}},salvo:false,novo:true};
       AC.sel=em;AC.novo=false;renderAcessos();return;}
     if(t.closest('[data-acsalva]')){acSalvar();return;}
+    const rm=t.closest('[data-acremove]');if(rm){acRemover(rm.dataset.acremove);return;}
     const au=t.closest('[data-acautoriza]');if(au){au.disabled=true;acResponde(au.dataset.acautoriza,true);return;}
     const ng=t.closest('[data-acnega]');if(ng){ng.disabled=true;acResponde(ng.dataset.acnega,false);return;}});
   /* grava só as contas que mudaram (ou que ainda estão no perfil inicial e
@@ -9650,7 +9694,7 @@ const APP_VER='v160';
     else if(d.acop){const [s,k]=d.acop.split('|');p.ops[s][k]=t.checked;}
     else if(d.acacao){const [s,k]=d.acacao.split('|');p.acoes[s][k]=t.checked;}
     renderAcessos();});
-  window.rmAcessos={estado:()=>AC,diferencas:acDiferencas,sujo:acSujo,desfaz:()=>{AC.atual=JSON.parse(JSON.stringify(AC.orig));Object.keys(AC.atual).forEach(k=>{if(AC.orig[k].novo&&!AC.orig[k].salvo){delete AC.atual[k];delete AC.orig[k];}});if(!AC.atual[AC.sel])AC.sel=Object.keys(AC.atual)[0];AC.dif=false;},render:renderAcessos,salvar:acSalvar,responde:acResponde,pedidos:acPedidosAbertos,ouvirPedidos:acOuvirPedidos,reinicia:()=>{if(AC.desliga)try{AC.desliga();}catch(e){}AC={orig:null,atual:null,sel:'engenharia@rmestruturas.com.br',dif:false,nuvem:{},carregado:false,desliga:null,novo:false};}};
+  window.rmAcessos={estado:()=>AC,diferencas:acDiferencas,sujo:acSujo,desfaz:()=>{AC.atual=JSON.parse(JSON.stringify(AC.orig));Object.keys(AC.atual).forEach(k=>{if(AC.orig[k].novo&&!AC.orig[k].salvo){delete AC.atual[k];delete AC.orig[k];}});if(!AC.atual[AC.sel])AC.sel=Object.keys(AC.atual)[0];AC.dif=false;},render:renderAcessos,salvar:acSalvar,responde:acResponde,pedidos:acPedidosAbertos,ouvirPedidos:acOuvirPedidos,reinicia:()=>{if(AC.desliga)try{AC.desliga();}catch(e){}AC={orig:null,atual:null,sel:null,dif:false,nuvem:{},carregado:false,desliga:null,novo:false};}};
   function setSettingsTab(t){
     if (!isAdminUser() && t !== 'aparencia') t = 'aparencia';
     document.querySelectorAll('.st-tab').forEach(b => b.classList.toggle('active', b.getAttribute('data-stab')===t));
@@ -14227,7 +14271,7 @@ const APP_VER='v160';
   /* "Papel RM" (plano de fundo do Windows): o papel de parede da proteção, escuro com o símbolo à direita */
   .wallpaper-preview.wp-papelrm { background:#111214; }
   .wallpaper-preview.wp-papelrm i { left:auto;right:12%;width:34px;height:42px;opacity:1;background:#F24618; }
-  .link-btn { border:0;background:none;padding:0;font:inherit;color:var(--accent-light,var(--rm-laranja));cursor:pointer;text-decoration:underline; }
+  .link-btn { border:0;background:none;padding:0;font:inherit;color:var(--text);text-underline-offset:2px;cursor:pointer;text-decoration:underline; }
   .wallpaper-preview.wp-trama i { left:auto;right:0;top:auto;bottom:0;transform:none;width:96px;height:96px;
     -webkit-mask:var(--wm-canto-marca) center/100% 100% no-repeat; mask:var(--wm-canto-marca) center/100% 100% no-repeat;opacity:1; }
   /* a amostra do "canto" tambem leva o simbolo pro canto, pra amostra
