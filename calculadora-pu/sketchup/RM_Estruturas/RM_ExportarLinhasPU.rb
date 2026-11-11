@@ -17,7 +17,7 @@ require 'json'
 
 module RM_LinhasPU
 
-  VERSAO = '1.1.0'
+  VERSAO = '1.2.0'
 
   INCHES_TO_M  = 0.0254
   ADJACENCIA_M = 0.50
@@ -98,6 +98,44 @@ module RM_LinhasPU
   def self.m(v); (v * INCHES_TO_M).round(4); end
   def self.pt(x, y, z); [m(x), m(y), m(z)]; end
 
+
+  # ── JUNTA DA BASE DA PLACA: só onde ela encontra outra peça ──
+  # "Essa linha que o sistema leu sem encontro adjacente com nada além do
+  # buraco está errada: se não tem encontro de juntas, considerar a linha de
+  # PU só até o final da placa inferior." A linha da base da placa vale nos
+  # trechos em que há placa (ou viga) logo abaixo, encostada. Placa no nível
+  # mais baixo (sobre o piso/baldrame) leva a base inteira. Placa sem nada
+  # encostado embaixo mas com placa mais baixa na mesma parede está por cima
+  # de um vão: não leva linha. Sem nenhuma placa embaixo na parede: inteira
+  # (apoiada em algo que não foi modelado). Volta [a0,a1] no eixo da placa.
+  TOL_JUNTA_M = 0.05
+  def self.trechos_base_placa(p, placas, vigas)
+    x0,x1,y0,y1,z0,_z1 = p[:bounds]
+    em_x = (x1-x0).abs >= (y1-y0).abs
+    a0, a1 = em_x ? [x0, x1] : [y0, y1]
+    tol = TOL_JUNTA_M / INCHES_TO_M; adj = ADJACENCIA_M / INCHES_TO_M
+    base = placas.map { |q| q[:bounds][4] }.min
+    return [[a0, a1]] if z0 <= base + tol
+    perto = lambda do |b|
+      g = em_x ? [b[2]-y1, y0-b[3], 0].max : [b[0]-x1, x0-b[1], 0].max
+      g <= adj
+    end
+    ao_longo = lambda { |b| em_x ? [[b[0], a0].max, [b[1], a1].min] : [[b[2], a0].max, [b[3], a1].min] }
+    apoios = []; abaixo = false
+    (placas + vigas).each do |q|
+      next if q.equal?(p)
+      b = q[:bounds]
+      next unless perto.call(b)
+      i0, i1 = ao_longo.call(b)
+      next unless i1 > i0
+      if (b[5] - z0).abs <= tol then apoios << [i0, i1]
+      elsif b[5] < z0 then abaixo = true
+      end
+    end
+    return merge_intervals(apoios) unless apoios.empty?
+    abaixo ? [] : [[a0, a1]]
+  end
+
   # ── Gera linhas de PU em coordenadas reais ────────────────
   def self.gerar_linhas(pilares, placas, vigas)
     linhas = []; id = 0; adj = ADJACENCIA_M / INCHES_TO_M
@@ -108,19 +146,20 @@ module RM_LinhasPU
       dx = (x1-x0).abs; dy = (y1-y0).abs
       z_base = z0   # base da placa = onde o PU é aplicado
 
-      if dx >= dy   # placa estendida em X
-        cy = (y0+y1)/2.0
-        p1 = pt(x0, cy, z_base); p2 = pt(x1, cy, z_base)
-        ml = (dx * INCHES_TO_M).round(3)
-      else           # placa estendida em Y
-        cx = (x0+x1)/2.0
-        p1 = pt(cx, y0, z_base); p2 = pt(cx, y1, z_base)
-        ml = (dy * INCHES_TO_M).round(3)
+      # um trecho por encontro de junta embaixo (ver trechos_base_placa)
+      trechos_base_placa(p, placas, vigas).each do |a0, a1|
+        if dx >= dy   # placa estendida em X
+          cy = (y0+y1)/2.0
+          p1 = pt(a0, cy, z_base); p2 = pt(a1, cy, z_base)
+        else           # placa estendida em Y
+          cx = (x0+x1)/2.0
+          p1 = pt(cx, a0, z_base); p2 = pt(cx, a1, z_base)
+        end
+        ml = ((a1-a0) * INCHES_TO_M).round(3)
+        next if ml < 0.05
+        linhas << { id: id+=1, nome: p[:nome], tipo: 'Placa',
+                    pt1: p1, pt2: p2, ml: ml, app: 'ext_int', incluir: true }
       end
-
-      next if ml < 0.05
-      linhas << { id: id+=1, nome: p[:nome], tipo: 'Placa',
-                  pt1: p1, pt2: p2, ml: ml, app: 'ext_int', incluir: true }
     end
 
     # ── PILARES: segmentos verticais por face com placa ───────

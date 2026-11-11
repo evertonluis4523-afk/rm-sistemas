@@ -214,12 +214,42 @@ module RM_ExportarPU
     merge_intervals(covered).sum { |a, b| (b - a) * INCHES_TO_M }.round(3)
   end
 
-  # ── ML da PLACA — extensão horizontal ─────────────────────
-  def self.ml_placa(bounds)
-    x0, x1, y0, y1 = bounds
-    wx = (x1 - x0).abs * INCHES_TO_M
-    wy = (y1 - y0).abs * INCHES_TO_M
-    [wx, wy].max.round(3)
+
+  # ── JUNTA DA BASE DA PLACA: só onde ela encontra outra peça ──
+  # "Essa linha que o sistema leu sem encontro adjacente com nada além do
+  # buraco está errada: se não tem encontro de juntas, considerar a linha de
+  # PU só até o final da placa inferior." A linha da base da placa vale nos
+  # trechos em que há placa (ou viga) logo abaixo, encostada. Placa no nível
+  # mais baixo (sobre o piso/baldrame) leva a base inteira. Placa sem nada
+  # encostado embaixo mas com placa mais baixa na mesma parede está por cima
+  # de um vão: não leva linha. Sem nenhuma placa embaixo na parede: inteira
+  # (apoiada em algo que não foi modelado). Volta [a0,a1] no eixo da placa.
+  TOL_JUNTA_M = 0.05
+  def self.trechos_base_placa(p, placas, vigas)
+    x0,x1,y0,y1,z0,_z1 = p[:bounds]
+    em_x = (x1-x0).abs >= (y1-y0).abs
+    a0, a1 = em_x ? [x0, x1] : [y0, y1]
+    tol = TOL_JUNTA_M / INCHES_TO_M; adj = ADJACENCIA_M / INCHES_TO_M
+    base = placas.map { |q| q[:bounds][4] }.min
+    return [[a0, a1]] if z0 <= base + tol
+    perto = lambda do |b|
+      g = em_x ? [b[2]-y1, y0-b[3], 0].max : [b[0]-x1, x0-b[1], 0].max
+      g <= adj
+    end
+    ao_longo = lambda { |b| em_x ? [[b[0], a0].max, [b[1], a1].min] : [[b[2], a0].max, [b[3], a1].min] }
+    apoios = []; abaixo = false
+    (placas + vigas).each do |q|
+      next if q.equal?(p)
+      b = q[:bounds]
+      next unless perto.call(b)
+      i0, i1 = ao_longo.call(b)
+      next unless i1 > i0
+      if (b[5] - z0).abs <= tol then apoios << [i0, i1]
+      elsif b[5] < z0 then abaixo = true
+      end
+    end
+    return merge_intervals(apoios) unless apoios.empty?
+    abaixo ? [] : [[a0, a1]]
   end
 
   # ── Sobreposição entre dois bounding boxes (0.0 a 1.0) ────
@@ -281,7 +311,8 @@ module RM_ExportarPU
 
     # ── Placas ──
     placas.each do |r|
-      ml    = ml_placa(r[:bounds])
+      # a base só conta onde encontra outra peça (trechos_base_placa)
+      ml    = trechos_base_placa(r, placas, vigas).sum { |a0, a1| (a1 - a0) * INCHES_TO_M }.round(3)
       next if ignorar?(r[:nome], ml)
       chave = "#{r[:nome]}|#{ml.round(2)}"
       acum[chave] ||= { nome: r[:nome], tipo: 'Placa', ml: ml,

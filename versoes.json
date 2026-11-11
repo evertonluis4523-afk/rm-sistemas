@@ -12,15 +12,15 @@
   "versao": "v105"
  },
  "calculadora-pu": {
-  "commit": "f6541f3",
-  "versao": "v113"
+  "commit": "cb8cfc2",
+  "versao": "v114"
  },
  "calculo_pre_moldados": {
   "commit": "77065bc",
   "versao": "v50"
  },
  "central_rm": {
-  "commit": "aa2dba6",
+  "commit": "fb631d4",
   "versao": "v163"
  },
  "controle_cheques": {

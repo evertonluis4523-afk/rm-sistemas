@@ -12,8 +12,8 @@
      ASSETS (ex.: o jsPDF da Telha, guardado para funcionar sem internet).
    Medido: com este arquivo a versão publicada aparece na próxima abertura;
    com o anterior, e sem service worker nenhum, voltava a versão velha. */
-const CACHE = 'controle-pu-rm-v113';
-const ASSETS = ['./', './index.html', './medicao.html', './painel.html', './three.module.min.js', './addons/controls/OrbitControls.js', './manifest.webmanifest', './rm-logo.svg', './icon-192.png', './icon-512.png', './icon-maskable-512.png', './favicon.png'];
+const CACHE = 'controle-pu-rm-v114';
+const ASSETS = ['./', './index.html', './medicao.html', './painel.html', './three.module.min.js', './addons/controls/OrbitControls.js', './addons/lines/LineSegments2.js', './addons/lines/LineMaterial.js', './addons/lines/LineSegmentsGeometry.js', './manifest.webmanifest', './rm-logo.svg', './icon-192.png', './icon-512.png', './icon-maskable-512.png', './favicon.png'];
 const PAGINA = './index.html';
 
 self.addEventListener('install', e => {
