@@ -17,7 +17,7 @@ module RM_Estruturas
       UI.messagebox("Erro ao alterar leitura: #{erro.message}")
       return
     end
-    UI.messagebox(valor ? 'Seleção ignorada no PU. Exporte novamente os JSONs.' : 'Seleção habilitada no PU. Exporte novamente os JSONs.')
+    UI.messagebox(valor ? 'Seleção ignorada no PU. Exporte de novo as Linhas PU.' : 'Seleção habilitada no PU. Exporte de novo as Linhas PU.')
   end
 
   unless file_loaded?(__FILE__)
@@ -25,10 +25,6 @@ module RM_Estruturas
     SCRIPTS_DIR = File.dirname(__FILE__)
 
     menu = UI.menu('Extensões').add_submenu('RM Estruturas PU')
-
-    menu.add_item('📊  Exportar Medição PU  (→ Sistema PU)') do
-      load File.join(SCRIPTS_DIR, 'RM_ExportarPU.rb')
-    end
 
     menu.add_item('📏  Exportar Linhas PU  (→ Viewer 3D)') do
       load File.join(SCRIPTS_DIR, 'RM_ExportarLinhasPU.rb')
@@ -46,11 +42,9 @@ module RM_Estruturas
     menu.add_item('ℹ️  Sobre') do
       UI.messagebox(
         "RM Estruturas — Controle de PU\n\n" \
-        "Scripts disponíveis:\n" \
-        "  • Exportar Medição PU      → gera PU_*.json para o sistema\n" \
-        "  • Exportar Linhas PU       → gera *_linhasPU.json para o viewer 3D\n" \
+        "Exportar Linhas PU → gera *_linhasPU.json para o viewer 3D\n" \
         "    (leva também as peças e a vista atual do SketchUp)\n\n" \
-        "Para usar: abra o modelo → Extensões → RM Estruturas PU → escolha a ação.\n\n" \
+        "Para usar: abra o modelo → Extensões → RM Estruturas PU → Exportar Linhas PU.\n\n" \
         "RM Estruturas Pré-Fabricadas · Estrela/RS"
       )
     end

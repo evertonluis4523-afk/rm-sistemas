@@ -2220,7 +2220,7 @@ else comeca();
         <div class="ic">📏</div>
         <p>Carregue o arquivo <b>*_linhasPU.json</b><br>gerado pelo plugin do SketchUp.</p>
         <p><button type="button" class="v3b v3carrega" onclick="$('v3file').click()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 9l5-5 5 5"/><path d="M12 4v12"/></svg>Carregar arquivo</button></p>
-        <p><a class="v3plugin" href="sketchup/RM_Estruturas_PU.rbz?v=1.3.5" download="RM_Estruturas_PU.rbz">⬇ Plugin do SketchUp (.rbz)</a><br>
+        <p><a class="v3plugin" href="sketchup/RM_Estruturas_PU.rbz?v=1.3.6" download="RM_Estruturas_PU.rbz">⬇ Plugin do SketchUp (.rbz)</a><br>
           <span class="v3plugin-dica">SketchUp → Extensões → Gerenciador de extensões → Instalar extensão</span></p>
       </div>
       <div id="v3d-list"></div>
@@ -2633,7 +2633,7 @@ function v3Salva(){
 /* TOPO DA VIGA x TOPO DA PAREDE embaixo do piso (laje): a viga do mezanino
    fica com o piso apoiado em cima e o PU vai nos 2 lados dela (ext_int);
    só o topo da placa de parede (a laje encostando por cima) é 1 lado, a
-   linha interna embaixo da laje. O plugin 1.3.5 manda os dois com
+   linha interna embaixo da laje. O plugin 1.3.5 mandava os dois com
    junta 'laje_inferior' -- a viga volta a ser Viga aqui ('viga_superior'). */
 function v3EhTopoViga(l,pecas){
   const nome=String(l.nome||''); if(!/·\s*topo\s*$/i.test(nome)) return false;

@@ -18,7 +18,7 @@ load File.join(File.dirname(__FILE__), 'deteccao_pu.rb')
 
 module RM_LinhasPU
 
-  VERSAO = '1.3.5'
+  VERSAO = '1.3.6'
 
   INCHES_TO_M  = 0.0254
   ADJACENCIA_M = 0.50
@@ -324,7 +324,8 @@ module RM_LinhasPU
       else
         vc = (vx0+vx1)/2.0; p1 = pt(vc,a0,vz1); p2 = pt(vc,a1,vz1)
       end
-      linhas << { id: id+=1, nome: "#{viga[:nome]} · topo", tipo: 'Viga', junta: 'laje_inferior',
+      # a viga do mezanino leva PU nos 2 lados (ext_int)
+      linhas << { id: id+=1, nome: "#{viga[:nome]} · topo", tipo: 'Viga', junta: 'viga_superior',
                   pt1: p1, pt2: p2, ml: ml, app: 'ext_int', incluir: true }
     end
 
@@ -338,8 +339,9 @@ module RM_LinhasPU
       else
         c = (x0+x1)/2.0; p1 = pt(c,a0,z1); p2 = pt(c,a1,z1)
       end
-      linhas << { id: id+=1, nome: "#{pl[:nome]} · topo", tipo: 'Placa', junta: 'laje_inferior',
-                  pt1: p1, pt2: p2, ml: ml, app: 'ext_int', incluir: true }
+      # embaixo da laje o PU vai só na linha interna: 1 lado (int1)
+      linhas << { id: id+=1, nome: "#{pl[:nome]} · topo", tipo: 'Laje', junta: 'laje_inferior',
+                  pt1: p1, pt2: p2, ml: ml, app: 'int1', incluir: true }
     end
 
     linhas
