@@ -1366,6 +1366,7 @@ var RM_FONTE="@font-face{font-family:'Satoshi';src:url(data:font/woff2;base64,d0
   .ac-user{min-width:0;display:flex;flex-direction:column;gap:2px;text-align:left;padding:10px 12px;border:1px solid var(--divider);border-radius:var(--rm-raio);background:var(--card);color:var(--text);font:inherit;cursor:pointer}
   .ac-conta{display:flex;align-items:center;gap:10px;justify-content:space-between;padding:10px 12px;margin-bottom:10px;border:1px solid var(--divider);border-radius:var(--rm-raio);background:var(--card)}
   .ac-conta>div{min-width:0;display:flex;flex-direction:column;gap:2px}.ac-conta b{font-size:14px}.ac-conta span{font-size:12px;color:var(--text-muted);overflow-wrap:anywhere}
+  .ac-conta-bts{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
   .ac-perigo{color:var(--rm-perigo)!important;border-color:color-mix(in srgb,var(--rm-perigo) 40%,transparent)!important;flex:none}
   .ac-hist summary{display:flex;align-items:baseline;gap:10px;cursor:pointer;list-style:none}.ac-hist summary::-webkit-details-marker{display:none}.ac-hist summary h4{margin:0}
   .ac-hist summary::before{content:'▸';color:var(--text-muted)}.ac-hist[open] summary::before{content:'▾'}
@@ -2592,6 +2593,8 @@ var RM_FONTE="@font-face{font-family:'Satoshi';src:url(data:font/woff2;base64,d0
   .lock-trocar, .lock-outra, .lock-voltar { font: inherit; cursor: pointer; border: 0; background: none; }
   .lock-trocar { flex: none; font-size: 13px; font-weight: 700; color: #ff8a66; padding: 6px 11px; border-radius: 999px; background: rgba(242,70,24,.14); }
   body[data-theme="claro"] .lock-trocar { color: #C1310B; }
+  .lock-esqueci { margin-top: 2px; min-height: 40px; font-size: 13px; font-weight: 600; color: var(--lk-nota); text-decoration: underline; text-underline-offset: 2px; background: none; border: 0; cursor: pointer; font-family: inherit; }
+  .lock-error.ok { color: var(--lk-nota); }
   .lock-outra { margin-top: 4px; min-height: 44px; font-size: 14px; font-weight: 600; color: var(--lk-nota); }
   .lock-outra b { color: #ff8a66; font-weight: 700; }
   body[data-theme="claro"] .lock-outra b { color: #C1310B; }
@@ -3993,6 +3996,7 @@ try { var _e = localStorage.getItem('rm_estilo_ultimo'); if (_e === 'viva' || _e
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
     </button>
     <button type="button" class="lock-outra" onclick="loginOutraConta()">Não é você? <b>Entrar com outra conta</b></button>
+    <button type="button" class="lock-esqueci" id="lock-esqueci" onclick="loginEsqueciSenha()">Esqueci minha senha</button>
     <button type="button" class="lock-voltar" id="lock-voltar" onclick="loginVoltarLembrado()"></button>
   </div>
   <div class="lock-foot">RM Estruturas © 2026 · Todos os direitos reservados</div>
@@ -4814,7 +4818,7 @@ try { var _e = localStorage.getItem('rm_estilo_ultimo'); if (_e === 'viva' || _e
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js" crossorigin="anonymous"></script>
 
 <script>/* versão publicada (PADRAO_RM.md §3): sobe a cada publicação, junto com o CACHE do sw.js */
-const APP_VER='v161';
+const APP_VER='v162';
 </script>
 <script>
   /* ===== LOGIN (Firebase Authentication) =====
@@ -5010,6 +5014,27 @@ const APP_VER='v161';
     else { if(b.dataset.rotulo!=null){ b.innerHTML=b.dataset.rotulo; delete b.dataset.rotulo; }
            b.classList.remove('ocupado'); b.disabled=false; }
   }
+  /* troca de senha: o Firebase manda ao e-mail um link para criar a senha
+     nova (a Central não vê nem guarda senha). Serve para quem esqueceu, na
+     tela de entrada, e para o dono mandar pelo painel de contas. */
+  function enviarTrocaSenha(email) {
+    email = String(email || '').trim().toLowerCase();
+    if (window.__rmResetSenha) return Promise.resolve(window.__rmResetSenha(email));
+    try { auth.languageCode = 'pt-BR'; } catch (e) { }
+    return auth.sendPasswordResetEmail(email);
+  }
+  window.enviarTrocaSenha = enviarTrocaSenha;
+  function loginEsqueciSenha() {
+    const lembrado = loginLembrado(), modoLembrado = document.getElementById('lock-screen').classList.contains('modo-lembrado');
+    const email = (modoLembrado && lembrado) ? lembrado.email : document.getElementById('lock-email').value.trim();
+    const err = document.getElementById('lock-error'); err.classList.remove('ok');
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) { err.textContent = 'Escreva o seu e-mail acima e clique de novo em "Esqueci minha senha".'; return; }
+    const bt = document.getElementById('lock-esqueci'); if (bt) bt.disabled = true;
+    enviarTrocaSenha(email).then(() => { err.classList.add('ok'); err.textContent = 'Enviamos para ' + email + ' um link para criar a senha nova. Veja também a caixa de spam.'; })
+      .catch(e => { const c = (e && e.code) || ''; err.textContent = /user-not-found/.test(c) ? 'Este e-mail ainda não tem login. Fale com o administrador.' : /too-many/.test(c) ? 'Muitas tentativas. Espere alguns minutos e tente de novo.' : 'Não deu para enviar agora. Confira a internet e tente de novo.'; })
+      .finally(() => { if (bt) bt.disabled = false; });
+  }
+  window.loginEsqueciSenha = loginEsqueciSenha;
   function doLogin() {
     const lembrado = loginLembrado();
     const modoLembrado = document.getElementById('lock-screen').classList.contains('modo-lembrado');
@@ -9564,6 +9589,13 @@ const APP_VER='v161';
   const acQuandoRel=t=>{if(!t)return '';const d=new Date(t),h=new Date(),dd=x=>new Date(x.getFullYear(),x.getMonth(),x.getDate()),dias=Math.round((dd(h)-dd(d))/864e5),hm=String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');
     return dias===0?'hoje '+hm:dias===1?'ontem '+hm:String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')+(d.getFullYear()!==h.getFullYear()?'/'+d.getFullYear():'')+' '+hm;};
   const acVisto=e=>{const v=(AC.visto||{})[acChave(e)];return v&&v.em?'último acesso: '+acQuandoRel(v.em):'ainda não entrou';};
+  /* troca de senha pelo painel: o link vai para o e-mail da conta; a senha
+     nova é a pessoa que cria (ninguém mais vê) */
+  function acTrocaSenha(e){const u=AC.atual[e]||{nome:e};
+    rmPergunta({titulo:'Enviar troca de senha para '+u.nome+'?',texto:'Chega em '+e+' um e-mail com o link para criar a senha nova. A senha atual continua valendo até a pessoa trocar.',ok:'Enviar',cancelar:'Cancelar',aoOk:()=>{
+      enviarTrocaSenha(e).then(()=>{toast('Link de troca de senha enviado para '+e+'.');const N=acNuvem();
+        if(N)try{const h={};h['acessos/historico/'+N.novaChave()]={em:Date.now(),por:CURRENT_EMAIL,alteracoes:[u.nome+' ('+e+'): link de troca de senha enviado']};Promise.resolve(N.gravar(h)).catch(()=>{});}catch(x){}})
+      .catch(err=>{const c=(err&&err.code)||'';toast(/user-not-found/.test(c)?'Este e-mail ainda não tem login criado no Firebase.':'Não foi enviado: '+((err&&err.message)||'tente de novo'),'err');});}});}
   /* remover: apaga a ficha da conta (ela perde todos os sistemas e gavetas) */
   function acRemover(e){const u=AC.atual[e];if(!u)return;
     const tira=()=>{delete AC.atual[e];delete AC.orig[e];delete AC.nuvem[e];if(AC.sel===e)AC.sel=Object.keys(AC.atual)[0]||null;renderAcessos();};
@@ -9628,7 +9660,7 @@ const APP_VER='v161';
       +'<div>';
     if(!u){el.innerHTML=h+'<p class="ac-nota">Nenhuma conta liberada ainda. Clique em <b>+ Conta</b> para liberar um e-mail.</p></div></div>'+acHistHTML();return;}
     const p=u.p;
-    h+='<div class="ac-conta"><div><b>'+escHtml(u.nome)+'</b><span>'+escHtml(e)+(u.salvo?' · '+acVisto(e):'')+'</span></div><button type="button" class="btn-mini ghost ac-perigo" data-acremove="'+escHtml(e)+'">Remover acesso</button></div>';
+    h+='<div class="ac-conta"><div><b>'+escHtml(u.nome)+'</b><span>'+escHtml(e)+(u.salvo?' · '+acVisto(e):'')+'</span></div><div class="ac-conta-bts"><button type="button" class="btn-mini ghost" data-acsenha="'+escHtml(e)+'" title="O Firebase manda a este e-mail um link para a pessoa criar a senha nova">Enviar troca de senha</button><button type="button" class="btn-mini ghost ac-perigo" data-acremove="'+escHtml(e)+'">Remover acesso</button></div></div>';
     h+='<div class="ac-bloco"><h4>Sistemas</h4><div class="ac-chips">'+acSistemas().map(s=>'<label class="ac-chk"><input type="checkbox" data-acsis="'+s.id+'"'+(p.sistemas[s.id]?' checked':'')+'> '+escHtml(s.name)+'</label>').join('')+'</div></div>';
     h+='<div class="ac-bloco"><h4>Gavetas</h4><div class="ac-chips">'+AC_GAVETAS.map(([g,n])=>'<label class="ac-chk"><input type="checkbox" data-acgav="'+g+'"'+(p.gavetas[g]?' checked':'')+'> '+n+'</label>').join('')+'</div></div>';
     const lib=acSistemas().filter(s=>p.sistemas[s.id]);
@@ -9673,6 +9705,7 @@ const APP_VER='v161';
       AC.sel=em;AC.novo=false;renderAcessos();return;}
     if(t.closest('[data-acsalva]')){acSalvar();return;}
     const rm=t.closest('[data-acremove]');if(rm){acRemover(rm.dataset.acremove);return;}
+    const ts=t.closest('[data-acsenha]');if(ts){acTrocaSenha(ts.dataset.acsenha);return;}
     const au=t.closest('[data-acautoriza]');if(au){au.disabled=true;acResponde(au.dataset.acautoriza,true);return;}
     const ng=t.closest('[data-acnega]');if(ng){ng.disabled=true;acResponde(ng.dataset.acnega,false);return;}});
   /* grava só as contas que mudaram (ou que ainda estão no perfil inicial e
