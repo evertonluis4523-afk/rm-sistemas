@@ -4773,7 +4773,7 @@ else poe();
      - quem não tem vê "Esta ação é do administrador" e pode PEDIR
        AUTORIZAÇÃO, com o motivo (acessos/pedidos/<conta>). O dono autoriza
        na Central, uma vez, para aquela ação e aquele item; a pessoa refaz a
-       ação e a autorização é gasta.
+       ação e a autorização é gasta (na tela e, 1 minuto depois, no banco).
    Conta sem cadastro salvo na Central segue como antes (tudo liberado) até
    o dono salvar. Sem nuvem (modo local), não há o que restringir. As
    regras do banco recusam o que dá para recusar lá (ferramentas/
@@ -4799,18 +4799,18 @@ else poe();
   /* liga quando o sistema já iniciou o Firebase (cada um inicia na sua hora) */
   var liga = setInterval(function () {
     var T = teste();
-    if (T) { clearInterval(liga); E.email = String(T.email || '').toLowerCase(); E.k = chave(E.email); E.reg = T.reg || null; E.pedidos = T.pedidos || {}; E.carregado = true; avisa(); return; }
+    if (T) { clearInterval(liga); E.email = String(T.email || '').toLowerCase(); E.k = chave(E.email); E.reg = T.reg || null; E.pedidos = T.pedidos || {}; E.leuPedidos = true; E.carregado = true; avisa(); limpaGastas(); return; }
     var d = db(); if (!d) return;
     clearInterval(liga);
     var desl = [];
     firebase.auth().onAuthStateChanged(function (u) {
       desl.forEach(function (f) { try { f(); } catch (e) { } }); desl = [];
-      E.reg = null; E.pedidos = {}; E.carregado = false;
+      E.reg = null; E.pedidos = {}; E.carregado = false; E.leuPedidos = false;
       if (!u || !u.email) { E.email = ''; E.k = ''; return; }
       E.email = String(u.email).toLowerCase(); E.k = chave(E.email);
       if (E.email === ADM) { E.carregado = true; avisa(); return; }
       var r1 = d.ref('acessos/usuarios/' + E.k), r2 = d.ref('acessos/pedidos/' + E.k);
-      var f1 = function (s) { E.reg = s.val(); E.carregado = true; avisa(); }, f2 = function (s) { E.pedidos = s.val() || {}; avisa(); };
+      var f1 = function (s) { E.reg = s.val(); E.carregado = true; avisa(); limpaGastas(); }, f2 = function (s) { E.pedidos = s.val() || {}; E.leuPedidos = true; avisa(); limpaGastas(); };
       /* sem as regras novas a leitura é recusada: fica como antes (liberado) */
       r1.on('value', f1, function () { E.reg = null; E.carregado = true; avisa(); });
       r2.on('value', f2, function () { });
@@ -4820,6 +4820,25 @@ else poe();
   setTimeout(function () { clearInterval(liga); }, 120000);
 
   function local() { return !teste() && !db(); }
+  /* a liberação no banco vale 24 h; gasta a autorização na tela, ela é
+     fechada também no banco 1 minuto depois (dá tempo de a ação gravar
+     antes). Só fecha quando o pedido daquela liberação (mesmo "ate") já foi
+     usado -- e também ao abrir o sistema, se a página fechou antes. */
+  function gasta(s, a) {
+    var lib = Number((((E.reg || {}).libera || {})[s] || {})[a] || 0); if (!(lib > Date.now())) return false;
+    var ps = Object.keys(E.pedidos || {}).map(function (i) { return E.pedidos[i]; }).filter(function (p) { return p && p.sistema === s && p.acao === a && Number(p.ate) === lib; });
+    return ps.length > 0 && ps.every(function (p) { return p.usado === true; });
+  }
+  function fecha(s, a) {
+    if (!gasta(s, a)) return;
+    grava('acessos/usuarios/' + E.k + '/libera/' + s + '/' + a, null).catch(function () { });
+  }
+  var usadasAgora = {};   /* gastas nesta sessão: quem fecha é o relógio, depois que a ação gravou */
+  function limpaGastas() {
+    if (!E.leuPedidos || !E.reg || !E.reg.libera || E.email === ADM) return;
+    Object.keys(E.reg.libera).forEach(function (s) { Object.keys(E.reg.libera[s] || {}).forEach(function (a) { if (!usadasAgora[s + '|' + a] && gasta(s, a)) fecha(s, a); }); });
+  }
+  function atrasoFecha() { var T = teste(); return T && T.atrasoFecha != null ? T.atrasoFecha : 60000; }
   function nomeAcao(s, a) { return (NOMES[s] && NOMES[s][a]) || a; }
   /* autorização do dono ainda não gasta para esta ação (e este item) */
   function liberacao(s, a, alvo) {
@@ -4905,9 +4924,11 @@ else poe();
     if (dono || semReg || (((E.reg.acoes || {})[s]) || {})[a] === true) { registra(s, a, info, dono ? 'administrador' : semReg ? 'sem-cadastro' : 'permitido'); return true; }
     var lib = liberacao(s, a, info.alvo);
     if (lib) {
+      usadasAgora[s + '|' + a] = 1;   /* antes de gravar: o Firebase avisa a escuta na hora */
       grava('acessos/pedidos/' + E.k + '/' + lib, { usado: true, usadoEm: Date.now() }, 'update').catch(function () { });
       if (E.pedidos[lib]) E.pedidos[lib].usado = true;
       registra(s, a, info, 'autorizacao');
+      setTimeout(function () { delete usadasAgora[s + '|' + a]; fecha(s, a); }, atrasoFecha());
       return true;
     }
     return false;

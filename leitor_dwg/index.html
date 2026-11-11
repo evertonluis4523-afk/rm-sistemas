@@ -25021,11 +25021,12 @@ function calcula(e){
   trechos.forEach((t,k)=>{if(t.tipo!=='patamar'||!(t.comp>0))return;
     const pri=Math.min(t.comp,cw),sob=(t.comp-pri)/2,L=t.larg;
     pecas.push({grupo:'p',desc:'Chapa xadrez do patamar',onde:t.rot,mm:Math.round(L),qtd:1,w:pri,l:L,cortes:f0(pri)+' × '+f0(L)+' mm · esp. '+f1(D.esp)});
-    const ext=(w,q,txt,l)=>{if(w>0.5)pecas.push({grupo:'pe',desc:'Extensão / dobra do patamar',onde:t.rot,mm:Math.round(l||L),qtd:q,w,l:l||L,cortes:f0(w)+' × '+f0(l||L)+' mm · esp. '+f1(D.esp)+' · '+txt+' · solda na RM'});};
-    if(t.vira){ext(sob,2,'complemento da chapa, nas duas pontas');if(k>0)ext(pF,1,'dobra '+f0(pF)+' para baixo, onde chega o lance',W);ext(pT,1,'dobra '+f0(pT)+' para cima, onde sai o lance',W);return;}
+    /* dob: as dobras de cada peça (mm e sentido), para o desenho do pedido */
+    const ext=(w,q,txt,l,dob)=>{if(w>0.5)pecas.push({grupo:'pe',desc:'Extensão / dobra do patamar',onde:t.rot,mm:Math.round(l||L),qtd:q,w,l:l||L,dob:dob||[],cortes:f0(w)+' × '+f0(l||L)+' mm · esp. '+f1(D.esp)+' · '+txt+' · solda na RM'});};
+    if(t.vira){ext(sob,2,'complemento da chapa, nas duas pontas');if(k>0)ext(pF,1,'dobra '+f0(pF)+' para baixo, onde chega o lance',W,[{mm:pF,sent:'baixo',onde:'onde chega o lance'}]);ext(pT,1,'dobra '+f0(pT)+' para cima, onde sai o lance',W,[{mm:pT,sent:'cima',onde:'onde sai o lance'}]);return;}
     const ef=pF+sob,et=pT+sob;
-    if(Math.round(ef)===Math.round(et))ext(ef,2,'frente: dobra '+f0(pF)+' para baixo; trás: '+f0(pT)+' para cima');
-    else{ext(ef,1,'frente: dobra '+f0(pF)+' para baixo');ext(et,1,'trás: dobra '+f0(pT)+' para cima');}
+    if(Math.round(ef)===Math.round(et))ext(ef,2,'frente: dobra '+f0(pF)+' para baixo; trás: '+f0(pT)+' para cima',undefined,[{mm:pF,sent:'baixo',onde:'frente'},{mm:pT,sent:'cima',onde:'trás'}]);
+    else{ext(ef,1,'frente: dobra '+f0(pF)+' para baixo',undefined,[{mm:pF,sent:'baixo',onde:'frente'}]);ext(et,1,'trás: dobra '+f0(pT)+' para cima',undefined,[{mm:pT,sent:'cima',onde:'trás'}]);}
   });
   const ult=trechos.length-1,linha=trechos.reduce((a,t)=>a+len(t),0),altura=nivel*h,ultLance=trechos.length&&trechos[ult].tipo==='lance';
   /* o perfil cobre a lateral do degrau: da face de baixo até a frente do
@@ -25615,6 +25616,133 @@ function pintaExtras(){const box=$('esPedEx');if(!box)return;
   box.innerHTML=st.pedido.extras.map((x,i)=>'<div class="es-px" data-x="'+i+'"><label>Descrição<input data-xk="desc" value="'+esc(x.desc)+'" placeholder="ex.: parafuso, chumbador"></label>'
     +'<label>Medida<input data-xk="med" value="'+esc(x.med)+'"></label><label>Qtd.<input data-xk="qtd" inputmode="decimal" value="'+esc(x.qtd)+'"></label><label>Un.<input data-xk="un" value="'+esc(x.un)+'"></label>'
     +'<button type="button" class="es-x" data-xdel="'+i+'" title="Tirar" aria-label="Tirar">×</button></div>').join('');}
+/* ---- desenhos de fabricação no pedido (só degrau, patamar e perfil) ----
+   "gerar uma imagem técnica da dobra e vista com exemplo na parte inferior
+   para prevenir erros": o corte da dobra com as cotas e o sentido de cada
+   dobra, e a peça pronta em perspectiva. Teste leitor-escada-pedido-desenhos. */
+const DF={tinta:'#2b3036',peca:'#d9dde2',pecaE:'#c3c9d0',pecaT:'#eceff2',cota:'#d5331a',nota:'#5b626b'};
+function dfTxt(x,y,t,o){o=o||{};return '<text x="'+x.toFixed(1)+'" y="'+y.toFixed(1)+'" text-anchor="'+(o.a||'middle')+'" font-size="'+(o.fs||11)+'" font-weight="'+(o.fw||600)+'" fill="'+(o.c||DF.tinta)+'"'+(o.rot?' transform="rotate('+o.rot+' '+x.toFixed(1)+' '+y.toFixed(1)+')"':'')+' style="font-family:Satoshi,Arial,sans-serif;paint-order:stroke;stroke:#fff;stroke-width:3px;stroke-linejoin:round">'+esc(t)+'</text>';}
+/* cota entre dois pontos, afastada "off" px para o lado esquerdo do sentido a->b */
+function dfCota(ax,ay,bx,by,txt,off){
+  const dx=bx-ax,dy=by-ay,L=Math.hypot(dx,dy)||1,nx=-dy/L,ny=dx/L,ox=nx*off,oy=ny*off,A=[ax+ox,ay+oy],B=[bx+ox,by+oy],ux=dx/L,uy=dy/L,s=5;
+  const seta=(P,d)=>'<path d="M'+P[0].toFixed(1)+' '+P[1].toFixed(1)+' l'+((-ux*d*s)+(-nx*s*.45)).toFixed(1)+' '+((-uy*d*s)+(-ny*s*.45)).toFixed(1)+' M'+P[0].toFixed(1)+' '+P[1].toFixed(1)+' l'+((-ux*d*s)+(nx*s*.45)).toFixed(1)+' '+((-uy*d*s)+(ny*s*.45)).toFixed(1)+'" stroke="'+DF.cota+'" stroke-width="1.3" fill="none"/>';
+  let g='<line x1="'+ax.toFixed(1)+'" y1="'+ay.toFixed(1)+'" x2="'+(A[0]+nx*3).toFixed(1)+'" y2="'+(A[1]+ny*3).toFixed(1)+'" stroke="'+DF.cota+'" stroke-width=".7" stroke-dasharray="2 2"/>'
+    +'<line x1="'+bx.toFixed(1)+'" y1="'+by.toFixed(1)+'" x2="'+(B[0]+nx*3).toFixed(1)+'" y2="'+(B[1]+ny*3).toFixed(1)+'" stroke="'+DF.cota+'" stroke-width=".7" stroke-dasharray="2 2"/>'
+    +'<line x1="'+A[0].toFixed(1)+'" y1="'+A[1].toFixed(1)+'" x2="'+B[0].toFixed(1)+'" y2="'+B[1].toFixed(1)+'" stroke="'+DF.cota+'" stroke-width="1.1"/>'+seta(A,-1)+seta(B,1);
+  const sg=off>=0?1:-1,mx=(A[0]+B[0])/2+nx*9*sg,my=(A[1]+B[1])/2+ny*9*sg+3.5,ang=Math.atan2(dy,dx)*180/Math.PI,rot=Math.abs(ang)>90?ang+180:ang;
+  return g+dfTxt(mx,my,txt,{c:DF.cota,fw:700,rot:Math.abs(rot)<1?0:rot});
+}
+function dfSeta(x1,y1,x2,y2,c){c=c||DF.nota;const a=Math.atan2(y2-y1,x2-x1),s=6;
+  return '<line x1="'+x1+'" y1="'+y1+'" x2="'+x2+'" y2="'+y2+'" stroke="'+c+'" stroke-width="1.3"/><path d="M'+x2+' '+y2+' l'+(-s*Math.cos(a-.45)).toFixed(1)+' '+(-s*Math.sin(a-.45)).toFixed(1)+' M'+x2+' '+y2+' l'+(-s*Math.cos(a+.45)).toFixed(1)+' '+(-s*Math.sin(a+.45)).toFixed(1)+'" stroke="'+c+'" stroke-width="1.3" fill="none"/>';}
+/* chapa dobrada em corte: pontos em mm (x para a direita, y para CIMA), desenhada com a espessura */
+function dfCorte(pts,esp,k,ox,oy){
+  const P=pts.map(([x,y])=>[ox+x*k,oy-y*k]),w=Math.max(2.4,esp*k);
+  return '<polyline points="'+P.map(q=>q[0].toFixed(1)+','+q[1].toFixed(1)).join(' ')+'" fill="none" stroke="'+DF.tinta+'" stroke-width="'+w.toFixed(1)+'" stroke-linejoin="miter" stroke-linecap="butt"/>';
+}
+/* relevo da chapa xadrez (marquinhas) numa reta, do lado de cima */
+function dfRelevo(x1,y,x2){let g='';for(let x=x1+6;x<x2-4;x+=9)g+='<path d="M'+x.toFixed(1)+' '+(y-3).toFixed(1)+' l3 -3" stroke="'+DF.nota+'" stroke-width="1"/>';return g;}
+/* peça em perspectiva: o corte (d, h em mm) puxado no comprimento L */
+function dfIso(sec,L,W,H,o){o=o||{};
+  /* X ao longo da peça (para a direita e para cima), d para trás (sobe um pouco), h para cima */
+  const c=Math.cos(Math.PI/6),s2=.5,P3=(X,d,h)=>[X*c+d*.62,-X*s2*.62-h-d*.42];
+  const all=[];sec.forEach(([d,h])=>{all.push(P3(0,d,h));all.push(P3(L,d,h));});
+  const mnx=Math.min(...all.map(q=>q[0])),mxx=Math.max(...all.map(q=>q[0])),mny=Math.min(...all.map(q=>q[1])),mxy=Math.max(...all.map(q=>q[1]));
+  const k=Math.min((W-2*(o.mx||30))/(mxx-mnx||1),(H-2*(o.my||26))/(mxy-mny||1)),ox=(W-(mxx-mnx)*k)/2-mnx*k,oy=(H-(mxy-mny)*k)/2-mny*k;
+  const T=(X,d,h)=>{const q=P3(X,d,h);return [ox+q[0]*k,oy+q[1]*k];};
+  /* faces de trás para a frente (d maior primeiro) */
+  const segs=[];for(let i=0;i<sec.length-1;i++)segs.push([sec[i],sec[i+1]]);
+  segs.sort((a,b)=>Math.max(b[0][0],b[1][0])-Math.max(a[0][0],a[1][0]));
+  let g='';segs.forEach(([a,b])=>{const q=[T(0,a[0],a[1]),T(L,a[0],a[1]),T(L,b[0],b[1]),T(0,b[0],b[1])],hz=Math.abs(a[1]-b[1])<1e-6;
+    g+='<polygon points="'+q.map(v=>v[0].toFixed(1)+','+v[1].toFixed(1)).join(' ')+'" fill="'+(hz?DF.pecaT:DF.peca)+'" stroke="'+DF.tinta+'" stroke-width="1.2" stroke-linejoin="round"/>';
+    if(hz&&o.relevo){for(let t=.08;t<.95;t+=.07)for(let u=.15;u<.9;u+=.25){const x=q[0][0]+(q[1][0]-q[0][0])*t+(q[3][0]-q[0][0])*u,y=q[0][1]+(q[1][1]-q[0][1])*t+(q[3][1]-q[0][1])*u;g+='<path d="M'+x.toFixed(1)+' '+y.toFixed(1)+' l3 -2" stroke="'+DF.nota+'" stroke-width=".8"/>';}}});
+  /* contorno da ponta (corte) */
+  g+='<polyline points="'+sec.map(([d,h])=>T(0,d,h)).map(v=>v[0].toFixed(1)+','+v[1].toFixed(1)).join(' ')+'" fill="none" stroke="'+DF.tinta+'" stroke-width="2.2"/>';
+  return {g,T,k};
+}
+/* faixa de quebra no meio da peça (desenho encurtado) */
+function dfQuebra(v,Lv,sec){const xs=[Lv*.47,Lv*.53],ds=sec.map(q=>q[0]),hs=sec.map(q=>q[1]),d0=Math.min(...ds),d1=Math.max(...ds),h0=Math.min(...hs),h1=Math.max(...hs);
+  const pol=X=>[v.T(X,d0-8,h0-8),v.T(X,d0-8,h1+8),v.T(X,d1+8,h1+8),v.T(X,d1+8,h0-8)];
+  const A=pol(xs[0]),B=pol(xs[1]),hull=[A[0],A[1],A[2],B[2],B[3],B[0]];
+  return '<polygon points="'+[A[0],A[1],A[2],A[3],B[3],B[2],B[1],B[0]].map(q=>q[0].toFixed(1)+','+q[1].toFixed(1)).join(' ')+'" fill="#fff" stroke="none"/>'
+    +'<path d="M'+A[0][0].toFixed(1)+' '+A[0][1].toFixed(1)+' L'+A[1][0].toFixed(1)+' '+A[1][1].toFixed(1)+' L'+A[2][0].toFixed(1)+' '+A[2][1].toFixed(1)+' M'+B[0][0].toFixed(1)+' '+B[0][1].toFixed(1)+' L'+B[1][0].toFixed(1)+' '+B[1][1].toFixed(1)+' L'+B[2][0].toFixed(1)+' '+B[2][1].toFixed(1)+'" stroke="'+DF.tinta+'" stroke-width="1.1" stroke-dasharray="4 3" fill="none"/>';}
+function dfCaixa(tit,svg1,svg2){   /* só o desenho: sem texto explicativo embaixo */
+  return '<div class="es-df"><div class="es-df-h">'+esc(tit)+'</div><div class="es-df-g"><div>'+svg1+'</div><div>'+svg2+'</div></div></div>';
+}
+function dfSvg(w,h,miolo,rot){return '<svg viewBox="0 0 '+w+' '+h+'" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="'+esc(rot)+'">'+miolo+'</svg>';}
+/* DEGRAU Z: dobra da frente para baixo, pisada, dobra de trás para cima */
+function dfDegrau(D){
+  const aF=num(D.abaF),P=num(D.pisada),aT=num(D.abaT),e=num(D.esp),L=num(D.comp),W=340,H=210;
+  const k=Math.min((W-120)/P,(H-90)/((aF+aT)||1)),ox=60,oy=34+aT*k;
+  let c=dfCorte([[0,-aF],[0,0],[P,0],[P,aT]],e,k,ox,oy);
+  c+=dfRelevo(ox,oy-Math.max(1.2,e*k/2),ox+P*k);
+  c+=dfCota(ox,oy,ox+P*k,oy,f0(P),-(aT*k+16));
+  c+=dfCota(ox,oy-aF*-k,ox,oy,f0(aF),-22);
+  c+=dfCota(ox+P*k,oy,ox+P*k,oy-aT*k,f0(aT),22);
+  c+=dfTxt(ox+8,oy+aF*k-2,'FRENTE',{a:'start',fs:10,c:DF.nota})+dfTxt(ox+8,oy+aF*k+11,'dobra para BAIXO',{a:'start',fs:10,c:DF.cota,fw:700});
+  c+=dfTxt(ox+P*k-8,oy+16,'TRÁS',{a:'end',fs:10,c:DF.nota})+dfTxt(ox+P*k-8,oy+29,'dobra para CIMA',{a:'end',fs:10,c:DF.cota,fw:700});
+  c+=dfTxt(ox+P*k/2,oy-12,'relevo xadrez para cima',{fs:9.5,c:DF.nota});
+  c+=dfTxt(W/2,H-8,'CORTE DA DOBRA · esp. '+f1(e)+' mm · dobras a 90°',{fs:10.5,fw:700});
+  const Lv=Math.min(L,P*2.4),v=dfIso([[0,-aF],[0,0],[P,0],[P,aT]],Lv,W,H,{relevo:true,mx:34,my:34});
+  let vi=v.g+dfQuebra(v,Lv,[[0,-aF],[0,0],[P,0],[P,aT]]);const a=v.T(0,0,-aF),b=v.T(Lv,0,-aF);
+  vi+=dfCota(a[0],a[1],b[0],b[1],f0(L)+' mm',18);
+  const fr=v.T(Lv*.22,0,-aF*.55);vi+=dfTxt(12,22,'FRENTE · dobra para baixo',{fs:10,c:DF.nota,a:'start'})+dfSeta(60,28,fr[0]-2,fr[1]-4);
+  vi+=dfTxt(W/2,H-8,'VISTA · degrau pronto'+(Lv<L?' (desenho encurtado)':''),{fs:10.5,fw:700});
+  return dfCaixa('Degrau Z '+f0(aF)+' × '+f0(P)+' × '+f0(aT)+' · chapa xadrez esp. '+f1(e)+' · comprimento '+f0(L)+' mm',dfSvg(W,H,c,'corte do degrau'),dfSvg(W,H,vi,'vista do degrau'));
+}
+/* PERFIL U: alma e abas, em barra */
+function dfPerfil(Pf,bar){
+  const h=num(Pf.alt),a=num(Pf.aba),e=num(Pf.esp),W=340,H=210,k=Math.min(124/h,150/a),ox=W/2-a*k/2,oy=H/2+h*k/2-4;
+  let c=dfCorte([[a,0],[0,0],[0,h],[a,h]],e,k,ox,oy);
+  c+=dfCota(ox,oy,ox,oy-h*k,f0(h),-24)+dfCota(ox,oy-h*k,ox+a*k,oy-h*k,f0(a),-14)+dfCota(ox,oy,ox+a*k,oy,f0(a),14);
+  c+=dfTxt(ox-52,oy-h*k/2+4,'alma',{a:'end',fs:10,c:DF.nota})+dfTxt(ox+a*k+10,oy-h*k+4,'aba',{a:'start',fs:10,c:DF.nota})+dfTxt(ox+a*k+10,oy+4,'aba',{a:'start',fs:10,c:DF.nota});
+  c+=dfTxt(W/2,H-8,'CORTE · esp. '+f1(e)+' mm · dobras a 90°',{fs:10.5,fw:700});
+  /* vista: a barra encurtada, com a quebra */
+  const Lv=h*3.4,v=dfIso([[a,0],[0,0],[0,h],[a,h]].map(([x,y])=>[x,y]),Lv,W,H,{mx:30,my:30});
+  let vi=v.g+dfQuebra(v,Lv,[[a,0],[0,0],[0,h],[a,h]]);
+  const b0=v.T(0,0,0),b1=v.T(Lv,0,0);vi+=dfCota(b0[0],b0[1],b1[0],b1[1],'barra de '+f0(bar)+' mm',18);
+  vi+=dfTxt(W/2,H-8,'VISTA · barra (desenho encurtado)',{fs:10.5,fw:700});
+  return dfCaixa(String(Pf.nome||'Perfil U')+' '+f0(h)+' × '+f0(a)+' · esp. '+f1(e)+' · barras de '+f0(bar)+' mm',dfSvg(W,H,c,'corte do perfil'),dfSvg(W,H,vi,'vista do perfil'));
+}
+/* PATAMAR: chapa lisa em planta + o corte de cada extensão com dobra */
+function dfPatamar(pecas,D){
+  const e=num(D.esp),out=[],W=340,H=210;
+  pecas.filter(p=>p.grupo==='p').forEach(p=>{
+    const w=num(p.w),l=num(p.l),k=Math.min((W-110)/l,(H-80)/w),x0=(W-l*k)/2,y0=34;
+    let c='<rect x="'+x0.toFixed(1)+'" y="'+y0+'" width="'+(l*k).toFixed(1)+'" height="'+(w*k).toFixed(1)+'" fill="'+DF.pecaT+'" stroke="'+DF.tinta+'" stroke-width="1.6"/>';
+    for(let x=x0+8;x<x0+l*k-6;x+=12)for(let y=y0+8;y<y0+w*k-6;y+=12)c+='<path d="M'+x.toFixed(1)+' '+y.toFixed(1)+' l4 -3" stroke="'+DF.nota+'" stroke-width=".8"/>';
+    c+=dfCota(x0,y0,x0+l*k,y0,f0(l),-14)+dfCota(x0,y0+w*k,x0,y0,f0(w),-14);
+    c+=dfTxt(W/2,H-8,'PLANTA · chapa lisa, sem dobra',{fs:10.5,fw:700});
+    const exs=pecas.filter(q=>q.grupo==='pe'&&q.onde===p.onde);
+    out.push({tit:'Chapa do patamar · '+p.onde+' · '+f0(w)+' × '+f0(l)+' mm · chapa xadrez esp. '+f1(e),a:dfSvg(W,H,c,'planta da chapa do patamar'),exs});
+  });
+  const corteExt=(q,d)=>{const w=num(q.w),mm=num(d.mm),fl=Math.max(0,w-mm),baixo=d.sent==='baixo';let c='';
+    if(fl>0.5){const k=Math.min((W-190)/fl,(H-110)/Math.max(mm,20)),ox=130,oy=baixo?70:H-70;
+      c+='<line x1="'+(ox-34)+'" y1="'+oy+'" x2="'+ox+'" y2="'+oy+'" stroke="'+DF.nota+'" stroke-width="2" stroke-dasharray="5 3"/>'+dfTxt(ox-38,oy+3.5,'chapa do patamar',{a:'end',fs:9.5,c:DF.nota});   /* na ponta da linha: não cruza as cotas */
+      c+=dfCorte([[0,0],[fl,0],[fl,baixo?-mm:mm]],e,k,ox,oy)+dfRelevo(ox,oy-Math.max(1.2,e*k/2),ox+fl*k);
+      c+=dfCota(ox,oy,ox+fl*k,oy,f0(fl),baixo?-16:18)+dfCota(ox+fl*k,oy,ox+fl*k,oy+(baixo?mm*k:-mm*k),f0(mm),baixo?-18:18);
+      c+=dfTxt(ox+2,oy+(baixo?16:-13),'solda aqui',{a:'start',fs:9.5,c:DF.nota});}
+    else{const k=Math.min(3,(H-120)/Math.max(mm,10)),x=W/2-10,y0=baixo?50:H-62;
+      c+='<line x1="'+(x-130)+'" y1="'+y0+'" x2="'+x+'" y2="'+y0+'" stroke="'+DF.nota+'" stroke-width="2" stroke-dasharray="5 3"/>'+dfTxt(x-10,y0+(baixo?-8:16),'borda da chapa do patamar',{a:'end',fs:9.5,c:DF.nota});
+      c+=dfCorte([[0,0],[0,baixo?-mm:mm]],e,k,x,y0)+dfCota(x,y0,x,y0+(baixo?mm*k:-mm*k),f0(mm),baixo?-16:16);
+      c+=dfTxt(x+44,y0+(baixo?mm*k/2:-mm*k/2)+4,'tira em pé, soldada',{a:'start',fs:9.5,c:DF.nota});}
+    c+=dfTxt(W/2,H-24,(d.onde?d.onde.toUpperCase()+' · ':'')+(fl>0.5?'dobra '+f0(mm):'tira de '+f0(mm)+' soldada')+' para '+(baixo?'BAIXO':'CIMA'),{fs:10.5,fw:700,c:DF.cota});
+    c+=dfTxt(W/2,H-8,'CORTE · peça '+f0(w)+' × '+f0(q.l)+' mm · esp. '+f1(e),{fs:10.5,fw:700});
+    return dfSvg(W,H,c,'corte da extensão do patamar');};
+  return out.map(o=>{const cs=[];o.exs.forEach(q=>(q.dob&&q.dob.length?q.dob:[{mm:0,sent:'baixo'}]).forEach(d=>cs.push(corteExt(q,d))));
+    let h=dfCaixa(o.tit,o.a,cs[0]||'');
+    for(let i=1;i<cs.length;i+=2)h+='<div class="es-df"><div class="es-df-h">Extensões / dobras do patamar · '+esc(o.exs[0].onde)+'</div><div class="es-df-g"><div>'+cs[i]+'</div><div>'+(cs[i+1]||'')+'</div></div></div>';
+    return h;}).join('');
+}
+function desenhosPedido(r){
+  const S=st.pedido.sec,D=st.degrau,bar=Math.max(500,num(st.barra)||6000);let h='';
+  if(S.degraus&&r.deg)h+=dfDegrau(D);
+  if(S.patamar&&r.pecas.some(p=>p.grupo==='p'))h+=dfPatamar(r.pecas,D);
+  if(S.perfil&&r.pecas.some(p=>p.grupo==='u'))h+=dfPerfil(st.perfil,bar);
+  if(!h)return '';
+  const cab='<h4 class="es-df-tit">Desenhos de fabricação (mm)</h4>';
+  const i=h.indexOf('<div class="es-df">',1);   /* o título e o primeiro desenho andam juntos */
+  return i>0?'<div style="break-inside:avoid;page-break-inside:avoid">'+cab+h.slice(0,i)+'</div>'+h.slice(i):'<div style="break-inside:avoid;page-break-inside:avoid">'+cab+h+'</div>';
+}
 function pedidoHTML(){
   resultado();
   const r=window.__escadaUltimo.r,PD=st.pedido,it=itensPedido(r),dt=v=>{const m=String(v||'').match(/^(\d{4})-(\d{2})-(\d{2})$/);return m?m[3]+'/'+m[2]+'/'+m[1]:'';};
@@ -25623,7 +25751,7 @@ function pedidoHTML(){
     +'<div class="es-res" style="grid-template-columns:repeat(3,1fr)">'+campos.map(a=>'<div><span>'+a[0]+'</span><b>'+esc(a[1]||'—')+'</b></div>').join('')+'</div>'
     +'<h4>Itens</h4>'+tabelaPedido(it,'es-ptab')
     +(PD.obs?'<h4>Observações</h4><div class="es-box">'+esc(PD.obs).replace(/\n/g,'<br>')+'</div>':'')
-    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:30px;margin-top:40px;font-size:10px;color:#555"><div style="border-top:1px solid #999;padding-top:4px">Responsável RM</div><div style="border-top:1px solid #999;padding-top:4px">Fornecedor (recebido)</div></div>'
+    +desenhosPedido(r)
     +'</article>';
 }
 
@@ -25646,6 +25774,8 @@ const ESTILO_PAPEL='<style>.es-print{font-family:Satoshi,Arial,sans-serif;color:
   +'.es-print .es-gs{fill:none;stroke:#59616b;stroke-width:1.6}.es-print .es-gt{stroke-width:2.6}.es-print .es-gp{stroke:#3a3f47;stroke-width:3}.es-print .es-gb{stroke:#3a3f47;stroke-width:1.6}.es-print .es-sp{stroke:#2f7fd1;stroke-width:2.2}.es-print .es-spc{fill:#2f7fd1}.es-print .es-em{fill:#F24619;stroke:#fff;stroke-width:1}'
   +'.es-print table{width:100%;border-collapse:collapse;font-size:10.5px;margin-top:6px}.es-print th{background:#f3f4f6;text-align:left;padding:4px 5px;border:1px solid #d9dde2}.es-print td{padding:4px 5px;border:1px solid #d9dde2}.es-print tr{break-inside:avoid}.es-print .r{text-align:right}'
   +'.es-print .es-res{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}.es-print .es-res div{border:1px solid #d9dde2;border-radius:6px;padding:5px 7px}.es-print .es-res span{display:block;font-size:8px;letter-spacing:.08em;text-transform:uppercase;color:#666;font-weight:700}.es-print .es-res b{font-size:13px}'
+  +'.es-print .es-df-tit{margin-top:22px}.es-print .es-df{border:1px solid #d9dde2;border-radius:8px;padding:8px 10px;margin:0 0 10px;break-inside:avoid;page-break-inside:avoid}'
+  +'.es-print .es-df-h{font-size:11px;font-weight:700;margin-bottom:4px}.es-print .es-df-g{display:grid;grid-template-columns:1fr 1fr;gap:10px;align-items:center}.es-print .es-df-g svg{width:100%;height:auto;display:block}'
   +'.es-print td.sec{background:#f3f4f6;font-size:8.5px;letter-spacing:.08em;text-transform:uppercase;color:#555;font-weight:700}'
   +'.es-print .es-duo{display:grid;grid-template-columns:1fr 1fr;gap:10px;align-items:center}.es-print .es-duo svg{width:100%;height:auto;display:block}.es-print ol,.es-print ul{margin:4px 0 0 18px;padding:0}.es-print li{margin:2px 0}'
   +'.es-print .es-box{border:1px solid #d9dde2;border-left:3px solid #F24619;border-radius:4px;padding:6px 9px;margin-top:6px}</style>';
@@ -30959,7 +31089,7 @@ if('serviceWorker' in navigator && location.protocol.startsWith('http')){
 }
 </script>
 <script>/* versão publicada (PADRAO_RM.md §3): sobe a cada publicação, junto com o CACHE do sw.js */
-const APP_VER='v274';
+const APP_VER='v275';
 </script>
 <script id="rmVersaoBloco">
 /* ===== SELO DE VERSÃO — igual em todos os sistemas (PADRAO_RM.md §3) =====
