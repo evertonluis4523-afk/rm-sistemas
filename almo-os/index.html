@@ -1386,6 +1386,10 @@ function poe(){
      obra, no Propostas): a da pagina sai, para nao sobrepor as duas.
      O sistema marca <html class="rm-sem-dagua"> enquanto mostra ele. */
   +'html.rm-sem-dagua body #rm-dagua-imp{display:none!important}'
+  /* A marca da FOLHA (.rm-dagua, no meio do documento todo) sai no papel:
+     ali ja vai a marca de CADA pagina. Num documento de 3 folhas a da
+     folha caia no fim da 2a, deslocada, e as duas saiam uma sobre a outra. */
+  +(sim?'html body .rm-dagua{display:none!important}':'')
   /* o fio da marca no papel e FINO e corre a linha inteira, como na
      papelaria -- a regua de 4px com o fio escuro embaixo saiu */
   +'.head::after,.rm-cab::after{height:2px!important;left:0!important;right:0!important;width:auto!important}'
@@ -5762,7 +5766,7 @@ fbInit();
 /* Sobe junto com o nome do cache do sw.js, sempre: se um subir sem o outro,
    o numero na tela deixa de significar alguma coisa. Ha uma prova automatica
    que falha quando os dois discordam. */
-const APP_VER='v104';
+const APP_VER='v105';
 (function(){var p=document.getElementById('verPill'); if(p)p.textContent=APP_VER;})();
 if('serviceWorker' in navigator){
   if(location.protocol.startsWith('http')){ navigator.serviceWorker.register('./sw.js').catch(()=>{}); }

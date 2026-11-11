@@ -1064,6 +1064,10 @@ function poe(){
      obra, no Propostas): a da pagina sai, para nao sobrepor as duas.
      O sistema marca <html class="rm-sem-dagua"> enquanto mostra ele. */
   +'html.rm-sem-dagua body #rm-dagua-imp{display:none!important}'
+  /* A marca da FOLHA (.rm-dagua, no meio do documento todo) sai no papel:
+     ali ja vai a marca de CADA pagina. Num documento de 3 folhas a da
+     folha caia no fim da 2a, deslocada, e as duas saiam uma sobre a outra. */
+  +(sim?'html body .rm-dagua{display:none!important}':'')
   /* o fio da marca no papel e FINO e corre a linha inteira, como na
      papelaria -- a regua de 4px com o fio escuro embaixo saiu */
   +'.head::after,.rm-cab::after{height:2px!important;left:0!important;right:0!important;width:auto!important}'
@@ -2193,6 +2197,8 @@ html.ctaberto,html.ctaberto body{overflow:hidden}
 #printArea .pt-t th.c-q,#printArea .pt-t td.c-q{text-align:right;width:1%;white-space:nowrap;
   font-weight:800;color:#1d2127;font-size:13px;padding-right:10px}
 #printArea .pt-t th.c-q{font-size:11px;font-weight:700;color:#6c7480}
+#printArea .pt-t tr.pt-tel{break-after:avoid;page-break-after:avoid}
+#printArea .pt-t tr.pt-tel td{background:#f4f5f7;font-size:12px;padding:5px 6px;color:#1d2127}
 #printArea .pt-t .c-d{font-size:11px;color:#6c7480;line-height:1.35;font-weight:600}
 #printArea .so-papel{display:none}
 /* A perda no papel: bloco proprio, antes da lista, para nao morrer no rodape. */
@@ -5031,11 +5037,11 @@ function brasOpcoesGrupo(atual){
     '<option value="bras:novo">＋ Escolher no catálogo Brastelha…</option>';
 }
 let BRAS_SEL={};
-function brasAbreCatalogo(aoUsar){
+function brasAbreCatalogo(aoUsar,so){
   let ov=document.getElementById('brasov');
   if(!ov){ov=document.createElement('div');ov.id='brasov';ov.className='bras-ov';document.body.appendChild(ov);}
-  BRAS_SEL={};
-  const linhas=BRAS_LINHAS.filter(x=>x.id!=='CUM');
+  const linhas=BRAS_LINHAS.filter(x=>so?x.id===so:x.id!=='CUM');
+  BRAS_SEL=so?{l:so}:{};
   const sel=(campo,rot,ops,atual)=>'<div class="fld"><label>'+rot+'</label><select data-bras="'+campo+'"><option value="">— escolha —</option>'+
     ops.map(o=>'<option value="'+escapeAttr(o[0])+'"'+(String(o[0])===String(atual==null?'':atual)?' selected':'')+'>'+escapeHtml(o[1])+'</option>').join('')+'</select></div>';
   const pinta=()=>{
@@ -5053,13 +5059,13 @@ function brasAbreCatalogo(aoUsar){
     if(ok){
       const M=BRAS_MOD[c.m]||{},max=brasMax(c);
       const av=[M.obs,L.obs,max?'Comprimento máximo '+(max/1000).toLocaleString('pt-BR')+' m'+(L.min?' · mínimo '+(L.min/1000).toLocaleString('pt-BR')+' m':'')+'.':''].filter(Boolean);
-      ficha='<div class="bras-ficha"><b>'+escapeHtml(brasDesc(c))+'</b><span>Largura útil <b>'+brasLargura(c)+' mm</b>'+(av.length?' · '+escapeHtml(av.join(' ')):'')+'</span></div>';
+      ficha='<div class="bras-ficha"><b>'+escapeHtml(brasDesc(c))+'</b><span>'+(L.semArea?'Largura útil <b>'+(M.larg||'—')+' mm</b> (a da telha '+escapeHtml(M.nome||'')+')':'Largura útil <b>'+brasLargura(c)+' mm</b>')+(av.length?' · '+escapeHtml(av.join(' ')):'')+'</span></div>';
     }
     ov.innerHTML='<div class="bras-card" role="dialog" aria-label="Catálogo Brastelha"><div class="bras-top"><h3>Catálogo Brastelha</h3>'+
       '<button type="button" class="btn ghost" data-bras-x="fecha">Fechar</button></div>'+
-      '<p class="bras-p">A telha escolhida entra com a largura útil <b>da Brastelha</b> e vai ao Orçamento RM com a compra marcada nela, com o preço da coluna dela.</p>'+
+      '<p class="bras-p">'+(so==='CUM'?'A cumeeira escolhida vai ao Orçamento RM com a compra marcada na Brastelha.':'A telha escolhida entra com a largura útil <b>da Brastelha</b> e vai ao Orçamento RM com a compra marcada nela, com o preço da coluna dela.')+'</p>'+
       '<div class="bras-g">'+h+'</div>'+ficha+
-      '<div class="bras-bt"><button type="button" class="btn primary" data-bras-x="usa"'+(ok?'':' disabled')+'>Usar esta telha</button></div></div>';
+      '<div class="bras-bt"><button type="button" class="btn primary" data-bras-x="usa"'+(ok?'':' disabled')+'>'+(so==='CUM'?'Usar esta cumeeira':'Usar esta telha')+'</button></div></div>';
   };
   ov.onclick=e=>{
     if(e.target===ov||e.target.closest('[data-bras-x="fecha"]')){ov.classList.remove('on');return;}
@@ -12808,7 +12814,7 @@ const TLH_PERFIS = {
 };
 const TLH = {perfil:'TP-40',telhaId:'', util:980, passo:196, altura:40, fabricante:'',
              maxComp:0, traspasse:200, estruturas:1, faces:[], avisos:[], avulsos:[],
-             ajusteObra:0, ajustesFace:{},
+             ajusteObra:0, ajustesFace:{}, telhasFace:{},
              aberturas:{ajustes:{},manuais:{}},
              origem:'dwg',sketchupFaces:[],sketchupNome:'',sketchupDoc:null,sketchupIgnoradas:0};
 try{const g=JSON.parse(localStorage.getItem('rm_telha_cfg')||'null');
@@ -12819,6 +12825,20 @@ try{const g=JSON.parse(localStorage.getItem('rm_telha_cfg')||'null');
       fabricante:String(g.fabricante||'')});}catch(e){}
 /* ajuste da obra no fechamento: obra salva antes da v280 tinha o positivo
    descontando; agora soma (positivo acrescenta, negativo desconta) */
+/* TELHA POR PAREDE (como as faces da cobertura): TLH.telhasFace[nome] =
+   'orc:<id>' (cadastro do Orçamento ou Brastelha); sem nada = a principal.
+   Pelo nome da parede, para sobreviver à releitura. Teste leitor-fechamento-telha-por-parede. */
+function tlhTelhaFace(f){
+  const v=String(((TLH.telhasFace||{})[f&&f.nome])||'');
+  if(v.startsWith('orc:')){loadPrecos();const t=orcTelhaPorId(v.slice(4));
+    if(t)return {chave:v,util:Math.max(1,orcTelhaLarguraMm(t)),nome:orcTelhaRotulo(t),telhaId:String(t.id)};}
+  const b=telhaBancoAtual();return {chave:'',util:TLH.util,nome:telhaRotuloAtual(),telhaId:b?String(b.id):''};
+}
+function tlhOpcoesTelhaFace(sel){
+  sel=String(sel||'');loadPrecos();const ts=orcTelhasDisponiveis();
+  return '<option value="">Principal</option>'+ts.map(t=>'<option value="orc:'+escapeAttr(t.id)+'"'+('orc:'+t.id===sel?' selected':'')+'>'+escapeHtml(t.desc)+' · útil '+orcTelhaLarguraMm(t)+' mm</option>').join('')+
+    brasOpcoesGrupo(sel.startsWith('orc:')?sel.slice(4):'');
+}
 function tlhAjusteSinal(cfg){if(!cfg||cfg.ajusteSinal)return;
   if(cfg.ajusteObra!=null)TLH.ajusteObra=-(+cfg.ajusteObra||0);
   if(cfg.ajustesFace){const a={};Object.keys(cfg.ajustesFace).forEach(k=>{a[k]=-(+cfg.ajustesFace[k]||0);});TLH.ajustesFace=a;}}
@@ -13493,7 +13513,7 @@ function telhaFaces(){
    como corte forcado: la ele parte a telha em duas -- uma estreita de altura
    cheia e a curta -- em vez de encurtar o vao inteiro. */
 function telhaPreenche(f){
-  const util=Math.max(1,TLH.util), cortes=new Set([f.xIni,f.xFim]);
+  const TF=tlhTelhaFace(f),util=Math.max(1,TF.util), cortes=new Set([f.xIni,f.xFim]);
   /* A grade nasce na CUMEEIRA e nao se desloca. Eu cheguei a por um campo
      para mover o inicio e uma sugestao dizendo que 320 mm economizariam
      10,9 m² de perda na obra de referência -- numero certo, conselho errado: a
@@ -13527,14 +13547,14 @@ function telhaPreenche(f){
     /* AJUSTE DA OBRA: o que a medida da obra (ou da tesoura) tem a menos que
        o projeto -- o geral e o desta parede (pelo nome, sobrevive à releitura) */
     const mm=Math.round(alto-pe)+Math.round((+TLH.ajusteObra||0)+(+((TLH.ajustesFace||{})[f.nome])||0));
-    if(mm>0)out.push({x0,x1,larg,mm,queda,porta:!!ab,face:f.nome,
+    if(mm>0)out.push({x0,x1,larg,mm,queda,porta:!!ab,face:f.nome,telha:TF.chave,util,
       yA:f.yEm(x0),yB:f.yEm(x1),pe});
     /* JANELA: se a abertura nao vai ao chao, sobra parede EMBAIXO dela e ali
        entra uma segunda telha, de topo reto. Porta nao gera esta peca porque
        o peitoril dela e o proprio piso. */
     if(ab&&ab.pe>f.baseY+50){
       const mb=Math.round(ab.pe-f.baseY);
-      if(mb>0)out.push({x0,x1,larg,mm:mb,queda:0,porta:false,abaixo:true,face:f.nome,
+      if(mb>0)out.push({x0,x1,larg,mm:mb,queda:0,porta:false,abaixo:true,face:f.nome,telha:TF.chave,util,
         yA:ab.pe,yB:ab.pe,pe:f.baseY});
     }
   }
@@ -13588,7 +13608,7 @@ function telhaMonta(){
      largura util do perfil, e nunca fica deitada para aproveitar melhor. A
      grade de corte garante isso sozinha; se algum dia nao garantir, o numero
      aparece aqui em vez de virar telha deitada no desenho e no pedido. */
-  const gordas=TLH.faces.flatMap(f=>f.telhas.filter(t=>t.larg>TLH.util+2)
+  const gordas=TLH.faces.flatMap(f=>f.telhas.filter(t=>t.larg>(t.util||TLH.util)+2)
     .map(t=>f.nome+': '+t.larg+' x '+t.mm+' mm'));
   if(gordas.length)TLH.avisos.push('Telha mais larga que a largura útil ('+TLH.util+
     ' mm) em '+gordas.length+' peça(s) — a leitura da face está errada, não use esta lista: '+
@@ -13677,13 +13697,13 @@ function telhaMonta(){
    larguras que saem da mesma chapa), que e o que vai para o DXF. */
 function telhaChapas(grupos,util){
   util=util||TLH.util;
-  const gs=grupos||TLH.faces.map(f=>({cume:f.cume,telhas:f.telhas}));
+  const gs=grupos||TLH.faces.map(f=>{const TF=tlhTelhaFace(f);return {cume:f.cume,telhas:f.telhas,util:TF.util,telha:TF.chave};});
   const chapas=[];
   gs.forEach((g,gi)=>{
-    const cel={};
+    const cel={},u=g.util||util,tel=g.telha||'';
     (g.telhas||[]).forEach(t=>{
       t.chapa=0; t.irmas=null;
-      const k=gi+'#'+Math.floor(((t.x0+t.x1)/2-g.cume)/util);
+      const k=gi+'#'+Math.floor(((t.x0+t.x1)/2-g.cume)/u);
       (cel[k]=cel[k]||[]).push(t);
     });
     Object.keys(cel).forEach(k=>{
@@ -13691,7 +13711,7 @@ function telhaChapas(grupos,util){
         /* entra na chapa deste vao que ainda nao ocupa esta faixa de x */
         const c=chapas.find(c=>c.k===k&&c.cortes.every(q=>t.x0>=q.x1-1||t.x1<=q.x0+1));
         if(c){c.cortes.push(t); c.usada+=t.larg; if(t.mm>c.mm)c.mm=t.mm;}
-        else chapas.push({k,mm:t.mm,usada:t.larg,cortes:[t],cheia:false});
+        else chapas.push({k,mm:t.mm,usada:t.larg,cortes:[t],cheia:false,util:u,telha:tel});
       });
     });
   });
@@ -13711,7 +13731,7 @@ function telhaChapas(grupos,util){
      Só mexe em chapa que já é uma tira sozinha (chapa cheia estreita) -- uma
      chapa que já divide vão continua reservada a esse vão, como antes. */
   const tlhBaseNome=nome=>String(nome||'').replace(/\s*\d+\s*$/,'').trim();
-  const sobras=chapas.filter(c=>c.cortes.length===1&&c.cortes[0].larg<util-2);
+  const sobras=chapas.filter(c=>c.cortes.length===1&&c.cortes[0].larg<(c.util||util)-2);
   const fundidas=new Set();
   sobras.forEach(c1=>{
     if(fundidas.has(c1))return;
@@ -13719,9 +13739,9 @@ function telhaChapas(grupos,util){
     sobras.forEach(c2=>{
       if(c2===c1||fundidas.has(c2))return;
       const t2=c2.cortes[0];
-      if(tlhBaseNome(t2.face)!==base1)return;
+      if(tlhBaseNome(t2.face)!==base1||(c2.telha||'')!==(c1.telha||''))return;
       if(Math.abs(t2.larg-t1.larg)>1)return;
-      if(c1.usada+t2.larg>util)return;
+      if(c1.usada+t2.larg>(c1.util||util))return;
       c1.cortes.push(t2); c1.usada+=t2.larg; if(t2.mm>c1.mm)c1.mm=t2.mm;
       fundidas.add(c2);
     });
@@ -13729,7 +13749,7 @@ function telhaChapas(grupos,util){
   const chapasFinal=chapas.filter(c=>!fundidas.has(c));
   let n=0;
   chapasFinal.forEach(c=>{
-    c.cheia=c.cortes.length===1&&c.cortes[0].larg>=util-2;
+    c.cheia=c.cortes.length===1&&c.cortes[0].larg>=(c.util||util)-2;
     if(c.cortes.length<2)return;
     c.n=++n;
     c.cortes.forEach(t=>{t.chapa=c.n; t.irmas=c.cortes.filter(q=>q!==t).map(q=>q.larg);});
@@ -13747,12 +13767,12 @@ const tlhParede   = t => (t.larg/1000)*((t.mm-(t.queda||0)/2)/1000);
 function telhaContas(chapas,util){
   util=util||TLH.util;
   let comprada=0,parede=0,ang=0,cheias=0,cortadas=0,tiras=0,juntas=0,pecas=0,emJunta=0;
-  chapas.forEach(c=>{
-    comprada+=(util/1000)*(c.mm/1000);
+  chapas.forEach(c=>{const u=c.util||util;
+    comprada+=(u/1000)*(c.mm/1000);
     if(c.cheia)cheias++; else cortadas++;
     if(c.cortes.length>1)juntas++;
     c.cortes.forEach(t=>{pecas++; parede+=tlhParede(t); ang+=tlhPerdaAng(t);
-      if(t.larg<util-2)tiras++;
+      if(t.larg<u-2)tiras++;
       if(c.cortes.length>1)emJunta++;});
   });
   const perda=comprada-parede;
@@ -13764,11 +13784,14 @@ function telhaContas(chapas,util){
    cada peca e, quando a chapa e dividida, como cortar ("180 + 800"). */
 function telhaAgrupado(){
   const chapas=telhaChapas(), por={};
-  const grupo=mm=>por[mm]||(por[mm]={mm,qtd:0,pecas:0,origens:{},destinos:{},cortes:{},
-                                     pAng:0,perda:0,rots:[]});
+  /* a telha de cada grupo (a principal e as escolhidas por parede) */
+  const tels={'':tlhTelhaFace(null)};TLH.faces.forEach(f=>{const T=tlhTelhaFace(f);tels[T.chave]=T;});
+  const grupo=(mm,tel)=>{tel=tel||'';const k=tel+'#'+mm,T=tels[tel]||tels[''];
+    return por[k]||(por[k]={mm,qtd:0,pecas:0,origens:{},destinos:{},cortes:{},pAng:0,perda:0,rots:[],
+      telha:tel,telhaNome:T.nome,telhaId:T.telhaId,util:T.util});};
   chapas.forEach(c=>{
-    const g=grupo(c.mm); g.qtd++;
-    g.perda+=(TLH.util/1000)*(c.mm/1000)-c.cortes.reduce((s,t)=>s+tlhParede(t),0);
+    const g=grupo(c.mm,c.telha); g.qtd++;
+    g.perda+=((c.util||TLH.util)/1000)*(c.mm/1000)-c.cortes.reduce((s,t)=>s+tlhParede(t),0);
     /* DESTINO conta CHAPAS, e origens conta PEÇAS -- sao coisas diferentes e
        a diferenca entre elas era o que fazia a soma do destino nao fechar com
        a quantidade no papel. Como a chapa e' o vao da grade, todos os pedacos
@@ -13800,9 +13823,9 @@ function telhaAgrupado(){
       cortes:Object.entries(g.cortes).map(([k,n])=>n>1?(n+'× '+k):k)};
     if(P>1){o.dividida={de:g.mm,partes:P,traspasse:Math.round(TLH.traspasse||0)};
       o.mm=d.medida;o.qtd=x(g.qtd);o.pecas=x(g.pecas);
-      o.perda=g.perda+(P-1)*(TLH.traspasse/1000)*(TLH.util/1000)*g.qtd;}
+      o.perda=g.perda+(P-1)*(TLH.traspasse/1000)*((g.util||TLH.util)/1000)*g.qtd;}
     return o;})
-    .sort((a,b)=>b.mm-a.mm);
+    .sort((a,b)=>(a.telha?1:0)-(b.telha?1:0)||String(a.telha).localeCompare(String(b.telha))||b.mm-a.mm);
 }
 function telhaTotais(){
   const e=Math.max(1,TLH.estruturas);
@@ -13811,7 +13834,7 @@ function telhaTotais(){
   let extraPerda=0;
   chapas.forEach(ch=>{const d=tlhDivide(ch.mm);metros+=d.partes*d.medida/1000*e;
     if(d.partes===1&&TLH.maxComp>0&&ch.mm>TLH.maxComp)longas+=e;
-    if(d.partes>1){const mais=(d.partes*d.medida-ch.mm)/1000*(TLH.util/1000)*e;
+    if(d.partes>1){const mais=(d.partes*d.medida-ch.mm)/1000*((ch.util||TLH.util)/1000)*e;
       pecas+=(d.partes-1)*e;telhas+=(d.partes-1)*ch.cortes.length*e;m2+=mais;extraPerda+=mais;}});
   (TLH.avulsos||[]).forEach(a=>{
     const n=a.qtd*e,d=tlhDivide(a.mm);
@@ -13829,7 +13852,7 @@ function telhaSemAproveitar(){
   const e=Math.max(1,TLH.estruturas);
   let chapas=0,area=0;
   TLH.faces.forEach(f=>f.telhas.forEach(t=>{
-    chapas+=e; area+=(TLH.util/1000)*(t.mm/1000)*e;}));
+    chapas+=e; area+=((t.util||TLH.util)/1000)*(t.mm/1000)*e;}));
   return {chapas,area};
 }
 /* ---- item avulso ----
@@ -13893,13 +13916,13 @@ function telhaPerdaPorFace(){
   const reg=nome=>por[nome]||(por[nome]={nome,ang:0,larg:0,perda:0,area:0,nEstreitas:0});
   TLH.faces.forEach(f=>reg(f.nome));
   telhaChapas().forEach(c=>{
-    const comp=(TLH.util/1000)*(c.mm/1000);
+    const comp=((c.util||TLH.util)/1000)*(c.mm/1000);
     const peso=c.cortes.map(t=>(t.larg/1000)*(t.mm/1000));
     const som=peso.reduce((a,b)=>a+b,0)||1;
     c.cortes.forEach((t,i)=>{
       const r=reg(t.face), q=comp*peso[i]/som;
       r.area+=q*e; r.ang+=tlhPerdaAng(t)*e; r.perda+=(q-tlhParede(t))*e;
-      if(t.larg<TLH.util-2)r.nEstreitas++;
+      if(t.larg<(t.util||TLH.util)-2)r.nEstreitas++;
     });
   });
   return Object.values(por).map(r=>({...r,larg:Math.max(0,r.perda-r.ang),
@@ -13919,6 +13942,8 @@ function telhaRenomeiaFace(i,valorBruto){
   const novo=String(valorBruto||'').trim();
   if(!novo||novo===f.nome)return false;
   if(f.nomeOriginal==null)f.nomeOriginal=f.nome;
+  /* o ajuste e a telha da parede vão com ela para o nome novo */
+  [TLH.ajustesFace,TLH.telhasFace].forEach(m=>{if(m&&m[f.nome]!=null){m[novo]=m[f.nome];delete m[f.nome];}});
   f.nome=novo;
   (f.telhas||[]).forEach(t=>{t.face=novo;});
   return true;
@@ -14086,7 +14111,7 @@ function telhaPinta(){
   }).join('')||'<tr><td colspan="5">Nenhuma face fechada encontrada no desenho.</td></tr>';
   const ld=document.getElementById('tlListaDet');
   if(ld)ld.innerHTML=gs.map(g=>{
-    const tot=g.qtd*e, perda=g.perda*e, area=(tot*g.mm/1000)*(TLH.util/1000);
+    const tot=g.qtd*e, perda=g.perda*e, area=(tot*g.mm/1000)*((g.util||TLH.util)/1000);
     return '<tr><td class="ct-mm">'+g.mm.toLocaleString('pt-BR')+' mm</td>'+
       '<td class="ct-org">'+g.origens.map(o=>escapeHtml(o.faixa)+' ('+(o.qtd*e)+')').join(' · ')+'</td>'+
       '<td class="n"><b>'+tot+'</b></td>'+
@@ -14132,6 +14157,7 @@ function telhaPinta(){
       '<span class="tl-f-d"><b>'+((f.xFim-f.xIni)/1000).toFixed(2).replace('.',',')+'</b> m de base</span>'+
       '<span class="tl-f-d"><b>'+(f.telhas.length*e)+'</b> telhas</span>'+
       '<span class="tl-f-d"'+(abTit?' title="'+escAttr(abTit)+'"':'')+'>'+ab+'</span>'+
+      '<label class="tl-f-tel">Telha <select data-tlh-tel="'+i+'" aria-label="Telha desta parede">'+tlhOpcoesTelhaFace((TLH.telhasFace||{})[f.nome])+'</select></label>'+
       '<label class="tl-f-aj" title="Somado às telhas desta parede, além do Ajuste da obra: positivo acrescenta, negativo desconta">Ajuste (mm) <input data-tlh-aj="'+i+'" type="number" step="1" value="'+Math.round(+((TLH.ajustesFace||{})[f.nome])||0)+'"></label>'+
       (skpF?'<button type="button" class="btn ghost tl-f-x" data-tlh-excluir="'+i+'" title="Tira este grupo da leitura: terça, cobertura ou qualquer face que veio junto sem ser parede">× Excluir</button>':'')+
       tlhAberturasHTML(f,i)+
@@ -14142,6 +14168,12 @@ function telhaPinta(){
      calculada desta face (t.face) -- sem isso a tabela de corte e a perda
      por face continuariam mostrando o nome antigo, porque foram calculadas
      uma vez e guardam o nome copiado, nao uma referencia viva. */
+  fx.querySelectorAll('[data-tlh-tel]').forEach(el=>el.addEventListener('change',()=>{
+    const f=TLH.faces[+el.dataset.tlhTel];if(!f)return;TLH.telhasFace=TLH.telhasFace||{};
+    const usa=v=>{if(v)TLH.telhasFace[f.nome]=v;else delete TLH.telhasFace[f.nome];telhaMonta();telhaPinta();};
+    if(el.value==='bras:novo'){el.value=(TLH.telhasFace||{})[f.nome]||'';brasAbreCatalogo(id=>usa('orc:'+id));return;}
+    usa(el.value);
+  }));
   fx.querySelectorAll('[data-tlh-aj]').forEach(el=>el.addEventListener('change',()=>{
     const f=TLH.faces[+el.dataset.tlhAj];if(!f)return;TLH.ajustesFace=TLH.ajustesFace||{};
     const v=Math.round(num(el.value)||0);if(v)TLH.ajustesFace[f.nome]=v;else delete TLH.ajustesFace[f.nome];
@@ -14412,7 +14444,7 @@ function telhaSalvarObra(){
     perfilRot:telhaRotuloAtual(),
     cfg:{perfil:TLH.perfil,telhaId:TLH.telhaId||'',util:TLH.util,passo:TLH.passo,altura:TLH.altura,
          maxComp:TLH.maxComp,traspasse:TLH.traspasse,estruturas:TLH.estruturas,
-         ajusteSinal:2,ajusteObra:Math.round(+TLH.ajusteObra||0),ajustesFace:JSON.parse(JSON.stringify(TLH.ajustesFace||{})),
+         telhasFace:JSON.parse(JSON.stringify(TLH.telhasFace||{})),ajusteSinal:2,ajusteObra:Math.round(+TLH.ajusteObra||0),ajustesFace:JSON.parse(JSON.stringify(TLH.ajustesFace||{})),
          aberturas:JSON.parse(JSON.stringify(TLH.aberturas||{ajustes:{},manuais:{}})),
          avulsos:JSON.parse(JSON.stringify(TLH.avulsos||[]))},
     resumo:{chapas:t.pecas,pecas:t.telhas,m2:+t.m2.toFixed(2),
@@ -14522,7 +14554,7 @@ function telhaExportarOrcamento(){
   const t=telhaBancoAtual(),b=document.getElementById('tlOrc');
   if(!t){alert('Selecione primeiro uma telha do cadastro do Orçamento RM.');return;}
   const e=Math.max(1,TLH.estruturas),linhas=telhaAgrupado().map(g=>({
-    telhaId:t.id,comp:g.mm,qtd:g.qtd*e,larguraUtilMm:TLH.util,
+    telhaId:g.telha&&g.telhaId?g.telhaId:t.id,comp:g.mm,qtd:g.qtd*e,larguraUtilMm:g.util||TLH.util,
     obs:'Fechamento vertical · '+g.destinos.map(d=>d.faixa+' '+(d.qtd*e)).join(' · ')+
       (g.rots&&g.rots.length?' · '+g.rots.join(' · '):'')
   }));
@@ -14616,7 +14648,7 @@ function telhaMontarDXF(){
       /* a tira estreita leva a largura e, quando divide chapa com outra, o
          numero da chapa e a irma -- e conferir isso no AutoCAD que mostra
          que nao ha chapa comprada a mais */
-      if(t.larg<TLH.util-2)
+      if(t.larg<(t.util||TLH.util)-2)
         T('RM-TEL-COTA',{x:(t.x0+t.x1)/2,y:t.pe+260},hp,
           'L='+t.larg+(t.chapa?('  CHAPA '+t.chapa+' c/ '+t.irmas.join('+')):''),90);
     });
@@ -14703,9 +14735,10 @@ function telhaDocumento(){
   /* Metade em cada coluna, e a mais comprida na esquerda: e' a ordem em que
      ele le e a mesma da tela. */
   const meio=Math.ceil(gs.length/2);
+  const variasTel=new Set(gs.map(g=>g.telha||'')).size>1;
   const tabela=lista=>'<table class="pt-t"><thead><tr>'+
     '<th class="c-mm">Compr. (mm)</th><th class="c-q">Qtd.</th><th class="c-d">Destino</th>'+
-    '</tr></thead><tbody>'+lista.map(linha).join('')+'</tbody></table>';
+    '</tr></thead><tbody>'+lista.map((g,i)=>(variasTel&&(i===0||(lista[i-1].telha||'')!==(g.telha||''))?'<tr class="pt-tel"><td colspan="3"><b>'+escapeHtml(g.telhaNome||'')+'</b> · útil '+(g.util||TLH.util)+' mm</td></tr>':'')+linha(g)).join('')+'</tbody></table>';
 
   pa.classList.remove('hide');
   pa.innerHTML='<div class="rm-sheet rc-sheet ct-pedido pt-folha">'+'<div class=\"rm-dagua\" aria-hidden=\"true\"><img src=\"'+LOGO_MARCA_DAGUA+'\" alt=\"\"></div>'+
@@ -14714,8 +14747,8 @@ function telhaDocumento(){
       '<div class="rm-obra"><span>Obra / Cliente</span><b>'+escapeHtml(obraAtual()||'(sem obra)')+'</b>'+
         '<span class="rm-date">'+dataBr+'</span></div>'+
       '<div class="rc-res">'+
-        '<div><span>Telha</span><b>'+escapeHtml(perfilRot)+'</b></div>'+ 
-        '<div><span>Largura útil</span><b>'+TLH.util+' mm</b></div>'+
+        '<div><span>Telha</span><b>'+escapeHtml(perfilRot)+'</b>'+[...new Map(gs.filter(g=>g.telha).map(g=>[g.telha,g])).values()].map(g=>'<b style="display:block;margin-top:3px">'+escapeHtml(g.telhaNome)+'</b>').join('')+'</div>'+ 
+        '<div><span>Largura útil</span><b>'+TLH.util+' mm</b>'+[...new Map(gs.filter(g=>g.telha).map(g=>[g.telha,g])).values()].map(g=>'<b style="display:block;margin-top:3px">'+(g.util||TLH.util)+' mm</b>').join('')+'</div>'+
         (TLH.fabricante?('<div><span>Fabricante</span><b>'+escapeHtml(TLH.fabricante)+'</b></div>'):'')+
         '<div><span>Chapas</span><b>'+t.pecas.toLocaleString('pt-BR')+'</b></div>'+
         '<div><span>Metros lineares</span><b>'+t.metros.toFixed(2).replace('.',',')+' m</b></div>'+
@@ -14832,7 +14865,7 @@ function telhaFichaHTML(){
   const obs=t=>{const o=[],d=tlhDivide(t.mm);
     if(t.abaixo)o.push('sob janela');else if(t.porta)o.push('sobre abertura');
     if(t.queda>0)o.push('corte '+n0(t.queda));
-    if(t.larg<util-2)o.push('larg. '+n0(t.larg));
+    if(t.larg<(t.util||util)-2)o.push('larg. '+n0(t.larg));
     if(t.chapa){const ir=chapas.find(c=>c.n===t.chapa);const outras=ir?ir.cortes.filter(q=>q!==t).map(q=>q.cod):[];if(outras.length)o.push('mesma chapa '+outras.join(', '));}
     if(d.partes>1)o.push(d.partes+' × '+n0(d.medida));
     return o.map(x=>'<span style="white-space:nowrap">'+x+'</span>').join(' · ');};
@@ -14985,7 +15018,8 @@ function tlh3dMonta(){
   const LUZ=[-0.42,0.30,0.85];
   f.telhas.forEach((t,ti)=>{
     const yA=t.yA, yB=t.yB;
-    const alto=Math.max(yA,yB), pe=alto-t.mm;
+    /* o pé de verdade (t.pe): o ajuste da obra muda a medida comprada, não a parede */
+    const alto=Math.max(yA,yB), pe=t.pe!=null?t.pe:alto-t.mm;
     const teto=x=>yA+(yB-yA)*(x-t.x0)/((t.x1-t.x0)||1);
     const xs=tlh3dAmostras(t.x0,t.x1);
     /* P TEM DE VIVER AQUI FORA, NAO DENTRO DO FOR.
@@ -15005,7 +15039,7 @@ function tlh3dMonta(){
       /* lambert simples: e a sombra que faz a onda aparecer */
       const nx=-dz/L, nz=dx/L;
       const luz=Math.max(0.30,Math.min(1,Math.abs(nx*LUZ[0]+nz*LUZ[2])*0.85+0.35));
-      quads.push({tipo:'telha',luz,estreita:t.larg<TLH.util-2,cor:tlh3dCor(T3.face,t.larg<TLH.util-2,ti),
+      quads.push({tipo:'telha',luz,estreita:t.larg<(t.util||TLH.util)-2,cor:tlh3dCor(T3.face,t.larg<(t.util||TLH.util)-2,ti),
         pts:[P(xa,pe,za),P(xb,pe,zb),P(xb,teto(xb),zb),P(xa,teto(xa),za)]});
       if(T3.recorte&&Math.abs(yA-yB)>1){
         const ta=teto(xa), tb=teto(xb);
@@ -15050,7 +15084,7 @@ function tlh3dMontaConjunto(){
       const yA=t.yA,yB=t.yB,alto=Math.max(yA,yB),pe=t.pe,teto=x=>yA+(yB-yA)*(x-t.x0)/((t.x1-t.x0)||1),xs=tlh3dAmostras(t.x0,t.x1);
       for(let i=0;i+1<xs.length;i++){
         const xa=xs[i],xb=xs[i+1],za=tlh3dZ(xa)*k,zb=tlh3dZ(xb)*k;
-        quads.push({tipo:'telha',fi,luz:.82,estreita:t.larg<TLH.util-2,cor:tlh3dCor(fi,t.larg<TLH.util-2,ti),pts:[tlh3dMundo(f,xa,pe,za),tlh3dMundo(f,xb,pe,zb),tlh3dMundo(f,xb,teto(xb),zb),tlh3dMundo(f,xa,teto(xa),za)]});
+        quads.push({tipo:'telha',fi,luz:.82,estreita:t.larg<(t.util||TLH.util)-2,cor:tlh3dCor(fi,t.larg<(t.util||TLH.util)-2,ti),pts:[tlh3dMundo(f,xa,pe,za),tlh3dMundo(f,xb,pe,zb),tlh3dMundo(f,xb,teto(xb),zb),tlh3dMundo(f,xa,teto(xa),za)]});
         if(T3.recorte&&Math.abs(yA-yB)>1){const ta=teto(xa),tb=teto(xb);if(alto-ta>.5||alto-tb>.5)quads.push({tipo:'recorte',luz:1,pts:[tlh3dMundo(f,xa,ta,za),tlh3dMundo(f,xb,tb,zb),tlh3dMundo(f,xb,alto,zb),tlh3dMundo(f,xa,alto,za)]});}
       }
       const z0=tlh3dZ(t.x0)*k,z1=tlh3dZ(t.x1)*k;
@@ -15502,7 +15536,7 @@ function tlh3dExportarHTML(){
       cumeeira:f.cumeeira,beiral:f.beiral,
       perdaAng:+ang.toFixed(2),perdaLarg:+larg.toFixed(2),estreitas:estr,
       telhas:f.telhas.map(t=>({x0:+t.x0.toFixed(1),x1:+t.x1.toFixed(1),
-        yA:+t.yA.toFixed(1),yB:+t.yB.toFixed(1),mm:t.mm,larg:t.larg}))};
+        yA:+t.yA.toFixed(1),yB:+t.yB.toFixed(1),pe:+(+t.pe).toFixed(1),mm:t.mm,larg:t.larg}))};
   });
   /* a paleta vai junto: tlh3dCor depende dela e o arquivo enviado nao tem
      o resto do leitor */
@@ -19982,7 +20016,7 @@ window.__leitorTeste={
       sheets:p.sheets.map(s=>({w:s.width,n:s.placed.length,lot:s.lotKey,retalhos:RMChapas.retalhos(s,st.cfg)}))};},
   fechamento:()=>{const hex=c=>'#'+c.map(v=>v.toString(16).padStart(2,'0')).join(''),conj=tlh3dMontaConjunto();
     return {util:TLH.util,paredes:TLH.faces.map((f,i)=>({nome:f.nome,base:f.xFim-f.xIni,aberturas:(f.vergas||[]).filter(v=>!v.vao).length,
-      cor:hex(tlh3dCor(i,false,0)),telhas:f.telhas.length,maiorMm:Math.max(0,...f.telhas.map(t=>t.mm)),area:Math.round((Number(f.area3d)||0)*10)/10,cortes:[...new Set(f.telhas.flatMap(t=>[t.x0-f.xIni,t.x1-f.xIni]))].sort((a,b)=>a-b)})),
+      cor:hex(tlh3dCor(i,false,0)),telhas:f.telhas.length,maiorMm:Math.max(0,...f.telhas.map(t=>t.mm)),utils:[...new Set(f.telhas.map(t=>t.util||TLH.util))],larguras:f.telhas.map(t=>t.larg),fundo3d:(()=>{const g=T3.face;T3.face=i;const d=tlh3dMonta();T3.face=g;const ys=d?d.quads.filter(q=>q.tipo==='telha').flatMap(q=>q.pts.map(p=>p[1])):[];return ys.length?Math.round(Math.min(...ys)):null;})(),estreitas:f.telhas.filter(t=>t.larg<(t.util||TLH.util)-2).length,area:Math.round((Number(f.area3d)||0)*10)/10,cortes:[...new Set(f.telhas.flatMap(t=>[t.x0-f.xIni,t.x1-f.xIni]))].sort((a,b)=>a-b)})),
       rotulos:((conj&&conj.rotulos)||[]).map(x=>{const ys=conj.quads.filter(q=>q.fi===x.i).flatMap(q=>q.pts.map(p=>p[1]));
         return {nome:x.nome,cor:hex(x.cor),acimaDoTopo:ys.length?Math.round(x.pos[1]-Math.max(...ys)):null};})};},
   cuKey:CU_KEY,
@@ -27016,6 +27050,8 @@ render();
 #tlov .cob-cum{border:1px solid var(--line);border-left:3px solid var(--rm-laranja);border-radius:8px;padding:9px 12px;margin:10px 0;background:var(--surface);font-size:13px}
 #tlov .cob-cum-t{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}
 #tlov .cob-cum-d{color:var(--muted);font-size:12px;margin-top:3px}
+#tlov .cob-cum-esc{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;margin:8px 0 2px;font-size:12px;color:var(--muted)}
+#tlov .cob-cum-esc select{max-width:340px;margin-left:6px}#tlov .cob-cum-esc input{width:90px;margin-left:6px}
 #tlov .cob-topo-todos{display:flex;gap:6px;flex-wrap:wrap}
 #tlov .cob-topo-todos .btn{padding:3px 9px;font-size:12px}
 #tlov table.cob-topo{width:100%;border-collapse:collapse;margin:8px 0 4px;font-size:12.5px}
@@ -27141,7 +27177,7 @@ html[data-theme="escuro"] .log-det>summary.err{color:var(--red)}.log-det>summary
 #tlov .tl-prev{display:block;position:relative;width:100%;margin:0 0 10px;padding:0;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--surface-2);cursor:zoom-in}
 #tlov .tl-prev img{display:block;width:100%;height:auto}
 #tlov .tl-prev span{position:absolute;right:8px;bottom:8px;padding:4px 9px;border-radius:7px;background:rgba(20,26,32,.8);color:#eef2f6;font-size:12px;font-weight:600}
-#tlov .tl-face .cob-f-tel select{max-width:230px;font-family:inherit}
+#tlov .tl-face .cob-f-tel select,#tlov .tl-face .tl-f-tel select{max-width:230px;font-family:inherit}
 #tlov .cob-tel-t{text-align:left;background:var(--surface-2);color:var(--ink);font-size:12px;letter-spacing:.04em}
 #tlov .tl-face label{display:inline-flex;align-items:center;gap:5px;font-size:11px;color:var(--muted);text-transform:uppercase;
   letter-spacing:.07em;font-weight:700;white-space:nowrap}
@@ -28981,7 +29017,12 @@ html[data-theme="escuro"] .log-det>summary.err{color:var(--red)}.log-det>summary
       const v=num(e.target.value);if(v<0)return;COB.parafM2=v;salvaCob();e.target.blur();pintaCobertura();});
     const cumP=document.getElementById('cobCumPainel');
     if(cumP){
-      cumP.addEventListener('change',e=>{const k=e.target.dataset&&e.target.dataset.cobTopo;if(k==null)return;
+      cumP.addEventListener('change',e=>{
+        if(e.target.matches('[data-cob-cum-id]')){const v=e.target.value;
+          if(v==='bras:novo'){e.target.value=String(COB.cumId||'');brasAbreCatalogo(id=>{COB.cumId=id;COB.cumUtil=0;topoMuda();},'CUM');return;}
+          COB.cumId=v;COB.cumUtil=0;topoMuda();return;}
+        if(e.target.matches('[data-cob-cum-util]')){const v=inteiro(e.target.value);COB.cumUtil=v>=100?v:0;topoMuda();return;}
+        const k=e.target.dataset&&e.target.dataset.cobTopo;if(k==null)return;
         COB.topos=COB.topos&&typeof COB.topos==='object'?COB.topos:{};COB.topos[k]=e.target.value;topoMuda();});
       cumP.addEventListener('click',e=>{const bt=e.target.closest('[data-cob-topo-todos]');if(!bt)return;
         const v=bt.dataset.cobTopoTodos,r=calculaCobertura();COB.topos={};
@@ -29216,10 +29257,13 @@ html[data-theme="escuro"] .log-det>summary.err{color:var(--red)}.log-det>summary
     const util=inteiro(COB.util),e=Math.max(1,inteiro(COB.estruturas)||1);
     if(!(util>0))return null;
     const linhas=topoLinhas(r);
-    const tr=linhas.filter(l=>l.tipo==='cumeeira').map(c=>({nome:c.nome,L:c.L,pecas:c.pecas.length*e,dois:c.dois}));
+    /* útil da cumeeira igual à da telha: uma peça por faixa (casa com os
+       gomos). Diferente: o comprimento da cumeeira dividido pela útil dela */
+    const ce=cumEscolha(cumTipo()),uc=ce.util,porFaixa=Math.abs(uc-util)<=2;
+    const tr=linhas.filter(l=>l.tipo==='cumeeira').map(c=>({nome:c.nome,L:c.L,pecas:(porFaixa?c.pecas.length:Math.ceil(c.L/uc-1e-6))*e,dois:c.dois}));
     const pecas=tr.reduce((s,t)=>s+t.pecas,0);
     const rp=rufoPecas(1),rt=linhas.filter(l=>l.tipo==='rufo').map(l=>({nome:l.nome,L:l.L,pecas:rufoPecas(l.L).n*e}));
-    return {tipo:cumTipo(),util,aba:CUM_ABA,trechos:tr,pecas,metros:pecas*util/1000,e,umaAgua:!tr.length,
+    return {tipo:cumTipo(),util:uc,cad:ce.cad,escolhida:ce.escolhida,aba:CUM_ABA,trechos:tr,pecas,metros:pecas*uc/1000,e,umaAgua:!tr.length,
       rufo:{trechos:rt,pecas:rt.reduce((s,t)=>s+t.pecas,0),metros:rt.reduce((s,t)=>s+t.L,0)*e/1000,peca:rp.peca,sobrepoe:rp.sob},
       linhas:linhas.map(l=>({key:l.key,nome:l.nome,L:l.L,auto:l.auto,tipo:l.tipo,dois:l.dois}))};
   }
@@ -29232,6 +29276,29 @@ html[data-theme="escuro"] .log-det>summary.err{color:var(--red)}.log-det>summary
     const cs=(PRECOS.telhas||[]).filter(x=>!x.oculto&&/CUMEEIRA/i.test((x.cat||'')+' '+(x.desc||'')));
     const tp=cs.filter(x=>tipo==='ondulada'?/ONDUL/i.test(x.desc||''):/TP\s*-?\s*40|TRAPEZ/i.test(x.desc||''));
     return (esp&&tp.find(x=>String(x.desc||'').replace('.',',').includes(esp)))||tp[0]||null;
+  }
+  /* A CUMEEIRA QUE A PESSOA ESCOLHE: modelo e espessura (cadastro do
+     Orçamento ou catálogo Brastelha) e a largura útil dela, que muda de
+     fornecedor para fornecedor. Vazio = a sugestão (o cadastro com o perfil
+     e a espessura da telha). Útil 0 = a do item; sem ela, a da telha. */
+  function cumDoCadastro(){loadPrecos();return (PRECOS.telhas||[]).filter(x=>!x.oculto&&/CUMEEIRA/i.test((x.cat||'')+' '+(x.desc||'')))
+    .slice().sort((a,b)=>String(a.desc||'').localeCompare(String(b.desc||''),'pt-BR'));}
+  function cumEscolha(tipo){
+    const id=String(COB.cumId||''),t=id?orcTelhaPorId(id):null,cad=t||cumCadastro(tipo);
+    let util=inteiro(COB.cumUtil);
+    if(!(util>0)&&t){if(t.bras)util=(BRAS_MOD[t.bras.m]||{}).larg||0;
+      else{const m=Number(String(t.larguraUtilMm==null?'':t.larguraUtilMm).replace(',','.'));util=m>0?(m<20?Math.round(m*1000):Math.round(m)):0;}}
+    if(!(util>0))util=inteiro(COB.util);
+    return {cad,util,escolhida:!!t};
+  }
+  function cumOpcoesHTML(tipo){
+    const id=String(COB.cumId||''),sug=cumCadastro(tipo),db=cumDoCadastro();
+    const bras=Object.keys(BRAS_REG).filter(k=>BRAS_REG[k]&&BRAS_REG[k].l==='CUM'&&brasTelhaVirtual(k)&&!db.some(x=>String(x.id)===k)).map(k=>brasTelhaVirtual(k));
+    const op=(v,t)=>'<option value="'+h(v)+'"'+(String(v)===id?' selected':'')+'>'+h(t)+'</option>';
+    return op('','Sugerida'+(sug?' · '+sug.desc:''))+
+      (db.length?'<optgroup label="Cadastro do Orçamento">'+db.map(x=>op(String(x.id),x.desc)).join('')+'</optgroup>':'')+
+      (bras.length?'<optgroup label="BRASTELHA · escolhidas do catálogo">'+bras.map(x=>op(String(x.id),x.desc)).join('')+'</optgroup>':'')+
+      '<option value="bras:novo">＋ Escolher no catálogo Brastelha…</option>';
   }
   /* O painel do topo: uma linha por topo de água, com a escolha. impresso
      tira os campos (vai no pedido em papel). */
@@ -29263,7 +29330,7 @@ html[data-theme="escuro"] .log-det>summary.err{color:var(--red)}.log-det>summary
   }
   function cumHTML(c,impresso){
     if(!c)return '';
-    const ls=c.linhas||[],cad=c.pecas?cumCadastro(c.tipo):null,ru=c.rufo||{pecas:0,trechos:[]};
+    const ls=c.linhas||[],cad=c.pecas?c.cad:null,ru=c.rufo||{pecas:0,trechos:[]};
     if(!ls.length)return '<div class="cob-cum"><b>Topo do telhado</b> · nenhuma linha de topo encontrada.</div>';
     const linha=l=>{
       const q=l.tipo==='cumeeira'?((c.trechos.find(t=>t.nome===l.nome&&Math.abs(t.L-l.L)<1)||{}).pecas||0)+' pç de '+mm(c.util)+' mm'
@@ -29278,7 +29345,9 @@ html[data-theme="escuro"] .log-det>summary.err{color:var(--red)}.log-det>summary
           '<button type="button" class="btn ghost" data-cob-topo-todos="rufo">Tudo rufo</button>'+
           '<button type="button" class="btn ghost" data-cob-topo-todos="auto">Sugestão do sistema</button></span>')+'</div>'+
       '<table class="cob-topo"><thead><tr><th>Linha de topo</th><th class="n">Comprimento</th><th>Acabamento</th><th class="n">Peças</th></tr></thead><tbody>'+ls.map(linha).join('')+'</tbody></table>'+
-      (c.pecas?'<div class="cob-cum-d"><b>Cumeeira '+h(c.tipo)+': '+c.pecas+' peças de '+mm(c.util)+' mm</b> · comprimento da peça = largura útil da telha · aba de '+c.aba+' mm para cada água'+
+      (c.pecas&&!impresso?'<div class="cob-cum-esc"><label>Modelo da cumeeira <select data-cob-cum-id aria-label="Modelo e espessura da cumeeira">'+cumOpcoesHTML(c.tipo)+'</select></label>'+
+        '<label>Largura útil (mm) <input data-cob-cum-util type="number" min="100" step="1" value="'+c.util+'" aria-label="Largura útil da cumeeira"></label></div>':'')+
+      (c.pecas?'<div class="cob-cum-d"><b>Cumeeira '+h(c.tipo)+': '+c.pecas+' peças de '+mm(c.util)+' mm</b> · aba de '+c.aba+' mm para cada água'+
         (c.e>1?' · '+c.e+' estruturas':'')+' · '+(cad?'no Orçamento: <b>'+h(cad.desc)+'</b>':'<span style="color:var(--warn)">não encontrada no cadastro do Orçamento — vai como item avulso</span>')+'</div>':'')+
       (ru.pecas?'<div class="cob-cum-d"><b>Rufo: '+dec(ru.metros,2)+' m · '+ru.pecas+' peças de '+mm(ru.peca)+' mm</b> (sobreposição de '+ru.sobrepoe+' mm) · aba de '+RUFO_ABA+' mm sobre a telha'+
         (c.e>1?' · '+c.e+' estruturas':'')+' · vai ao Orçamento como item avulso</div>':'')+
@@ -29393,7 +29462,7 @@ html[data-theme="escuro"] .log-det>summary.err{color:var(--red)}.log-det>summary
     const linhas=cobTotaisComprimento(r.lista).map(g=>({telhaId:g.telha?g.x.telhaId:m.telhaId,comp:g.x.mm,qtd:g.qtd,larguraUtilMm:g.x.util||COB.util,
       obs:'Cobertura · '+[...g.destinos].join(', ')+(g.diag?' · '+g.diag+' com ponta em ângulo (corte na obra)':'')}));
     const cum=cobCumeeiras(r),avulsos=[];
-    if(cum&&cum.pecas){const cad=cumCadastro(cum.tipo),obs='Cumeeira '+cum.tipo+' · peças de '+cum.util+' mm (largura útil) · abas de '+cum.aba+' mm';
+    if(cum&&cum.pecas){const cad=cum.cad,obs='Cumeeira '+cum.tipo+' · peças de '+cum.util+' mm (largura útil) · abas de '+cum.aba+' mm';
       if(cad)linhas.push({telhaId:String(cad.id),comp:cum.util,qtd:cum.pecas,larguraUtilMm:cum.util,obs});
       else avulsos.push({nome:'Cumeeira '+cum.tipo+' ('+obs+')',tamanho:cum.pecas+' × '+cum.util+' mm',qtd:cum.pecas});}
     if(cum&&cum.rufo&&cum.rufo.pecas)avulsos.push({nome:'Rufo de topo (aba '+RUFO_ABA+' mm sobre a telha · '+dec(cum.rufo.metros,2)+' m · sobreposição '+cum.rufo.sobrepoe+' mm)',
@@ -29935,7 +30004,10 @@ html[data-theme="escuro"] .log-det>summary.err{color:var(--red)}.log-det>summary
       const f0=g[0],fz=g[g.length-1],ax3=sub(f0.b,f0.a),Lx=Math.sqrt(dot(ax3,ax3))||1,ex=ax3.map(v=>v/Lx);
       const tAt=q=>dot(sub(q,f0.a),ex);let lo=-Infinity,hi=Infinity;
       g.forEach(p=>{const a1=tAt(p.a),b1=tAt(p.b);lo=Math.max(lo,Math.min(a1,b1));hi=Math.min(hi,Math.max(a1,b1));});
-      const tm=hi>lo?(lo+hi)/2:Lx*.5;
+      /* a seta vai FORA do telhado, logo além do beiral: em cima das telhas
+         ela cobria o código e o comprimento delas */
+      const baixoA=f0.a[2]<=f0.b[2],pontas=g.map(p=>{const ta=tAt(p.a),tb=tAt(p.b);return baixoA?Math.min(ta,tb):Math.max(ta,tb);});
+      const folga=Math.max(350,Math.min(900,Lx*.07)),tm=baixoA?Math.min(...pontas)-folga:Math.max(...pontas)+folga;
       /* o código de cada telha vai na metade oposta à da seta */
       g.forEach(p=>{const ta=tAt(p.a),tb=tAt(p.b),fr=Math.abs(tb-ta)>1e-6?(tm-ta)/(tb-ta):.5;p.lt=fr<.5?.74:.26;});
       if(g.length<2)return;
@@ -29943,8 +30015,21 @@ html[data-theme="escuro"] .log-det>summary.err{color:var(--red)}.log-det>summary
       const A=f0.a.map((v,i)=>v+ex[i]*tm),Z=A.map((v,i)=>v+Dp[i]),pa=tr(A),pz=tr(Z);
       setas.push({a:{x:sx(pa),y:sy(pa)},z:{x:sx(pz),y:sy(pz)}});
     });
-    /* 2) código e comprimento ao longo de cada telha */
+    /* 2) as setas, fora do telhado e por baixo dos códigos */
+    setas.forEach(({a,z})=>{
+      const ang=Math.atan2(z.y-a.y,z.x-a.x),hd=18;
+      c.strokeStyle='#d53309';c.lineWidth=5;c.lineCap='round';
+      c.beginPath();c.moveTo(a.x,a.y);c.lineTo(z.x-Math.cos(ang)*hd*.7,z.y-Math.sin(ang)*hd*.7);c.stroke();
+      c.beginPath();c.moveTo(z.x,z.y);c.lineTo(z.x-Math.cos(ang-.45)*hd,z.y-Math.sin(ang-.45)*hd);c.lineTo(z.x-Math.cos(ang+.45)*hd,z.y-Math.sin(ang+.45)*hd);c.closePath();c.fillStyle='#d53309';c.fill();
+      c.beginPath();c.arc(a.x,a.y,8,0,Math.PI*2);c.fillStyle='#fff';c.fill();c.lineWidth=4;c.stroke();
+      /* INÍCIO antes do ponto de partida, no sentido contrário ao da seta:
+         fica fora da primeira telha e não cobre o código dela */
+      const ix=a.x-Math.cos(ang)*14,iy=a.y-Math.sin(ang)*14;
+      c.font='800 14px Arial, sans-serif';c.textAlign=Math.cos(ang)>=0?'right':'left';c.textBaseline='middle';c.lineWidth=4;c.strokeStyle='#fff';c.strokeText('INÍCIO',ix,iy);c.fillStyle='#d53309';c.fillText('INÍCIO',ix,iy);c.textBaseline='alphabetic';
+    });
+    /* 3) código e comprimento ao longo de cada telha */
     P.forEach(p=>{p.mx=p.ax+(p.bx-p.ax)*p.lt;p.my=p.ay+(p.by-p.ay)*p.lt;});
+    C3.fichaSetas={setas,codigos:P.map(p=>({x:p.mx,y:p.my}))};
     P.forEach(p=>{let d=Infinity;P.forEach(o=>{if(o!==p&&o.st===p.st)d=Math.min(d,Math.hypot(o.mx-p.mx,o.my-p.my));});p.larg=d;});
     c.save();c.textAlign='center';c.textBaseline='middle';
     P.forEach(p=>{
@@ -29967,18 +30052,6 @@ html[data-theme="escuro"] .log-det>summary.err{color:var(--red)}.log-det>summary
       c.beginPath();c.moveTo(d.mx,d.my);c.lineTo(d.mx-Math.cos(ang-.4)*14,d.my-Math.sin(ang-.4)*14);c.lineTo(d.mx-Math.cos(ang+.4)*14,d.my-Math.sin(ang+.4)*14);c.closePath();c.fill();
       const t='SOBRA '+p.f.reusoLarguraSobra+' mm';c.font='800 14px Arial, sans-serif';c.textAlign='center';c.textBaseline='middle';
       c.lineWidth=4;c.strokeStyle='#fff';c.strokeText(t,mx,(p.my+d.my)/4+my/2);c.fillText(t,mx,(p.my+d.my)/4+my/2);c.restore();
-    });
-    /* 3) as setas por cima */
-    setas.forEach(({a,z})=>{
-      const ang=Math.atan2(z.y-a.y,z.x-a.x),hd=18;
-      c.strokeStyle='#d53309';c.lineWidth=5;c.lineCap='round';
-      c.beginPath();c.moveTo(a.x,a.y);c.lineTo(z.x-Math.cos(ang)*hd*.7,z.y-Math.sin(ang)*hd*.7);c.stroke();
-      c.beginPath();c.moveTo(z.x,z.y);c.lineTo(z.x-Math.cos(ang-.45)*hd,z.y-Math.sin(ang-.45)*hd);c.lineTo(z.x-Math.cos(ang+.45)*hd,z.y-Math.sin(ang+.45)*hd);c.closePath();c.fillStyle='#d53309';c.fill();
-      c.beginPath();c.arc(a.x,a.y,8,0,Math.PI*2);c.fillStyle='#fff';c.fill();c.lineWidth=4;c.stroke();
-      /* INÍCIO antes do ponto de partida, no sentido contrário ao da seta:
-         fica fora da primeira telha e não cobre o código dela */
-      const ix=a.x-Math.cos(ang)*14,iy=a.y-Math.sin(ang)*14;
-      c.font='800 14px Arial, sans-serif';c.textAlign=Math.cos(ang)>=0?'right':'left';c.textBaseline='middle';c.lineWidth=4;c.strokeStyle='#fff';c.strokeText('INÍCIO',ix,iy);c.fillStyle='#d53309';c.fillText('INÍCIO',ix,iy);c.textBaseline='alphabetic';
     });
     c.restore();
   }
@@ -30529,40 +30602,53 @@ html[data-theme="escuro"] .log-det>summary.err{color:var(--red)}.log-det>summary
       '<line x1="'+x1+'" y1="'+(sup(x1)+6)+'" x2="'+x1+'" y2="'+(yd+8)+'" stroke="#d53309" stroke-width="1"/>'+
       '<line x1="'+(xi-16)+'" y1="'+yd+'" x2="'+(x1+16)+'" y2="'+yd+'" stroke="#d53309" stroke-width="1.5"/>'+tick(xi)+tick(x1)+
       '<text x="'+(xi-22)+'" y="'+(yd+6)+'" font-size="19" font-weight="800" fill="#d53309" text-anchor="end">'+pg+' mm</text>';
-    return '<div class="cob-fab-det"><b>Pingadeira: '+pg+' mm · inferior = superior − '+pg+' mm</b><svg viewBox="0 0 '+W+' '+(yd+20)+'" role="img" aria-label="Detalhe da pingadeira na ponta de baixo da telha" style="font-family:Arial,Helvetica,sans-serif">'+o+'</svg></div>';
+    return '<div class="cob-fab-det"><b>Pingadeira</b><svg viewBox="0 0 '+W+' '+(yd+20)+'" role="img" aria-label="Detalhe da pingadeira na ponta de baixo da telha" style="font-family:Arial,Helvetica,sans-serif">'+o+'</svg></div>';
   }
   /* as telhas do FECHAMENTO, para irem no mesmo pedido (opção na tela):
      o cálculo é o da aba Fechamento, com o ajuste da obra dela */
   function cobFechPedido(){
     if(!COB.comFechamento||!Array.isArray(TLH.faces)||!TLH.faces.length)return null;
     const e=Math.max(1,+TLH.estruturas||1),gs=telhaAgrupado();if(!gs.length)return null;
-    return {nome:telhaRotuloAtual(),util:TLH.util,grupos:gs.map(g=>({mm:g.mm,qtd:g.qtd*e,onde:(g.destinos||[]).map(d=>d.faixa)}))};
+    const sec=new Map();gs.forEach(g=>{const k=g.telha||'';if(!sec.has(k))sec.set(k,{nome:g.telhaNome||telhaRotuloAtual(),util:g.util||TLH.util,grupos:[]});
+      sec.get(k).grupos.push({mm:g.mm,qtd:g.qtd*e,onde:(g.destinos||[]).map(d=>d.faixa)});});
+    return [...sec.values()];
   }
   function documentoCobertura(){
     const r=calculaCobertura();if(!COB.confirmada||!r.ok)return;
     const pa=document.getElementById('printArea');if(!pa)return;const m=modeloAtual(),data=new Date().toLocaleDateString('pt-BR');
     const logo=(typeof LOGO_RM!=='undefined'&&LOGO_RM)?'<img src="'+LOGO_RM+'" style="height:56px;display:block">':'<div style="font-weight:800;font-size:22px;color:#D53309">RM</div>';
     const tc=COB.orcTelhaId?orcTelhaPorId(COB.orcTelhaId):null,telha=(tc&&tc.desc)||m.nome;
-    const cum=cobCumeeiras(r),cad=cum&&cum.pecas?cumCadastro(cum.tipo):null;
+    const cum=cobCumeeiras(r),cad=cum&&cum.pecas?cum.cad:null;
     const tot=cobTotaisComprimento(r.lista),ru=cum&&cum.rufo&&cum.rufo.pecas?cum.rufo:null,fech=cobFechPedido();
     const n0=v=>Math.round(v).toLocaleString('pt-BR');
     /* uma tabela só, larga: cada telha é um título, e embaixo comprimento,
        quantidade e onde vai */
-    const secao=(tit,util,linhas,soma,metros)=>'<tr class="cf-sec"><th colspan="3">'+tit+' <small>útil '+mm(util)+' mm</small></th></tr>'+linhas+
-      '<tr class="cf-tot"><td>Total</td><td class="q">'+soma+'</td><td>'+dec(metros,2)+' m</td></tr>';
+    /* o título de cada telha vai junto com as primeiras linhas dela: se não
+       cabe no fim da folha, passa inteiro para a próxima (nunca sozinho) */
+    const secao=(tit,util,linhas,soma,metros)=>'<tbody class="cf-cab"><tr class="cf-sec"><th colspan="3">'+tit+' <small>útil '+mm(util)+' mm</small></th></tr>'+linhas.slice(0,2).join('')+'</tbody>'+
+      '<tbody>'+linhas.slice(2).join('')+'<tr class="cf-tot"><td>Total</td><td class="q">'+soma+'</td><td>'+dec(metros,2)+' m</td></tr></tbody>';
     const linhaCob=g=>{const t=g.x.chapaSup!=null&&g.x.chapaInf!=null&&g.x.chapaSup!==g.x.chapaInf;
       return '<tr><td class="c">'+(t?n0(g.x.chapaSup)+' <small>sup.</small><br><span class="inf">'+n0(g.x.chapaInf)+' <small>inf.</small></span>':n0(g.x.mm))+'</td><td class="q">'+g.qtd+'</td><td class="o">'+h([...g.destinos].join(', '))+'</td></tr>';};
     const telhasCob=cobTelhasDoTotal(tot).map(T=>{const so=T.grupos.reduce((a,g)=>a+g.qtd,0),mt=T.grupos.reduce((a,g)=>a+g.qtd*num(g.x.chapaSup!=null?g.x.chapaSup:g.x.mm),0)/1000;
-      return secao('Cobertura · '+h(T.nome),T.util,T.grupos.map(linhaCob).join(''),so,mt);}).join('');
-    const telhasFech=fech?secao('Fechamento · '+h(fech.nome),fech.util,fech.grupos.map(g=>'<tr><td class="c">'+n0(g.mm)+'</td><td class="q">'+g.qtd+'</td><td class="o">'+h(g.onde.join(', '))+'</td></tr>').join(''),
-      fech.grupos.reduce((a,g)=>a+g.qtd,0),fech.grupos.reduce((a,g)=>a+g.qtd*g.mm,0)/1000):'';
+      return secao('Cobertura · '+h(T.nome),T.util,T.grupos.map(linhaCob),so,mt);}).join('');
+    const telhasFech=fech?fech.map(F=>secao('Fechamento · '+h(F.nome),F.util,F.grupos.map(g=>'<tr><td class="c">'+n0(g.mm)+'</td><td class="q">'+g.qtd+'</td><td class="o">'+h(g.onde.join(', '))+'</td></tr>'),
+      F.grupos.reduce((a,g)=>a+g.qtd,0),F.grupos.reduce((a,g)=>a+g.qtd*g.mm,0)/1000)).join(''):'';
+    /* quadro Telha: uma linha por telha, com onde ela vai (cobertura e/ou
+       fechamento) -- antes eram nomes empilhados sem ordem */
+    const telOnde=new Map(),poe=(nome,onde)=>{if(!telOnde.has(nome))telOnde.set(nome,[]);const l=telOnde.get(nome);if(!l.includes(onde))l.push(onde);};
+    poe(telha,'Cobertura');cobTelhasDoTotal(tot).filter(T=>T.chave).forEach(T=>poe(T.nome,'Cobertura'));(fech||[]).forEach(F=>poe(F.nome,'Fechamento'));
+    const telhasQuadro=telOnde.size>1
+      ?'<div class="cf-tels"><span>Telhas</span>'+[...telOnde].map(([n,o])=>'<div class="cf-tel"><em>'+o.join(' e ')+'</em><b>'+h(n)+'</b></div>').join('')+'</div>'
+      :'<div><span>Telha</span><b>'+h(telha)+'</b></div>';
     const img3d=cob3DImagem(r);
     pa.classList.remove('hide');
     pa.innerHTML='<style>#printArea .cob-fab .cob-fab-mod{display:grid;grid-template-columns:1.6fr 1.3fr 1fr;gap:10px;margin:8px 0 14px}'+
       '#printArea .cob-fab .cob-fab-mod>div{border:1px solid #d6dade;border-left:4px solid #D53309;border-radius:6px;padding:7px 11px}'+
       '#printArea .cob-fab .cob-fab-mod span{display:block;font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:#6b7280}'+
       '#printArea .cob-fab .cob-fab-mod b{display:block;font-size:13.5px;line-height:1.25;color:#141414}#printArea .cob-fab .cob-fab-mod small{display:block;font-size:10.5px;color:#555;margin-top:1px}'+
-      '#printArea .cob-fab table.cf-tab{width:100%;border-collapse:collapse;margin:0 0 6px}'+
+      '#printArea .cob-fab .cob-fab-mod:has(>.cf-tels){grid-template-columns:1.3fr 1fr}#printArea .cob-fab .cob-fab-mod>.cf-tels{grid-column:1/-1}#printArea .cob-fab .cf-tel{display:grid;grid-template-columns:150px 1fr;gap:10px;align-items:baseline;padding:4px 0;border-top:1px solid #eceef1}#printArea .cob-fab .cf-tels span+.cf-tel{border-top:0}'+
+      '#printArea .cob-fab .cf-tel em{font-style:normal;font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#D53309}#printArea .cob-fab .cf-tel b{font-size:13px}'+
+      '#printArea .cob-fab table.cf-tab{width:100%;border-collapse:collapse;margin:0 0 6px}#printArea .cob-fab .cf-tab tbody.cf-cab{break-inside:avoid;page-break-inside:avoid}#printArea .cob-fab .cf-tab tr{break-inside:avoid}'+
       '#printArea .cob-fab .cf-tab th,#printArea .cob-fab .cf-tab td{border:0;border-bottom:1px solid #e3e6ea;padding:7px 10px;text-align:left;vertical-align:middle;background:none}'+
       '#printArea .cob-fab .cf-tab thead th{font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:#6b7280;font-weight:700;border-bottom:1.5px solid #141414}'+
       '#printArea .cob-fab .cf-tab .cf-sec th{font-size:13px;font-weight:800;color:#141414;background:#f4f5f7;border-bottom:1px solid #d6dade;padding-top:9px}#printArea .cob-fab .cf-sec small{font-weight:400;color:#555;font-size:11px;margin-left:6px}'+
@@ -30579,12 +30665,10 @@ html[data-theme="escuro"] .log-det>summary.err{color:var(--red)}.log-det>summary
       '<div class="rm-dagua" aria-hidden="true"><img src="'+LOGO_MARCA_DAGUA+'" alt=""></div>'+
       '<div class="rm-head"><div class="rm-logo">'+logo+'</div><div class="rm-co">'+rmTimbre2()+'</div></div>'+'<div class="doc-tag tb2-tipo">Pedido de telhas ao fabricante</div>'+
       '<div class="rm-body"><div class="rm-obra"><span>Obra / Cliente</span><b>'+h(nomeObra())+'</b><span class="rm-date">'+data+'</span></div>'+
-      '<div class="cob-fab-mod"><div><span>Telha</span><b>'+h(telha)+'</b>'+
-        cobTelhasDoTotal(tot).filter(T=>T.chave).map(T=>'<b style="margin-top:3px">'+h(T.nome)+'</b>').join('')+
-        (fech&&fech.nome!==telha?'<b style="margin-top:3px">'+h(fech.nome)+'</b><small>fechamento</small>':'')+'</div>'+
+      '<div class="cob-fab-mod">'+telhasQuadro+
         '<div><span>Cumeeira</span><b>'+(cum&&cum.pecas?h(cad?cad.desc:'Cumeeira '+cum.tipo):'—')+'</b>'+(cum&&cum.pecas?'<small>aba de '+cum.aba+' mm'+(num(COB.cumeeira)>0?' · folga '+mm(COB.cumeeira)+' mm':'')+'</small>':'')+'</div>'+
         '<div><span>Fabricante</span><b>'+h(COB.fabricante||m.fabricante||'a definir')+'</b></div></div>'+
-      '<table class="cf-tab"><thead><tr><th>Comprimento (mm)</th><th class="q">Quantidade</th><th>Onde vai</th></tr></thead><tbody>'+telhasCob+telhasFech+'</tbody></table>'+
+      '<table class="cf-tab"><thead><tr><th>Comprimento (mm)</th><th class="q">Quantidade</th><th>Onde vai</th></tr></thead>'+telhasCob+telhasFech+'</table>'+
       (cum&&cum.pecas||ru?'<table class="cf-tab"><thead><tr><th>Acabamento</th><th class="q">Quantidade</th><th>Medida</th></tr></thead><tbody>'+
         (cum&&cum.pecas?'<tr><td class="o"><b>'+h(cad?cad.desc:'Cumeeira '+cum.tipo)+'</b></td><td class="q">'+cum.pecas+'</td><td class="o">'+mm(cum.util)+' mm</td></tr>':'')+
         (ru?'<tr><td class="o"><b>Rufo de topo</b> (aba '+RUFO_ABA+' mm)</td><td class="q">'+ru.pecas+'</td><td class="o">'+mm(ru.peca)+' mm</td></tr>':'')+'</tbody></table>':'')+
@@ -30647,7 +30731,7 @@ html[data-theme="escuro"] .log-det>summary.err{color:var(--red)}.log-det>summary
     atualizaModo();
   }
   inicia();
-  window.rmCobertura={estado:COB,catalogo:CATALOGO,calcular:calculaCobertura,fichaHTML:cobFichaHTML,pedido:documentoCobertura,parafusosCumeeira:()=>cobParafusosCumeeira(cobCumeeiras(calculaCobertura())),
+  window.rmCobertura={estado:COB,fichaSetas:()=>C3.fichaSetas,catalogo:CATALOGO,calcular:calculaCobertura,fichaHTML:cobFichaHTML,pedido:documentoCobertura,parafusosCumeeira:()=>cobParafusosCumeeira(cobCumeeiras(calculaCobertura())),
     detectar:()=>detectaCobertura(true),montarDXF:montaDXF,abrir:abreCobertura,novoDesenho:cobNovoDesenhoDwg,
     cumeeira:()=>cobCumeeiras(calculaCobertura()),topo:()=>topoLinhas(calculaCobertura()).map(l=>({key:l.key,nome:l.nome,L:l.L,auto:l.auto,tipo:l.tipo,dois:l.dois})),
     cristas:()=>cumCristas(calculaCobertura()).map(c=>({nome:c.nome,L:c.L,pecas:c.pecas})),gomosTelha:()=>cumSimplesFaixas(),relevo:()=>{C3.relevo=null;cria3D();desenha3D();return C3.relevo;},
@@ -31259,7 +31343,7 @@ if('serviceWorker' in navigator && location.protocol.startsWith('http')){
 }
 </script>
 <script>/* versão publicada (PADRAO_RM.md §3): sobe a cada publicação, junto com o CACHE do sw.js */
-const APP_VER='v280';
+const APP_VER='v281';
 </script>
 <script id="rmVersaoBloco">
 /* ===== SELO DE VERSÃO — igual em todos os sistemas (PADRAO_RM.md §3) =====
