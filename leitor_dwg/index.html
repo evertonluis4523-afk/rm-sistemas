@@ -2178,28 +2178,6 @@ html.ctaberto,html.ctaberto body{overflow:hidden}
 #printArea .pt-folha .rc-res>div{flex:1 1 0;min-width:0;padding:8px 10px}
 #printArea .pt-folha .rc-res b{font-size:15px;white-space:nowrap}
 #printArea .pt-folha .rc-res span{font-size:11px;white-space:nowrap;font-weight:600}
-#printArea .pt-dest{background:#eef1f4;color:#31363d;font-size:12px;
-  padding:5px 9px;margin:9px 0 0;border-radius:4px;break-inside:avoid;font-weight:560}
-#printArea .pt-dest b{font-weight:700}
-#printArea .pt-tit{display:flex;align-items:baseline;gap:9px;margin:13px 0 5px;
-  font-size:11px;letter-spacing:.1em;text-transform:uppercase;font-weight:800;color:#D53309}
-#printArea .pt-tit span{font-size:11px;letter-spacing:0;text-transform:none;
-  font-weight:600;color:#8a929a}
-#printArea .pt-cols{display:flex;gap:16px;align-items:flex-start}
-#printArea .pt-cols>.pt-t{flex:1;min-width:0}
-#printArea .pt-t{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums}
-#printArea .pt-t th{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:#6c7480;
-  font-weight:700;text-align:left;padding:0 6px 5px;border-bottom:1px solid #dadee3;white-space:nowrap}
-#printArea .pt-t td{font-size:12px;padding:2.5px 6px;border-bottom:1px solid #f1f2f4;
-  break-inside:avoid;-webkit-column-break-inside:avoid;vertical-align:baseline;font-weight:560}
-#printArea .pt-t .c-mm{font-family:'JetBrains Mono',monospace;font-weight:600;color:#1d2127;
-  white-space:nowrap;width:1%}
-#printArea .pt-t th.c-q,#printArea .pt-t td.c-q{text-align:right;width:1%;white-space:nowrap;
-  font-weight:800;color:#1d2127;font-size:13px;padding-right:10px}
-#printArea .pt-t th.c-q{font-size:11px;font-weight:700;color:#6c7480}
-#printArea .pt-t tr.pt-tel{break-after:avoid;page-break-after:avoid}
-#printArea .pt-t tr.pt-tel td{background:#f4f5f7;font-size:12px;padding:5px 6px;color:#1d2127}
-#printArea .pt-t .c-d{font-size:11px;color:#6c7480;line-height:1.35;font-weight:600}
 #printArea .so-papel{display:none}
 /* A perda no papel: bloco proprio, antes da lista, para nao morrer no rodape. */
 @media print{
@@ -2209,9 +2187,6 @@ html.ctaberto,html.ctaberto body{overflow:hidden}
   #printArea .pt-folha .rm-head{padding-bottom:6px}
   #printArea .pt-folha .rm-logo img{height:44px!important}
   #printArea .pt-folha .rc-note{font-size:8.5px;line-height:1.4;margin-top:6px;font-weight:600}
-  #printArea .pt-folha .pt-t td{font-size:10px;padding:1.8px 5px;font-weight:600}
-  #printArea .pt-folha .pt-t .c-d{font-size:8px;font-weight:600}
-  #printArea .pt-folha .pt-cols{gap:12px}
   /* O pedido agrupado passava 9 px da folha -- 2,4 mm -- e nascia uma segunda
      pagina inteiramente em branco. O respiro de baixo do corpo nao serve para
      nada no papel: e ali que estao os 9 px. */
@@ -14368,7 +14343,7 @@ function telhaAbrir(){
         '<div class="fld"><label>Telha do Orçamento RM</label><select id="tlPerfil" title="O item, a cor e o preço vêm do cadastro do Orçamento RM">'+ops+'</select></div>'+
         '<div class="fld"><label>Largura útil (mm)</label><input id="tlUtil" type="number" min="1" step="10" value="'+TLH.util+'"></div>'+
         '<div class="fld"><label>Fabricante</label><input id="tlFab" value="'+escapeAttr(escapeHtml(TLH.fabricante||''))+'" placeholder="nome do fabricante" autocomplete="off"></div>'+
-      '</div></div>'+
+      '</div>'+pedEntregaHTML()+'</div>'+
       '<div class="tl-sec"><div class="tl-sec-t">Medidas</div><div class="tl-campos">'+
         '<div class="fld"><label>Comprimento máximo (mm)</label><input id="tlMax" type="number" min="0" step="100" value="'+TLH.maxComp+'" title="Telha mais comprida que isto sai dividida em partes iguais, com transpasse. Zero = não divide."></div>'+
         '<div class="fld"><label>Transpasse se dividir (mm)</label><input id="tlTraspasse" type="number" min="0" step="10" value="'+Math.round(TLH.traspasse||0)+'"></div>'+
@@ -14401,7 +14376,7 @@ function telhaAbrir(){
           '<div class="tl-det-corpo"><table class="ct-t"><thead><tr><th>Comprimento</th><th>De onde saiu</th><th class="n">Chapas</th>'+
           '<th class="n">Peças</th><th class="n">Área</th><th class="n">Perda</th></tr></thead><tbody id="tlListaDet"></tbody></table></div></details>'+
       '</div>';
-    tlMaisLiga(ov);
+    tlMaisLiga(ov);pedEntregaLiga(ov);
     const refaz=()=>{telhaGuarda();telhaMonta();telhaPinta();};
     document.getElementById('tlSalvar').onclick=telhaSalvarObra;
     document.getElementById('tlImportSkp').onclick=()=>{const f=document.getElementById('tlhSkpDiretoFile');if(f)f.click();};
@@ -14752,74 +14727,134 @@ function telhaBaixarDXF(){
    grade, os dois pedacos dela moram na mesma face -- contando a chapa, o
    destino fecha sempre. Sem asterisco e sem bloco de conferencia, que
    pediriam confirmacao de um erro que nao existe. */
-function telhaDocumento(){
-  const pa=document.getElementById('printArea'); if(!pa)return;
+/* ===================== PEDIDO DE TELHAS AO FABRICANTE =====================
+   "Pense como um fornecedor": o pedido diz O QUE fabricar (perfil,
+   espessura, acabamento, largura útil, tolerância), QUANTO custa cotar
+   (chapas, metros, área, peso, maior peça) e COMO entregar -- e a lista de
+   corte numerada por item, para a conversa por telefone ser "o item 4". Um
+   modelo só para a cobertura e o fechamento. O fabricante não separa nem
+   identifica telha por parede: isso fica na ficha do montador. */
+const PED_KEY='rm_telha_pedido_v1';
+const PED_CAMPOS=[['num','Nº do pedido','ex.: 2026-031'],['prazo','Prazo desejado','ex.: 25/11/2026'],['local','Local de entrega','endereço da obra'],
+  ['contato','Recebimento na obra','nome e telefone'],['descarga','Descarga','ex.: munck da RM · acesso para carreta']];
+function pedChave(){return String(obraAtual()||'').trim().toLowerCase()||'_';}
+function pedTudo(){try{const g=JSON.parse(localStorage.getItem(PED_KEY)||'{}');return g&&typeof g==='object'?g:{};}catch(_){return {};}}
+function pedDados(){return pedTudo()[pedChave()]||{};}
+function pedGuarda(campo,valor){const g=pedTudo(),k=pedChave();g[k]=Object.assign(g[k]||{},{[campo]:valor});try{localStorage.setItem(PED_KEY,JSON.stringify(g));}catch(_){}}
+function pedEntregaHTML(){const d=pedDados();
+  return '<details class="tl-det ped-ent"><summary>Entrega e nº do pedido <small>saem no pedido ao fabricante</small></summary><div class="tl-det-corpo"><div class="tl-campos">'
+    +PED_CAMPOS.map(([k,l,ph])=>'<div class="fld"><label>'+l+'</label><input data-ped="'+k+'" value="'+escapeAttr(escapeHtml(d[k]||''))+'" placeholder="'+escapeAttr(ph)+'" autocomplete="off"></div>').join('')
+    +'</div></div></details>';}
+function pedEntregaLiga(raiz){(raiz||document).querySelectorAll('[data-ped]').forEach(i=>i.addEventListener('input',()=>pedGuarda(i.dataset.ped,i.value.trim())));}
+/* o que o fabricante precisa saber da telha: do catálogo Brastelha sai tudo;
+   do cadastro, o que a descrição disser */
+function telhaSpec(t,nome,util){
+  const o=[],n0=v=>Math.round(v).toLocaleString('pt-BR'),c=t&&t.bras;
+  let esp=0,termica=false;
+  if(c&&typeof brasLinha==='function'){
+    const L=brasLinha(c.l)||{},M=BRAS_MOD[c.m]||{},cor=brasCor(c.cor)||{f:''},galv=c.cor==='GALV';
+    termica=/EPS|PIR|FRE/.test(L.id||'');esp=parseFloat(String(c.esp).replace(',','.'))||0;
+    if(M.nome)o.push(['Perfil',(M.ond?'Ondulada ':'')+M.nome]);
+    if(esp)o.push(['Espessura',String(c.esp).replace('.',',')+' mm']);
+    o.push(['Acabamento',galv?'Galvalume':'Pré-pintada '+(cor.f||'')]);
+    if(c.n)o.push(['Núcleo',(L.id||'')+' '+c.n+' mm']);
+  }else{
+    const tx=String(nome||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toUpperCase();
+    termica=/TERMIC|EPS|PIR|SANDUICHE/.test(tx);
+    const pf=tx.match(/TP\s*-?\s*\d+|ONDULAD[AO]|MULTIDOBRA/);if(pf)o.push(['Perfil',pf[0].replace(/\s+/g,'').replace('ONDULADA','Ondulada').replace('ONDULADO','Ondulada').replace('MULTIDOBRA','Multidobra')]);
+    const es=tx.match(/(?:^|[^\d,.])(0[,.]\d{2})(?![\d])/);if(es){o.push(['Espessura',es[1].replace('.',',')+' mm']);esp=parseFloat(es[1].replace(',','.'));}
+    const ac=tx.match(/GALVALUME|ZINCAD[AO]|PRE-?\s*PINTAD[AO]|NATURAL/);if(ac)o.push(['Acabamento',ac[0].charAt(0)+ac[0].slice(1).toLowerCase().replace('pre pintad','pré-pintad').replace('pre-pintad','pré-pintad')]);
+  }
+  o.push(['Largura útil',n0(util)+' mm']);
+  o.push(['Tolerância de corte','± 3 mm']);
+  return {campos:o,esp,termica};
+}
+/* secoes: [{tit, nome, util, t, linhas:[{mm, qtd, sup, inf}]}]; acess: [{peca, qtd, medida}] */
+function pedidoTelhasHTML(o){
+  const n0=v=>Math.round(v).toLocaleString('pt-BR'),d2=v=>v.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
   const logo=(typeof LOGO_RM!=='undefined'&&LOGO_RM)?'<img src="'+LOGO_RM+'" style="height:56px;display:block">':'<div style="font-weight:800;font-size:22px;color:#D53309">RM</div>';
-  const e=Math.max(1,TLH.estruturas), t=telhaTotais(), dataBr=new Date().toLocaleDateString('pt-BR');
-  const perfilRot=telhaRotuloAtual();
-  const gs=telhaAgrupado();
-
-  /* destino por face, somando as chapas -- e' a linha de conferencia rapida
-     do alto, e fecha com o total de chapas */
-  const porFace={};
-  gs.forEach(g=>(g.destinos||[]).forEach(d=>{porFace[d.faixa]=(porFace[d.faixa]||0)+d.qtd*e;}));
-
-  const linha=g=>{
-    const dest=(g.destinos||[]).map(d=>escapeHtml(d.faixa)+' '+(d.qtd*e)).join(' · ');
-    const obs=(g.rots&&g.rots.length)?(' — '+escapeHtml(g.rots.join(' · '))):'';
-    return '<tr><td class="c-mm">'+g.mm.toLocaleString('pt-BR')+'</td>'+
-      '<td class="c-q">'+(g.qtd*e)+'</td>'+
-      '<td class="c-d">'+dest+obs+'</td></tr>';
-  };
-  /* Metade em cada coluna, e a mais comprida na esquerda: e' a ordem em que
-     ele le e a mesma da tela. */
-  const meio=Math.ceil(gs.length/2);
-  const variasTel=new Set(gs.map(g=>g.telha||'')).size>1;
-  const tabela=lista=>'<table class="pt-t"><thead><tr>'+
-    '<th class="c-mm">Compr. (mm)</th><th class="c-q">Qtd.</th><th class="c-d">Destino</th>'+
-    '</tr></thead><tbody>'+lista.map((g,i)=>(variasTel&&(i===0||(lista[i-1].telha||'')!==(g.telha||''))?'<tr class="pt-tel"><td colspan="3"><b>'+escapeHtml(g.telhaNome||'')+'</b> · útil '+(g.util||TLH.util)+' mm</td></tr>':'')+linha(g)).join('')+'</tbody></table>';
-
+  const dataBr=new Date().toLocaleDateString('pt-BR'),ped=pedDados();
+  const secs=o.secoes.filter(s=>s.linhas.length);
+  secs.forEach(s=>{s.spec=telhaSpec(s.t,s.nome,s.util);s.qtd=s.linhas.reduce((a,l)=>a+l.qtd,0);s.metros=s.linhas.reduce((a,l)=>a+l.qtd*(l.sup||l.mm),0)/1000;s.area=s.metros*s.util/1000;});
+  const tq=secs.reduce((a,s)=>a+s.qtd,0),tm=secs.reduce((a,s)=>a+s.metros,0),ta=secs.reduce((a,s)=>a+s.area,0);
+  const pesoOk=secs.length&&secs.every(s=>s.spec.esp>0&&!s.spec.termica),peso=pesoOk?secs.reduce((a,s)=>a+s.metros*s.spec.esp*7.85*1.2,0):0;
+  const maior=Math.max(0,...secs.flatMap(s=>s.linhas.map(l=>l.sup||l.mm)));
+  /* telhas iguais em cobertura e fechamento: um quadro de produto só */
+  const prods=new Map();secs.forEach(s=>{const k=s.nome+'|'+s.util;if(!prods.has(k))prods.set(k,{s,onde:[]});const p=prods.get(k);if(!p.onde.includes(s.tipo))p.onde.push(s.tipo);});
+  const produto=[...prods.values()].map(({s,onde})=>'<div class="pp-prod"><div class="pp-prod-t"><b>'+escapeHtml(s.nome)+'</b>'+(prods.size>1||onde.length>1?'<em>'+onde.join(' e ')+'</em>':'')+'</div>'
+    +'<div class="pp-spec">'+s.spec.campos.map(([l,v])=>'<div><span>'+l+'</span><b>'+escapeHtml(v)+'</b></div>').join('')+'</div></div>').join('');
+  let item=0;
+  const linhas=secs.map(s=>(secs.length>1?'<tr class="pp-sec"><td colspan="4">'+escapeHtml(s.tit)+' <small>útil '+n0(s.util)+' mm</small></td></tr>':'')
+    +s.linhas.map(l=>'<tr><td class="it">'+String(++item).padStart(2,'0')+'</td><td class="mm">'+(l.sup!=null&&l.inf!=null&&l.sup!==l.inf?n0(l.sup)+' <small>sup.</small> / '+n0(l.inf)+' <small>inf.</small>':n0(l.mm))+'</td>'
+      +'<td class="q">'+l.qtd+'</td><td class="n">'+d2(l.qtd*(l.sup||l.mm)/1000)+'</td></tr>').join('')
+    +(secs.length>1?'<tr class="pp-sub"><td></td><td>Subtotal</td><td class="q">'+s.qtd+'</td><td class="n">'+d2(s.metros)+'</td></tr>':'')).join('');
+  const acess=(o.acess||[]).filter(a=>a.qtd>0);
+  const ent=PED_CAMPOS.slice(1).map(([k,l])=>'<div><span>'+l+'</span>'+(ped[k]?escapeHtml(ped[k]):'<i>a combinar</i>')+'</div>').join('');
+  const termica=secs.some(s=>s.linhas.some(l=>l.sup!=null&&l.inf!=null&&l.sup!==l.inf));
+  const css='<style>#printArea .ped-fab{font-size:10.5px;color:#141414}#printArea .ped-fab h4{font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;color:#D53309;margin:10px 0 4px;font-weight:700;display:flex;gap:8px;align-items:center}'
+    +'#printArea .ped-fab h4 i{font-style:normal;color:#141414;background:#f3f4f6;border-radius:4px;padding:1px 6px;letter-spacing:.06em}'
+    +'#printArea .ped-fab .pp-ref{display:flex;justify-content:space-between;gap:12px;margin:2px 0 4px;font-size:10px;color:#4b5563}#printArea .ped-fab .pp-ref b{color:#141414;font-size:12px}'
+    +'#printArea .ped-fab .pp-prod{margin-bottom:6px}#printArea .ped-fab .pp-prod-t{display:flex;gap:8px;align-items:baseline;margin-bottom:3px}#printArea .ped-fab .pp-prod-t b{font-size:12.5px}#printArea .ped-fab .pp-prod-t em{font-style:normal;font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:#D53309;font-weight:700}'
+    +'#printArea .ped-fab .pp-spec{display:grid;grid-template-columns:repeat(3,1fr);border:1px solid #d9dce1;border-radius:8px;overflow:hidden}#printArea .ped-fab .pp-spec div{padding:5px 9px;border-right:1px solid #e5e7eb;border-top:1px solid #e5e7eb;margin-top:-1px}'
+    +'#printArea .ped-fab .pp-spec span,#printArea .ped-fab .pp-kpi span,#printArea .ped-fab .pp-ent span{display:block;font-size:8.5px;letter-spacing:.1em;text-transform:uppercase;color:#6b7280}#printArea .ped-fab .pp-spec b{font-size:12px}'
+    +'#printArea .ped-fab .pp-kpi{display:grid;grid-template-columns:repeat(auto-fit,minmax(90px,1fr));gap:6px}#printArea .ped-fab .pp-kpi div{border:1px solid #d9dce1;border-radius:8px;padding:6px 8px}#printArea .ped-fab .pp-kpi b{font-size:14px;color:#D53309}'
+    +'#printArea .ped-fab table.pp-t{width:100%;border-collapse:collapse;font-size:11px;table-layout:fixed;margin:0}#printArea .ped-fab .pp-t th{font-size:8.5px;letter-spacing:.1em;text-transform:uppercase;color:#6b7280;text-align:left;border:0;border-bottom:1.5px solid #141414;padding:4px 6px;background:none}'
+    +'#printArea .ped-fab .pp-t td{border:0;border-bottom:1px solid #e5e7eb;padding:1px 6px;line-height:1.3;background:none;height:auto}#printArea .ped-fab .pp-t tr{break-inside:avoid;background:none}#printArea .ped-fab .pp-t .n{text-align:right}'
+    +'#printArea .ped-fab .pp-t td.it{color:#6b7280}#printArea .ped-fab .pp-t td.mm{font-weight:800;font-size:15px}#printArea .ped-fab .pp-t td.mm small{font-size:9px;font-weight:600;color:#6b7280}#printArea .ped-fab .pp-t td.q{font-weight:800;font-size:15px;text-align:right}'
+    +'#printArea .ped-fab .pp-t .pp-sec{break-after:avoid;page-break-after:avoid}#printArea .ped-fab .pp-t .pp-sec td{background:#f4f5f7;font-weight:800;font-size:11.5px;padding-top:6px}#printArea .ped-fab .pp-sec small{font-weight:400;color:#555;margin-left:6px}#printArea .ped-fab .pp-t .pp-sub td{font-weight:700;color:#4b5563}'
+    +'#printArea .ped-fab .pp-t tfoot td{border-bottom:0;border-top:1.5px solid #141414;font-weight:800}'
+    +'#printArea .ped-fab .pp-2{display:grid;grid-template-columns:1fr 1fr;gap:16px;break-inside:avoid}#printArea .ped-fab .pp-ent{display:grid;grid-template-columns:1fr 1fr;gap:5px 14px;font-size:10.5px}#printArea .ped-fab .pp-ent i{color:#9aa3ad}'
+    +'#printArea .ped-fab ul{margin:0;padding-left:16px;line-height:1.55}#printArea .ped-fab .pp-nota{font-size:9px;color:#6b7280;margin-top:8px}</style>';
+  const doc='<div class="rm-sheet rc-sheet ct-pedido pt-folha ped-fab'+(o.classe?' '+o.classe:'')+'">'+'<div class="rm-dagua" aria-hidden="true"><img src="'+LOGO_MARCA_DAGUA+'" alt=""></div>'
+    +'<div class="rm-head"><div class="rm-logo">'+logo+'</div><div class="rm-co">'+rmTimbre2()+'</div></div><div class="doc-tag tb2-tipo">Pedido de telhas ao fabricante</div>'
+    +'<div class="rm-body"><div class="rm-obra"><span>Obra / Cliente</span><b>'+escapeHtml(o.obra||'(sem obra)')+'</b><span class="rm-date">'+dataBr+'</span></div>'
+    +'<div class="pp-ref"><span>'+(ped.num?'Pedido nº <b>'+escapeHtml(ped.num)+'</b>':'')+'</span><span>'+(o.fabricante?'Fabricante: <b>'+escapeHtml(o.fabricante)+'</b> · ':'')+'em dúvida, cite o item</span></div>'
+    +'<h4><i>1</i> Produto</h4>'+produto
+    +'<h4><i>2</i> Resumo para cotação</h4><div class="pp-kpi"><div><span>Chapas</span><b>'+n0(tq)+'</b></div><div><span>Metros lineares</span><b>'+d2(tm)+' m</b></div>'
+      +'<div><span>Área (útil)</span><b>'+d2(ta)+' m²</b></div>'+(peso?'<div><span>Peso estimado</span><b>≈ '+n0(peso)+' kg</b></div>':'')+'<div><span>Maior peça</span><b>'+n0(maior)+' mm</b></div></div>'
+    +'<h4><i>3</i> Lista de corte</h4><table class="pp-t"><colgroup><col style="width:44px"><col><col style="width:80px"><col style="width:100px"></colgroup>'
+      +'<thead><tr><th>Item</th><th>Comprimento (mm)</th><th class="n">Qtd.</th><th class="n">Metros</th></tr></thead><tbody>'+linhas+'</tbody>'
+      +'<tfoot><tr><td></td><td>Total · '+item+' medida'+(item>1?'s':'')+'</td><td class="q">'+n0(tq)+'</td><td class="n">'+d2(tm)+'</td></tr></tfoot></table>'
+    +'<div class="pp-2"><div>'+(acess.length?'<h4><i>4</i> Acessórios</h4><table class="pp-t"><colgroup><col><col style="width:60px"><col style="width:90px"></colgroup><thead><tr><th>Peça</th><th class="n">Qtd.</th><th>Medida</th></tr></thead><tbody>'
+        +acess.map(a=>'<tr><td>'+escapeHtml(a.peca)+'</td><td class="q">'+n0(a.qtd)+'</td><td>'+escapeHtml(a.medida||'—')+'</td></tr>').join('')+'</tbody></table>':'')
+      +'<h4><i>'+(acess.length?5:4)+'</i> Entrega</h4><div class="pp-ent">'+ent+'</div></div>'
+      +'<div><h4><i>'+(acess.length?6:5)+'</i> Fabricação</h4><ul><li>Medidas em milímetros. Corte reto, no comprimento da lista.</li><li>Ponta em ângulo e corte na largura são feitos na obra.</li>'
+        +(termica?'<li>Térmica: a chapa inferior é mais curta (pingadeira), conforme a lista.</li>':'')
+        +'<li>Confirmar fabricação e prazo com a RM.</li>'+(o.obs?'<li>'+escapeHtml(o.obs)+'</li>':'')+'</ul></div></div>'
+    +'</div></div>';
+  /* a mesma lista em planilha, para o fabricante não digitar de novo */
+  let n=0;const csv=['Item;Telha;Comprimento (mm);Comprimento inferior (mm);Quantidade;Metros']
+    .concat(secs.flatMap(s=>s.linhas.map(l=>[String(++n).padStart(2,'0'),'"'+String(s.nome).replace(/"/g,'""')+'"',l.sup||l.mm,(l.inf!=null&&l.inf!==l.sup)?l.inf:'',l.qtd,(l.qtd*(l.sup||l.mm)/1000).toFixed(2).replace('.',',')].join(';'))))
+    .concat(acess.map(a=>['','"'+String(a.peca).replace(/"/g,'""')+'"','','',a.qtd,''].join(';'))).join('\r\n');
+  return {html:css+doc,csv};
+}
+function pedidoMostra(o){
+  const pa=document.getElementById('printArea');if(!pa)return;
+  const {html,csv}=pedidoTelhasHTML(o);
   pa.classList.remove('hide');
-  pa.innerHTML='<div class="rm-sheet rc-sheet ct-pedido pt-folha">'+'<div class=\"rm-dagua\" aria-hidden=\"true\"><img src=\"'+LOGO_MARCA_DAGUA+'\" alt=\"\"></div>'+
-    '<div class="rm-head"><div class="rm-logo">'+logo+'</div><div class="rm-co">'+rmTimbre2()+'</div></div>'+'<div class="doc-tag tb2-tipo">Pedido de telhas</div>'+
-    '<div class="rm-body">'+
-      '<div class="rm-obra"><span>Obra / Cliente</span><b>'+escapeHtml(obraAtual()||'(sem obra)')+'</b>'+
-        '<span class="rm-date">'+dataBr+'</span></div>'+
-      '<div class="rc-res">'+
-        '<div><span>Telha</span><b>'+escapeHtml(perfilRot)+'</b>'+[...new Map(gs.filter(g=>g.telha).map(g=>[g.telha,g])).values()].map(g=>'<b style="display:block;margin-top:3px">'+escapeHtml(g.telhaNome)+'</b>').join('')+'</div>'+ 
-        '<div><span>Largura útil</span><b>'+TLH.util+' mm</b>'+[...new Map(gs.filter(g=>g.telha).map(g=>[g.telha,g])).values()].map(g=>'<b style="display:block;margin-top:3px">'+(g.util||TLH.util)+' mm</b>').join('')+'</div>'+
-        (TLH.fabricante?('<div><span>Fabricante</span><b>'+escapeHtml(TLH.fabricante)+'</b></div>'):'')+
-        '<div><span>Chapas</span><b>'+t.pecas.toLocaleString('pt-BR')+'</b></div>'+
-        '<div><span>Metros lineares</span><b>'+t.metros.toFixed(2).replace('.',',')+' m</b></div>'+
-        '<div><span>Área</span><b>'+t.m2.toFixed(2).replace('.',',')+' m²</b></div>'+
-        (e>1?('<div><span>Estruturas iguais</span><b>'+e+'</b></div>'):'')+
-      '</div>'+
-      /* Avulsos sempre por ultimo: sao o que NAO saiu do desenho, e no meio
-         das faces davam a impressao de ser mais uma delas. */
-      '<div class="pt-dest">Destinos: '+Object.keys(porFace)
-        .sort((a,b)=>(a==='Avulsos'?1:0)-(b==='Avulsos'?1:0))
-        .map(k=>'<b>'+escapeHtml(k)+'</b> '+porFace[k]).join(' · ')+'</div>'+
-      /* ---- o que NAO vai para o papel ----
-         O pedido sai da RM para o CLIENTE comprar. Perda de corte, tira
-         estreita, chapa partida e abertura deduzida sao conta de dentro de
-         casa. Fica tudo na tela, que e' onde isso serve -- para conferir
-         ANTES de mandar. */
-      '<div class="pt-tit">Relação de medidas'+
-        '<span>leitura de cima para baixo em cada coluna</span></div>'+
-      '<div class="pt-cols">'+tabela(gs.slice(0,meio))+tabela(gs.slice(meio))+'</div>'+
-      '<div class="rc-note">'+gs.length+' medida(s) · '+t.pecas.toLocaleString('pt-BR')+
-        ' chapa(s). Telhas geradas pelo contorno de cada face, no passo da largura útil de '+
-        TLH.util+' mm, começando na cumeeira. '+
-        'As quantidades foram conferidas na RM antes do envio.</div>'+
-    '</div></div>'+
-    '<div style="margin-top:12px"><button class="btn" id="tlPrint">Imprimir / PDF</button> '+
-    '<button class="btn ghost" id="tlFecharDoc">Fechar</button></div>';
-  document.getElementById('tlPrint').addEventListener('click',()=>
-    sairEmPDF(nomeArquivoSeguro('Pedido de telhas '+(obraAtual()||'obra'),90)));
-  document.getElementById('tlFecharDoc').addEventListener('click',()=>{pa.classList.add('hide');pa.innerHTML='';});
-  const ov=document.getElementById('tlov'); if(ov)ov.classList.remove('on');
-  document.documentElement.classList.remove('ctaberto');
+  pa.innerHTML=html+'<div style="margin-top:12px"><button class="btn" id="'+o.idPrint+'">Imprimir / PDF</button> <button class="btn ghost" id="'+o.idPrint+'Csv">⬇ Planilha (.csv)</button> '
+    +'<button class="btn ghost" id="'+o.idFechar+'">Fechar</button></div>';
+  window.__pedidoCsv=csv;
+  document.getElementById(o.idPrint).addEventListener('click',()=>sairEmPDF(nomeArquivoSeguro(o.arquivo,90)));
+  document.getElementById(o.idPrint+'Csv').addEventListener('click',()=>{const a=document.createElement('a');
+    a.href=URL.createObjectURL(new Blob(['﻿'+csv],{type:'text/csv;charset=utf-8'}));a.download=nomeArquivoSeguro(o.arquivo,90)+'.csv';document.body.appendChild(a);a.click();
+    setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},500);});
+  document.getElementById(o.idFechar).addEventListener('click',()=>{pa.classList.add('hide');pa.innerHTML='';});
+  const ov=document.getElementById('tlov');if(ov&&o.fechaOv)ov.classList.remove('on');
+  if(o.fechaOv)document.documentElement.classList.remove('ctaberto');
   pa.scrollIntoView({behavior:'smooth',block:'start'});
+}
+function telhaDocumento(){
+  const e=Math.max(1,TLH.estruturas), gs=telhaAgrupado(), t0=telhaBancoAtual();
+  const sec=new Map();
+  gs.forEach(g=>{const k=g.telha||'';if(!sec.has(k)){const tb=g.telha&&g.telhaId?orcTelhaPorId(g.telhaId):t0;
+      sec.set(k,{tipo:'Fechamento',tit:'Fechamento · '+(g.telha?g.telhaNome:telhaRotuloAtual()),nome:g.telha?g.telhaNome:telhaRotuloAtual(),util:g.util||TLH.util,t:tb,linhas:[]});}
+    sec.get(k).linhas.push({mm:g.mm,qtd:g.qtd*e});});
+  const ac=telhaAcessorios().map(a=>a.id==='paraf'?{peca:'Parafuso autobrocante com arruela',qtd:a.qtd,medida:'—'}
+    :a.id==='abert'?{peca:a.nome+' ('+a.obs+')',qtd:a.pecas,medida:Math.round(TLH_ACESS.peca).toLocaleString('pt-BR')+' mm'}
+    :a.id==='fita'?{peca:a.nome,qtd:Math.ceil(a.mm/1000),medida:'metros'}:null).filter(Boolean);
+  pedidoMostra({obra:obraAtual(),secoes:[...sec.values()],acess:ac,fabricante:TLH.fabricante||'',idPrint:'tlPrint',idFechar:'tlFecharDoc',fechaOv:true,
+    arquivo:'Pedido de telhas '+(obraAtual()||'obra')});
 }
 /* ===================== FICHA DO MONTADOR (TELHAS) =====================
    O pedido ao fabricante diz QUANTO comprar; o montador precisa saber ONDE
@@ -14843,15 +14878,101 @@ function telhaCodigos(){
   });
   return {faces,chapas};
 }
-/* "B-01, B-02, B-03" -> "B-01 a 03": a lista da separação cabe numa linha */
-function tlhFaixasCod(cods){
-  const out=[];let ini=null,ant=null;
-  const parte=c=>{const i=c.lastIndexOf('-');return [c.slice(0,i),+c.slice(i+1)];};
-  const fecha=()=>{if(ini)out.push(ini===ant?ini:ini+' a '+ant.slice(ant.lastIndexOf('-')+1));};
-  cods.forEach(c=>{const [l,n]=parte(c);
-    if(ant){const [la,na]=parte(ant);if(la===l&&na+1===n){ant=c;return;}}
-    fecha();ini=ant=c;});
-  fecha();return out;
+/* ===== FICHA DO MONTADOR: o que é igual no fechamento e na cobertura =====
+   "Pense como um montador": a ficha abre com o RESUMO (onde fica cada
+   parede/água, a ordem de montagem e o que conferir antes de subir), depois
+   a SEPARAÇÃO (a pilha de cada parede na ordem em que sobe, com o
+   comprimento de cada telha, e o desenho de cada chapa que vira duas telhas)
+   e uma folha por parede/água com o código no pé de cada telha e as cotas
+   para marcar na terça. O fabricante entrega as telhas misturadas: quem
+   separa e escreve o código é a equipe, na obra. */
+function tmfCss(){
+  return '<style>.tmf{font-family:Arial,Helvetica,sans-serif;color:#141414;box-sizing:border-box;width:281mm;height:176mm;border:.35mm solid #141414;padding:5mm 7mm 3mm;display:grid;grid-template-rows:auto 1fr auto;gap:2.5mm;overflow:hidden;break-after:page;page-break-after:always;background:#fff}'
+    +'.tmf:last-child{break-after:auto;page-break-after:auto}.tmf *{box-sizing:border-box}'
+    +'.tmf-top{display:flex;justify-content:space-between;align-items:flex-start;gap:8mm}.tmf-tx{font-size:11pt;line-height:1.45}.tmf-tx .t{font-size:15pt;font-weight:700;margin-bottom:.5mm}.tmf-tx span{color:#444}.tmf-tx2{font-size:9pt;color:#333;margin-top:.5mm}.tmf-tx2:empty{display:none}'
+    +'.tmf-logo{text-align:right;font-size:8pt;color:#555;white-space:nowrap}.tmf-logo img{height:9mm;display:block;margin:0 0 1.5mm auto}'
+    +'.tmf-corpo{display:grid;grid-template-columns:1fr 92mm;gap:5mm;min-height:0}.tmf h5{margin:0 0 1.5mm;font-size:8pt;letter-spacing:.08em;text-transform:uppercase;color:#777}'
+    +'.tmf svg{width:100%;height:auto;max-height:128mm;display:block}.tmf text{font-family:Arial,Helvetica,sans-serif}'
+    +'#printArea .tmf table{width:100%;border-collapse:collapse;font-size:9pt;margin:0}.tmf tr{background:none}#printArea .tmf th{background:none;border:0;font-weight:700;text-align:left;font-size:7.5pt;color:#777;text-transform:uppercase;letter-spacing:.05em;border-bottom:.3mm solid #141414;padding:1mm}'
+    +'#printArea .tmf td{border:0;font-size:9.5pt;font-weight:400;color:#141414;padding:.7mm 1mm;border-bottom:.15mm solid #ddd;vertical-align:top;white-space:nowrap}#printArea .tmf td.tmf-ob,#printArea .tmf td.tmf-cod{white-space:normal}#printArea .tmf td.tmf-ob{font-size:7.5pt;color:#555}#printArea .tmf td.r,#printArea .tmf th.r{text-align:right}#printArea .tmf td b{font-size:10.5pt}.tmf-ob{font-size:7.5pt;color:#555}'
+    +'#printArea .tmf td.tmf-c{font-weight:800;font-size:10.5pt}#printArea .tmf td.lg,.tmf .lg{color:#D53309;font-weight:800}'
+    +'.tmf-ok{display:inline-block;width:3.2mm;height:3.2mm;border:.25mm solid #141414;border-radius:.6mm}'
+    +'.tmf-3d{min-height:0;height:100%;display:flex;align-items:center;justify-content:center;overflow:hidden}.tmf-3d img{width:100%;height:100%;object-fit:contain;display:block}'
+    +'.tmf-pe{display:flex;justify-content:space-between;gap:6mm;font-size:7.5pt;color:#777;border-top:.2mm solid #ccc;padding-top:1.5mm}'
+    +'.tmf-cod span{white-space:nowrap}'
+    +'.tmf-corpo.longa{grid-template-columns:1fr;grid-template-rows:auto 1fr}.tmf-corpo.longa svg{max-height:58mm}.tmf-corpo.longa .tmf-lst{columns:3;column-gap:6mm}.tmf-corpo.longa .tmf-leg{margin-top:.5mm}'
+    +'.tmf-l{display:grid;grid-template-columns:12mm 12mm 9mm 1fr 4mm;gap:1.5mm;align-items:baseline;font-size:8.5pt;padding:.25mm 0;border-bottom:.15mm solid #ddd;break-inside:avoid}.tmf-l>span:first-child{font-weight:800}.tmf-l b{text-align:right;font-size:9.5pt}.tmf-l i{font-style:normal;text-align:right}.tmf-l .tmf-ob{font-size:7pt;color:#555}'
+    +'.tmf-corpo.larga{grid-template-columns:1fr 100mm}.tmf-lst.dupla{columns:2;column-gap:4mm}.tmf-lst.mini .tmf-l{font-size:7.5pt;padding:.2mm 0}.tmf-lst.mini .tmf-l b{font-size:8pt}.tmf-lst.mini .tmf-ok{width:2.8mm;height:2.8mm}'
+    +'.tmf-res{display:grid;grid-template-columns:1.15fr 1fr;gap:6mm;min-height:0}.tmf-res.so{grid-template-columns:1fr}.tmf-res .tmf-3d{border:.2mm solid #e5e7eb;border-radius:2mm}'
+    +'.tmf-col{display:grid;gap:4mm;align-content:start;min-height:0}#printArea .tmf td.tmf-n{font-size:15pt;font-weight:800;color:#D53309;width:8mm;line-height:1}'
+    +'.tmf-sub{display:block;font-size:7pt;color:#555;white-space:normal}'
+    +'.tmf-chk{list-style:none;margin:0;padding:0;display:grid;gap:2mm;font-size:9.5pt}.tmf-chk li{display:flex;gap:2.5mm;align-items:flex-start}.tmf-chk .tmf-ok{flex:none;margin-top:.5mm}'
+    +'.tmf-leg{display:flex;gap:4mm;flex-wrap:wrap;font-size:7.5pt;color:#555;margin-top:1.5mm}.tmf-leg i{display:inline-block;width:3mm;height:3mm;border:.2mm solid #141414;border-radius:.5mm;vertical-align:-.5mm;margin-right:1mm}'
+    +'.tmf-sepc{display:grid;gap:3mm;align-content:start;min-height:0}.tmf-pilha{border:.2mm solid #d9dce1;border-radius:2mm;padding:1.6mm 2.2mm;break-inside:avoid}'
+    +'.tmf-pilha .h{display:flex;justify-content:space-between;gap:4mm;font-size:9.5pt;margin-bottom:1.2mm}.tmf-pilha .h em{font-style:normal;color:#D53309;font-weight:800;margin-right:1.5mm}.tmf-pilha .h span{font-size:7.5pt;color:#555}'
+    +'.tmf-seq{display:flex;flex-wrap:wrap;gap:1mm}.tmf-seq span{border:.2mm solid #c9ccd1;border-radius:.8mm;padding:.2mm 1.2mm;font-size:8.5pt;font-weight:700;white-space:nowrap}'
+    +'.tmf-seq span small{font-weight:400;color:#555;margin-left:1mm;font-size:7.5pt}.tmf-seq span.x{border-color:#D53309;color:#D53309}.tmf-seq span.top{background:#141414;color:#fff;border-color:#141414}.tmf-seq span.top small{color:#ddd}'
+    +'.tmf-cortes{display:grid;grid-template-columns:repeat(8,1fr);gap:2mm}.tmf-corte{border:.2mm solid #d9dce1;border-radius:2mm;padding:1.2mm 1.5mm;text-align:center;font-size:7.5pt;color:#555;break-inside:avoid}'
+    +'.tmf-corte b{font-size:9pt;color:#141414}.tmf .tmf-corte svg{width:100%;height:auto;max-height:44mm;margin:1mm 0}'
+    +'.tmf-fix td:last-child{text-align:right}</style>';
+}
+function tmfTopo(logo,obra,dataBr,t,l1,l2){
+  return '<div class="tmf-top"><div class="tmf-tx"><div class="t">'+t+'</div>'+l1+'<div class="tmf-tx2">'+(l2||'')+'</div></div>'
+    +'<div class="tmf-logo">'+logo+escapeHtml(obra)+' · '+dataBr+'</div></div>';
+}
+/* o resumo: 3D + ordem de montagem + "antes de subir" */
+function tmfResumo(o){
+  const n0=v=>Math.round(v).toLocaleString('pt-BR');
+  return '<article class="tmf tmf-resumo">'+o.topo
+    +'<div class="tmf-res'+(o.img?'':' so')+'">'+(o.img?'<div class="tmf-3d"><img src="'+o.img+'" alt="'+escapeAttr(o.alt||'Montagem em 3D')+'"></div>':'')
+    +'<div class="tmf-col"><div><h5>Ordem de montagem</h5><table class="tmf-ord"><thead><tr><th></th><th>'+o.col+'</th><th class="r">Telhas</th><th class="r">Chapas</th><th class="r">✂ na obra</th><th class="r">Folha</th></tr></thead><tbody>'
+    +o.linhas.map(l=>'<tr data-ordem="'+l.n+'"><td class="tmf-n">'+l.n+'</td><td><b>'+escapeHtml(l.nome)+'</b>'+(l.sub?'<span class="tmf-sub">'+escapeHtml(l.sub)+'</span>':'')+'</td>'
+      +'<td class="r">'+n0(l.telhas)+'</td><td class="r">'+n0(l.chapas)+'</td><td class="r">'+(l.cortes||'—')+'</td><td class="r">'+l.folha+'</td></tr>').join('')
+    +'</tbody></table></div>'
+    +'<div><h5>Antes de subir</h5><ul class="tmf-chk">'+o.chk.map(c=>'<li><span class="tmf-ok"></span><span>'+c+'</span></li>').join('')+'</ul></div>'
+    +(o.leg||'')+'</div></div>'+o.pe+'</article>';
+}
+/* uma chapa que vira duas (ou mais) telhas: as partes lado a lado, na largura
+   em que são cortadas; o que sobra fica tracejado */
+function tmfCorteSVG(chapa,util,partes){
+  const n0=v=>Math.round(v).toLocaleString('pt-BR'),W=120,H=150,k=H/Math.max(1,chapa),kx=W/Math.max(1,util),r1=v=>Math.round(v*10)/10;
+  let x=6,s='';
+  partes.forEach((p,i)=>{const w=Math.max(2,p.larg*kx),h=Math.max(4,Math.min(chapa,p.alt)*k);
+    s+='<rect x="'+r1(x)+'" y="'+r1(6+H-h)+'" width="'+r1(w)+'" height="'+r1(h)+'" fill="'+(i%2?'#dbe8f5':'#fde5d6')+'" stroke="#141414"/>';
+    const cx=r1(x+w/2),cy=r1(6+H-h/2);
+    s+='<text x="'+cx+'" y="'+cy+'" font-size="9" font-weight="800" text-anchor="middle" dominant-baseline="middle" transform="rotate(-90 '+cx+' '+cy+')">'+escapeHtml(p.cod)+'</text>';
+    s+='<text x="'+cx+'" y="'+(H+18)+'" font-size="8" text-anchor="middle">'+n0(p.larg)+'</text>';
+    if(p.alt<chapa-1)s+='<text x="'+cx+'" y="'+r1(6+H-h-3)+'" font-size="8" font-weight="700" fill="#d53309" text-anchor="middle">'+n0(p.alt)+'</text>';
+    x+=w;});
+  const usado=partes.reduce((a,p)=>a+p.larg,0);
+  if(usado<util-1)s+='<rect x="'+r1(x)+'" y="6" width="'+r1((util-usado)*kx)+'" height="'+H+'" fill="url(#tmfsob)" stroke="#9aa3ad" stroke-dasharray="3 2"/>';
+  s+='<rect x="6" y="6" width="'+W+'" height="'+H+'" fill="none" stroke="#141414" stroke-width="1.6"/>';
+  return '<svg viewBox="0 0 158 '+(H+24)+'"><defs><pattern id="tmfsob" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="6" stroke="#c9ccd1"/></pattern></defs>'+s+'</svg>';
+}
+/* a pilha de cada parede/água: na ordem de montagem, a primeira por cima */
+function tmfPilha(p){
+  const n0=v=>Math.round(v).toLocaleString('pt-BR');
+  return '<div class="tmf-pilha" data-pilha="'+escapeAttr(p.letra)+'" data-chapas="'+p.chapas+'"><div class="h"><b><em>'+escapeHtml(p.letra)+'</em>'+escapeHtml(p.nome)+'</b><span>de cima para baixo · '+p.chapas+' chapa'+(p.chapas>1?'s':'')+'</span></div>'
+    +'<div class="tmf-seq">'+p.itens.map((it,i)=>'<span class="'+(i===0?'top':'')+(it.x?' x':'')+'">'+escapeHtml(it.cod)+(it.x?' ✂':'')+'<small>'+n0(it.mm)+(it.partes>1?' ×'+it.partes:'')+'</small></span>').join('')+'</div></div>';
+}
+/* altura estimada (mm) de cada bloco, para a separação ir para outra folha
+   em vez de sumir no fim da página */
+function tmfAlturaPilha(p){
+  const w=p.itens.reduce((a,it)=>a+String(it.cod).length*1.95+String(Math.round(it.mm)).length*1.7+(it.x?5:3.5)+1.2,0);
+  return 8+Math.max(1,Math.ceil(w/262))*5.4;
+}
+function tmfSeparacao(o){
+  /* blocos: as pilhas, e os cortes em linhas de 8 */
+  const blocos=o.pilhas.map(p=>({h:tmfAlturaPilha(p),html:tmfPilha(p)}));
+  const cs=o.cortes||[];
+  for(let i=0;i<cs.length;i+=8){
+    blocos.push({h:(i?0:6)+50,html:(i?'':'<h5 style="margin-top:1mm">✂ Chapas que viram duas telhas · cortar no chão, escrever o código em cada parte</h5>')
+      +'<div class="tmf-cortes">'+cs.slice(i,i+8).map(c=>'<div class="tmf-corte" data-corte="'+escapeAttr(c.nome)+'"><b>'+escapeHtml(c.nome)+'</b><br>chapa '+Math.round(c.mm).toLocaleString('pt-BR')+tmfCorteSVG(c.mm,c.util,c.partes)+'largura em mm · tracejado = sobra</div>').join('')+'</div>'});
+  }
+  const CAP=128,pags=[[]];let h=0;
+  blocos.forEach(b=>{if(h+b.h>CAP&&pags[pags.length-1].length){pags.push([]);h=0;}pags[pags.length-1].push(b.html);h+=b.h+3;});
+  return pags.map((p,i)=>'<article class="tmf tmf-separa">'+o.topo(pags.length>1?' ('+(i+1)+'/'+pags.length+')':'')
+    +'<div class="tmf-sepc">'+p.join('')+'</div>'+o.pe+'</article>');
 }
 function telhaFichaHTML(){
   const {faces,chapas}=telhaCodigos();
@@ -14859,115 +14980,136 @@ function telhaFichaHTML(){
   const e=Math.max(1,TLH.estruturas||1), util=TLH.util, n0=v=>Math.round(v).toLocaleString('pt-BR');
   const obra=obraAtual()||'(sem obra)', dataBr=new Date().toLocaleDateString('pt-BR'), rot=telhaRotuloAtual();
   const logo=(typeof LOGO_RM!=='undefined'&&LOGO_RM)?'<img src="'+LOGO_RM+'" alt="RM Estruturas">':'<b>RM Estruturas</b>';
-  const css='<style>.tmf{font-family:Arial,Helvetica,sans-serif;color:#141414;box-sizing:border-box;width:281mm;height:176mm;border:.35mm solid #141414;padding:5mm 7mm 3mm;display:grid;grid-template-rows:auto 1fr auto;gap:2.5mm;overflow:hidden;break-after:page;page-break-after:always;background:#fff}'
-    +'.tmf:last-child{break-after:auto;page-break-after:auto}.tmf *{box-sizing:border-box}'
-    +'.tmf-top{display:flex;justify-content:space-between;align-items:flex-start;gap:8mm}.tmf-tx{font-size:11pt;line-height:1.45}.tmf-tx .t{font-size:15pt;font-weight:700;margin-bottom:.5mm}.tmf-tx span{color:#444}.tmf-tx2{font-size:9pt;color:#333;margin-top:.5mm}'
-    +'.tmf-logo{text-align:right;font-size:8pt;color:#555;white-space:nowrap}.tmf-logo img{height:9mm;display:block;margin:0 0 1.5mm auto}'
-    +'.tmf-corpo{display:grid;grid-template-columns:1fr 78mm;gap:5mm;min-height:0}.tmf h5{margin:0 0 1.5mm;font-size:8pt;letter-spacing:.08em;text-transform:uppercase;color:#777}'
-    +'.tmf svg{width:100%;height:auto;max-height:135mm;display:block}.tmf text{font-family:Arial,Helvetica,sans-serif}'
-    +'#printArea .tmf table{width:100%;border-collapse:collapse;font-size:9pt;margin:0}.tmf tr{background:none}#printArea .tmf th{background:none;border:0;font-weight:700;text-align:left;font-size:7.5pt;color:#777;text-transform:uppercase;letter-spacing:.05em;border-bottom:.3mm solid #141414;padding:1mm}'
-    +'#printArea .tmf td{border:0;font-size:9pt;font-weight:400;color:#141414;padding:.6mm 1mm;border-bottom:.15mm solid #ddd;vertical-align:top;white-space:nowrap}#printArea .tmf td.tmf-ob,#printArea .tmf td.tmf-cod{white-space:normal}#printArea .tmf td.tmf-ob{font-size:7pt;color:#555}#printArea .tmf td.r,#printArea .tmf th.r{text-align:right}#printArea .tmf td b{font-size:10pt}.tmf-ob{font-size:7.5pt;color:#555}'
-    +'.tmf-ok{display:inline-block;width:3.2mm;height:3.2mm;border:.25mm solid #141414;border-radius:.6mm}'
-    +'.tmf-3d{min-height:0;height:100%;display:flex;align-items:center;justify-content:center;overflow:hidden}.tmf-3d img{width:100%;height:100%;object-fit:contain;display:block}'
-    +'.tmf-pe{display:flex;justify-content:space-between;gap:6mm;font-size:7.5pt;color:#777;border-top:.2mm solid #ccc;padding-top:1.5mm}'
-    +'#printArea .tmf-sep td{font-size:10pt;padding:1.2mm 1mm}.tmf-cod span{white-space:nowrap}'
-    +'.tmf-corpo.longa{grid-template-columns:1fr;grid-template-rows:auto 1fr}.tmf-corpo.longa svg{max-height:65mm}.tmf-corpo.longa .tmf-lst{columns:3;column-gap:6mm}.tmf-l{display:grid;grid-template-columns:11mm 12mm 1fr 4mm;gap:1.5mm;align-items:baseline;font-size:8.5pt;padding:.4mm 0;border-bottom:.15mm solid #ddd;break-inside:avoid}.tmf-l b{text-align:right;font-size:9.5pt}.tmf-l .tmf-ob{font-size:7pt;color:#555}</style>';
-  const topo=(t,l1,l2)=>'<div class="tmf-top"><div class="tmf-tx"><div class="t">'+t+'</div>'+l1+'<div class="tmf-tx2">'+l2+'</div></div>'
-    +'<div class="tmf-logo">'+logo+escapeHtml(obra)+' · '+dataBr+'</div></div>';
+  const topo=(t,l1,l2)=>tmfTopo(logo,obra,dataBr,t,l1,l2);
   const vezes=e>1?' · <b>'+e+'</b> estruturas iguais (monte cada parede '+e+' vezes)':'';
-  /* ---- folha 1: separação ---- */
-  const por={};
-  chapas.forEach(c=>{const d=tlhDivide(c.mm),g=por[d.medida]||(por[d.medida]={qtd:0,soltas:[],juntas:[],partes:d.partes});
-    g.qtd+=d.partes*e;
-    const cs=c.cortes.map(t=>t.cod).filter(Boolean).sort();
-    if(cs.length>1)g.juntas.push(cs[0]+'+'+cs.slice(1).map(x=>x.slice(x.lastIndexOf('-')+1)).join('+'));
-    else if(cs.length)g.soltas.push(cs[0]);});
-  (TLH.avulsos||[]).forEach(a=>{const d=tlhDivide(a.mm),g=por[d.medida]||(por[d.medida]={qtd:0,soltas:[],juntas:[],partes:d.partes});
-    g.qtd+=a.qtd*d.partes*e;g.juntas.push('avulso'+(a.rot?' ('+a.rot+')':'')+' ×'+a.qtd*e);});
-  const mms=Object.keys(por).map(Number).sort((a,b)=>b-a);
-  const temJunta=chapas.some(c=>c.cortes.length>1), temDiv=mms.some(m=>por[m].partes>1);
-  const totalQtd=mms.reduce((s,m)=>s+por[m].qtd,0);
-  const sep='<article class="tmf">'+topo('TELHAS · SEPARAÇÃO NA OBRA',
-      '<span>Telha:</span> <b>'+escapeHtml(rot)+'</b> · <span>largura útil</span> <b>'+n0(util)+' mm</b> · <b>'+totalQtd+'</b> chapas · <b>'+faces.length+'</b> parede(s)'+vezes,
-      'Ao descarregar, escreva o código com pincel na ponta de cada telha e faça uma pilha por parede (A, B, C…). Depois é só seguir a folha de cada parede.')
-    +'<div style="min-height:0;overflow:hidden"><table class="tmf-sep"><thead><tr><th class="r">Compr. (mm)</th><th class="r">Qtd.</th><th>Códigos (onde vai)</th><th></th></tr></thead><tbody>'
-    +mms.map(m=>{const g=por[m];
-      const cods=tlhFaixasCod(g.soltas.sort()).concat(g.juntas.map(j=>j+(/^avulso/.test(j)?'':' ✂')));
-      return '<tr><td class="r"><b>'+n0(m)+'</b></td><td class="r">'+g.qtd+'</td><td class="tmf-cod">'
-        +cods.map(c=>'<span>'+escapeHtml(c)+'</span>').join(' · ')
-        +(g.partes>1?' <span class="tmf-ob">· cada uma em '+g.partes+' partes</span>':'')+'</td><td><span class="tmf-ok"></span></td></tr>';}).join('')
-    +'</tbody></table></div>'
-    +'<div class="tmf-pe"><span>Paredes: '+faces.map(f=>'<b>'+f.letra+'</b> '+escapeHtml(f.nome)).join(' · ')+'</span><span>'
-      +(temJunta?'✂ uma chapa rende as duas peças: cortar na obra. ':'')
-      +(temDiv?'Telha comprida sai em partes com transpasse de '+n0(TLH.traspasse||0)+' mm. ':'')+'Medidas em mm</span></div></article>';
+  const peTxt='<div class="tmf-pe"><span>Medidas em mm. Confira o código escrito na telha antes de subir.</span><span>'+escapeHtml(rot)+' · útil '+n0(util)+'</span></div>';
+  const chapaDe=t=>t.chapa?chapas.find(c=>c.n===t.chapa):null;
+  const irmasDe=t=>{const c=chapaDe(t);return c&&c.cortes.length>1?c.cortes:null;};
+  const curto=c=>c.slice(c.lastIndexOf('-')+1);
+  const nomeJunto=cs=>{const s=cs.map(t=>t.cod).filter(Boolean).sort();return s[0]+'+'+s.slice(1).map(curto).join('+');};
+  /* ---- pilhas e cortes ---- */
+  const usadas=new Set(),cortes=[];
+  const pilhas=faces.map(f=>{
+    const itens=[];
+    f.ordem.forEach(t=>{
+      const ir=irmasDe(t);
+      if(ir){const c=chapaDe(t);if(usadas.has(c))return;usadas.add(c);
+        const d=tlhDivide(c.mm);itens.push({cod:nomeJunto(ir),mm:d.medida,partes:d.partes,x:true});
+        cortes.push({nome:nomeJunto(ir),mm:c.mm,util:c.util||util,partes:ir.slice().sort((a,b)=>a.x0-b.x0).map(q=>({cod:q.cod,larg:q.larg,alt:q.mm}))});
+        return;}
+      const d=tlhDivide(t.mm);itens.push({cod:t.cod,mm:d.medida,partes:d.partes,x:false});
+    });
+    f.pilhaChapas=itens.reduce((a,it)=>a+it.partes,0)*e;
+    f.pilhaCortes=itens.filter(it=>it.x).length;
+    return {letra:f.letra,nome:'Parede '+f.letra+' · '+String(f.nome),itens,chapas:f.pilhaChapas};
+  });
+  if((TLH.avulsos||[]).length){
+    const itens=TLH.avulsos.map(a=>{const d=tlhDivide(a.mm);return {cod:(a.rot||'avulso')+' ×'+(a.qtd*e),mm:d.medida,partes:d.partes*a.qtd*e,x:false};});
+    pilhas.push({letra:'+',nome:'Avulsos (fora do desenho)',itens,chapas:itens.reduce((s,it)=>s+it.partes,0)});
+  }
+  const totalQtd=pilhas.reduce((s,p)=>s+p.chapas,0);
+  const temDiv=pilhas.some(p=>p.itens.some(it=>it.partes>1));
+  const pe0='<div class="tmf-pe"><span>Paredes: '+faces.map(f=>'<b>'+f.letra+'</b> '+escapeHtml(f.nome)).join(' · ')+'</span><span>'
+    +(temDiv?'×2 = telha comprida em partes, transpasse de '+n0(TLH.traspasse||0)+' mm · ':'')+'Medidas em mm</span></div>';
+  const sep=tmfSeparacao({pilhas,cortes,pe:pe0,
+    topo:suf=>topo('SEPARAÇÃO E CORTES NA OBRA'+suf,
+      '<span>Telha:</span> <b>'+escapeHtml(rot)+'</b> · <b>'+totalQtd+'</b> chapas · <b>'+faces.length+'</b> parede(s)'+vezes,
+      'Escreva o código com pincel na ponta de cada telha e monte a pilha de cada parede na ordem: a primeira a subir fica por cima.')});
   /* ---- uma folha por parede ---- */
   const obs=t=>{const o=[],d=tlhDivide(t.mm);
     if(t.abaixo)o.push('sob janela');else if(t.porta)o.push('sobre abertura');
-    if(t.queda>0)o.push('corte '+n0(t.queda));
-    if(t.larg<(t.util||util)-2)o.push('larg. '+n0(t.larg));
-    if(t.chapa){const ir=chapas.find(c=>c.n===t.chapa);const outras=ir?ir.cortes.filter(q=>q!==t).map(q=>q.cod):[];if(outras.length)o.push('mesma chapa '+outras.join(', '));}
+    const ir=irmasDe(t);if(ir)o.push('✂ com '+ir.filter(q=>q!==t).map(q=>q.cod).join(', '));
     if(d.partes>1)o.push(d.partes+' × '+n0(d.medida));
     return o.map(x=>'<span style="white-space:nowrap">'+x+'</span>').join(' · ');};
-  const folha=(f,ts,parte,partes)=>{
+  const corteTxt=t=>t.queda>0?'diag. '+n0(t.queda):'reto';
+  const largTd=t=>{const u=t.util||util,c=t.larg<u-2;return '<td class="r'+(c?' lg':'')+'">'+n0(c?t.larg:u)+'</td>';};
+  const folha=(f,ts,parte,partes,fi)=>{
     const x0=parte?Math.min(...ts.map(t=>t.x0)):f.xIni, x1=parte?Math.max(...ts.map(t=>t.x1)):f.xFim, longa=ts.length>18;
     const yTop=Math.max(...ts.map(t=>Math.max(t.yA,t.yB))), yBase=f.baseY;
-    const W=1000,m=34;
-    /* a altura do desenho segue a parede: lateral comprida e baixa não deixa faixa vazia em cima */
-    const s=Math.min((W-2*m)/Math.max(1,x1-x0),(longa?300:460)/Math.max(1,yTop-yBase)), H=Math.round((yTop-yBase)*s+2*m+30);
-    const ox=(W-(x1-x0)*s)/2, X=x=>ox+(x-x0)*s, Y=y=>H-m-22-(y-yBase)*s, r1=v=>Math.round(v*10)/10;
+    const W=1000,m=34,EXTRA=40;
+    const s=Math.min((W-2*m)/Math.max(1,x1-x0),(longa?280:430)/Math.max(1,yTop-yBase)), H=Math.round((yTop-yBase)*s+2*m+30+EXTRA);
+    const ox=(W-(x1-x0)*s)/2, X=x=>ox+(x-x0)*s, Y=y=>H-m-22-EXTRA-(y-yBase)*s, r1=v=>Math.round(v*10)/10;
     let g='';
     ts.forEach(t=>{
       const a=r1(X(t.x0)),b=r1(X(t.x1)),pe=r1(Y(t.pe)),ya=r1(Y(t.yA)),yb=r1(Y(t.yB)),alto=Math.min(ya,yb);
       const cor=t.porta&&!t.abaixo?'#dbe8f5':t.queda>0?'#fde5d6':'#eceef1';
       g+='<polygon data-cod="'+t.cod+'" points="'+a+','+pe+' '+b+','+pe+' '+b+','+yb+' '+a+','+ya+'" fill="'+cor+'" stroke="#141414" stroke-width="1"/>';
-      /* o retângulo da telha passa da água: o triângulo tracejado é o que sai */
       if(t.queda>0)g+='<polygon points="'+a+','+alto+' '+b+','+alto+' '+(ya>yb?a+','+ya:b+','+yb)+'" fill="none" stroke="#d53309" stroke-width=".8" stroke-dasharray="3 2"/>';
-      const cx=r1((a+b)/2),cy=r1((pe+Math.max(ya,yb))/2),w=b-a;
+      const cx=r1((a+b)/2),cy=r1((pe+Math.max(ya,yb))/2),w=b-a,hh=pe-Math.max(ya,yb);
       g+='<text x="'+cx+'" y="'+cy+'" font-size="'+r1(Math.max(7,Math.min(13,w*.55)))+'" font-weight="700" fill="#141414" text-anchor="middle" dominant-baseline="middle" transform="rotate(-90 '+cx+' '+cy+')">'+n0(t.mm)+'</text>';
-      /* posição: embaixo da linha do chão; a telha que fica sobre a porta
-         leva o número logo abaixo dela, dentro da abertura */
-      const noAlto=t.pe-yBase>50;
-      g+='<text x="'+cx+'" y="'+r1(noAlto?pe+11:Y(yBase)+13)+'" font-size="'+r1(Math.max(6.5,Math.min(9.5,w*.4)))+'" text-anchor="middle" fill="#555">'+t.cod.slice(t.cod.lastIndexOf('-')+1)+'</text>';
+      /* o código no pé de cada telha; a estreita leva só o número, embaixo */
+      if(w>=24&&hh>=34)g+='<text x="'+cx+'" y="'+r1(pe-6)+'" font-size="'+r1(Math.max(7.5,Math.min(10.5,w*.16)))+'" font-weight="800" fill="#141414" text-anchor="middle">'+t.cod+'</text>';
+      else{const noAlto=t.pe-yBase>50;g+='<text x="'+cx+'" y="'+r1(noAlto?pe+11:Y(yBase)+12)+'" font-size="'+r1(Math.max(6.5,Math.min(9,w*.45)))+'" font-weight="700" text-anchor="middle" fill="#141414">'+curto(t.cod)+'</text>';}
     });
     (f.vergas||[]).forEach(v=>{const pe=v.pe!=null?Math.max(v.pe,yBase):yBase;
       if(Math.min(v.x1,x1)-Math.max(v.x0,x0)<=1)return;
-      g+='<rect x="'+r1(X(Math.max(v.x0,x0)))+'" y="'+r1(Y(v.y))+'" width="'+r1((Math.min(v.x1,x1)-Math.max(v.x0,x0))*s)+'" height="'+r1((v.y-pe)*s)+'" fill="url(#tmh'+f.letra+')" stroke="#141414" stroke-width=".8"/>';});
-    if(!f.topoReto&&f.cume>x0&&f.cume<x1){const c=r1(X(f.cume));
-      g+='<line x1="'+c+'" y1="'+(m-8)+'" x2="'+c+'" y2="'+(H-m-22)+'" stroke="#d53309" stroke-width="1.2" stroke-dasharray="6 4"/>'
+      const vx0=X(Math.max(v.x0,x0)),vx1=X(Math.min(v.x1,x1)),vy=Y(v.y),vp=Y(pe);
+      g+='<rect x="'+r1(vx0)+'" y="'+r1(vy)+'" width="'+r1(vx1-vx0)+'" height="'+r1(vp-vy)+'" fill="url(#tmh'+f.letra+')" stroke="#141414" stroke-width=".8"/>';
+      /* o vão com a medida: "PORTA 3.000 × 4.200" */
+      const porta=pe<=yBase+1,lb=(porta?'PORTA':'JANELA'),md=n0(v.x1-v.x0)+' × '+n0(v.y-pe);
+      const bw=Math.min(vx1-vx0-6,Math.max(64,md.length*6.2)),bh=Math.min(vp-vy-6,30);
+      if(bw>=44&&bh>=20)g+='<rect x="'+r1((vx0+vx1)/2-bw/2)+'" y="'+r1((vy+vp)/2-bh/2)+'" width="'+r1(bw)+'" height="'+r1(bh)+'" rx="3" fill="#fff" stroke="#141414" stroke-width=".8"/>'
+        +'<text x="'+r1((vx0+vx1)/2)+'" y="'+r1((vy+vp)/2-1)+'" font-size="8.5" font-weight="800" text-anchor="middle">'+lb+'</text>'
+        +'<text x="'+r1((vx0+vx1)/2)+'" y="'+r1((vy+vp)/2+9)+'" font-size="8" text-anchor="middle">'+md+'</text>';});
+    const temCume=!f.topoReto&&f.cume>x0&&f.cume<x1;
+    if(temCume){const c=r1(X(f.cume));
+      g+='<line x1="'+c+'" y1="'+(m-8)+'" x2="'+c+'" y2="'+r1(Y(yBase))+'" stroke="#d53309" stroke-width="1.2" stroke-dasharray="6 4"/>'
         +'<text x="'+c+'" y="'+(m-12)+'" font-size="11" font-weight="700" fill="#d53309" text-anchor="middle">CUMEEIRA · comece aqui ← →</text>';}
-    g+='<line x1="'+r1(X(x0))+'" y1="'+(H-12)+'" x2="'+r1(X(x1))+'" y2="'+(H-12)+'" stroke="#141414" stroke-width=".7"/>'
-      +'<text x="'+r1((X(x0)+X(x1))/2)+'" y="'+(H-15)+'" font-size="10" fill="#141414" text-anchor="middle">'+n0(x1-x0)+'</text>';
+    else if(!parte||parte===1){const t0=ts[0],xa=r1(X(t0.x0)),ya=r1(Y(Math.max(t0.yA,t0.yB))-8);
+      g+='<text x="'+xa+'" y="'+ya+'" font-size="11" font-weight="800" fill="#d53309">▶ COMECE AQUI · '+t0.cod+' →</text>';}
+    /* cotas para marcar na terça: onde começa cada telha, do canto esquerdo */
+    const yc=r1(Y(yBase)+24);
+    const ini=[...new Set(ts.map(t=>Math.round(t.x0)).concat([Math.round(x1)]))].sort((a,b)=>a-b);
+    const marcas=[];ini.forEach(v=>{const px=X(v);if(marcas.length&&px-X(marcas[marcas.length-1])<20){if(v===Math.round(x1))marcas[marcas.length-1]=v;return;}marcas.push(v);});
+    g+='<line x1="'+r1(X(x0))+'" y1="'+yc+'" x2="'+r1(X(x1))+'" y2="'+yc+'" stroke="#141414" stroke-width=".8"/>'
+      +'<text x="'+r1(X(x0))+'" y="'+r1(yc-5)+'" font-size="8.5" font-weight="800" fill="#d53309">MARCAR NA TERÇA · do canto esquerdo</text>';
+    marcas.forEach(v=>{const px=r1(X(v));
+      g+='<line x1="'+px+'" y1="'+r1(yc-3.5)+'" x2="'+px+'" y2="'+r1(yc+3.5)+'" stroke="#141414" stroke-width=".8"/>'
+        +'<text x="'+px+'" y="'+r1(yc+13)+'" font-size="8.5" font-weight="700" text-anchor="end" transform="rotate(-35 '+px+' '+r1(yc+13)+')">'+n0(v-f.xIni)+'</text>';});
     const svg='<svg viewBox="0 0 '+W+' '+H+'"><defs><pattern id="tmh'+f.letra+'" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="8" stroke="#9aa3ad" stroke-width="1.2"/></pattern></defs>'+g+'</svg>';
-    const linha=t=>'<tr><td>'+t.cod+'</td><td class="r"><b>'+n0(t.mm)+'</b></td><td class="tmf-ob">'+obs(t)+'</td><td><span class="tmf-ok"></span></td></tr>';
-    const lista=longa?ts.map(t=>'<div class="tmf-l"><span>'+t.cod+'</span><b>'+n0(t.mm)+'</b><span class="tmf-ob">'+obs(t)+'</span><span class="tmf-ok"></span></div>').join('')
-      :'<table><thead><tr><th>Nº</th><th class="r">Compr.</th><th>Obs.</th><th></th></tr></thead><tbody>'+ts.map(linha).join('')+'</tbody></table>';
     const temCorte=ts.some(t=>t.queda>0), temAb=ts.some(t=>t.porta);
+    const leg='<div class="tmf-leg">'+(temCorte?'<span><i style="background:#fde5d6"></i>corte na diagonal (o tracejado sai)</span>':'')
+      +(temAb?'<span><i style="background:#dbe8f5"></i>telha sobre porta / janela</span>':'')
+      +'<span>código no pé de cada telha · número grande = comprimento</span></div>';
+    const linha=t=>'<tr><td class="tmf-c">'+t.cod+'</td><td class="r"><b>'+n0(t.mm)+'</b></td>'+largTd(t)+'<td>'+corteTxt(t)+'</td><td class="tmf-ob">'+obs(t)+'</td><td><span class="tmf-ok"></span></td></tr>';
+    const lista=longa?ts.map(t=>{const u=t.util||util,c=t.larg<u-2;return '<div class="tmf-l"><span>'+t.cod+'</span><b>'+n0(t.mm)+'</b><i'+(c?' class="lg"':'')+'>'+n0(c?t.larg:u)+'</i><span class="tmf-ob">'+[t.queda>0?corteTxt(t):'',obs(t)].filter(Boolean).join(' · ')+'</span><span class="tmf-ok"></span></div>';}).join('')
+      :'<table><thead><tr><th>Cód.</th><th class="r">Compr.</th><th class="r">Larg.</th><th>Corte</th><th>Obs.</th><th></th></tr></thead><tbody>'+ts.map(linha).join('')+'</tbody></table>';
     return '<article class="tmf" data-parede="'+f.letra+'">'+topo('PAREDE '+f.letra+' · '+escapeHtml(String(f.nome).toUpperCase())+(parte?' ('+parte+'/'+partes+')':''),
         (parte?'<b>'+ts[0].cod+' a '+ts[ts.length-1].cod+'</b> · <b>'+ts.length+'</b> de '+f.ordem.length+' telhas · <span>trecho</span> <b>'+n0(x0-f.xIni)+' a '+n0(x1-f.xIni)+' mm</b>'
-          :'<b>'+ts.length+'</b> telhas · <span>altura</span> <b>'+n0(yTop-yBase)+' mm</b> · <span>comprimento</span> <b>'+n0(x1-x0)+' mm</b>')+vezes,
-        'Vista de fora. Número pequeno = posição ('+f.letra+'-01 à esquerda); número grande = comprimento da telha.'
-          +(temCorte?' Laranja: corte na diagonal (o tracejado é o que sai).':'')+(temAb?' Azul: telha sobre porta/janela.':''))
-      +'<div class="tmf-corpo'+(longa?' longa':'')+'"><div><h5>Vista da parede</h5>'+svg+'</div><div style="min-height:0;overflow:hidden"><h5>Telhas desta parede</h5><div class="tmf-lst">'+lista+'</div></div></div>'
-      +'<div class="tmf-pe"><span>Medidas em mm. Confira o código escrito na telha antes de subir.</span><span>'+escapeHtml(rot)+' · útil '+n0(util)+'</span></div></article>';
+          :'<b>'+ts.length+'</b> telhas · <span>altura</span> <b>'+n0(yTop-yBase)+' mm</b> · <span>comprimento</span> <b>'+n0(x1-x0)+' mm</b>')
+          +' · <span>ordem</span> <b>'+(fi+1)+' de '+faces.length+'</b>'+vezes,'')
+      +'<div class="tmf-corpo'+(longa?' longa':'')+'"><div><h5>Vista de fora</h5>'+svg+leg+'</div><div style="min-height:0;overflow:hidden"><h5>Telhas desta parede · na ordem</h5><div class="tmf-lst">'+lista+'</div></div></div>'
+      +peTxt+'</article>';
   };
   /* Parede com mais de 36 telhas não cabe numa folha (nem o desenho fica
      legível): sai em trechos, cortando só entre colunas de telha -- a peça
      de cima e a de baixo da janela ficam sempre no mesmo trecho. */
   const MAX_FOLHA=36;
-  const folhas=f=>{
-    if(f.ordem.length<=MAX_FOLHA)return folha(f,f.ordem);
+  const folhas=(f,fi)=>{
+    if(f.ordem.length<=MAX_FOLHA)return [folha(f,f.ordem,0,0,fi)];
     const cols=[];f.ordem.forEach(t=>{const c=cols[cols.length-1];if(c&&Math.abs(c[0].x0-t.x0)<1)c.push(t);else cols.push([t]);});
     const nPartes=Math.ceil(f.ordem.length/30), alvo=f.ordem.length/nPartes, grupos=[[]];
     cols.forEach(c=>{const g=grupos[grupos.length-1];if(g.length&&g.length+c.length>alvo+1&&grupos.length<nPartes)grupos.push([]);grupos[grupos.length-1].push(...c);});
-    return grupos.map((g,i)=>folha(f,g,i+1,grupos.length)).join('');
+    return grupos.map((g,i)=>folha(f,g,i+1,grupos.length,fi));
   };
+  const porParede=faces.map(folhas);
+  /* ---- resumo: 3D, ordem, antes de subir ---- */
+  let pag=1+sep.length;
+  const aberturas=f=>{const m=new Map();(f.vergas||[]).forEach(v=>{const pe=v.pe!=null?v.pe:f.baseY,porta=pe<=f.baseY+1;
+      const k=(porta?'porta':'janela')+'|'+n0(v.x1-v.x0)+' × '+n0(v.y-pe);m.set(k,(m.get(k)||0)+1);});
+    return [...m].map(([k,q])=>{const [t,md]=k.split('|');return (q>1?q+' '+t+'s':t)+' '+md;}).join(' · ');};
+  const linhas=faces.map((f,i)=>{const l={n:i+1,nome:f.letra+' · '+f.nome,sub:aberturas(f),telhas:f.ordem.length*e,chapas:f.pilhaChapas,cortes:f.pilhaCortes*e,folha:String(pag+1)+(porParede[i].length>1?'–'+(pag+porParede[i].length):'')};pag+=porParede[i].length;return l;});
+  const nCortes=cortes.length*e;
   const img3d=tlh3dImagem();
-  const pag3d=img3d?'<article class="tmf">'+topo('FECHAMENTO · MONTAGEM EM 3D',
-      '<span>Telha:</span> <b>'+escapeHtml(rot)+'</b> · <b>'+totalQtd+'</b> chapas · <b>'+faces.length+'</b> parede(s)'+vezes,
-      'Referência de onde fica cada parede. Os códigos e as medidas estão nas folhas seguintes.')
-    +'<div class="tmf-3d"><img src="'+img3d+'" alt="Fechamento em 3D, com as paredes no lugar"></div>'
-    +'<div class="tmf-pe"><span>Paredes: '+faces.map(f=>'<b>'+f.letra+'</b> '+escapeHtml(f.nome)).join(' · ')+'</span><span>Medidas em mm</span></div></article>':'';
-  return css+pag3d+sep+faces.map(folhas).join('');
+  const resumo=tmfResumo({img:img3d,alt:'Fechamento em 3D, com as paredes no lugar',col:'Parede',linhas,
+    topo:topo('FECHAMENTO · MONTAGEM EM 3D E RESUMO','<b>'+faces.reduce((s,f)=>s+f.ordem.length,0)*e+'</b> telhas de <b>'+totalQtd+'</b> chapas · <b>'+faces.length+'</b> parede(s) · '+escapeHtml(rot)+' · útil <b>'+n0(util)+'</b> mm'+vezes,''),
+    chk:['Telhas separadas por parede e contadas: <b>'+totalQtd+' chapas</b> (folha 2).','Terças no prumo e alinhadas.',
+      'Marcar na terça o início de cada telha (cotas embaixo do desenho de cada parede).']
+      .concat(nCortes?['Cortar no chão, antes de subir, as <b>'+nCortes+' chapa'+(nCortes>1?'s':'')+' ✂</b> (folha 2).']:[])
+      .concat(['Transpasse da onda: a telha nova por cima, contra o vento.']),
+    leg:'<div class="tmf-leg"><span><i style="background:#fde5d6"></i>corte na diagonal</span><span><i style="background:#dbe8f5"></i>sobre porta / janela</span><span><i style="background:#fff;border-color:#d53309"></i>✂ uma chapa = duas telhas</span></div>',
+    pe:pe0});
+  return tmfCss()+resumo+sep.join('')+porParede.flat().join('');
 }
 async function telhaFichaMontador(){
   const pa=document.getElementById('printArea'); if(!pa)return;
@@ -27065,8 +27207,6 @@ render();
   color:var(--muted);line-height:1.55;font-weight:530}
 #cob3ov .cob3leg span{display:flex;align-items:center;gap:7px;margin:5px 0}
 #cob3ov .cob3leg i{width:11px;height:11px;border-radius:2px;background:#F24619;flex:0 0 auto}
-#printArea .cob-pedido .cob-obs{font-size:11px;color:#6c7480;line-height:1.5;margin-top:10px;
-  padding-top:8px;border-top:1px solid #dadee3;font-weight:560}
 /* ===================== COBERTURA E FECHAMENTO NO MESMO MOLDE =====================
    As duas telas tem a mesma ordem: Acoes -> Pedido -> Medidas -> Faces ->
    Resultado. Dois botoes a vista (Orcamento e Pedido); o resto no "Mais".
@@ -28178,7 +28318,30 @@ html[data-theme="escuro"] .log-det>summary.err{color:var(--red)}.log-det>summary
      Sobras: a última faixa de cada água do bloco. Destinos: a primeira de
      cada água do bloco seguinte; todas precisam casar (comprimento até o da
      sobra, corte no comprimento), senão o bloco fica como era. */
-  const cobCurto=f=>String.fromCharCode(65+(f.setor||0))+'-'+String(f.ordem).padStart(2,'0');
+  const cobCurto=f=>f.cod||(String.fromCharCode(65+(f.setor||0))+'-'+String(f.ordem).padStart(2,'0'));
+  const cobCodigo=cobCurto;
+  /* UM CÓDIGO POR ÁGUA NA OBRA INTEIRA: antes as duas águas do SketchUp
+     saíam as duas como A-01..A-11 -- na obra, duas pilhas com os mesmos
+     códigos. Cada água ganha a inicial do nome ("ÁGUA NORTE" → N-01, "ÁGUA
+     SUL" → S-01, setores A/B → A-01/B-01) quando elas não se repetem; senão
+     C1, C2... pela ordem. */
+  function cobAplicaCodigos(blocos,todas,reusos){
+    const aguas=[];
+    blocos.forEach(rb=>(rb.setores||[]).forEach(st=>{if((st.faixas||[]).length)aguas.push(st);}));
+    const ini=st=>{const nm=String(st.nome||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase();
+      const ws=nm.split(/[^A-Z0-9#]+/).filter(w=>/^[A-Z]/.test(w)&&!/#/.test(w)&&!/^(AGUA|SETOR|FACE|BLOCO|TELHADO)$/.test(w));return ws.length?ws[ws.length-1][0]:'';};
+    const cand=aguas.map(ini),unico=cand.every(Boolean)&&new Set(cand).size===cand.length;
+    const porCod=new Map();
+    aguas.forEach((st,i)=>{const pref=unico?cand[i]:'C'+(i+1);
+      st.faixas.forEach(f=>{f.cod=pref+'-'+String(f.ordem).padStart(2,'0');porCod.set(f.codigo,f.cod);});});
+    todas.forEach(x=>{if(porCod.has(x.codigo))x.cod=porCod.get(x.codigo);});
+    const nomeDe=x=>(x.blocoNome?x.blocoNome+' ':'');
+    const todosF=blocos.flatMap(rb=>(rb.setores||[]).flatMap(st=>st.faixas||[])).concat(todas);
+    const acha=c=>todas.find(x=>x.codigo===c);
+    todosF.forEach(f=>{if(f.reusoLarguraPara){const d=acha(f.reusoLarguraPara);if(d)f.reusoLarguraParaCurto=nomeDe(d)+d.cod;}
+      if(f.reusoLarguraDe){const o=acha(f.reusoLarguraDe);if(o)f.reusoLarguraDeCurto=nomeDe(o)+o.cod;}});
+    (reusos||[]).forEach(x=>{const o=acha(x.fonte),d=acha(x.destino);if(o)x.fonteCurto=nomeDe(o)+o.cod;if(d)x.destinoCurto=nomeDe(d)+d.cod;});
+  }
   function cobSobrasLargura(itens,util){
     const ult=new Map();
     itens.forEach(x=>{const o=ult.get(x.setor);if(!o||x.indice>o.indice)ult.set(x.setor,x);});
@@ -28290,6 +28453,7 @@ html[data-theme="escuro"] .log-det>summary.err{color:var(--red)}.log-det>summary
         f.reusoLarguraSobra=x.sobra;}})),{telha:cobTelhaB(b).chave}):null;
     });
     if(erros.length)return {ok:false,modo:'planta',erros,avisos,aguas,blocos,lista:[]};
+    cobAplicaCodigos(blocos,todas,reusosLargura);
     /* A ordem precisa existir antes de agrupar o pedido: as pecas obtidas de
        sobra deixam de ser compradas, mas continuam identificadas no plano. */
     const porTelha=new Map();todas.forEach(x=>{const k=x.telha||'';if(!porTelha.has(k))porTelha.set(k,[]);porTelha.get(k).push(x);});
@@ -29028,7 +29192,7 @@ html[data-theme="escuro"] .log-det>summary.err{color:var(--red)}.log-det>summary
           '<div class="fld"><label>Chapas por telha</label><input id="cobTermicaInfo" value="'+(COB.termica?'Duas chapas (térmica / forro)':'Uma folha')+'" disabled title="Vem do nome da telha no cadastro: térmica ou forro = duas chapas; sem isso, uma folha"></div>'+
           '<div class="fld cob-termica-only"><label>Pingadeira (mm)</label><input id="cobPingadeira" type="number" min="0" value="'+inteiro(COB.pingadeira)+'" title="Descontada da chapa inferior. A superior fica com o comprimento da telha."></div>'+
           '<div class="fld cob-termica-only"><label>Peça do beiral (mm)</label><input id="cobPecaBeiral" type="number" min="0" value="'+inteiro(COB.pecaBeiral)+'" title="Chapa inferior da peça de baixo, onde cai a emenda. Zero divide igual."></div>'+
-        '</div></div>'+
+        '</div>'+pedEntregaHTML()+'</div>'+
         (skpArq&&!temDwg?'':
         '<div class="tl-bloco cob-dwg-only"><div class="tl-bloco-t">Leitura do DWG</div><div class="tl-campos">'+
           (temDwg?'<div class="fld"><label>Desenho</label><select id="cobLeitura"><option value="planta"'+(COB.leitura==='planta'?' selected':'')+'>Planta da cobertura</option><option value="corte"'+(COB.leitura==='corte'?' selected':'')+'>Corte / elevação lateral</option>'+(skpArq?'<option value="sketchup" selected>SketchUp — faces 3D</option>':'')+'</select></div>':'')+
@@ -29110,6 +29274,7 @@ html[data-theme="escuro"] .log-det>summary.err{color:var(--red)}.log-det>summary
       detectaCobertura(true);salvaCob();montaCobertura();
     });
     document.getElementById('cobImportSkp').addEventListener('click',()=>document.getElementById('cobSkpFile').click());
+    pedEntregaLiga(document.getElementById('tlov'));
     document.getElementById('cobSalvar').addEventListener('click',cobSalvarObra);
     document.getElementById('cobSkpFile').addEventListener('change',e=>{const f=e.target.files&&e.target.files[0];e.target.value='';cobAbreSketchup(f);});
     const liga=(id,ev,fn)=>{const el=document.getElementById(id);if(el)el.addEventListener(ev,fn);};
@@ -29661,7 +29826,7 @@ html[data-theme="escuro"] .log-det>summary.err{color:var(--red)}.log-det>summary
     const marca=p=>{if(p.x<minx)minx=p.x;if(p.x>maxx)maxx=p.x;if(p.y<miny)miny=p.y;if(p.y>maxy)maxy=p.y;};
     const ln=(lay,a,b)=>{marca(a);marca(b);ent+=dxfLinha(lay,a,b);};
     const tx=(lay,p,alt,t,rot=0)=>{marca(p);ent+=dxfTexto(lay,p,alt,dxfTxt(t),rot,'RM-TEXTO');};
-    const curto=f=>String.fromCharCode(65+(f.setor||0))+'-'+String(f.ordem).padStart(2,'0');
+    const curto=cobCodigo;
 
     /* A COR DA AGUA E A MESMA DA PREVIA DA TELA -- alternada face a face.
        A previa do SketchUp desenha so as faces que tem geometria 3D, entao a
@@ -30096,7 +30261,7 @@ html[data-theme="escuro"] .log-det>summary.err{color:var(--red)}.log-det>summary
     P.forEach(p=>{
       const L=Math.hypot(p.bx-p.ax,p.by-p.ay);if(L<20)return;
       let ang=Math.atan2(p.by-p.ay,p.bx-p.ax);if(ang>Math.PI/2)ang-=Math.PI;if(ang<-Math.PI/2)ang+=Math.PI;
-      const txt=String.fromCharCode(65+(p.f.setor||0))+'-'+String(p.f.ordem).padStart(2,'0')+'  '+(p.f.reusoLarguraDe?'SOBRA':Math.round(num(p.f.pedido)).toLocaleString('pt-BR'));
+      const txt=cobCodigo(p.f)+'  '+(p.f.reusoLarguraDe?'SOBRA':Math.round(num(p.f.pedido)).toLocaleString('pt-BR'));
       const fs=Math.max(7,Math.min(15,(isFinite(p.larg)?p.larg:30)*.62,L*.45/(txt.length*.62)));
       c.save();c.translate(p.mx,p.my);c.rotate(ang);c.font='700 '+fs.toFixed(1)+'px Arial, sans-serif';
       c.lineWidth=Math.max(2,fs*.3);c.lineJoin='round';c.strokeStyle='rgba(255,255,255,.94)';c.strokeText(txt,0,0);
@@ -30163,7 +30328,8 @@ html[data-theme="escuro"] .log-det>summary.err{color:var(--red)}.log-det>summary
     const min=todos.reduce((a,p)=>[Math.min(a[0],p[0]),Math.min(a[1],p[1]),Math.min(a[2],p[2])],[Infinity,Infinity,Infinity]);
     const max=todos.reduce((a,p)=>[Math.max(a[0],p[0]),Math.max(a[1],p[1]),Math.max(a[2],p[2])],[-Infinity,-Infinity,-Infinity]);
     const cen=[(min[0]+max[0])/2,(min[1]+max[1])/2,(min[2]+max[2])/2],co=Math.cos(C3.yaw),si=Math.sin(C3.yaw),cp=Math.cos(C3.pitch),sp=Math.sin(C3.pitch);
-    const tr=p=>{let x=p[0]-cen[0],y=p[1]-cen[1],z=p[2]-cen[2];const xr=x*co-y*si,yr=x*si+y*co;return {x:xr,y:-(z*cp-yr*sp),d:yr*cp+z*sp};};
+    /* y do mundo entra invertido: sem isso a projeção tinha determinante negativo e o 3D saía ESPELHADO (o INÍCIO de uma água aparecia do lado contrário ao da folha do montador) */
+    const tr=p=>{let x=p[0]-cen[0],y=-(p[1]-cen[1]),z=p[2]-cen[2];const xr=x*co-y*si,yr=x*si+y*co;return {x:xr,y:-(z*cp-yr*sp),d:yr*cp+z*sp};};C3.tr=tr;
     const pp=todos.map(tr),mnX=Math.min(...pp.map(p=>p.x)),mxX=Math.max(...pp.map(p=>p.x)),mnY=Math.min(...pp.map(p=>p.y)),mxY=Math.max(...pp.map(p=>p.y));
     const sc=Math.min((W-90)/Math.max(1,mxX-mnX),(H-90)/Math.max(1,mxY-mnY))*C3.zoom,sx=p=>(p.x-(mnX+mxX)/2)*sc+W/2,sy=p=>(p.y-(mnY+mxY)/2)*sc+H/2;
     c3Cenario(c,W,H,tr,sx,sy,min,max,paineis.map(x=>x.p));
@@ -30227,7 +30393,8 @@ html[data-theme="escuro"] .log-det>summary.err{color:var(--red)}.log-det>summary
     const min=todos.reduce((a,p)=>[Math.min(a[0],p[0]),Math.min(a[1],p[1]),Math.min(a[2],p[2])],[Infinity,Infinity,Infinity]);
     const max=todos.reduce((a,p)=>[Math.max(a[0],p[0]),Math.max(a[1],p[1]),Math.max(a[2],p[2])],[-Infinity,-Infinity,-Infinity]);
     const cen=[(min[0]+max[0])/2,(min[1]+max[1])/2,(min[2]+max[2])/2],co=Math.cos(C3.yaw),si=Math.sin(C3.yaw),cp=Math.cos(C3.pitch),sp=Math.sin(C3.pitch);
-    const tr=p=>{let x=p[0]-cen[0],y=p[1]-cen[1],z=p[2]-cen[2];const xr=x*co-y*si,yr=x*si+y*co;return {x:xr,y:-(z*cp-yr*sp),d:yr*cp+z*sp};};
+    /* y do mundo entra invertido: sem isso a projeção tinha determinante negativo e o 3D saía ESPELHADO (o INÍCIO de uma água aparecia do lado contrário ao da folha do montador) */
+    const tr=p=>{let x=p[0]-cen[0],y=-(p[1]-cen[1]),z=p[2]-cen[2];const xr=x*co-y*si,yr=x*si+y*co;return {x:xr,y:-(z*cp-yr*sp),d:yr*cp+z*sp};};C3.tr=tr;
     const pp=todos.map(tr),mnX=Math.min(...pp.map(p=>p.x)),mxX=Math.max(...pp.map(p=>p.x)),mnY=Math.min(...pp.map(p=>p.y)),mxY=Math.max(...pp.map(p=>p.y));
     const sc=Math.min((W-90)/Math.max(1,mxX-mnX),(H-90)/Math.max(1,mxY-mnY))*C3.zoom,sx=p=>(p.x-(mnX+mxX)/2)*sc+W/2,sy=p=>(p.y-(mnY+mxY)/2)*sc+H/2;
     c3Cenario(c,W,H,tr,sx,sy,min,max,paineis.map(x=>x.p));
@@ -30307,18 +30474,6 @@ html[data-theme="escuro"] .log-det>summary.err{color:var(--red)}.log-det>summary
     document.querySelectorAll('#cob3ov [data-v]').forEach(x=>x.classList.toggle('on',x.dataset.v===C3.vista));
   }
 
-  function svgPedido(r){
-    if(COB.leitura==='sketchup')return svgPreviewSketchup(r);
-    if(cobGeometrico())return svgPreviewPlanta(r);
-    const a=r.aguas[0],b=r.aguas[1],w=760,hg=92,x0=24,x1=736,n=Math.min(r.faixas,35);let l='';
-    for(let i=1;i<n;i++){const x=x0+(x1-x0)*i/n;l+='<line x1="'+x+'" y1="18" x2="'+x+'" y2="'+(COB.aguas===2?80:104)+'" stroke="#bbc0c5" stroke-width=".7"/>';}
-    return '<svg viewBox="0 0 760 120" aria-label="Esquema da cobertura">'+ 
-      (COB.aguas===2?'<rect x="24" y="49" width="712" height="43" fill="#fff0eb" stroke="#F24619"/><rect x="24" y="6" width="712" height="43" fill="#edf4f9" stroke="#4d83ad"/><line x1="24" y1="49" x2="736" y2="49" stroke="#222" stroke-width="2.5"/>'
-                    :'<rect x="24" y="12" width="712" height="92" fill="#fff0eb" stroke="#F24619"/>')+l+
-      '<text x="34" y="'+(COB.aguas===2?76:65)+'" font-family="Arial" font-size="11" fill="#a92f0b">ÁGUA A · '+a.faixas+' faixas · '+a.final+' mm</text>'+ 
-      (b?'<text x="34" y="34" font-family="Arial" font-size="11" fill="#356f9c">ÁGUA B · '+b.faixas+' faixas · '+b.final+' mm</text>':'')+
-      '<text x="520" y="116" font-family="Arial" font-size="9" fill="#6c7480">'+(COB.sentido==='ltr'?'montagem: esquerda → direita':'montagem: direita → esquerda')+'</text></svg>';
-  }
   /* ===== NOMENCLATURA DA TABELA DE FABRICACAO, COMO NA ABA DETALHAMENTO =====
      A tabela tinha uma coluna "Fabricação" escrevendo um paragrafo por
      peca -- tipo de corte, o metodo de medir e o sentido de montagem, tudo
@@ -30416,125 +30571,141 @@ html[data-theme="escuro"] .log-det>summary.err{color:var(--red)}.log-det>summary
     const e=Math.max(1,inteiro(COB.estruturas)||1), util=inteiro(COB.util), n0=v=>Math.round(v).toLocaleString('pt-BR');
     const obra=nomeObra()||'(sem obra)', dataBr=new Date().toLocaleDateString('pt-BR'), rot=modeloAtual().nome||'Telha';
     const logo=(typeof LOGO_RM!=='undefined'&&LOGO_RM)?'<img src="'+LOGO_RM+'" alt="RM Estruturas">':'<b>RM Estruturas</b>';
-    const css='<style>.tmf{font-family:Arial,Helvetica,sans-serif;color:#141414;box-sizing:border-box;width:281mm;height:176mm;border:.35mm solid #141414;padding:5mm 7mm 3mm;display:grid;grid-template-rows:auto 1fr auto;gap:2.5mm;overflow:hidden;break-after:page;page-break-after:always;background:#fff}'
-      +'.tmf:last-child{break-after:auto;page-break-after:auto}.tmf *{box-sizing:border-box}'
-      +'.tmf-top{display:flex;justify-content:space-between;align-items:flex-start;gap:8mm}.tmf-tx{font-size:11pt;line-height:1.45}.tmf-tx .t{font-size:15pt;font-weight:700;margin-bottom:.5mm}.tmf-tx span{color:#444}.tmf-tx2{font-size:9pt;color:#333;margin-top:.5mm}'
-      +'.tmf-logo{text-align:right;font-size:8pt;color:#555;white-space:nowrap}.tmf-logo img{height:9mm;display:block;margin:0 0 1.5mm auto}'
-      +'.tmf-corpo{display:grid;grid-template-columns:1fr 78mm;gap:5mm;min-height:0}.tmf h5{margin:0 0 1.5mm;font-size:8pt;letter-spacing:.08em;text-transform:uppercase;color:#777}'
-      +'.tmf svg{width:100%;height:auto;max-height:135mm;display:block}.tmf text{font-family:Arial,Helvetica,sans-serif}'
-      +'#printArea .tmf table{width:100%;border-collapse:collapse;font-size:9pt;margin:0}.tmf tr{background:none}#printArea .tmf th{background:none;border:0;font-weight:700;text-align:left;font-size:7.5pt;color:#777;text-transform:uppercase;letter-spacing:.05em;border-bottom:.3mm solid #141414;padding:1mm}'
-      +'#printArea .tmf td{border:0;font-size:9pt;font-weight:400;color:#141414;padding:.6mm 1mm;border-bottom:.15mm solid #ddd;vertical-align:top;white-space:nowrap}#printArea .tmf td.tmf-ob,#printArea .tmf td.tmf-cod{white-space:normal}#printArea .tmf td.tmf-ob{font-size:7pt;color:#555}#printArea .tmf td.r,#printArea .tmf th.r{text-align:right}#printArea .tmf td b{font-size:10pt}.tmf-ob{font-size:7.5pt;color:#555}'
-      +'.tmf-ok{display:inline-block;width:3.2mm;height:3.2mm;border:.25mm solid #141414;border-radius:.6mm}'
-      +'.tmf-pe{display:flex;justify-content:space-between;gap:6mm;font-size:7.5pt;color:#777;border-top:.2mm solid #ccc;padding-top:1.5mm}'
-      +'#printArea .tmf-sep td{font-size:10pt;padding:1.2mm 1mm}.tmf-cod span{white-space:nowrap}'
-      +'.tmf-3d{min-height:0;height:100%;display:flex;align-items:center;justify-content:center;overflow:hidden}.tmf-3d img{width:100%;height:100%;object-fit:contain;display:block}'
-      +'.tmf-corpo.longa{grid-template-columns:1fr;grid-template-rows:auto 1fr}.tmf-corpo.longa svg{max-height:80mm}.tmf-corpo.longa .tmf-lst{columns:4;column-gap:6mm}.tmf-l{display:grid;grid-template-columns:11mm 12mm 1fr 4mm;gap:1.5mm;align-items:baseline;font-size:8.5pt;padding:.4mm 0;border-bottom:.15mm solid #ddd;break-inside:avoid}.tmf-l b{text-align:right;font-size:9.5pt}.tmf-l .tmf-ob{font-size:7pt;color:#555}.tmf-corpo.larga{grid-template-columns:1fr 100mm}.tmf-lst.dupla{columns:2;column-gap:4mm}.tmf-lst.mini .tmf-l{font-size:7.5pt;padding:.2mm 0}.tmf-lst.mini .tmf-l b{font-size:8pt}.tmf-lst.mini .tmf-ok{width:2.8mm;height:2.8mm}</style>';
-    const topo=(t,l1,l2)=>'<div class="tmf-top"><div class="tmf-tx"><div class="t">'+t+'</div>'+l1+'<div class="tmf-tx2">'+l2+'</div></div>'
-      +'<div class="tmf-logo">'+logo+escapeHtml(obra)+' · '+dataBr+'</div></div>';
+    const topo=(t,l1,l2)=>tmfTopo(logo,obra,dataBr,t,l1,l2);
     const vezes=e>1?' · <b>'+e+'</b> estruturas iguais (monte cada face '+e+' vezes)':'';
     const totais=cobTotaisComprimento(r.lista);
     const totalQtd=totais.reduce((s,g)=>s+g.qtd,0);
     const cum=cobCumeeiras(r);
-    const sep='<article class="tmf">'+topo('COBERTURA · SEPARAÇÃO NA OBRA',
-        '<span>Telha:</span> <b>'+escapeHtml(rot)+'</b> · <span>largura útil</span> <b>'+n0(util)+' mm</b> · <b>'+totalQtd+'</b> chapas'+
-        (cum&&cum.pecas?' · <b>'+cum.pecas+'</b> cumeeira(s)':'')+vezes,
-        'Ao descarregar, escreva o código com pincel na ponta de cada telha e separe por face (água). Depois é só seguir a folha de cada face.')
-      +'<div style="min-height:0;overflow:hidden"><table class="tmf-sep"><thead><tr><th class="r">Compr. (mm)</th><th class="r">Qtd.</th><th>Faces (destino)</th><th></th></tr></thead><tbody>'
-      +totais.map(g=>'<tr><td class="r"><b>'+(g.x.chapaSup!=null&&g.x.chapaInf!=null&&g.x.chapaSup!==g.x.chapaInf?'sup. '+n0(g.x.chapaSup)+' / inf. '+n0(g.x.chapaInf):n0(g.x.mm))
-        +'</b></td><td class="r">'+g.qtd+'</td><td class="tmf-cod"><span>'+[...g.destinos].map(escapeHtml).join(' · ')+'</span>'
-        +(g.diag?' <span class="tmf-ob">· '+g.diag+' com ponta em ângulo (cortar na obra)</span>':'')+'</td><td><span class="tmf-ok"></span></td></tr>').join('')
-      +'</tbody></table>'
-      +(r.reusosLargura||[]).map(x=>'<div class="tmf-ob" style="margin-top:1.5mm;font-size:9pt;color:#1d5fd1"><b>Sobra de largura (não vem do fabricante):</b> corte a telha <b>'+escapeHtml(x.fonteCurto)+'</b> no comprimento — '
-        +n0(util-x.sobra)+' mm ficam nela e os <b>'+n0(x.sobra)+' mm</b> que sobram são a <b>'+escapeHtml(x.destinoCurto)+'</b>.</div>').join('')
-      +'</div>'
-      +cobFichaParafusos(r,cum)
-      +'<div class="tmf-pe"><span>Faces: '+ORD.blocos.map(b=>'<b>'+escapeHtml(b.nome)+'</b>').join(' · ')+'</span><span>Medidas em mm</span></div></article>';
-    const folhas=ORD.blocos.map(bloco=>{
-      const sentido=cobSentidoFace(bloco);
-      const setores=bloco.setores||[];
-      const faixas=setores.reduce((a,s)=>a.concat(s.faixas||[]),[]);
-      if(!faixas.length)return '';
-      const xs=[],ys=[];
-      faixas.forEach(f=>{
-        [f.p0,f.p1].forEach(p=>{
-          if(p){xs.push(num(p.x));xs.push(num(p.x));ys.push(num(p.y));ys.push(num(p.y));}
-        });
-      });
-      (bloco.poligono||[]).forEach(p=>{xs.push(num(p.x));ys.push(num(p.y));});
-      if(!xs.length)return '';
-      const xMin=Math.min(...xs),xMax=Math.max(...xs),yMin=Math.min(...ys),yMax=Math.max(...ys);
-      const nF=faixas.length,longa=nF>40||(xMax-xMin)/Math.max(1,yMax-yMin)>2.2;
+    const parafT=cobParafusos(r),areaT=Math.max(1e-9,num(r.areaPedido));
+    const fol=Math.round(num(COB.cumeeira)),beiral=Math.round(num(COB.beiral));
+    /* as águas na ordem do telhado: cada setor com faixa é uma água */
+    const aguas=[];
+    ORD.blocos.forEach(bloco=>(bloco.setores||[]).forEach(st=>{const fx=(st.faixas||[]).filter(f=>f.p0&&f.p1).slice().sort((a,b)=>a.ordem-b.ordem);
+      if(fx.length)aguas.push({bloco,st,faixas:fx,nome:(bloco.setores.length>1?st.nome||(bloco.nome+' · '+st.id):bloco.nome),pref:cobCodigo(fx[0]).replace(/-\d+$/,'')});}));
+    if(!aguas.length)return '';
+    const naObra=f=>f.diagonal||num(f.largura)<(f.util||util)-2;
+    const estreita=f=>num(f.largura)<(f.util||util)-2;
+    const peTxt='<div class="tmf-pe"><span>Medidas em mm. Confira o código escrito na telha antes de subir.</span><span>'+escapeHtml(rot)+' · útil '+n0(util)+'</span></div>';
+    /* ---- separação: a pilha de cada água ---- */
+    const pilhas=aguas.map(a=>{const itens=a.faixas.filter(f=>!f.reusoLarguraDe).map(f=>({cod:cobCodigo(f),mm:f.pedido,partes:Math.max(1,f.partes||1),x:naObra(f)}));
+      a.chapas=itens.reduce((s,it)=>s+it.partes,0)*e;a.cortes=a.faixas.filter(naObra).length*e;
+      return {letra:a.pref,nome:a.nome,itens,chapas:a.chapas};});
+    const reuso=(r.reusosLargura||[]).map(x=>'<div class="tmf-ob" style="font-size:9pt;color:#1d5fd1"><b>Sobra de largura (não vem do fabricante):</b> corte a telha <b>'+escapeHtml(x.fonteCurto)+'</b> no comprimento — '
+        +n0(util-x.sobra)+' mm ficam nela e os <b>'+n0(x.sobra)+' mm</b> que sobram são a <b>'+escapeHtml(x.destinoCurto)+'</b>.</div>').join('');
+    const pe0='<div class="tmf-pe"><span>Águas: '+aguas.map(a=>'<b>'+escapeHtml(a.pref)+'</b> '+escapeHtml(a.nome)).join(' · ')+'</span><span>✂ = cortar na obra (ponta em ângulo ou largura) · Medidas em mm</span></div>';
+    const sep=tmfSeparacao({pilhas,cortes:[],pe:pe0,
+      topo:suf=>topo('SEPARAÇÃO NA OBRA'+suf,'<span>Telha:</span> <b>'+escapeHtml(rot)+'</b> · <span>largura útil</span> <b>'+n0(util)+' mm</b> · <b>'+totalQtd+'</b> chapas'+(cum&&cum.pecas?' · <b>'+cum.pecas+'</b> cumeeira(s)':'')+vezes,
+        'Escreva o código com pincel na ponta de cada telha e monte a pilha de cada água na ordem: a primeira a subir fica por cima.')});
+    { const extra=(reuso?'<div style="display:grid;gap:1.5mm">'+reuso+'</div>':'')+cobFichaParafusos(r,cum),L=sep.length-1,i=sep[L].lastIndexOf('</div><div class="tmf-pe">');
+      if(extra&&i>=0)sep[L]=sep[L].slice(0,i)+extra+sep[L].slice(i); }
+    /* ---- uma folha por água ---- */
+    const obs=f=>{const o=[];
+      if(f.diagonal)o.push('ponta em ângulo');
+      if(estreita(f))o.push('cortar na largura');
+      if(f.partes>1)o.push(f.partes+' partes');
+      if(f.foraCumeeira)o.push('fora da cumeeira');
+      if(f.reusoLarguraPara)o.push('cortar no comprimento: a sobra de '+f.reusoLarguraSobra+' mm vai para '+f.reusoLarguraParaCurto);
+      if(f.reusoLarguraDe)o.push('é a sobra de '+f.reusoLarguraDeCurto+' (não vem do fabricante)');
+      return o.join(' · ');};
+    const desenho=(a)=>{
+      const b=a.bloco,ex=cobEixos(b),poly=(a.st.poly&&a.st.poly.length>2?a.st.poly:b.poligono)||[];
+      const cen=cobCentro(poly);
+      /* cumeeira em cima: se ela fica "embaixo" no eixo v, gira 180° (sem espelhar) */
+      const k=cobDot(cen,ex.v)>ex.v0?-1:1;
+      /* No SketchUp a face planificada tem x = eixo comum às águas (o sinal
+         foi acertado pelo eixo global) e y descendo a água: visto de fora,
+         a direita é normal × descida. Onde o eixo ficou ao contrário, o
+         desenho vira -- senão uma das águas sairia espelhada em relação ao 3D. */
+      let kU=k;
+      const sk=b.sketchup;
+      if(sk&&sk.normal&&sk.direcao&&sk.eixo)kU=cobVDot(sk.eixo,cobVCross(sk.normal,sk.direcao))>=0?1:-1;
+      const U=p=>kU*cobDot(p,ex.u),Vv=p=>k*cobDot(p,ex.v);   /* Vv cresce para a cumeeira */
+      const pts=poly.concat(a.faixas.flatMap(f=>[f.p0,f.p1]));
+      const us=pts.map(U),vs=pts.map(Vv),u0=Math.min(...us),u1=Math.max(...us),v0=Math.min(...vs),v1=Math.max(...vs);
+      const W=1000,m=40,TOP=42,BOT=96,nF=a.faixas.length,longa=nF>40||(u1-u0)/Math.max(1,v1-v0)>2.2;
+      const s=Math.min((W-2*m)/Math.max(1,u1-u0),(longa?230:400)/Math.max(1,v1-v0)),H=Math.round((v1-v0)*s+TOP+BOT);
+      const ox=(W-(u1-u0)*s)/2,X=p=>ox+(U(p)-u0)*s,Y=p=>TOP+(v1-Vv(p))*s,r1=v=>Math.round(v*10)/10;
+      const XU=u=>ox+(kU*u-u0)*s;
+      const cid='cobclip'+escapeAttr(a.pref).replace(/[^A-Za-z0-9]/g,'');
+      let g='<defs><clipPath id="'+cid+'"><path d="M'+poly.map(p=>r1(X(p))+' '+r1(Y(p))).join('L')+'Z"/></clipPath></defs>';
+      const yTop=TOP,yBot=TOP+(v1-v0)*s;
+      g+='<g clip-path="url(#'+cid+')">';
+      a.faixas.forEach((f,i)=>{const xa=XU(f.ini),xb=XU(f.fim),xl=Math.min(xa,xb),w=Math.abs(xb-xa);
+        const cor=naObra(f)?'#fde5d6':(i%2?'#e6e9ed':'#eef1f5');
+        g+='<rect data-cod="'+escapeAttr(cobCodigo(f))+'" x="'+r1(xl)+'" y="'+r1(yTop-4)+'" width="'+r1(w)+'" height="'+r1(yBot-yTop+8)+'" fill="'+cor+'" stroke="#141414" stroke-width=".8"/>';
+        if(!naObra(f)&&w>30)for(let q=1;q<5;q++)g+='<line x1="'+r1(xl+w*q/5)+'" x2="'+r1(xl+w*q/5)+'" y1="'+r1(yTop)+'" y2="'+r1(yBot)+'" stroke="#c9ccd1" stroke-width=".6"/>';});
+      g+='</g>';
+      (b.furos||[]).forEach(fu=>{g+='<path d="M'+fu.map(p=>r1(X(p))+' '+r1(Y(p))).join('L')+'Z" fill="#fff" stroke="#141414" stroke-width="1.2" stroke-dasharray="6 4"/>';});
+      g+='<path d="M'+poly.map(p=>r1(X(p))+' '+r1(Y(p))).join('L')+'Z" fill="none" stroke="#141414" stroke-width="2"/>';
+      /* código no pé (beiral) e comprimento no meio de cada telha */
+      a.faixas.forEach(f=>{const xa=XU(f.ini),xb=XU(f.fim),cx=r1((xa+xb)/2),w=Math.abs(xb-xa);
+        const pb=Vv(f.p0)<Vv(f.p1)?f.p0:f.p1,pc=pb===f.p0?f.p1:f.p0,yb=Y(pb),yc=Y(pc),cy=r1((yb+yc)/2);
+        const cod=cobCodigo(f),txt=n0(f.pedido)+(f.partes>1?' ('+f.partes+'×)':'')+(estreita(f)?' · larg. '+n0(f.largura):'');
+        const fs=r1(Math.max(7,Math.min(13,w*.5)));
+        g+='<text x="'+cx+'" y="'+cy+'" font-size="'+fs+'" font-weight="800" fill="'+(naObra(f)?'#d53309':'#141414')+'" text-anchor="middle" dominant-baseline="middle" transform="rotate(-90 '+cx+' '+cy+')">'+txt+'</text>';
+        if(w>=26)g+='<text x="'+cx+'" y="'+r1(yb-7)+'" font-size="'+r1(Math.max(7.5,Math.min(12,w*.16)))+'" font-weight="800" text-anchor="middle">'+escapeHtml(cod)+'</text>';
+        else g+='<text x="'+cx+'" y="'+r1(yBot+12)+'" font-size="'+r1(Math.max(6.5,Math.min(9,w*.5)))+'" font-weight="700" text-anchor="middle">'+escapeHtml(cod.slice(cod.lastIndexOf('-')+1))+'</text>';});
+      /* cumeeira em cima, beiral embaixo */
+      if(ORD.cum(b))g+='<line data-cume="1" x1="'+r1(ox-12)+'" x2="'+r1(ox+(u1-u0)*s+12)+'" y1="'+r1(yTop-6)+'" y2="'+r1(yTop-6)+'" stroke="#d53309" stroke-width="2.5"/>'
+        +'<text x="'+r1(W/2)+'" y="'+r1(yTop-12)+'" font-size="12" font-weight="800" fill="#d53309" text-anchor="middle">CUMEEIRA'+(fol>0?' · folga '+n0(fol)+' mm':'')+'</text>';
+      else g+='<text x="'+r1(W/2)+'" y="'+r1(yTop-12)+'" font-size="11" font-weight="700" fill="#555" text-anchor="middle">TOPO (fim da telha)</text>';
+      g+='<text x="'+r1(W/2)+'" y="'+r1(yBot+(nF&&a.faixas.some(f=>Math.abs(XU(f.fim)-XU(f.ini))<26)?24:16))+'" font-size="10.5" font-weight="700" text-anchor="middle">BEIRAL'+(beiral>0?' · '+n0(beiral)+' mm para fora':'')+'</text>';
+      /* sentido: da primeira para a última telha */
+      const f0=a.faixas[0],fz=a.faixas[a.faixas.length-1],dir=(XU(fz.ini)+XU(fz.fim))>=(XU(f0.ini)+XU(f0.fim))?1:-1;
+      const xs0=dir>0?Math.min(XU(f0.ini),XU(f0.fim)):Math.max(XU(f0.ini),XU(f0.fim));
+      const ya=r1(yTop+16);
+      if(a.faixas.length>1)g+='<path d="M'+r1(xs0+dir*8)+','+ya+' h'+(dir*150)+' m0,0 l'+(-dir*9)+',-6 m'+(dir*9)+',6 l'+(-dir*9)+',6" stroke="#d53309" stroke-width="2.6" fill="none"/>'
+        +'<text x="'+r1(xs0+dir*12)+'" y="'+r1(ya-7)+'" font-size="10" font-weight="800" fill="#d53309" text-anchor="'+(dir>0?'start':'end')+'">SENTIDO DE MONTAGEM</text>';
+      /* cotas para marcar no beiral: onde começa cada telha */
+      const yc=r1(yBot+40);
+      const bordas=[...new Set(a.faixas.flatMap(f=>[f.ini,f.fim]).map(v=>Math.round(v)))].sort((p,q)=>dir*(XU(p)-XU(q)));
+      const uS=bordas[0];const marcas=[];
+      bordas.forEach(u=>{if(marcas.length&&Math.abs(XU(u)-XU(marcas[marcas.length-1]))<22){if(u===bordas[bordas.length-1])marcas[marcas.length-1]=u;return;}marcas.push(u);});
+      g+='<line x1="'+r1(Math.min(XU(bordas[0]),XU(bordas[bordas.length-1])))+'" x2="'+r1(Math.max(XU(bordas[0]),XU(bordas[bordas.length-1])))+'" y1="'+yc+'" y2="'+yc+'" stroke="#141414" stroke-width=".8"/>'
+        +'<text x="'+r1(XU(uS))+'" y="'+r1(yc-6)+'" font-size="8.5" font-weight="800" fill="#d53309" text-anchor="'+(dir>0?'start':'end')+'">MARCAR NO BEIRAL · da borda '+(cobSentidoFace(b)==='rtl'?'B':'A')+'</text>';
+      marcas.forEach(u=>{const px=r1(XU(u));g+='<line x1="'+px+'" x2="'+px+'" y1="'+r1(yc-3.5)+'" y2="'+r1(yc+3.5)+'" stroke="#141414" stroke-width=".8"/>'
+        +'<text x="'+px+'" y="'+r1(yc+13)+'" font-size="8.5" font-weight="700" text-anchor="end" transform="rotate(-35 '+px+' '+r1(yc+13)+')">'+n0(Math.abs(u-uS))+'</text>';});
+      g+='<text x="'+r1(XU(uS))+'" y="'+r1(yc+44)+'" font-size="11" font-weight="800" fill="#d53309" text-anchor="'+(dir>0?'start':'end')+'">↑ COMECE AQUI · '+escapeHtml(cobCodigo(f0))+'</text>';
+      return {svg:'<svg viewBox="0 0 '+W+' '+H+'"'+(longa?' style="max-height:62mm"':'')+'>'+g+'</svg>',longa};
+    };
+    let pag=1+sep.length;
+    const folhas=aguas.map((a,ai)=>{
+      const nF=a.faixas.length,{svg,longa}=desenho(a);
       const rowH=nF>30?5:6;let nCol=4;while(nCol<8&&Math.ceil(nF/nCol)*rowH>55)nCol++;
-      const svgMax=Math.max(30,Math.min(80,118-Math.ceil(nF/nCol)*rowH-2));
-      const W=1000,m=34;
-      const sX=(W-2*m)/Math.max(1,xMax-xMin),sY=(longa?200:600)/Math.max(1,yMax-yMin),s=Math.min(sX,sY);
-      const H=Math.round((yMax-yMin)*s+2*m+30);
-      const ox=(W-(xMax-xMin)*s)/2;
-      const X=x=>ox+(x-xMin)*s, Y=y=>H-m-22-(y-yMin)*s, r1=v=>Math.round(v*10)/10;
-      let g='';
-      (bloco.poligono||[]).forEach((p,i,arr)=>{
-        const n2=arr[(i+1)%arr.length];
-        g+='<line x1="'+r1(X(p.x))+'" y1="'+r1(Y(p.y))+'" x2="'+r1(X(n2.x))+'" y2="'+r1(Y(n2.y))+'" stroke="#141414" stroke-width="1.2"/>';
-      });
-      if(ORD.cum(bloco)&&bloco.cumeeira&&bloco.cumeeira.a&&bloco.cumeeira.b){
-        const ca=bloco.cumeeira.a,cb=bloco.cumeeira.b,poly=bloco.poligono||[];
-        const d1x=cb.x-ca.x,d1y=cb.y-ca.y,hits=[];
-        for(let pi=0;pi<poly.length;pi++){
-          const pa=poly[pi],pb=poly[(pi+1)%poly.length],d2x=pb.x-pa.x,d2y=pb.y-pa.y;
-          const det=d1x*d2y-d1y*d2x;if(Math.abs(det)<1e-8)continue;
-          const t=((pa.x-ca.x)*d2y-(pa.y-ca.y)*d2x)/det,u2=((pa.x-ca.x)*d1y-(pa.y-ca.y)*d1x)/det;
-          if(u2>=-0.001&&u2<=1.001)hits.push({t,x:ca.x+d1x*t,y:ca.y+d1y*t});
-        }
-        if(hits.length>=2){
-          hits.sort((a,b)=>a.t-b.t);
-          const h0=hits[0],h1=hits[hits.length-1];
-          g+='<line x1="'+r1(X(h0.x))+'" y1="'+r1(Y(h0.y))+'" x2="'+r1(X(h1.x))+'" y2="'+r1(Y(h1.y))+'" stroke="#d53309" stroke-width="2.4" stroke-dasharray="12 6"/>';
-          const mx2=r1((X(h0.x)+X(h1.x))/2),my2=r1((Y(h0.y)+Y(h1.y))/2);
-          g+='<rect x="'+r1(mx2-48)+'" y="'+r1(my2-10)+'" width="96" height="20" fill="#fff"/>';
-          g+='<text x="'+mx2+'" y="'+r1(my2+5)+'" font-size="15" font-weight="700" fill="#d53309" text-anchor="middle">CUMEEIRA</text>';
-        }
-      }
-      faixas.forEach(f=>{
-        if(!f.p0||!f.p1)return;
-        const ax=r1(X(f.p0.x)),ay=r1(Y(f.p0.y)),bx=r1(X(f.p1.x)),by=r1(Y(f.p1.y));
-        const diag=f.diagonal;
-        g+='<line x1="'+ax+'" y1="'+ay+'" x2="'+bx+'" y2="'+by+'" stroke="'+(diag?'#d53309':'#bbc0c5')+'" stroke-width="'+(diag?'1':'0.7')+'"/>';
-        const cx=r1((ax+bx)/2),cy=r1((ay+by)/2);
-        const cod=String.fromCharCode(65+(f.setor||0))+'-'+String(f.ordem).padStart(2,'0');
-        const dx2=bx-ax,dy2=by-ay,w2=Math.hypot(dx2,dy2);
-        const fs=Math.max(7,Math.min(11,w2*.04));
-        const ang2=Math.atan2(dy2,dx2)*180/Math.PI;
-        const rAng=(ang2>90||ang2<-90)?ang2+180:ang2;
-        const reu=f.reusoLarguraDe?' SOBRA':f.reusoLarguraPara?' → '+f.reusoLarguraParaCurto:'';
-        g+='<text x="'+cx+'" y="'+cy+'" font-size="'+r1(fs)+'" font-weight="700" fill="'+(reu?'#1d5fd1':'#141414')+'" text-anchor="middle" dominant-baseline="middle" transform="rotate('+r1(rAng)+' '+cx+' '+cy+')">'+cod+escapeHtml(reu)+'</text>';
-      });
-      const svg='<svg viewBox="0 0 '+W+' '+H+'"'+(longa?' style="max-height:'+r1(svgMax)+'mm"':'')+'>'+g+'</svg>';
-      const curto2=f=>String.fromCharCode(65+(f.setor||0))+'-'+String(f.ordem).padStart(2,'0');
-      const obs=f=>{const o=[];
-        if(f.diagonal)o.push('ponta em ângulo');
-        if(f.partes>1)o.push(f.partes+' partes');
-        if(f.foraCumeeira)o.push('fora da cumeeira');
-        if(f.reusoLarguraPara)o.push('cortar no comprimento: a sobra de '+f.reusoLarguraSobra+' mm vai para '+f.reusoLarguraParaCurto);
-        if(f.reusoLarguraDe)o.push('é a sobra de '+f.reusoLarguraDeCurto+' (não vem do fabricante)');
-        return o.join(' · ');};
-      const linha=f=>'<tr><td>'+curto2(f)+'</td><td class="r"><b>'+n0(f.pedido)+'</b></td><td class="tmf-ob">'+obs(f)+'</td><td><span class="tmf-ok"></span></td></tr>';
+      const sentido=cobSentidoFace(a.bloco);
+      const larg=f=>{const c=estreita(f);return c?'<span class="lg">'+n0(f.largura)+'</span>':n0(f.util||util);};
+      const linha=f=>'<tr><td class="tmf-c">'+escapeHtml(cobCodigo(f))+'</td><td class="r"><b>'+n0(f.pedido)+'</b></td><td class="r">'+larg(f)+'</td><td class="tmf-ob">'+obs(f)+'</td><td><span class="tmf-ok"></span></td></tr>';
       const lista=(longa||nF>12)
-        ?faixas.map(f=>'<div class="tmf-l"><span>'+curto2(f)+'</span><b>'+n0(f.pedido)+'</b><span class="tmf-ob">'+obs(f)+'</span><span class="tmf-ok"></span></div>').join('')
-        :'<table><thead><tr><th>Nº</th><th class="r">Compr.</th><th>Obs.</th><th></th></tr></thead><tbody>'+faixas.map(linha).join('')+'</tbody></table>';
-      return '<article class="tmf">'+topo('FACE · '+escapeHtml(String(bloco.nome).toUpperCase()),
-          '<b>'+faixas.length+'</b> faixas · <span>montagem</span> <b>'+(sentido==='rtl'?'B → A':'A → B')+'</b>'+vezes,
-          'Código = posição na face. Suba as telhas na ordem indicada pela montagem.')
-        +'<div class="tmf-corpo'+(longa?' longa':(nF>12?' larga':''))+'"><div><h5>Vista planificada</h5>'+svg+'</div><div style="min-height:0;overflow:hidden"><h5>Telhas desta face</h5><div class="tmf-lst'+(longa?'':(nF>12?' dupla':''))+(nF>30?' mini':'')+'"'+(longa?' style="columns:'+nCol+'"':'')+'>'+lista+'</div></div></div>'
-        +'<div class="tmf-pe"><span>Medidas em mm. Confira o código escrito na telha antes de subir.</span><span>'+escapeHtml(rot)+' · útil '+n0(util)+'</span></div></article>';
-    }).filter(Boolean);
-    if(!folhas.length)return '';
+        ?a.faixas.map(f=>'<div class="tmf-l"><span>'+escapeHtml(cobCodigo(f))+'</span><b>'+n0(f.pedido)+'</b><i>'+larg(f)+'</i><span class="tmf-ob">'+obs(f)+'</span><span class="tmf-ok"></span></div>').join('')
+        :'<table><thead><tr><th>Cód.</th><th class="r">Compr.</th><th class="r">Larg.</th><th>Obs.</th><th></th></tr></thead><tbody>'+a.faixas.map(linha).join('')+'</tbody></table>';
+      /* parafusos desta água: a parte dela na área do pedido */
+      const area=a.faixas.reduce((s,f)=>s+num(f.pedido)*Math.max(1,f.partes||1)*num(f.util||util)/1e6,0)*e;
+      const paraf=parafT?Math.round(parafT*area/areaT):0;
+      const fix=paraf?'<div style="margin-top:2.5mm"><h5>Fixação desta água</h5><table class="tmf-fix"><tbody><tr><td>Parafusos nas telhas (≈ '+String(num(COB.parafM2)).replace('.',',')+' por m²)</td><td><b>'+paraf+'</b></td></tr>'
+        +(ORD.cum(a.bloco)&&cum&&cum.pecas?'<tr><td>Cumeeiras da obra (com a água vizinha)</td><td><b>'+cum.pecas+'</b></td></tr>':'')+'</tbody></table></div>':'';
+      const art='<article class="tmf" data-agua="'+escapeAttr(a.pref)+'">'+topo('ÁGUA '+escapeHtml(a.pref)+' · '+escapeHtml(String(a.nome).toUpperCase()),
+          '<b>'+nF+'</b> telhas · <span>montagem</span> <b>'+(sentido==='rtl'?'B → A':'A → B')+'</b>'+(num(a.st.inclinacao||a.bloco.inclinacao)?' · <span>inclinação</span> <b>'+dec(num(a.st.inclinacao||a.bloco.inclinacao),1)+'%</b>':'')+' · <span>ordem</span> <b>'+(ai+1)+' de '+aguas.length+'</b>'+vezes,'')
+        +'<div class="tmf-corpo'+(longa?' longa':(nF>12?' larga':''))+'"><div><h5>Vista de cima · cumeeira em cima, beiral embaixo</h5>'+svg
+          +'<div class="tmf-leg"><span><i style="background:#fde5d6"></i>cortar na obra (ponta em ângulo ou largura)</span><span>código no pé de cada telha · número grande = comprimento</span></div></div>'
+        +'<div style="min-height:0;overflow:hidden"><h5>Telhas desta água · na ordem</h5><div class="tmf-lst'+(longa?'':(nF>12?' dupla':''))+(nF>30?' mini':'')+'"'+(longa?' style="columns:'+nCol+'"':'')+'>'+lista+'</div>'+(longa?'':fix)+'</div></div>'
+        +peTxt+'</article>';
+      a.folha=pag+1;pag++;
+      return art;});
+    /* ---- resumo ---- */
+    const nCortes=aguas.reduce((s,a)=>s+a.cortes,0);
     const img3d=cob3DImagem(r);
-    const pag3d=img3d?'<article class="tmf">'+topo('COBERTURA · MONTAGEM EM 3D',
-        '<span>Telha:</span> <b>'+escapeHtml(rot)+'</b> · <b>'+totalQtd+'</b> chapas'+vezes,
-        'Sobre cada telha: código (água-posição) e comprimento em mm. A seta mostra o sentido de montagem de cada água, a partir do INÍCIO. Em vermelho: ponta em ângulo, cortar na obra.')
-      +'<div class="tmf-3d"><img src="'+img3d+'" alt="Cobertura em 3D com o sentido de montagem"></div>'
-      +'<div class="tmf-pe"><span>Faces: '+ORD.blocos.map(b=>'<b>'+escapeHtml(b.nome)+'</b>').join(' · ')+'</span><span>Medidas em mm</span></div></article>':'';
-    return css+pag3d+sep+folhas.join('');
+    const dets=svgDetalheCumeeira(r,cum)+svgDetalhePingadeira(totais);
+    const resumo=tmfResumo({img:img3d,alt:'Cobertura em 3D com o sentido de montagem',col:'Água',
+      linhas:aguas.map((a,i)=>({n:i+1,nome:a.pref+' · '+a.nome,sub:'montagem '+(cobSentidoFace(a.bloco)==='rtl'?'B → A':'A → B')+(ORD.cum(a.bloco)?'':' · uma água'),telhas:a.faixas.length*e,chapas:a.chapas,cortes:a.cortes,folha:String(a.folha)})),
+      topo:topo('COBERTURA · MONTAGEM EM 3D E RESUMO','<b>'+aguas.reduce((s,a)=>s+a.faixas.length,0)*e+'</b> telhas · <b>'+totalQtd+'</b> chapas · <b>'+aguas.length+'</b> água(s) · '+escapeHtml(rot)+' · útil <b>'+n0(util)+'</b> mm'+vezes,''),
+      chk:['Telhas separadas por água e contadas: <b>'+totalQtd+' chapas</b>'+(cum&&cum.pecas?' e <b>'+cum.pecas+' cumeeiras</b>':'')+' (folha 2).','Terças no prumo e alinhadas.',
+        'Marcar no beiral o início de cada telha (cotas embaixo do desenho de cada água).']
+        .concat(nCortes?['Cortar no chão as <b>'+nCortes+' telha'+(nCortes>1?'s':'')+' ✂</b> (ponta em ângulo ou largura), conforme a folha de cada água.']:[])
+        .concat(fol>0?['Folga na cumeeira: a telha para <b>'+n0(fol)+' mm</b> antes do eixo.']:[])
+        .concat(['Transpasse da onda: a telha nova por cima, contra o vento.']),
+      leg:(dets?'<div class="tmf-dets" style="display:flex;gap:3mm">'+dets+'</div>':''),
+      pe:pe0});
+    return tmfCss()+'<style>.tmf .cob-fab-det{flex:1 1 0;border:.2mm solid #d6dade;border-radius:2mm;padding:1.5mm 2.5mm;font-size:8.5pt}.tmf .cob-fab-det svg{max-height:26mm}</style>'+resumo+sep.join('')+folhas.join('');
   }
   function cobFichaParafusos(r,cum){
     const paraf=cobParafusos(r);
@@ -30560,85 +30731,6 @@ html[data-theme="escuro"] .log-det>summary.err{color:var(--red)}.log-det>summary
     window.addEventListener('afterprint',fim,{once:true});
     try{ sairEmPDF(nomeArquivoSeguro('Montagem cobertura '+(nomeObra()||'obra'),90)); }
     finally{ setTimeout(fim,2500); }
-  }
-  /* ===== PEDIDO AO FABRICANTE =====
-     "O esboço do telhado com os lados e a posição em que vai ser instalada
-     em tamanho grande, pode ser a primeira página (esquerda -> direita com
-     uma seta). Faixa, tipo, projeção em planta, montagem: nada disso
-     importa ao fabricante -- precisa do modelo da telha e da cumeeira."
-     Então: página 1 = modelos + esboço grande com o sentido de montagem;
-     depois só comprimento × quantidade, a cumeeira e o rufo. O resto (por
-     destino, ponta em ângulo, sobras) é da montagem e vai na ficha. */
-  function cobFaixasOrdem(s){return (s.faixas||[]).filter(f=>f.p0&&f.p1).slice().sort((a,b)=>a.ordem-b.ordem);}
-  function svgEsbocoFabricante(r){
-    const bs=(r.blocos||[]).filter(b=>b.poligono&&b.poligono.length>=3);
-    if(!cobGeometrico()||!bs.length)return svgPedido(r);
-    const W=1000,PAD=60,GAP=110;
-    /* planta: as águas no lugar em que estão no desenho; SketchUp: cada face
-       planificada tem o seu sistema, então elas vão uma embaixo da outra */
-    const junto=COB.leitura!=='sketchup';
-    const cx=bs.map(b=>{const xs=b.poligono.map(p=>p.x),ys=b.poligono.map(p=>p.y);
-      return {b,x0:Math.min(...xs),x1:Math.max(...xs),y0:Math.min(...ys),y1:Math.max(...ys)};});
-    let s,H,pos;
-    if(junto){
-      const X0=Math.min(...cx.map(c=>c.x0)),X1=Math.max(...cx.map(c=>c.x1)),Y0=Math.min(...cx.map(c=>c.y0)),Y1=Math.max(...cx.map(c=>c.y1));
-      s=Math.min((W-2*PAD)/Math.max(1,X1-X0),1150/Math.max(1,Y1-Y0));
-      H=Math.round((Y1-Y0)*s+2*PAD+40);
-      const ox=(W-(X1-X0)*s)/2;
-      pos=cx.map(()=>({X:x=>ox+(x-X0)*s,Y:y=>H-PAD-(y-Y0)*s}));
-    }else{
-      const mw=Math.max(...cx.map(c=>c.x1-c.x0)),sh=cx.reduce((a,c)=>a+(c.y1-c.y0),0);
-      s=Math.min((W-2*PAD)/Math.max(1,mw),(1150-GAP*(cx.length-1))/Math.max(1,sh));
-      let y=PAD+30;H=0;
-      pos=cx.map(c=>{const top=y,ox=(W-(c.x1-c.x0)*s)/2;y+=(c.y1-c.y0)*s+GAP;
-        return {X:x=>ox+(x-c.x0)*s,Y:yy=>top+(c.y1-yy)*s};});
-      H=Math.round(y-GAP+PAD);
-    }
-    const r1=v=>Math.round(v*10)/10,mt=v=>(v/1000).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
-    let g='',seta='';
-    cx.forEach((c,i)=>{
-      const b=c.b,P=pos[i],pt=p=>r1(P.X(p.x))+' '+r1(P.Y(p.y));
-      (b.setores||[]).forEach(st=>{const azul=st.id==='B';
-        g+='<path d="M'+st.poly.map(pt).join('L')+'Z" fill="'+(azul?'#e9f1f8':'#fdf0eb')+'" stroke="none"/>';
-        cobDivisasFaixas(b,st,st.faixas||[]).forEach(d=>{g+='<line x1="'+r1(P.X(d.p0.x))+'" y1="'+r1(P.Y(d.p0.y))+'" x2="'+r1(P.X(d.p1.x))+'" y2="'+r1(P.Y(d.p1.y))+'" stroke="#9aa3ac" stroke-width="1"/>';});
-      });
-      (b.furos||[]).forEach(f=>{g+='<path d="M'+f.map(pt).join('L')+'Z" fill="#fff" stroke="#141414" stroke-width="1.5" stroke-dasharray="6 4"/>';});
-      g+='<path d="M'+b.poligono.map(pt).join('L')+'Z" fill="none" stroke="#141414" stroke-width="3"/>';
-      if(b.cumeeira&&b.cumeeira.a&&b.cumeeira.b&&!b.medida3d)
-        g+='<line x1="'+r1(P.X(b.cumeeira.a.x))+'" y1="'+r1(P.Y(b.cumeeira.a.y))+'" x2="'+r1(P.X(b.cumeeira.b.x))+'" y2="'+r1(P.Y(b.cumeeira.b.y))+'" stroke="#d53309" stroke-width="3" stroke-dasharray="14 7"/>';
-      /* a seta de montagem: da primeira faixa para a última, de cada água,
-         num quarto do comprimento -- longe da letra da água */
-      (b.setores||[]).forEach(st=>{
-        const fs=cobFaixasOrdem(st);if(!fs.length)return;
-        /* a seta corre na perpendicular das telhas: da primeira faixa até a
-           altura da última -- sem seguir uma ponta em ângulo */
-        const f0=fs[0],fz=fs[fs.length-1],L0=Math.hypot(f0.p1.x-f0.p0.x,f0.p1.y-f0.p0.y)||1;
-        const ex={x:(f0.p1.x-f0.p0.x)/L0,y:(f0.p1.y-f0.p0.y)/L0},pe={x:-ex.y,y:ex.x};
-        const meio=f=>({x:(f.p0.x+f.p1.x)/2,y:(f.p0.y+f.p1.y)/2}),m0=meio(f0),mz=meio(fz);
-        const dd=(mz.x-m0.x)*pe.x+(mz.y-m0.y)*pe.y;
-        /* SEMPRE RETA e dentro do telhado: a altura da seta é a faixa comum a
-           todas as telhas da água (onde ela é mais comprida); nunca acompanha
-           uma ponta em ângulo */
-        const tAt=q=>(q.x-f0.p0.x)*ex.x+(q.y-f0.p0.y)*ex.y;let lo=-Infinity,hi=Infinity;
-        fs.forEach(f=>{const a1=tAt(f.p0),b1=tAt(f.p1);lo=Math.max(lo,Math.min(a1,b1));hi=Math.min(hi,Math.max(a1,b1));});
-        const tm=hi>lo?(lo+hi)/2:L0*.5;
-        const a={x:f0.p0.x+ex.x*tm,y:f0.p0.y+ex.y*tm},z={x:a.x+pe.x*dd,y:a.y+pe.y*dd};
-        const ax=P.X(a.x),ay=P.Y(a.y),zx=P.X(z.x),zy=P.Y(z.y);
-        const cc=cobCentro(st.poly);
-        g+='<text x="'+r1(P.X(cc.x))+'" y="'+r1(P.Y(cc.y)+14)+'" font-size="40" font-weight="800" fill="'+(st.id==='B'?'#356f9c':'#c13a14')+'" text-anchor="middle" opacity=".55">'+h(st.id)+'</text>';
-        if(fs.length<2||Math.hypot(zx-ax,zy-ay)<20)return;
-        const ang=Math.atan2(zy-ay,zx-ax),hd=22;
-        seta+='<line x1="'+r1(ax)+'" y1="'+r1(ay)+'" x2="'+r1(zx-Math.cos(ang)*hd*.8)+'" y2="'+r1(zy-Math.sin(ang)*hd*.8)+'" stroke="#d53309" stroke-width="7" stroke-linecap="round"/>'+
-          '<path d="M'+r1(zx)+' '+r1(zy)+'L'+r1(zx-Math.cos(ang-.45)*hd)+' '+r1(zy-Math.sin(ang-.45)*hd)+'L'+r1(zx-Math.cos(ang+.45)*hd)+' '+r1(zy-Math.sin(ang+.45)*hd)+'Z" fill="#d53309"/>'+
-          '<circle cx="'+r1(ax)+'" cy="'+r1(ay)+'" r="11" fill="#fff" stroke="#d53309" stroke-width="5"/>'+
-          '<text x="'+r1(ax+16)+'" y="'+r1(ay+30)+'" font-size="18" font-weight="800" fill="#d53309" stroke="#fff" stroke-width="5" paint-order="stroke">INÍCIO</text>';
-      });
-      const nx=P.X(c.x0),ny=Math.min(P.Y(c.y1),P.Y(c.y0))-14;
-      g+='<text x="'+r1(nx)+'" y="'+r1(ny)+'" font-size="24" font-weight="800" fill="#141414">'+h(b.nome)+
-        '<tspan font-size="17" font-weight="400" fill="#555"> · '+mt(c.x1-c.x0)+' × '+mt(c.y1-c.y0)+' m'+
-        (b.inclinacao?' · inclinação '+dec(b.inclinacao,1)+'%':'')+'</tspan></text>';
-    });
-    return '<svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="Esboço da cobertura com o sentido de montagem" style="font-family:Arial,Helvetica,sans-serif">'+g+seta+'</svg>';
   }
   /* Detalhe da cumeeira no pedido: a telha para antes do eixo (a folga,
      um recuo -- não soma) e a cumeeira cobre por cima. Fora de escala. */
@@ -30693,74 +30785,25 @@ html[data-theme="escuro"] .log-det>summary.err{color:var(--red)}.log-det>summary
   }
   function documentoCobertura(){
     const r=calculaCobertura();if(!COB.confirmada||!r.ok)return;
-    const pa=document.getElementById('printArea');if(!pa)return;const m=modeloAtual(),data=new Date().toLocaleDateString('pt-BR');
-    const logo=(typeof LOGO_RM!=='undefined'&&LOGO_RM)?'<img src="'+LOGO_RM+'" style="height:56px;display:block">':'<div style="font-weight:800;font-size:22px;color:#D53309">RM</div>';
-    const tc=COB.orcTelhaId?orcTelhaPorId(COB.orcTelhaId):null,telha=(tc&&tc.desc)||m.nome;
+    const m=modeloAtual(),tc=COB.orcTelhaId?orcTelhaPorId(COB.orcTelhaId):null;
     const cum=cobCumeeiras(r),cad=cum&&cum.pecas?cum.cad:null;
     const tot=cobTotaisComprimento(r.lista),ru=cum&&cum.rufo&&cum.rufo.pecas?cum.rufo:null,fech=cobFechPedido();
-    const n0=v=>Math.round(v).toLocaleString('pt-BR');
-    /* uma tabela só, larga: cada telha é um título, e embaixo comprimento,
-       quantidade e onde vai */
-    /* o título de cada telha vai junto com as primeiras linhas dela: se não
-       cabe no fim da folha, passa inteiro para a próxima (nunca sozinho) */
-    const secao=(tit,util,linhas,soma,metros)=>'<tbody class="cf-cab"><tr class="cf-sec"><th colspan="3">'+tit+' <small>útil '+mm(util)+' mm</small></th></tr>'+linhas.slice(0,2).join('')+'</tbody>'+
-      '<tbody>'+linhas.slice(2).join('')+'<tr class="cf-tot"><td>Total</td><td class="q">'+soma+'</td><td>'+dec(metros,2)+' m</td></tr></tbody>';
-    const linhaCob=g=>{const t=g.x.chapaSup!=null&&g.x.chapaInf!=null&&g.x.chapaSup!==g.x.chapaInf;
-      return '<tr><td class="c">'+(t?n0(g.x.chapaSup)+' <small>sup.</small><br><span class="inf">'+n0(g.x.chapaInf)+' <small>inf.</small></span>':n0(g.x.mm))+'</td><td class="q">'+g.qtd+'</td><td class="o">'+h([...g.destinos].join(', '))+'</td></tr>';};
-    const telhasCob=cobTelhasDoTotal(tot).map(T=>{const so=T.grupos.reduce((a,g)=>a+g.qtd,0),mt=T.grupos.reduce((a,g)=>a+g.qtd*num(g.x.chapaSup!=null?g.x.chapaSup:g.x.mm),0)/1000;
-      return secao('Cobertura · '+h(T.nome),T.util,T.grupos.map(linhaCob),so,mt);}).join('');
-    const telhasFech=fech?fech.map(F=>secao('Fechamento · '+h(F.nome),F.util,F.grupos.map(g=>'<tr><td class="c">'+n0(g.mm)+'</td><td class="q">'+g.qtd+'</td><td class="o">'+h(g.onde.join(', '))+'</td></tr>'),
-      F.grupos.reduce((a,g)=>a+g.qtd,0),F.grupos.reduce((a,g)=>a+g.qtd*g.mm,0)/1000)).join(''):'';
-    /* quadro Telha: uma linha por telha, com onde ela vai (cobertura e/ou
-       fechamento) -- antes eram nomes empilhados sem ordem */
-    const telOnde=new Map(),poe=(nome,onde)=>{if(!telOnde.has(nome))telOnde.set(nome,[]);const l=telOnde.get(nome);if(!l.includes(onde))l.push(onde);};
-    poe(telha,'Cobertura');cobTelhasDoTotal(tot).filter(T=>T.chave).forEach(T=>poe(T.nome,'Cobertura'));(fech||[]).forEach(F=>poe(F.nome,'Fechamento'));
-    const telhasQuadro=telOnde.size>1
-      ?'<div class="cf-tels"><span>Telhas</span>'+[...telOnde].map(([n,o])=>'<div class="cf-tel"><em>'+o.join(' e ')+'</em><b>'+h(n)+'</b></div>').join('')+'</div>'
-      :'<div><span>Telha</span><b>'+h(telha)+'</b></div>';
-    const img3d=cob3DImagem(r);
-    pa.classList.remove('hide');
-    pa.innerHTML='<style>#printArea .cob-fab .cob-fab-mod{display:grid;grid-template-columns:1.6fr 1.3fr 1fr;gap:10px;margin:8px 0 14px}'+
-      '#printArea .cob-fab .cob-fab-mod>div{border:1px solid #d6dade;border-left:4px solid #D53309;border-radius:6px;padding:7px 11px}'+
-      '#printArea .cob-fab .cob-fab-mod span{display:block;font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:#6b7280}'+
-      '#printArea .cob-fab .cob-fab-mod b{display:block;font-size:13.5px;line-height:1.25;color:#141414}#printArea .cob-fab .cob-fab-mod small{display:block;font-size:10.5px;color:#555;margin-top:1px}'+
-      '#printArea .cob-fab .cob-fab-mod:has(>.cf-tels){grid-template-columns:1.3fr 1fr}#printArea .cob-fab .cob-fab-mod>.cf-tels{grid-column:1/-1}#printArea .cob-fab .cf-tel{display:grid;grid-template-columns:150px 1fr;gap:10px;align-items:baseline;padding:4px 0;border-top:1px solid #eceef1}#printArea .cob-fab .cf-tels span+.cf-tel{border-top:0}'+
-      '#printArea .cob-fab .cf-tel em{font-style:normal;font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#D53309}#printArea .cob-fab .cf-tel b{font-size:13px}'+
-      '#printArea .cob-fab table.cf-tab{width:100%;border-collapse:collapse;margin:0 0 6px}#printArea .cob-fab .cf-tab tbody.cf-cab{break-inside:avoid;page-break-inside:avoid}#printArea .cob-fab .cf-tab tr{break-inside:avoid}'+
-      '#printArea .cob-fab .cf-tab th,#printArea .cob-fab .cf-tab td{border:0;border-bottom:1px solid #e3e6ea;padding:7px 10px;text-align:left;vertical-align:middle;background:none}'+
-      '#printArea .cob-fab .cf-tab thead th{font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:#6b7280;font-weight:700;border-bottom:1.5px solid #141414}'+
-      '#printArea .cob-fab .cf-tab .cf-sec th{font-size:13px;font-weight:800;color:#141414;background:#f4f5f7;border-bottom:1px solid #d6dade;padding-top:9px}#printArea .cob-fab .cf-sec small{font-weight:400;color:#555;font-size:11px;margin-left:6px}'+
-      '#printArea .cob-fab .cf-tab td.c{font-size:17px;font-weight:800;color:#141414;width:30%;white-space:nowrap}#printArea .cob-fab .cf-tab td.c small{font-size:10.5px;font-weight:600;color:#6b7280}#printArea .cob-fab .cf-tab td.c .inf{font-size:13px;font-weight:700;color:#555}'+
-      '#printArea .cob-fab .cf-tab td.q{font-size:19px;font-weight:800;color:#141414;width:18%;text-align:center}#printArea .cob-fab .cf-tab thead th.q{text-align:center}'+
-      '#printArea .cob-fab .cf-tab td.o{font-size:12px;color:#444}'+
-      '#printArea .cob-fab .cf-tab .cf-tot td{font-weight:700;font-size:12.5px;border-bottom:1.5px solid #141414}#printArea .cob-fab .cf-tab .cf-tot td.q{font-size:15px}'+
-      '#printArea .cob-fab h3{font-size:12.5px;letter-spacing:.06em;text-transform:uppercase;margin:12px 0 4px;color:#141414}'+
-      '#printArea .cob-fab .cob-fab-quebra{break-after:page;page-break-after:always;height:0}'+
-      '#printArea .cob-fab .cob-fab-3d img{width:100%;height:auto;max-height:175mm;object-fit:contain;display:block;margin:0 auto}#printArea .cob-fab .cob-fab-esb svg{width:100%;height:auto;max-height:175mm;display:block;margin:0 auto}'+
-      '#printArea .cob-fab .cob-fab-leg{font-size:11px;color:#555;text-align:center;margin-top:4px}'+
-      '#printArea .cob-fab .cob-fab-dets{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:8px}#printArea .cob-fab .cob-fab-dets .cob-fab-det{flex:1 1 0;margin:0;max-width:none}#printArea .cob-fab .cob-fab-det{max-width:120mm;margin:8px auto 0;border:1px solid #d6dade;border-radius:6px;padding:6px 10px;break-inside:avoid}#printArea .cob-fab .cob-fab-det b{display:block;font-size:12px}#printArea .cob-fab .cob-fab-det svg{width:100%;height:auto;display:block}</style>'+
-      '<div class="rm-sheet rc-sheet ct-pedido pt-folha cob-pedido cob-fab">'+
-      '<div class="rm-dagua" aria-hidden="true"><img src="'+LOGO_MARCA_DAGUA+'" alt=""></div>'+
-      '<div class="rm-head"><div class="rm-logo">'+logo+'</div><div class="rm-co">'+rmTimbre2()+'</div></div>'+'<div class="doc-tag tb2-tipo">Pedido de telhas ao fabricante</div>'+
-      '<div class="rm-body"><div class="rm-obra"><span>Obra / Cliente</span><b>'+h(nomeObra())+'</b><span class="rm-date">'+data+'</span></div>'+
-      '<div class="cob-fab-mod">'+telhasQuadro+
-        '<div><span>Cumeeira</span><b>'+(cum&&cum.pecas?h(cad?cad.desc:'Cumeeira '+cum.tipo):'—')+'</b>'+(cum&&cum.pecas?'<small>aba de '+cum.aba+' mm'+(num(COB.cumeeira)>0?' · folga '+mm(COB.cumeeira)+' mm':'')+'</small>':'')+'</div>'+
-        '<div><span>Fabricante</span><b>'+h(COB.fabricante||m.fabricante||'a definir')+'</b></div></div>'+
-      '<table class="cf-tab"><thead><tr><th>Comprimento (mm)</th><th class="q">Quantidade</th><th>Onde vai</th></tr></thead>'+telhasCob+telhasFech+'</table>'+
-      (cum&&cum.pecas||ru?'<table class="cf-tab"><thead><tr><th>Acabamento</th><th class="q">Quantidade</th><th>Medida</th></tr></thead><tbody>'+
-        (cum&&cum.pecas?'<tr><td class="o"><b>'+h(cad?cad.desc:'Cumeeira '+cum.tipo)+'</b></td><td class="q">'+cum.pecas+'</td><td class="o">'+mm(cum.util)+' mm</td></tr>':'')+
-        (ru?'<tr><td class="o"><b>Rufo de topo</b> (aba '+RUFO_ABA+' mm)</td><td class="q">'+ru.pecas+'</td><td class="o">'+mm(ru.peca)+' mm</td></tr>':'')+'</tbody></table>':'')+
-      '<div class="cob-obs">Medidas em milímetros. Confirmar fabricação e prazo com a RM.'+(COB.obs?' Observação: '+h(COB.obs)+'.':'')+'</div>'+
-      '<div class="cob-fab-quebra"></div>'+
-      '<h3>Vista do telhado</h3>'+
-      (img3d?'<div class="cob-fab-3d"><img src="'+img3d+'" alt="Telhado em 3D com as telhas e o sentido de montagem"></div>'+
-        '<div class="cob-fab-leg">Seta: sentido de montagem, a partir do <b>INÍCIO</b> · sobre cada telha: código e comprimento (mm)</div>'
-        :'<div class="cob-fab-esb">'+svgEsbocoFabricante(r)+'</div>')+
-      '<div class="cob-fab-dets">'+svgDetalheCumeeira(r,cum)+svgDetalhePingadeira(tot)+'</div></div></div>'+
-      '<div style="margin-top:12px"><button class="btn" id="cobPrint">Imprimir / PDF</button> <button class="btn ghost" id="cobCloseDoc">Fechar</button></div>';
-    document.getElementById('cobPrint').onclick=()=>sairEmPDF(nomeArquivoSeguro('Pedido de cobertura '+nomeObra(),100));
-    document.getElementById('cobCloseDoc').onclick=()=>{pa.classList.add('hide');pa.innerHTML='';};
-    pa.scrollIntoView({behavior:'smooth',block:'start'});
+    const telhaDe=ch=>ch&&ch.startsWith('orc:')?orcTelhaPorId(ch.slice(4)):(ch?null:tc);
+    const secoes=cobTelhasDoTotal(tot).map(T=>({tipo:'Cobertura',tit:'Cobertura · '+(T.chave?T.nome:((tc&&tc.desc)||m.nome)),nome:T.chave?T.nome:((tc&&tc.desc)||m.nome),util:T.util,t:telhaDe(T.chave),
+      linhas:T.grupos.map(g=>{const x=g.x,ter=x.chapaSup!=null&&x.chapaInf!=null&&x.chapaSup!==x.chapaInf;return ter?{mm:x.chapaSup,sup:x.chapaSup,inf:x.chapaInf,qtd:g.qtd}:{mm:num(x.mm),qtd:g.qtd};})}))
+      .concat((fech||[]).map(F=>({tipo:'Fechamento',tit:'Fechamento · '+F.nome,nome:F.nome,util:F.util,t:F.nome===telhaRotuloAtual()?telhaBancoAtual():null,linhas:F.grupos.map(g=>({mm:g.mm,qtd:g.qtd}))})));
+    const acess=[];
+    if(cum&&cum.pecas){
+      acess.push({peca:(cad?cad.desc:'Cumeeira '+cum.tipo)+' · aba '+cum.aba+' mm',qtd:cum.pecas,medida:mm(cum.util)+' mm útil'});
+      const onda=(r.todas||[]).filter(x=>x.tocaCumeeira&&!x.reusoLarguraDe&&!x.reusoDe).length*Math.max(1,r.e||1);
+      if(onda)acess.push({peca:'Fechamento de onda '+cum.tipo+' (na cumeeira)',qtd:onda,medida:'1 por telha'});
+    }
+    if(ru)acess.push({peca:'Rufo de topo (aba '+RUFO_ABA+' mm)',qtd:ru.pecas,medida:mm(ru.peca)+' mm'});
+    const pT=cobParafusos(r),pC=cobParafusosCumeeira(cum);
+    if(COB.termica){if(pT)acess.push({peca:'Parafuso autobrocante 4" com arruela (telhas)',qtd:pT,medida:'—'});if(pC)acess.push({peca:'Parafuso autobrocante 3/4" com arruela (cumeeira)',qtd:pC,medida:'—'});}
+    else if(pT+pC)acess.push({peca:'Parafuso autobrocante 3/4" com arruela',qtd:pT+pC,medida:'—'});
+    pedidoMostra({obra:nomeObra(),secoes,acess,fabricante:COB.fabricante||m.fabricante||'',obs:COB.obs?'Observação: '+COB.obs:'',
+      idPrint:'cobPrint',idFechar:'cobCloseDoc',classe:'cob-pedido cob-fab',arquivo:'Pedido de cobertura '+nomeObra()});
   }
 
   const telhaAbrirOriginal=telhaAbrir;
@@ -30888,7 +30931,7 @@ html[data-theme="escuro"] .log-det>summary.err{color:var(--red)}.log-det>summary
     detectar:()=>detectaCobertura(true),montarDXF:montaDXF,abrir:abreCobertura,novoDesenho:cobNovoDesenhoDwg,
     cumeeira:()=>cobCumeeiras(calculaCobertura()),topo:()=>topoLinhas(calculaCobertura()).map(l=>({key:l.key,nome:l.nome,L:l.L,auto:l.auto,tipo:l.tipo,dois:l.dois})),
     cristas:()=>cumCristas(calculaCobertura()).map(c=>({nome:c.nome,L:c.L,pecas:c.pecas})),gomosTelha:()=>cumSimplesFaixas(),relevo:()=>{C3.relevo=null;cria3D();desenha3D();return C3.relevo;},
-    rotulosNaTela3D:()=>cobRotulosNaTela(),salvarObra:cobSalvarObra,continuarObra:cobContinuarObra};
+    rotulosNaTela3D:()=>cobRotulosNaTela(),salvarObra:cobSalvarObra,continuarObra:cobContinuarObra,proj3D:p=>C3.tr?C3.tr(p):null};
 })();
 </script>
 
@@ -31496,7 +31539,7 @@ if('serviceWorker' in navigator && location.protocol.startsWith('http')){
 }
 </script>
 <script>/* versão publicada (PADRAO_RM.md §3): sobe a cada publicação, junto com o CACHE do sw.js */
-const APP_VER='v286';
+const APP_VER='v287';
 </script>
 <script id="rmVersaoBloco">
 /* ===== SELO DE VERSÃO — igual em todos os sistemas (PADRAO_RM.md §3) =====
