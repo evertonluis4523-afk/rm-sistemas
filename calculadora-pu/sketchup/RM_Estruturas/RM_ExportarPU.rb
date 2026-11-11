@@ -17,6 +17,7 @@
 #    No Controle de PU → "Importar" → selecione o JSON
 # ============================================================
 require 'json'
+load File.join(File.dirname(__FILE__), 'deteccao_pu.rb')
 
 module RM_ExportarPU
 
@@ -82,12 +83,17 @@ module RM_ExportarPU
     entities.each do |e|
       case e
       when Sketchup::ComponentInstance, Sketchup::Group
+        next if e.get_attribute('RM_Estruturas_PU', 'ignorar', false)
         world_t = parent_t * e.transformation
         defn    = e.respond_to?(:definition) ? e.definition : nil
         # o nome vale na definição (componente) e também na própria peça:
         # um GRUPO chamado "PLACA" (ou a instância renomeada) era ignorado
         nome = [defn && defn.name, e.respond_to?(:name) ? e.name : nil]
                .compact.map { |x| x.to_s.strip }.find { |x| !x.empty? && estrutural?(x) }
+        bounds = defn ? world_bounds(defn, world_t) : nil
+        if !nome && RM_DeteccaoPU.laje_sem_nome?(e, defn, world_t, bounds)
+          nome = 'PLACA DEITADA (AUTOMATICA)'
+        end
         if nome && defn
           t      = tipo(nome)
           bounds = world_bounds(e.definition, world_t)
@@ -324,6 +330,7 @@ module RM_ExportarPU
     model  = Sketchup.active_model
     pilares = []; placas = []; vigas = []
     coletar_tudo(model.entities, pilares, placas, vigas)
+    RM_DeteccaoPU.remover_chao!(pilares, placas)
 
     if pilares.empty? && placas.empty? && vigas.empty?
       UI.messagebox("Nenhum componente estrutural encontrado.\n\n" \

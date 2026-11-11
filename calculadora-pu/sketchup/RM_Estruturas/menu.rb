@@ -1,6 +1,25 @@
 require 'sketchup'
 
 module RM_Estruturas
+  def self.marcar_ignorar_pu(valor)
+    model = Sketchup.active_model
+    itens = model.selection.select { |e| e.is_a?(Sketchup::Group) || e.is_a?(Sketchup::ComponentInstance) }
+    if itens.empty?
+      UI.messagebox('Selecione o grupo ou componente do chão e tente novamente.')
+      return
+    end
+    model.start_operation('Alterar leitura de PU', true)
+    begin
+      itens.each { |e| e.set_attribute('RM_Estruturas_PU', 'ignorar', valor) }
+      model.commit_operation
+    rescue StandardError => erro
+      model.abort_operation
+      UI.messagebox("Erro ao alterar leitura: #{erro.message}")
+      return
+    end
+    UI.messagebox(valor ? 'Seleção ignorada no PU. Exporte novamente os JSONs.' : 'Seleção habilitada no PU. Exporte novamente os JSONs.')
+  end
+
   unless file_loaded?(__FILE__)
 
     SCRIPTS_DIR = File.dirname(__FILE__)
@@ -13,6 +32,13 @@ module RM_Estruturas
 
     menu.add_item('📏  Exportar Linhas PU  (→ Viewer 3D)') do
       load File.join(SCRIPTS_DIR, 'RM_ExportarLinhasPU.rb')
+    end
+
+    menu.add_item('Ignorar seleção na leitura de PU (chão)') do
+      marcar_ignorar_pu(true)
+    end
+    menu.add_item('Voltar a ler seleção no PU') do
+      marcar_ignorar_pu(false)
     end
 
     menu.add_separator

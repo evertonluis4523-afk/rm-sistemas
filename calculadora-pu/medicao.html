@@ -2046,7 +2046,7 @@ else comeca();
 .v3seg button{border:0;background:transparent;font:inherit;font-size:12px;font-weight:600;color:var(--ink);padding:5px 11px;cursor:pointer;}
 .v3seg button+button{border-left:1px solid var(--line);}
 .v3seg button:hover{background:var(--line-2);}
-.v3tipos{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;}
+.v3tipos{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;}
 .v3tipo{display:grid;grid-template-columns:auto 1fr;grid-template-rows:auto auto;column-gap:7px;align-items:center;text-align:left;
   padding:7px 26px 7px 9px;border-radius:9px;border:1px solid var(--line);background:var(--card);font:inherit;cursor:pointer;position:relative;}
 .v3tipo .v3cor{grid-row:1 / span 2;height:26px;}
@@ -2189,7 +2189,7 @@ else comeca();
       </div>
       <div class="v3leg">
         <div><i style="background:#FF6B6B"></i>Pilar</div><div><i style="background:#5BA3FF"></i>Placa</div>
-        <div><i style="background:#4CD98A"></i>Viga</div><div><i style="background:#FFB020"></i>Repetida</div>
+        <div><i style="background:#4CD98A"></i>Viga</div><div><i style="background:#B66BFF"></i>PU inferior da laje</div><div><i style="background:#FFB020"></i>Repetida</div>
         <div><i style="background:#69717B"></i>Fora do preço</div><div><i class="fina"></i>Só interno</div>
       </div>
       <div id="v3nav">Arrastar gira · roda do mouse aproxima · botão direito move · clique na linha seleciona</div>
@@ -2203,6 +2203,7 @@ else comeca();
           <button class="v3tb" data-t="Pilar" onclick="v3Toggle('Pilar',this)"><i style="background:#FF6B6B"></i>Pilares</button>
           <button class="v3tb" data-t="Placa" onclick="v3Toggle('Placa',this)"><i style="background:#5BA3FF"></i>Placas</button>
           <button class="v3tb" data-t="Viga"  onclick="v3Toggle('Viga',this)"><i style="background:#4CD98A"></i>Vigas</button>
+          <button class="v3tb" data-t="Laje" onclick="v3Toggle('Laje',this)"><i style="background:#B66BFF"></i>Lajes</button>
         </div>
       </div>
       <div class="v3cx" id="v3d-sel" style="display:none;">
@@ -2219,7 +2220,7 @@ else comeca();
         <div class="ic">📏</div>
         <p>Carregue o arquivo <b>*_linhasPU.json</b><br>gerado pelo plugin do SketchUp.</p>
         <p><button type="button" class="v3b v3carrega" onclick="$('v3file').click()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 9l5-5 5 5"/><path d="M12 4v12"/></svg>Carregar arquivo</button></p>
-        <p><a class="v3plugin" href="sketchup/RM_Estruturas_PU.rbz?v=1.3.0" download="RM_Estruturas_PU.rbz">⬇ Plugin do SketchUp (.rbz)</a><br>
+        <p><a class="v3plugin" href="sketchup/RM_Estruturas_PU.rbz?v=1.3.5" download="RM_Estruturas_PU.rbz">⬇ Plugin do SketchUp (.rbz)</a><br>
           <span class="v3plugin-dica">SketchUp → Extensões → Gerenciador de extensões → Instalar extensão</span></p>
       </div>
       <div id="v3d-list"></div>
@@ -2398,12 +2399,12 @@ import { LineSegments2 } from 'three/addons/lines/LineSegments2.js';
 import { LineSegmentsGeometry } from 'three/addons/lines/LineSegmentsGeometry.js';
 import { LineMaterial } from 'three/addons/lines/LineMaterial.js';
 
-const CLR={Pilar:0xFF6B6B,Placa:0x5BA3FF,Viga:0x4CD98A};
-const CLS={Pilar:'#FF6B6B',Placa:'#5BA3FF',Viga:'#4CD98A'};
+const CLR={Pilar:0xFF6B6B,Placa:0x5BA3FF,Viga:0x4CD98A,Laje:0xB66BFF};
+const CLS={Pilar:'#FF6B6B',Placa:'#5BA3FF',Viga:'#4CD98A',Laje:'#B66BFF'};
 const CLH=0xFFF3B0, CLFORA=0x69717B;
 
 let sc,cam,ren,ctrl,wrap;
-let objs=[],linhasData=[],tVis={Pilar:true,Placa:true,Viga:true};
+let objs=[],linhasData=[],tVis={Pilar:true,Placa:true,Viga:true,Laje:true};
 let HOME={p:[50,20,40],t:[15,5,10]},actId=-1,ready=false;
 /* tudo o que é da obra carregada (grade, eixos, peças) mora num grupo só,
    para trocar de arquivo sem sobrar nada do anterior */
@@ -2621,7 +2622,7 @@ function v3Salva(){
   clearTimeout(v3SalvaT);
   v3SalvaT=setTimeout(()=>{ if(!window.v3Guardar||!linhasData.length) return;
     window.v3Guardar({obra:v3Obra, arquivo:v3Arquivo, em:new Date().toISOString(),
-      linhas:linhasData.map(l=>({id:l.id,nome:l.nome,tipo:l.tipo,ml:l.ml,pt1:l.pt1,pt2:l.pt2,app:l.app||'ext_int',incluir:!!l.incluir})),
+      linhas:linhasData.map(l=>({id:l.id,nome:l.nome,tipo:l.tipo,junta:v3TipoJunta(l),ml:l.ml,pt1:l.pt1,pt2:l.pt2,app:l.app||'ext_int',incluir:!!l.incluir})),
       pecas:v3PecasDados||null, camera:v3Cam||null});
   },300);
 }
@@ -2629,13 +2630,28 @@ function v3Salva(){
    uma da outra e cobrindo mais da metade da menor. Acontece com peça
    duplicada no modelo (copiar e colar no mesmo lugar) -- e cada uma entrava
    no preço. A de id maior fica marcada como cópia da outra. */
+function v3TipoJunta(l){
+  if(l.tipo==='Laje') return 'laje_inferior';
+  if(l.junta) return String(l.junta);
+  if((l.tipo==='Placa'||l.tipo==='Viga') && /·\s*topo\s*$/i.test(String(l.nome||''))) return 'laje_inferior';
+  return l.tipo==='Placa'?'placa_base':l.tipo==='Viga'?'viga_inferior':l.tipo==='Pilar'?'pilar_face':'padrao';
+}
+function v3AjustaJuntaLaje(l){
+  return v3TipoJunta(l)==='laje_inferior'?{...l,tipo:'Laje',junta:'laje_inferior',app:'int1'}:l;
+}
+function v3DeslocamentoVisual(l,raio){
+  if(v3TipoJunta(l)!=='laje_inferior') return 0;
+  const ax=Math.abs(l.pt2[0]-l.pt1[0])>=Math.abs(l.pt2[1]-l.pt1[1])?0:1, cr=1-ax;
+  const sobreposta=linhasData.some(p=>v3TipoJunta(p)==='placa_base'&&Math.abs(p.pt1[2]-l.pt1[2])<.001&&Math.abs(p.pt2[2]-l.pt2[2])<.001&&Math.abs(p.pt1[cr]-l.pt1[cr])<.001&&Math.abs(p.pt2[cr]-l.pt2[cr])<.001&&Math.min(Math.max(p.pt1[ax],p.pt2[ax]),Math.max(l.pt1[ax],l.pt2[ax]))>Math.max(Math.min(p.pt1[ax],p.pt2[ax]),Math.min(l.pt1[ax],l.pt2[ax])));
+  return sobreposta?raio*2.5:0;
+}
 function v3MarcaRepetidas(){
   const TOL=0.05, sub=(a,b)=>[a[0]-b[0],a[1]-b[1],a[2]-b[2]], len=v=>Math.hypot(v[0],v[1],v[2]),
     cruz=(a,b)=>[a[1]*b[2]-a[2]*b[1],a[2]*b[0]-a[0]*b[2],a[0]*b[1]-a[1]*b[0]], dot=(a,b)=>a[0]*b[0]+a[1]*b[1]+a[2]*b[2];
   linhasData.forEach(l=>{l.rep=null;});
   const ok=linhasData.filter(l=>Array.isArray(l.pt1)&&Array.isArray(l.pt2)&&len(sub(l.pt2,l.pt1))>1e-6);
   for(let i=0;i<ok.length;i++){ const a=ok[i], da=sub(a.pt2,a.pt1), La=len(da), ua=da.map(v=>v/La);
-    for(let j=i+1;j<ok.length;j++){ const b=ok[j]; if(b.tipo!==a.tipo||b.rep) continue;
+    for(let j=i+1;j<ok.length;j++){ const b=ok[j]; if(b.tipo!==a.tipo||b.rep||v3TipoJunta(a)!==v3TipoJunta(b)) continue;
       const db=sub(b.pt2,b.pt1), Lb=len(db), ub=db.map(v=>v/Lb);
       if(len(cruz(ua,ub))>0.02) continue;
       const d1=len(cruz(sub(b.pt1,a.pt1),ua)), d2=len(cruz(sub(b.pt2,a.pt1),ua));
@@ -2698,7 +2714,7 @@ window.v3LoadJSON=function(json,fname,opc){
   v3Arquivo=String(fname||''); v3Obra=String(json.obra||'');
   v3PecasDados=Array.isArray(json.pecas)&&json.pecas.length?json.pecas:null;
   v3Cam=json.camera&&Array.isArray(json.camera.eye)&&Array.isArray(json.camera.target)?json.camera:null;
-  linhasData=ls.map(l=>({...l,ml:Number(l.ml)||0,incluir:l.incluir!==false}));
+  linhasData=ls.map(l=>v3AjustaJuntaLaje({...l,ml:Number(l.ml)||0,incluir:l.incluir!==false},v3PecasDados));
   v3MarcaRepetidas();
   linhasData.forEach(l=>{l.medDif=v3ConfereMedida(l);});
 
@@ -2756,6 +2772,7 @@ window.v3LoadJSON=function(json,fname,opc){
   const raio=Math.min(Math.max(diag/650,.02),.14), cima=new THREE.Vector3(0,1,0);
   linhasData.forEach(l=>{
     const p1=v3(l.pt1),p2=v3(l.pt2);
+    const visual=v3DeslocamentoVisual(l,raio); p1.y-=visual; p2.y-=visual;
     const line=new THREE.Line(new THREE.BufferGeometry().setFromPoints([p1,p2]),new THREE.LineBasicMaterial({color:v3Cor(l)}));
     line.visible=false; v3Cena.add(line);
     const len=Math.max(p1.distanceTo(p2),.001), mid=new THREE.Vector3().addVectors(p1,p2).multiplyScalar(.5);
@@ -2776,7 +2793,7 @@ window.v3LoadJSON=function(json,fname,opc){
   document.getElementById('v3d-list').style.display='';
   document.getElementById('v3d-sel').style.display='';
   document.querySelectorAll('.v3tb').forEach(b=>b.classList.remove('off'));
-  tVis={Pilar:true,Placa:true,Viga:true}; actId=-1;
+  tVis={Pilar:true,Placa:true,Viga:true,Laje:true}; actId=-1;
   v3ViewMode='list'; v3GrpState=new Map();
   document.getElementById('v3vt-list').classList.add('on');
   document.getElementById('v3vt-grp').classList.remove('on');
@@ -2828,7 +2845,8 @@ function v3Pinta(o,l){
   o.line.material.color.set(ativa?CLH:v3Cor(l));
 }
 const CLREP=0xFFB020;
-function v3Cor(l){ return l.rep?CLREP:(CLR[l.tipo]||0xFFFFFF); }
+function v3Cor(l){ return l.rep?CLREP:(v3TipoJunta(l)==='laje_inferior'?0xB66BFF:(CLR[l.tipo]||0xFFFFFF)); }
+function v3CorCSS(l){ return v3TipoJunta(l)==='laje_inferior'?'#B66BFF':(CLS[l.tipo]||'#888'); }
 function v3m(v){ return (Number(v)||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})+' m'; }
 function v3Avisos(l){
   let h='';
@@ -2846,10 +2864,11 @@ function v3BaseName(n){ return n.replace(/#\d+$/,''); }
    obra e para o orçamento (app int1). */
 function v3LadoDe(l){ return l.app==='int1'?'int':'2'; }
 function v3PoeLado(ls,v){
-  ls.forEach(l=>{ l.app=v==='int'?'int1':'ext_int'; const o=objs.find(x=>x.id===l.id); if(o) v3Pinta(o,l); });
+  ls.forEach(l=>{ l.app=v3TipoJunta(l)==='laje_inferior'?'int1':(v==='int'?'int1':'ext_int'); const o=objs.find(x=>x.id===l.id); if(o) v3Pinta(o,l); });
   v3Render(); v3Calc(); v3Salva();
 }
-function v3LadoHTML(atual){
+function v3LadoHTML(atual,laje=false){
+  if(laje) return '<span class="v3lado" title="PU inferior da laje: somente no lado interno"><span style="padding:4px 7px;font-size:11.5px;font-weight:600">1 lado</span></span>';
   return '<div class="v3lado" role="group" aria-label="Lados com PU">'
     +'<button type="button" data-lado="2"'+(atual==='2'?' class="on"':'')+' title="PU por fora e por dentro">2 lados</button>'
     +'<button type="button" data-lado="int"'+(atual==='int'?' class="on"':'')+' title="Só por dentro (o lado de fora não dá acesso)">Só int.</button></div>';
@@ -2862,10 +2881,10 @@ function v3Linha(l,comTipo){
   r.className='v3er'+(l.id===actId?' hl':'')+(l.incluir?'':' ex');
   r.dataset.id=l.id;
   r.innerHTML=`<input type="checkbox" class="v3ecb" ${l.incluir?'checked':''} aria-label="No preço">
-    <span class="v3cor" style="background:${CLS[l.tipo]||'#888'}"></span>
+    <span class="v3cor" style="background:${v3CorCSS(l)}"></span>
     <div class="v3ei"><div class="v3en" title="${escapeHtml(l.nome)}">${escapeHtml(l.nome)}</div>
       <div class="v3em">${comTipo?l.tipo+' · ':''}${v3m(l.ml)}</div>${v3Avisos(l)}</div>
-    ${v3LadoHTML(v3LadoDe(l))}`;
+    ${v3LadoHTML(v3LadoDe(l),v3TipoJunta(l)==='laje_inferior')}`;
   const cb=r.querySelector('.v3ecb');
   cb.addEventListener('click',e=>e.stopPropagation());
   cb.addEventListener('change',e=>{e.stopPropagation();v3Inc(l.id,e.target.checked);});
@@ -2878,12 +2897,12 @@ function v3Linha(l,comTipo){
 function v3RenderTipos(){
   const box=document.getElementById('v3TiposSel'); if(!box) return;
   box.innerHTML='';
-  ['Pilar','Placa','Viga'].forEach(t=>{
+  ['Pilar','Placa','Viga','Laje'].forEach(t=>{
     const ls=linhasData.filter(l=>l.tipo===t); if(!ls.length) return;
     const n=ls.filter(l=>l.incluir).length, est=n===ls.length?'on':(n?'meio':'');
     const bt=document.createElement('button'); bt.type='button'; bt.className='v3tipo '+est;
     bt.title=n===ls.length?'Tirar todas as linhas deste tipo do preço':'Pôr todas as linhas deste tipo no preço';
-    bt.innerHTML=`<span class="v3cor" style="background:${CLS[t]}"></span><span class="nm">${t==='Pilar'?'Pilares':t==='Placa'?'Placas':'Vigas'}</span><span class="ct">${n} de ${ls.length}</span><span class="mk"></span>`;
+    bt.innerHTML=`<span class="v3cor" style="background:${CLS[t]}"></span><span class="nm">${t==='Pilar'?'Pilares':t==='Placa'?'Placas':t==='Laje'?'Lajes':'Vigas'}</span><span class="ct">${n} de ${ls.length}</span><span class="mk"></span>`;
     bt.addEventListener('click',()=>window.v3SelTipo(t));
     box.appendChild(bt);
   });
@@ -2907,10 +2926,10 @@ function v3Render(){
       const isOpen=v3GrpState.has(key)?v3GrpState.get(key):false;
       const hdr=document.createElement('div'); hdr.className='v3grp-h'+(isOpen?' aberto':'')+(nIn?'':' ex');
       hdr.innerHTML=`<input type="checkbox" class="v3ecb" ${allIn?'checked':''} aria-label="Grupo no preço">
-        <span class="v3cor" style="background:${CLS[g.tipo]||'#888'}"></span>
+        <span class="v3cor" style="background:${g.items.every(l=>v3TipoJunta(l)==='laje_inferior')?'#B66BFF':(CLS[g.tipo]||'#888')}"></span>
         <div class="v3ei"><div class="v3grp-nome" title="${escapeHtml(g.bn)}">${escapeHtml(g.bn)}</div>
           <div class="v3grp-sub">${g.items.length} linha${g.items.length===1?'':'s'} · ${v3m(totML)}${nIn<g.items.length?' · '+nIn+' no preço':''}${lado===''?' · lados mistos':''}</div></div>
-        ${v3LadoHTML(lado)}
+        ${v3LadoHTML(lado,g.items.every(l=>v3TipoJunta(l)==='laje_inferior'))}
         <span class="v3grp-arrow" aria-hidden="true"></span>`;
       const cb=hdr.querySelector('.v3ecb');
       if(nIn&&!allIn) cb.indeterminate=true;
@@ -3166,7 +3185,7 @@ function onHov(ev){
   const hits=ray.intersectObjects(objs.filter(o=>o.sph.visible).map(o=>o.sph));
   if(hits.length){const l=linhasData.find(d=>d.id===hits[0].object.userData.id);
     if(l){tip.style.display='block';tip.style.left=(ev.clientX+14)+'px';tip.style.top=(ev.clientY-8)+'px';
-      tip.innerHTML=`<strong style="color:${CLS[l.tipo]}">${escapeHtml(l.nome)}</strong><br>${l.tipo} · ${v3m(l.ml)}<br>${l.incluir?'<span style="color:#4CD98A">✓ no preço</span>':'<span style="color:#aab1b9">fora do preço</span>'}${l.rep?'<br><span style="color:#FFB020">⚠ repetida de '+escapeHtml(l.rep.nome)+'</span>':''}`;}}
+      tip.innerHTML=`<strong style="color:${v3CorCSS(l)}">${escapeHtml(l.nome)}</strong><br>${l.tipo} · ${v3m(l.ml)}<br>${l.incluir?'<span style="color:#4CD98A">✓ no preço</span>':'<span style="color:#aab1b9">fora do preço</span>'}${l.rep?'<br><span style="color:#FFB020">⚠ repetida de '+escapeHtml(l.rep.nome)+'</span>':''}`;}}
   else{tip.style.display='none';}
 }
 function onClk(ev){
@@ -5448,35 +5467,4 @@ else poe();
     if (lib) {
       usadasAgora[s + '|' + a] = 1;   /* antes de gravar: o Firebase avisa a escuta na hora */
       grava('acessos/pedidos/' + E.k + '/' + lib, { usado: true, usadoEm: Date.now() }, 'update').catch(function () { });
-      if (E.pedidos[lib]) E.pedidos[lib].usado = true;
-      registra(s, a, info, 'autorizacao');
-      setTimeout(function () { delete usadasAgora[s + '|' + a]; fecha(s, a); }, atrasoFecha());
-      return true;
-    }
-    return false;
-  }
-  /* espera o cadastro chegar; se não pode, abre o pedido de autorização */
-  function exige(s, a, info) {
-    info = info || {};
-    return esperaCarregar().then(function () { return agora(s, a, info) || janela(s, a, info); });
-  }
-  /* a porta de cada ação protegida, para quem chama sem esperar: true =
-     segue já; false = não segue agora (abriu o pedido, ou o cadastro ainda
-     estava chegando -- aí, se puder, a ação é refeita sozinha por refaz) */
-  var passe = {};
-  function porta(s, a, info, refaz) {
-    var ch = s + '|' + a;
-    if (passe[ch]) { delete passe[ch]; return true; }
-    if (agora(s, a, info)) return true;
-    exige(s, a, info).then(function (ok) { if (ok && refaz) { passe[ch] = 1; try { refaz(); } finally { delete passe[ch]; } } });
-    return false;
-  }
-  window.RMAcesso = {
-    pode: pode, agora: agora, exige: exige, porta: porta, registra: registra, nome: nomeAcao,
-    ouvir: function (f) { E.ouvintes.push(f); },
-    estado: function () { return { email: E.email, carregado: E.carregado, reg: E.reg, pedidos: E.pedidos }; }
-  };
-})();
-</script>
-</body>
-</html>
+      if (E.pedidos[lib]) E.ped

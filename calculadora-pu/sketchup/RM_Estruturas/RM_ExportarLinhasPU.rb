@@ -14,10 +14,11 @@
 #    camera -- a vista atual do SketchUp (o 3D abre igual)
 # ============================================================
 require 'json'
+load File.join(File.dirname(__FILE__), 'deteccao_pu.rb')
 
 module RM_LinhasPU
 
-  VERSAO = '1.3.0'
+  VERSAO = '1.3.5'
 
   INCHES_TO_M  = 0.0254
   ADJACENCIA_M = 0.50
@@ -69,12 +70,17 @@ module RM_LinhasPU
     entities.each do |e|
       case e
       when Sketchup::ComponentInstance, Sketchup::Group
+        next if e.get_attribute('RM_Estruturas_PU', 'ignorar', false)
         world_t = parent_t * e.transformation
         defn    = e.respond_to?(:definition) ? e.definition : nil
         # o nome vale na definição (componente) e também na própria peça:
         # um GRUPO chamado "PLACA" (ou a instância renomeada) era ignorado
         nome = [defn && defn.name, e.respond_to?(:name) ? e.name : nil]
                .compact.map { |x| x.to_s.strip }.find { |x| !x.empty? && estrutural?(x) }
+        bounds = defn ? world_bounds(defn, world_t) : nil
+        if !nome && RM_DeteccaoPU.laje_sem_nome?(e, defn, world_t, bounds)
+          nome = 'PLACA DEITADA (AUTOMATICA)'
+        end
         if nome && defn
           t      = tipo(nome)
           bounds = world_bounds(e.definition, world_t)
@@ -211,7 +217,7 @@ module RM_LinhasPU
         end
         ml = ((a1-a0) * INCHES_TO_M).round(3)
         next if ml < 0.05
-        linhas << { id: id+=1, nome: p[:nome], tipo: 'Placa',
+        linhas << { id: id+=1, nome: p[:nome], tipo: 'Placa', junta: 'placa_base',
                     pt1: p1, pt2: p2, ml: ml, app: 'ext_int', incluir: true }
       end
     end
@@ -256,7 +262,7 @@ module RM_LinhasPU
           next if ml < 0.05
           linhas << { id: id+=1,
                       nome: "#{pilar[:nome]} · face #{face_sym}",
-                      tipo: 'Pilar',
+                      tipo: 'Pilar', junta: 'pilar_face',
                       pt1: pt(fx, fy, zs),
                       pt2: pt(fx, fy, ze),
                       ml: ml, app: 'ext_int', incluir: true }
@@ -296,12 +302,12 @@ module RM_LinhasPU
         next if ml < 0.05
         if along_x
           vc = (vy0+vy1)/2.0
-          linhas << { id: id+=1, nome: viga[:nome], tipo: 'Viga',
+          linhas << { id: id+=1, nome: viga[:nome], tipo: 'Viga', junta: 'viga_inferior',
                       pt1: pt(a0,vc,z_line), pt2: pt(a1,vc,z_line),
                       ml: ml, app: 'ext_int', incluir: true }
         else
           vc = (vx0+vx1)/2.0
-          linhas << { id: id+=1, nome: viga[:nome], tipo: 'Viga',
+          linhas << { id: id+=1, nome: viga[:nome], tipo: 'Viga', junta: 'viga_inferior',
                       pt1: pt(vc,a0,z_line), pt2: pt(vc,a1,z_line),
                       ml: ml, app: 'ext_int', incluir: true }
         end
@@ -318,7 +324,7 @@ module RM_LinhasPU
       else
         vc = (vx0+vx1)/2.0; p1 = pt(vc,a0,vz1); p2 = pt(vc,a1,vz1)
       end
-      linhas << { id: id+=1, nome: "#{viga[:nome]} · topo", tipo: 'Viga',
+      linhas << { id: id+=1, nome: "#{viga[:nome]} · topo", tipo: 'Viga', junta: 'laje_inferior',
                   pt1: p1, pt2: p2, ml: ml, app: 'ext_int', incluir: true }
     end
 
@@ -332,7 +338,7 @@ module RM_LinhasPU
       else
         c = (x0+x1)/2.0; p1 = pt(c,a0,z1); p2 = pt(c,a1,z1)
       end
-      linhas << { id: id+=1, nome: "#{pl[:nome]} · topo", tipo: 'Placa',
+      linhas << { id: id+=1, nome: "#{pl[:nome]} · topo", tipo: 'Placa', junta: 'laje_inferior',
                   pt1: p1, pt2: p2, ml: ml, app: 'ext_int', incluir: true }
     end
 
@@ -364,6 +370,7 @@ module RM_LinhasPU
     model   = Sketchup.active_model
     pilares = []; placas = []; vigas = []
     coletar_tudo(model.entities, pilares, placas, vigas)
+    RM_DeteccaoPU.remover_chao!(pilares, placas)
 
     linhas = gerar_linhas(pilares, placas, vigas)
 
