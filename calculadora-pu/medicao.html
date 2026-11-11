@@ -1999,6 +1999,9 @@ else comeca();
 #viewer3d .v3b{border:1px solid var(--line);background:var(--card);color:var(--ink);font:inherit;font-size:13px;font-weight:600;
   padding:7px 12px;border-radius:8px;cursor:pointer;white-space:nowrap;}
 #viewer3d .v3b:hover{border-color:var(--gray-2);}
+#viewer3d .v3b{display:inline-flex;align-items:center;gap:6px}
+#viewer3d .v3b svg{width:15px;height:15px;flex:none}
+#viewer3d .v3carrega{margin-top:4px}
 #viewer3d .v3corpo{flex:1;display:flex;min-height:0;}
 #v3d-canvas-wrap{flex:1;position:relative;overflow:hidden;min-width:0;background:#20252b;}
 #v3d-canvas-wrap.v3-cheia{position:fixed!important;inset:0!important;z-index:9000!important;width:auto!important;height:auto!important;flex:none!important}
@@ -2159,9 +2162,12 @@ else comeca();
 <div id="viewer3d">
   <div class="v3top">
     <div class="v3tit"><h3>Conferência 3D do PU</h3><p id="v3Nome">Nenhum arquivo carregado</p></div>
-    <button class="v3b" onclick="$('v3file').click()">📂 Carregar<span class="lg"> arquivo</span></button>
+    <!-- "não tem opção de fechar o arquivo carregado e carregar um novo para
+         atualizar, apenas fechar toda a tela": três ações separadas -->
+    <button class="v3b" id="v3TrocaBtn" onclick="$('v3file').click()" title="Carregar o arquivo *_linhasPU.json exportado de novo no SketchUp (substitui o atual)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 9l5-5 5 5"/><path d="M12 4v12"/></svg><span id="v3TrocaTxt">Carregar arquivo</span></button>
     <input type="file" id="v3file" accept=".json" style="display:none">
-    <button class="v3b" onclick="fecharViewer3D()">✕ Fechar</button>
+    <button class="v3b" id="v3FechaArqBtn" onclick="v3FecharArquivo()" style="display:none" title="Tira o arquivo do 3D e as marcações dele desta obra"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M9.5 12.5l5 5M14.5 12.5l-5 5"/></svg>Fechar arquivo</button>
+    <button class="v3b" onclick="fecharViewer3D()" title="Fecha a tela do 3D (o arquivo continua guardado na obra)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6L6 18M6 6l12 12"/></svg>Fechar 3D</button>
   </div>
   <div class="v3corpo">
     <div id="v3d-canvas-wrap">
@@ -2212,6 +2218,7 @@ else comeca();
       <div id="v3empty">
         <div class="ic">📏</div>
         <p>Carregue o arquivo <b>*_linhasPU.json</b><br>gerado pelo plugin do SketchUp.</p>
+        <p><button type="button" class="v3b v3carrega" onclick="$('v3file').click()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 9l5-5 5 5"/><path d="M12 4v12"/></svg>Carregar arquivo</button></p>
         <p><a class="v3plugin" href="sketchup/RM_Estruturas_PU.rbz" download>⬇ Plugin do SketchUp (.rbz)</a><br>
           <span class="v3plugin-dica">SketchUp → Extensões → Gerenciador de extensões → Instalar extensão</span></p>
       </div>
@@ -2776,6 +2783,7 @@ window.v3LoadJSON=function(json,fname,opc){
   objs.forEach(o=>v3Pinta(o));
   v3Render(); v3Calc();
   if(!(opc&&opc.restaura)) v3Salva();
+  v3BotoesArquivo();
 };
 /* VISTAS -- as mesmas do SketchUp: Topo com o verde para cima, Frente
    olhando para o verde, Lado pela direita, e a vista que estava no SketchUp
@@ -3187,6 +3195,33 @@ window.v3ExportarSistema=function(){
 };
 
 // Carregar arquivo via botão
+/* FECHAR O ARQUIVO: o 3D volta vazio (com o link do plugin e o botão de
+   carregar), e a obra esquece as linhas e as marcações dele. O que já foi
+   enviado para a lista da medição continua lá. */
+window.v3FecharArquivo=function(){
+  if(linhasData.length&&!confirm('Fechar o arquivo do 3D?\n\nAs linhas e as marcações dele saem desta obra. O que já foi enviado para a medição continua.')) return;
+  if(v3Trena.on) v3TrenaLiga(false);
+  if(v3Cena){ sc.remove(v3Cena); v3Cena.traverse(o=>{ if(o.geometry) o.geometry.dispose(); }); v3Cena=null; }
+  objs=[]; linhasData=[]; v3PecasGrp=null; v3PecasDados=null; v3Caixa=null; v3GradeArgs=null; v3Grade=null; v3Partes=[]; v3Arquivo=''; v3Obra='';
+  actId=-1;
+  if(window.v3Esquecer) window.v3Esquecer();
+  document.getElementById('v3Nome').textContent='Nenhum arquivo carregado';
+  document.getElementById('v3empty').style.display='block';
+  document.getElementById('v3d-list').style.display='none';
+  document.getElementById('v3d-sel').style.display='none';
+  document.querySelectorAll('.v3tb').forEach(b=>b.classList.add('off'));
+  v3Render(); v3Calc(); v3BotoesArquivo();
+};
+/* com arquivo: "Trocar arquivo" + "Fechar arquivo"; sem: "Carregar arquivo" */
+function v3BotoesArquivo(){
+  const tem=linhasData.length>0, t=document.getElementById('v3TrocaTxt'), f=document.getElementById('v3FechaArqBtn');
+  if(t) t.textContent=tem?'Trocar arquivo':'Carregar arquivo';
+  if(f) f.style.display=tem?'':'none';
+  /* sem arquivo não há preço do 3D para usar: o rodapé (linhas, ML, custo,
+     "Usar no orçamento") some, em vez de mostrar o valor do arquivo fechado */
+  const ft=document.getElementById('v3d-foot'); if(ft) ft.style.display=tem?'':'none';
+}
+window.v3BotoesArquivo=v3BotoesArquivo; v3BotoesArquivo();
 document.getElementById('v3file').addEventListener('change',e=>{
   const f=e.target.files[0]; if(!f) return;
   const r=new FileReader();
@@ -3370,8 +3405,10 @@ async function fbRemove(path){
     document.getElementById('v3d-list').style.display='none';
     document.getElementById('v3empty').style.display='block';
     document.getElementById('v3d-sel').style.display='none';
+    if(window.v3BotoesArquivo) window.v3BotoesArquivo();
   }
   window.v3Guardar = function(d){ linhas3d = d; persist(); };
+  window.v3Esquecer = function(){ linhas3d = null; persist(); };
   window.v3Precos  = function(){ return { ext: val('custoExt'), int: val('custoInt') }; };
   window.v3Lados   = function(app){ const a = APP[app] || APP.ext_int; return { ext: a.ext, int: a.int }; };
   function fecharViewer3D(){
