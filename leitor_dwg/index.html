@@ -14769,26 +14769,29 @@ function telhaSpec(t,nome,util){
   o.push(['Tolerância de corte','± 3 mm']);
   return {campos:o,esp,termica};
 }
-/* secoes: [{tit, nome, util, t, linhas:[{mm, qtd, sup, inf}]}]; acess: [{peca, qtd, medida}] */
+/* secoes: [{tit, nome, util, t, cumeeira?, linhas:[{mm, qtd, sup, inf}]}]
+   SÓ TELHA: "acessórios estão na empresa, precisam sair apenas na ficha do
+   montador" -- parafuso, fechamento de onda, rufo e requadro não vão ao
+   fabricante. "Cumeeira não é acessório": ela é um item da lista de corte. */
 function pedidoTelhasHTML(o){
   const n0=v=>Math.round(v).toLocaleString('pt-BR'),d2=v=>v.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
   const logo=(typeof LOGO_RM!=='undefined'&&LOGO_RM)?'<img src="'+LOGO_RM+'" style="height:56px;display:block">':'<div style="font-weight:800;font-size:22px;color:#D53309">RM</div>';
   const dataBr=new Date().toLocaleDateString('pt-BR'),ped=pedDados();
   const secs=o.secoes.filter(s=>s.linhas.length);
   secs.forEach(s=>{s.spec=telhaSpec(s.t,s.nome,s.util);s.qtd=s.linhas.reduce((a,l)=>a+l.qtd,0);s.metros=s.linhas.reduce((a,l)=>a+l.qtd*(l.sup||l.mm),0)/1000;s.area=s.metros*s.util/1000;});
-  const tq=secs.reduce((a,s)=>a+s.qtd,0),tm=secs.reduce((a,s)=>a+s.metros,0),ta=secs.reduce((a,s)=>a+s.area,0);
-  const pesoOk=secs.length&&secs.every(s=>s.spec.esp>0&&!s.spec.termica),peso=pesoOk?secs.reduce((a,s)=>a+s.metros*s.spec.esp*7.85*1.2,0):0;
-  const maior=Math.max(0,...secs.flatMap(s=>s.linhas.map(l=>l.sup||l.mm)));
+  const tel=secs.filter(s=>!s.cumeeira),cums=secs.filter(s=>s.cumeeira);
+  const tq=tel.reduce((a,s)=>a+s.qtd,0),tm=tel.reduce((a,s)=>a+s.metros,0),ta=tel.reduce((a,s)=>a+s.area,0),tc=cums.reduce((a,s)=>a+s.qtd,0);
+  const pesoOk=tel.length&&tel.every(s=>s.spec.esp>0&&!s.spec.termica),peso=pesoOk?tel.reduce((a,s)=>a+s.metros*s.spec.esp*7.85*1.2,0):0;
+  const maior=Math.max(0,...tel.flatMap(s=>s.linhas.map(l=>l.sup||l.mm)));
   /* telhas iguais em cobertura e fechamento: um quadro de produto só */
   const prods=new Map();secs.forEach(s=>{const k=s.nome+'|'+s.util;if(!prods.has(k))prods.set(k,{s,onde:[]});const p=prods.get(k);if(!p.onde.includes(s.tipo))p.onde.push(s.tipo);});
   const produto=[...prods.values()].map(({s,onde})=>'<div class="pp-prod"><div class="pp-prod-t"><b>'+escapeHtml(s.nome)+'</b>'+(prods.size>1||onde.length>1?'<em>'+onde.join(' e ')+'</em>':'')+'</div>'
     +'<div class="pp-spec">'+s.spec.campos.map(([l,v])=>'<div><span>'+l+'</span><b>'+escapeHtml(v)+'</b></div>').join('')+'</div></div>').join('');
   let item=0;
-  const linhas=secs.map(s=>(secs.length>1?'<tr class="pp-sec"><td colspan="4">'+escapeHtml(s.tit)+' <small>útil '+n0(s.util)+' mm</small></td></tr>':'')
+  const linhas=secs.map(s=>(secs.length>1?'<tr class="pp-sec'+(s.cumeeira?' pp-cum':'')+'"><td colspan="4">'+escapeHtml(s.tit)+' <small>'+(s.cumeeira?'peças de '+n0(s.util)+' mm úteis':'útil '+n0(s.util)+' mm')+'</small></td></tr>':'')
     +s.linhas.map(l=>'<tr><td class="it">'+String(++item).padStart(2,'0')+'</td><td class="mm">'+(l.sup!=null&&l.inf!=null&&l.sup!==l.inf?n0(l.sup)+' <small>sup.</small> / '+n0(l.inf)+' <small>inf.</small>':n0(l.mm))+'</td>'
       +'<td class="q">'+l.qtd+'</td><td class="n">'+d2(l.qtd*(l.sup||l.mm)/1000)+'</td></tr>').join('')
     +(secs.length>1?'<tr class="pp-sub"><td></td><td>Subtotal</td><td class="q">'+s.qtd+'</td><td class="n">'+d2(s.metros)+'</td></tr>':'')).join('');
-  const acess=(o.acess||[]).filter(a=>a.qtd>0);
   const ent=PED_CAMPOS.slice(1).map(([k,l])=>'<div><span>'+l+'</span>'+(ped[k]?escapeHtml(ped[k]):'<i>a combinar</i>')+'</div>').join('');
   const termica=secs.some(s=>s.linhas.some(l=>l.sup!=null&&l.inf!=null&&l.sup!==l.inf));
   const css='<style>#printArea .ped-fab{font-size:10.5px;color:#141414}#printArea .ped-fab h4{font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;color:#D53309;margin:10px 0 4px;font-weight:700;display:flex;gap:8px;align-items:center}'
@@ -14811,21 +14814,21 @@ function pedidoTelhasHTML(o){
     +'<div class="pp-ref"><span>'+(ped.num?'Pedido nº <b>'+escapeHtml(ped.num)+'</b>':'')+'</span><span>'+(o.fabricante?'Fabricante: <b>'+escapeHtml(o.fabricante)+'</b> · ':'')+'em dúvida, cite o item</span></div>'
     +'<h4><i>1</i> Produto</h4>'+produto
     +'<h4><i>2</i> Resumo para cotação</h4><div class="pp-kpi"><div><span>Chapas</span><b>'+n0(tq)+'</b></div><div><span>Metros lineares</span><b>'+d2(tm)+' m</b></div>'
-      +'<div><span>Área (útil)</span><b>'+d2(ta)+' m²</b></div>'+(peso?'<div><span>Peso estimado</span><b>≈ '+n0(peso)+' kg</b></div>':'')+'<div><span>Maior peça</span><b>'+n0(maior)+' mm</b></div></div>'
+      +'<div><span>Área (útil)</span><b>'+d2(ta)+' m²</b></div>'+(tc?'<div><span>Cumeeiras</span><b>'+n0(tc)+'</b></div>':'')+(peso?'<div><span>Peso estimado</span><b>≈ '+n0(peso)+' kg</b></div>':'')+'<div><span>Maior peça</span><b>'+n0(maior)+' mm</b></div></div>'
     +'<h4><i>3</i> Lista de corte</h4><table class="pp-t"><colgroup><col style="width:44px"><col><col style="width:80px"><col style="width:100px"></colgroup>'
       +'<thead><tr><th>Item</th><th>Comprimento (mm)</th><th class="n">Qtd.</th><th class="n">Metros</th></tr></thead><tbody>'+linhas+'</tbody>'
-      +'<tfoot><tr><td></td><td>Total · '+item+' medida'+(item>1?'s':'')+'</td><td class="q">'+n0(tq)+'</td><td class="n">'+d2(tm)+'</td></tr></tfoot></table>'
-    +'<div class="pp-2"><div>'+(acess.length?'<h4><i>4</i> Acessórios</h4><table class="pp-t"><colgroup><col><col style="width:60px"><col style="width:90px"></colgroup><thead><tr><th>Peça</th><th class="n">Qtd.</th><th>Medida</th></tr></thead><tbody>'
-        +acess.map(a=>'<tr><td>'+escapeHtml(a.peca)+'</td><td class="q">'+n0(a.qtd)+'</td><td>'+escapeHtml(a.medida||'—')+'</td></tr>').join('')+'</tbody></table>':'')
-      +'<h4><i>'+(acess.length?5:4)+'</i> Entrega</h4><div class="pp-ent">'+ent+'</div></div>'
-      +'<div><h4><i>'+(acess.length?6:5)+'</i> Fabricação</h4><ul><li>Medidas em milímetros. Corte reto, no comprimento da lista.</li><li>Ponta em ângulo e corte na largura são feitos na obra.</li>'
+      +'<tfoot><tr><td></td><td>Total de telhas'+(tc?'':' · '+item+' medida'+(item>1?'s':''))+'</td><td class="q">'+n0(tq)+'</td><td class="n">'+d2(tm)+'</td></tr>'
+        +(tc?'<tr><td></td><td>Cumeeiras</td><td class="q">'+n0(tc)+'</td><td></td></tr>':'')+'</tfoot></table>'
+    +'<div class="pp-2"><div>'
+      +'<h4><i>4</i> Entrega</h4><div class="pp-ent">'+ent+'</div></div>'
+      +'<div><h4><i>5</i> Fabricação</h4><ul><li>Medidas em milímetros. Corte reto, no comprimento da lista.</li><li>Ponta em ângulo e corte na largura são feitos na obra.</li>'
         +(termica?'<li>Térmica: a chapa inferior é mais curta (pingadeira), conforme a lista.</li>':'')
         +'<li>Confirmar fabricação e prazo com a RM.</li>'+(o.obs?'<li>'+escapeHtml(o.obs)+'</li>':'')+'</ul></div></div>'
     +'</div></div>';
   /* a mesma lista em planilha, para o fabricante não digitar de novo */
   let n=0;const csv=['Item;Telha;Comprimento (mm);Comprimento inferior (mm);Quantidade;Metros']
     .concat(secs.flatMap(s=>s.linhas.map(l=>[String(++n).padStart(2,'0'),'"'+String(s.nome).replace(/"/g,'""')+'"',l.sup||l.mm,(l.inf!=null&&l.inf!==l.sup)?l.inf:'',l.qtd,(l.qtd*(l.sup||l.mm)/1000).toFixed(2).replace('.',',')].join(';'))))
-    .concat(acess.map(a=>['','"'+String(a.peca).replace(/"/g,'""')+'"','','',a.qtd,''].join(';'))).join('\r\n');
+    .join('\r\n');
   return {html:css+doc,csv};
 }
 function pedidoMostra(o){
@@ -14850,10 +14853,7 @@ function telhaDocumento(){
   gs.forEach(g=>{const k=g.telha||'';if(!sec.has(k)){const tb=g.telha&&g.telhaId?orcTelhaPorId(g.telhaId):t0;
       sec.set(k,{tipo:'Fechamento',tit:'Fechamento · '+(g.telha?g.telhaNome:telhaRotuloAtual()),nome:g.telha?g.telhaNome:telhaRotuloAtual(),util:g.util||TLH.util,t:tb,linhas:[]});}
     sec.get(k).linhas.push({mm:g.mm,qtd:g.qtd*e});});
-  const ac=telhaAcessorios().map(a=>a.id==='paraf'?{peca:'Parafuso autobrocante com arruela',qtd:a.qtd,medida:'—'}
-    :a.id==='abert'?{peca:a.nome+' ('+a.obs+')',qtd:a.pecas,medida:Math.round(TLH_ACESS.peca).toLocaleString('pt-BR')+' mm'}
-    :a.id==='fita'?{peca:a.nome,qtd:Math.ceil(a.mm/1000),medida:'metros'}:null).filter(Boolean);
-  pedidoMostra({obra:obraAtual(),secoes:[...sec.values()],acess:ac,fabricante:TLH.fabricante||'',idPrint:'tlPrint',idFechar:'tlFecharDoc',fechaOv:true,
+  pedidoMostra({obra:obraAtual(),secoes:[...sec.values()],fabricante:TLH.fabricante||'',idPrint:'tlPrint',idFechar:'tlFecharDoc',fechaOv:true,
     arquivo:'Pedido de telhas '+(obraAtual()||'obra')});
 }
 /* ===================== FICHA DO MONTADOR (TELHAS) =====================
@@ -14961,6 +14961,13 @@ function tmfAlturaPilha(p){
   const w=p.itens.reduce((a,it)=>a+String(it.cod).length*1.95+String(Math.round(it.mm)).length*1.7+(it.x?5:3.5)+1.2,0);
   return 8+Math.max(1,Math.ceil(w/262))*5.4;
 }
+/* ACESSÓRIOS (levar da empresa): não vão ao fabricante -- saem só aqui */
+function tmfAcessHTML(L){
+  L=(L||[]).filter(x=>x.qtd>0);if(!L.length)return '';
+  return '<div class="tmf-acess"><h5 style="margin-top:1mm">Acessórios · levar da empresa</h5><table><thead><tr><th>Peça</th><th>Uso</th><th class="r">Qtd.</th><th></th></tr></thead><tbody>'
+    +L.map(x=>'<tr><td><b>'+escapeHtml(x.item)+'</b></td><td class="tmf-ob">'+escapeHtml(x.uso||'')+'</td><td class="r"><b>'+Math.round(x.qtd).toLocaleString('pt-BR')+'</b>'+(x.un?' '+escapeHtml(x.un):'')+'</td><td><span class="tmf-ok"></span></td></tr>').join('')
+    +'</tbody></table></div>';
+}
 function tmfSeparacao(o){
   /* blocos: as pilhas, e os cortes em linhas de 8 */
   const blocos=o.pilhas.map(p=>({h:tmfAlturaPilha(p),html:tmfPilha(p)}));
@@ -14969,6 +14976,7 @@ function tmfSeparacao(o){
     blocos.push({h:(i?0:6)+50,html:(i?'':'<h5 style="margin-top:1mm">✂ Chapas que viram duas telhas · cortar no chão, escrever o código em cada parte</h5>')
       +'<div class="tmf-cortes">'+cs.slice(i,i+8).map(c=>'<div class="tmf-corte" data-corte="'+escapeAttr(c.nome)+'"><b>'+escapeHtml(c.nome)+'</b><br>chapa '+Math.round(c.mm).toLocaleString('pt-BR')+tmfCorteSVG(c.mm,c.util,c.partes)+'largura em mm · tracejado = sobra</div>').join('')+'</div>'});
   }
+  (o.extra||[]).filter(x=>x&&x.html).forEach(x=>blocos.push(x));
   const CAP=128,pags=[[]];let h=0;
   blocos.forEach(b=>{if(h+b.h>CAP&&pags[pags.length-1].length){pags.push([]);h=0;}pags[pags.length-1].push(b.html);h+=b.h+3;});
   return pags.map((p,i)=>'<article class="tmf tmf-separa">'+o.topo(pags.length>1?' ('+(i+1)+'/'+pags.length+')':'')
@@ -15011,6 +15019,10 @@ function telhaFichaHTML(){
   const temDiv=pilhas.some(p=>p.itens.some(it=>it.partes>1));
   const pe0='<div class="tmf-pe"><span>Paredes: '+faces.map(f=>'<b>'+f.letra+'</b> '+escapeHtml(f.nome)).join(' · ')+'</span><span>'
     +(temDiv?'×2 = telha comprida em partes, transpasse de '+n0(TLH.traspasse||0)+' mm · ':'')+'Medidas em mm</span></div>';
+  const acs=telhaAcessorios().map(a=>a.id==='paraf'?{item:'Parafuso autobrocante com arruela',uso:'costura e fixação · '+String(TLH_ACESS.parafM2).replace('.',',')+' por m²',qtd:a.qtd}
+    :a.id==='abert'?{item:a.nome,uso:a.obs+' · peças de '+n0(TLH_ACESS.peca)+' mm',qtd:a.pecas,un:'pç'}
+    :a.id==='fita'?{item:a.nome,uso:a.obs,qtd:Math.ceil(a.mm/1000),un:'m'}:null).filter(Boolean);
+  const acH=tmfAcessHTML(acs);
   const sep=tmfSeparacao({pilhas,cortes,pe:pe0,
     topo:suf=>topo('SEPARAÇÃO E CORTES NA OBRA'+suf,
       '<span>Telha:</span> <b>'+escapeHtml(rot)+'</b> · <b>'+totalQtd+'</b> chapas · <b>'+faces.length+'</b> parede(s)'+vezes,
@@ -15107,7 +15119,7 @@ function telhaFichaHTML(){
       'Marcar na terça o início de cada telha (cotas embaixo do desenho de cada parede).']
       .concat(nCortes?['Cortar no chão, antes de subir, as <b>'+nCortes+' chapa'+(nCortes>1?'s':'')+' ✂</b> (folha 2).']:[])
       .concat(['Transpasse da onda: a telha nova por cima, contra o vento.']),
-    leg:'<div class="tmf-leg"><span><i style="background:#fde5d6"></i>corte na diagonal</span><span><i style="background:#dbe8f5"></i>sobre porta / janela</span><span><i style="background:#fff;border-color:#d53309"></i>✂ uma chapa = duas telhas</span></div>',
+    leg:'<div class="tmf-leg"><span><i style="background:#fde5d6"></i>corte na diagonal</span><span><i style="background:#dbe8f5"></i>sobre porta / janela</span><span><i style="background:#fff;border-color:#d53309"></i>✂ uma chapa = duas telhas</span></div>'+acH,
     pe:pe0});
   return tmfCss()+resumo+sep.join('')+porParede.flat().join('');
 }
@@ -30593,10 +30605,11 @@ html[data-theme="escuro"] .log-det>summary.err{color:var(--red)}.log-det>summary
     const reuso=(r.reusosLargura||[]).map(x=>'<div class="tmf-ob" style="font-size:9pt;color:#1d5fd1"><b>Sobra de largura (não vem do fabricante):</b> corte a telha <b>'+escapeHtml(x.fonteCurto)+'</b> no comprimento — '
         +n0(util-x.sobra)+' mm ficam nela e os <b>'+n0(x.sobra)+' mm</b> que sobram são a <b>'+escapeHtml(x.destinoCurto)+'</b>.</div>').join('');
     const pe0='<div class="tmf-pe"><span>Águas: '+aguas.map(a=>'<b>'+escapeHtml(a.pref)+'</b> '+escapeHtml(a.nome)).join(' · ')+'</span><span>✂ = cortar na obra (ponta em ângulo ou largura) · Medidas em mm</span></div>';
-    const sep=tmfSeparacao({pilhas,cortes:[],pe:pe0,
+    const acCob=cobFichaAcessorios(r,cum);
+    const sep=tmfSeparacao({pilhas,cortes:[],pe:pe0,extra:[{h:12+acCob.length*6,html:tmfAcessHTML(acCob)}],
       topo:suf=>topo('SEPARAÇÃO NA OBRA'+suf,'<span>Telha:</span> <b>'+escapeHtml(rot)+'</b> · <span>largura útil</span> <b>'+n0(util)+' mm</b> · <b>'+totalQtd+'</b> chapas'+(cum&&cum.pecas?' · <b>'+cum.pecas+'</b> cumeeira(s)':'')+vezes,
         'Escreva o código com pincel na ponta de cada telha e monte a pilha de cada água na ordem: a primeira a subir fica por cima.')});
-    { const extra=(reuso?'<div style="display:grid;gap:1.5mm">'+reuso+'</div>':'')+cobFichaParafusos(r,cum),L=sep.length-1,i=sep[L].lastIndexOf('</div><div class="tmf-pe">');
+    { const extra=(reuso?'<div style="display:grid;gap:1.5mm">'+reuso+'</div>':''),L=sep.length-1,i=sep[L].lastIndexOf('</div><div class="tmf-pe">');
       if(extra&&i>=0)sep[L]=sep[L].slice(0,i)+extra+sep[L].slice(i); }
     /* ---- uma folha por água ---- */
     const obs=f=>{const o=[];
@@ -30707,19 +30720,16 @@ html[data-theme="escuro"] .log-det>summary.err{color:var(--red)}.log-det>summary
       pe:pe0});
     return tmfCss()+'<style>.tmf .cob-fab-det{flex:1 1 0;border:.2mm solid #d6dade;border-radius:2mm;padding:1.5mm 2.5mm;font-size:8.5pt}.tmf .cob-fab-det svg{max-height:26mm}</style>'+resumo+sep.join('')+folhas.join('');
   }
-  function cobFichaParafusos(r,cum){
-    const paraf=cobParafusos(r);
-    if(!paraf&&!(cum&&cum.pecas))return '';
-    const termica=!!COB.termica;
-    const linhas=[];
-    if(termica)linhas.push({item:'Parafuso brocante 4"',uso:'Fixação das telhas térmicas',qtd:paraf});
-    else linhas.push({item:'Parafuso brocante 3/4',uso:'Fixação das telhas simples',qtd:paraf});
-    if(cum&&cum.pecas)linhas.push({item:'Parafuso brocante 3/4',uso:'Fixação das cumeeiras',qtd:cobParafusosCumeeira(cum)});
-    return '<table style="margin-top:2mm;font-size:9pt;width:100%;border-collapse:collapse"><thead><tr><th style="text-align:left;border-bottom:.3mm solid #141414;padding:1mm;font-size:7.5pt;color:#777;text-transform:uppercase;letter-spacing:.05em">Parafuso</th>'
-      +'<th style="text-align:left;border-bottom:.3mm solid #141414;padding:1mm;font-size:7.5pt;color:#777;text-transform:uppercase;letter-spacing:.05em">Uso</th>'
-      +'<th style="text-align:right;border-bottom:.3mm solid #141414;padding:1mm;font-size:7.5pt;color:#777;text-transform:uppercase;letter-spacing:.05em">Qtd.</th></tr></thead><tbody>'
-      +linhas.map(l=>'<tr><td style="padding:.6mm 1mm;border-bottom:.15mm solid #ddd"><b>'+escapeHtml(l.item)+'</b></td><td style="padding:.6mm 1mm;border-bottom:.15mm solid #ddd;font-size:8pt;color:#555">'+escapeHtml(l.uso)+'</td><td style="text-align:right;padding:.6mm 1mm;border-bottom:.15mm solid #ddd"><b>'+(l.qtd||'—')+'</b></td></tr>').join('')
-      +'</tbody></table>';
+  /* parafusos, fechamento de onda e rufo: material da empresa, só na ficha */
+  function cobFichaAcessorios(r,cum){
+    const L=[],paraf=cobParafusos(r),e=Math.max(1,(r&&r.e)||1);
+    if(COB.termica)L.push({item:'Parafuso brocante 4"',uso:'Fixação das telhas térmicas',qtd:paraf});
+    else L.push({item:'Parafuso brocante 3/4',uso:'Fixação das telhas simples',qtd:paraf});
+    if(cum&&cum.pecas){L.push({item:'Parafuso brocante 3/4',uso:'Fixação das cumeeiras',qtd:cobParafusosCumeeira(cum)});
+      const onda=(r.todas||[]).filter(x=>x.tocaCumeeira&&!x.reusoLarguraDe&&!x.reusoDe).length*e;
+      if(onda)L.push({item:'Fechamento de onda '+cum.tipo,uso:'na cumeeira, 1 por telha',qtd:onda,un:'pç'});
+      if(cum.rufo&&cum.rufo.pecas)L.push({item:'Rufo de topo (aba '+RUFO_ABA+' mm)',uso:'peças de '+mm(cum.rufo.peca)+' mm',qtd:cum.rufo.pecas,un:'pç'});}
+    return L;
   }
   async function cobFichaMontador(){
     const pa=document.getElementById('printArea'); if(!pa)return;
@@ -30787,22 +30797,14 @@ html[data-theme="escuro"] .log-det>summary.err{color:var(--red)}.log-det>summary
     const r=calculaCobertura();if(!COB.confirmada||!r.ok)return;
     const m=modeloAtual(),tc=COB.orcTelhaId?orcTelhaPorId(COB.orcTelhaId):null;
     const cum=cobCumeeiras(r),cad=cum&&cum.pecas?cum.cad:null;
-    const tot=cobTotaisComprimento(r.lista),ru=cum&&cum.rufo&&cum.rufo.pecas?cum.rufo:null,fech=cobFechPedido();
+    const tot=cobTotaisComprimento(r.lista),fech=cobFechPedido();
     const telhaDe=ch=>ch&&ch.startsWith('orc:')?orcTelhaPorId(ch.slice(4)):(ch?null:tc);
     const secoes=cobTelhasDoTotal(tot).map(T=>({tipo:'Cobertura',tit:'Cobertura · '+(T.chave?T.nome:((tc&&tc.desc)||m.nome)),nome:T.chave?T.nome:((tc&&tc.desc)||m.nome),util:T.util,t:telhaDe(T.chave),
       linhas:T.grupos.map(g=>{const x=g.x,ter=x.chapaSup!=null&&x.chapaInf!=null&&x.chapaSup!==x.chapaInf;return ter?{mm:x.chapaSup,sup:x.chapaSup,inf:x.chapaInf,qtd:g.qtd}:{mm:num(x.mm),qtd:g.qtd};})}))
       .concat((fech||[]).map(F=>({tipo:'Fechamento',tit:'Fechamento · '+F.nome,nome:F.nome,util:F.util,t:F.nome===telhaRotuloAtual()?telhaBancoAtual():null,linhas:F.grupos.map(g=>({mm:g.mm,qtd:g.qtd}))})));
-    const acess=[];
-    if(cum&&cum.pecas){
-      acess.push({peca:(cad?cad.desc:'Cumeeira '+cum.tipo)+' · aba '+cum.aba+' mm',qtd:cum.pecas,medida:mm(cum.util)+' mm útil'});
-      const onda=(r.todas||[]).filter(x=>x.tocaCumeeira&&!x.reusoLarguraDe&&!x.reusoDe).length*Math.max(1,r.e||1);
-      if(onda)acess.push({peca:'Fechamento de onda '+cum.tipo+' (na cumeeira)',qtd:onda,medida:'1 por telha'});
-    }
-    if(ru)acess.push({peca:'Rufo de topo (aba '+RUFO_ABA+' mm)',qtd:ru.pecas,medida:mm(ru.peca)+' mm'});
-    const pT=cobParafusos(r),pC=cobParafusosCumeeira(cum);
-    if(COB.termica){if(pT)acess.push({peca:'Parafuso autobrocante 4" com arruela (telhas)',qtd:pT,medida:'—'});if(pC)acess.push({peca:'Parafuso autobrocante 3/4" com arruela (cumeeira)',qtd:pC,medida:'—'});}
-    else if(pT+pC)acess.push({peca:'Parafuso autobrocante 3/4" com arruela',qtd:pT+pC,medida:'—'});
-    pedidoMostra({obra:nomeObra(),secoes,acess,fabricante:COB.fabricante||m.fabricante||'',obs:COB.obs?'Observação: '+COB.obs:'',
+    if(cum&&cum.pecas){const nc=cad?cad.desc:'Cumeeira '+cum.tipo;
+      secoes.push({tipo:'Cumeeira',cumeeira:true,tit:(/^cumeeira/i.test(nc)?nc:'Cumeeira · '+nc)+' · aba '+cum.aba+' mm',nome:nc,util:num(cum.util),t:cad,linhas:[{mm:num(cum.util),qtd:cum.pecas}]});}
+    pedidoMostra({obra:nomeObra(),secoes,fabricante:COB.fabricante||m.fabricante||'',obs:COB.obs?'Observação: '+COB.obs:'',
       idPrint:'cobPrint',idFechar:'cobCloseDoc',classe:'cob-pedido cob-fab',arquivo:'Pedido de cobertura '+nomeObra()});
   }
 
@@ -31539,7 +31541,7 @@ if('serviceWorker' in navigator && location.protocol.startsWith('http')){
 }
 </script>
 <script>/* versão publicada (PADRAO_RM.md §3): sobe a cada publicação, junto com o CACHE do sw.js */
-const APP_VER='v287';
+const APP_VER='v288';
 </script>
 <script id="rmVersaoBloco">
 /* ===== SELO DE VERSÃO — igual em todos os sistemas (PADRAO_RM.md §3) =====
