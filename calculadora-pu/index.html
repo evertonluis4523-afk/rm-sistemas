@@ -1631,17 +1631,7 @@ else poe();
   .kpi .k-label{font-size:12px;text-transform:uppercase;letter-spacing:1.3px;color:var(--gray);font-weight:700;}
   .kpi .k-val{font-size:26px;font-weight:700;margin:6px 0 1px;color:var(--ink);letter-spacing:-.5px;}
   .kpi .k-sub{font-size:12px;color:var(--muted);font-weight:560}
-  .kpi.accent{background:var(--red);border-color:var(--red);}
-  /* CONTRASTE NO CARTAO LARANJA. O rotulo e a linha de apoio eram rosa claro
-     (#F6CFCD e #F2BAB7) sobre o #D53309: 3,42:1 e 2,90:1, abaixo do minimo de
-     4,5:1 -- de longe, some. E nao ha tom de rosa que resolva: medindo os dois
-     sentidos sobre esse fundo, o BRANCO puro da 4,88:1 e e o teto; o preto
-     puro da 4,31:1 e tambem reprova. Entao os tres vao em branco, e a
-     hierarquia passa a ser de TAMANHO e PESO -- rotulo 10,5 px em caixa alta
-     e negrito, valor 26 px, apoio 11 px normal --, que e o que ja distinguia
-     os tres antes da cor entrar. */
-  .kpi.accent .k-label{color:#fff;}
-  .kpi.accent .k-val,.kpi.accent .k-sub{color:#fff;}
+  /* o cartão laranja de destaque saiu (linguagem de prancha, PADRAO_RM 3): os números são uma faixa .rm-faixa */
 
   /* Filters */
   .filters{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;}
@@ -2182,6 +2172,40 @@ html th{
    Só o canto e a cor da borda: em alguns sistemas ".card" é caixa sem fundo
    (a lista de funcionários do Recibos), e pintar o fundo mudaria a tela. */
 html .card{border-radius:var(--rm-raio-g);border-color:var(--rm-linha)}
+
+/* ---------- LINGUAGEM DE PRANCHA ----------
+   "20 sinais de que o teu dashboard foi feito por IA": cartão de número com
+   ícone colorido, faixa colorida na borda, cartão escuro de destaque, rótulo
+   em caixa alta espaçada em todo canto. A casa fala a língua da prancha
+   técnica (a mesma do papel M1): linha fina, escrita normal, cor só com
+   significado -- vermelho = problema, âmbar = vence logo, verde = pago ou
+   recebido; laranja RM só na marca e na ação principal. Caixa alta só no
+   carimbo e no cabeçalho de tabela. Regra em PADRAO_RM 3c. */
+/* o nome do sistema ao lado da marca, em escrita normal */
+html .rm-brand .sub{text-transform:none!important;letter-spacing:0!important;font-size:13px!important;font-weight:600!important}
+/* FAIXA DE NÚMEROS: o contêiner dos números do topo leva a classe
+   .rm-faixa; as caixas viram células de uma faixa só, divididas por fio.
+   O fio de cada célula é sombra de 1px à direita e embaixo -- a última
+   coluna e a última linha são cortadas pela borda da faixa, e a célula que
+   falta na última linha fica branca (com gap+fundo cinza ela virava um
+   bloco cinza). */
+html .rm-faixa{gap:0!important;background:var(--rm-superficie)!important;border:1px solid var(--rm-linha)!important;
+  border-radius:6px!important;overflow:hidden!important;box-shadow:none!important}
+html .rm-faixa>*{border:0!important;border-radius:0!important;background:transparent!important;
+  box-shadow:1px 0 0 var(--rm-linha),0 1px 0 var(--rm-linha)!important;transform:none!important}
+html .rm-faixa>*::before,html .rm-faixa>*::after{content:none!important}
+html .rm-faixa>:is(button,a,[onclick],[role=button]):hover{background:var(--rm-superficie-2)!important}
+html .rm-faixa :is(.lbl,.lab,.label,.k,.k-label,.sum-lbl,.rm-fx-r){text-transform:none!important;letter-spacing:0!important;
+  font-size:12.5px!important;font-weight:600!important;color:var(--rm-apagado)}
+html .rm-faixa :is(.lbl,.lab,.label,.k,.k-label) :is(svg,.ico,.dot,.dotk,.k-ico),
+html .rm-faixa :is(.lbl,.lab,.label,.k,.k-label)>span:empty{display:none!important}
+/* faixa que já mora no alto de um painel: sem caixa própria, só o fio de baixo */
+html .rm-faixa.rm-faixa-painel{border:0!important;border-bottom:1px solid var(--rm-linha)!important;border-radius:0!important}
+html .rm-faixa :is(.val,.v,.value,.k-value,.num){font-variant-numeric:tabular-nums}
+/* a cor do número: só quando pede atenção (a célula diz, o número pinta) */
+html .rm-faixa .rm-fx-ruim{color:var(--rm-perigo)!important}
+html .rm-faixa .rm-fx-aviso{color:var(--rm-aviso)!important}
+html .rm-faixa .rm-fx-bom{color:var(--rm-ok)!important}
 
 /* ---------- CANTO E COR VALEM EM QUALQUER LUGAR ----------
    Uma regra de lugar (".appbar .btn", ".toolbar .btn") pode deixar o botão
@@ -2852,21 +2876,21 @@ body:not([data-theme="escuro"]){
   <div class="pane on" id="pane-pu">
 
   <!-- KPIs -->
-  <div class="kpis k6 rmd-kpis">
+  <div class="kpis k6 rmd-kpis rm-faixa">
     <div class="kpi"><div class="k-label">Total de Obras</div><div class="k-val" id="kTotal">0</div><div class="k-sub">cadastradas</div></div>
     <div class="kpi"><div class="k-label">Aguardando</div><div class="k-val" id="kAguardando">0</div><div class="k-sub">a iniciar</div></div>
     <div class="kpi"><div class="k-label">Em Andamento</div><div class="k-val" id="kAndamento">0</div><div class="k-sub">em execução</div></div>
-    <div class="kpi accent"><div class="k-label">Valor Total Geral</div><div class="k-val" id="kValor">R$ 0,00</div><div class="k-sub" id="kFinalizadas">0 finalizadas</div></div>
-    <div class="kpi" style="border-left:3px solid #007C51;"><div class="k-label">Total Recebido</div><div class="k-val" style="color:#007C51;" id="kRecebido">R$ 0,00</div><div class="k-sub">pagamentos</div></div>
-    <div class="kpi" style="border-left:3px solid var(--red);"><div class="k-label">Saldo em Aberto</div><div class="k-val" style="color:var(--red);" id="kSaldo">R$ 0,00</div><div class="k-sub">a receber</div></div>
+    <div class="kpi"><div class="k-label">Valor Total Geral</div><div class="k-val" id="kValor">R$ 0,00</div><div class="k-sub" id="kFinalizadas">0 finalizadas</div></div>
+    <div class="kpi"><div class="k-label">Total Recebido</div><div class="k-val" id="kRecebido">R$ 0,00</div><div class="k-sub">pagamentos</div></div>
+    <div class="kpi"><div class="k-label">Saldo em Aberto</div><div class="k-val" id="kSaldo">R$ 0,00</div><div class="k-sub">a receber</div></div>
   </div>
 
   <!-- FILTROS -->
   <div class="filters no-print">
     <button class="filter-btn active" data-filter="todas" onclick="filtrar('todas',this)">Todas <span class="filter-count" id="fc-todas">0</span></button>
-    <button class="filter-btn" data-filter="aguardando" onclick="filtrar('aguardando',this)">⏳ Aguardando <span class="filter-count" id="fc-aguardando">0</span></button>
-    <button class="filter-btn" data-filter="andamento" onclick="filtrar('andamento',this)">🔵 Em Andamento <span class="filter-count" id="fc-andamento">0</span></button>
-    <button class="filter-btn" data-filter="finalizada" onclick="filtrar('finalizada',this)">✅ Finalizadas <span class="filter-count" id="fc-finalizada">0</span></button>
+    <button class="filter-btn" data-filter="aguardando" onclick="filtrar('aguardando',this)">Aguardando <span class="filter-count" id="fc-aguardando">0</span></button>
+    <button class="filter-btn" data-filter="andamento" onclick="filtrar('andamento',this)">Em Andamento <span class="filter-count" id="fc-andamento">0</span></button>
+    <button class="filter-btn" data-filter="finalizada" onclick="filtrar('finalizada',this)">Finalizadas <span class="filter-count" id="fc-finalizada">0</span></button>
   </div>
 
   <!-- TABELA DE OBRAS -->
@@ -2934,20 +2958,20 @@ body:not([data-theme="escuro"]){
       </div>
     </div>
 
-    <div class="kpis k6 rmd-kpis">
+    <div class="kpis k6 rmd-kpis rm-faixa">
       <div class="kpi"><div class="k-label">Obras</div><div class="k-val" id="mtKObras">0</div><div class="k-sub">cadastradas</div></div>
       <div class="kpi"><div class="k-label">Aguardando</div><div class="k-val" id="mtKAg">0</div><div class="k-sub">a montar</div></div>
       <div class="kpi"><div class="k-label">Em Andamento</div><div class="k-val" id="mtKAn">0</div><div class="k-sub">montando</div></div>
       <div class="kpi"><div class="k-label">Metragem</div><div class="k-val" id="mtKM2">0</div><div class="k-sub">m² no total</div></div>
-      <div class="kpi" style="border-left:3px solid var(--red);"><div class="k-label">A Pagar</div><div class="k-val" style="color:var(--red);" id="mtKAPagar">R$ 0,00</div><div class="k-sub" id="mtKNAPagar">0 obras</div></div>
-      <div class="kpi accent"><div class="k-label">Valor Total</div><div class="k-val" id="mtKValor">R$ 0,00</div><div class="k-sub" id="mtKFi">0 finalizadas</div></div>
+      <div class="kpi"><div class="k-label">A Pagar</div><div class="k-val" id="mtKAPagar">R$ 0,00</div><div class="k-sub" id="mtKNAPagar">0 obras</div></div>
+      <div class="kpi"><div class="k-label">Valor Total</div><div class="k-val" id="mtKValor">R$ 0,00</div><div class="k-sub" id="mtKFi">0 finalizadas</div></div>
     </div>
 
     <div class="filters">
       <button class="filter-btn active" data-mtf="todas" onclick="mtFiltrar('todas',this)">Todas <span class="filter-count" id="mtfc-todas">0</span></button>
-      <button class="filter-btn" data-mtf="aguardando" onclick="mtFiltrar('aguardando',this)">⏳ Aguardando <span class="filter-count" id="mtfc-aguardando">0</span></button>
-      <button class="filter-btn" data-mtf="andamento" onclick="mtFiltrar('andamento',this)">🔵 Em Andamento <span class="filter-count" id="mtfc-andamento">0</span></button>
-      <button class="filter-btn" data-mtf="finalizada" onclick="mtFiltrar('finalizada',this)">✅ Finalizadas <span class="filter-count" id="mtfc-finalizada">0</span></button>
+      <button class="filter-btn" data-mtf="aguardando" onclick="mtFiltrar('aguardando',this)">Aguardando <span class="filter-count" id="mtfc-aguardando">0</span></button>
+      <button class="filter-btn" data-mtf="andamento" onclick="mtFiltrar('andamento',this)">Em Andamento <span class="filter-count" id="mtfc-andamento">0</span></button>
+      <button class="filter-btn" data-mtf="finalizada" onclick="mtFiltrar('finalizada',this)">Finalizadas <span class="filter-count" id="mtfc-finalizada">0</span></button>
     </div>
 
     <div class="card" style="padding:0;overflow:hidden;">
@@ -3040,13 +3064,13 @@ body:not([data-theme="escuro"]){
       fbBadgeP = document.createElement('span');
       fbBadgeP.id = 'fbBadgePainel';
       fbBadgeP.style.cssText = 'position:fixed;top:14px;right:20px;font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;z-index:999;transition:all .3s;background:rgba(76,217,138,.1);color:#4CD98A;border:1px solid rgba(76,217,138,.25);';
-      fbBadgeP.innerHTML = '<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#4CD98A;margin-right:5px;vertical-align:middle;"></span>🔥 Firebase';
+      fbBadgeP.innerHTML = '<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#4CD98A;margin-right:5px;vertical-align:middle;"></span>Firebase';
       document.body.appendChild(fbBadgeP);
       fbP.ref('.info/connected').on('value', snap=>{
         if(!fbBadgeP) return;
         if(snap.val()){
           fbBadgeP.style.background='rgba(76,217,138,.1)'; fbBadgeP.style.color='#4CD98A'; fbBadgeP.style.border='1px solid rgba(76,217,138,.25)';
-          fbBadgeP.innerHTML='<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#4CD98A;box-shadow:0 0 5px #4CD98A;margin-right:5px;vertical-align:middle;"></span>🔥 Firebase';
+          fbBadgeP.innerHTML='<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#4CD98A;box-shadow:0 0 5px #4CD98A;margin-right:5px;vertical-align:middle;"></span>Firebase';
           setTimeout(()=>{ if(fbBadgeP) fbBadgeP.style.opacity='.55'; }, 4000);
         } else {
           fbBadgeP.style.background='rgba(255,96,96,.1)'; fbBadgeP.style.color='#FF6060'; fbBadgeP.style.border='1px solid rgba(255,96,96,.25)'; fbBadgeP.style.opacity='1';
@@ -3280,7 +3304,7 @@ body:not([data-theme="escuro"]){
     const body=$('projBody');
     if(!list.length){
       const msg = filtroAtivo==='todas' ? 'Nenhuma obra cadastrada. Finalize uma medição e clique em <strong>Enviar ao Painel</strong>.' : 'Nenhuma obra com este status.';
-      body.innerHTML=`<tr><td colspan="10"><div class="empty-state"><div class="icon">📋</div><h3>Sem obras aqui</h3><p>${msg}</p></div></td></tr>`;
+      body.innerHTML=`<tr><td colspan="10"><div class="empty-state"><h3>Sem obras aqui</h3><p>${msg}</p></div></td></tr>`;
       $('summaryBar').style.display='none';
       return;
     }
@@ -3304,15 +3328,15 @@ body:not([data-theme="escuro"]){
         <td style="font-size:12px;color:var(--gray-2);">${dataBR(data)}</td>
         <td>
           <div class="status-actions">
-            <button class="st-btn${p.status==='aguardando'?' active-aguardando':''}" onclick="mudarStatus('${p.id}','aguardando')">⏳ Aguardando</button>
-            <button class="st-btn${p.status==='andamento'?' active-andamento':''}" onclick="mudarStatus('${p.id}','andamento')">🔵 Andamento</button>
-            <button class="st-btn${p.status==='finalizada'?' active-finalizada':''}" onclick="mudarStatus('${p.id}','finalizada')">✅ Finalizada</button>
+            <button class="st-btn${p.status==='aguardando'?' active-aguardando':''}" onclick="mudarStatus('${p.id}','aguardando')">Aguardando</button>
+            <button class="st-btn${p.status==='andamento'?' active-andamento':''}" onclick="mudarStatus('${p.id}','andamento')">Andamento</button>
+            <button class="st-btn${p.status==='finalizada'?' active-finalizada':''}" onclick="mudarStatus('${p.id}','finalizada')">Finalizada</button>
           </div>
         </td>
         <td>
           <div class="row-actions">
             <button class="btn btn-ghost btn-xs" onclick="abrirNoSistema('${p.id}')" title="Abrir medição no sistema">✏️ Abrir</button>
-            <button class="icon-btn" onclick="excluir('${p.id}')" title="Excluir">🗑</button>
+            <button class="icon-btn" onclick="excluir('${p.id}')" title="Excluir" aria-label="Excluir"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 14h10l1-14M9 7V4h6v3"/></svg></button>
           </div>
         </td>
       </tr>`;
@@ -3575,7 +3599,7 @@ body:not([data-theme="escuro"]){
       const msg = mtFiltro==='todas'
         ? 'Nenhuma obra no controle da metálica. Preencha obra, cidade e metragem acima.'
         : 'Nenhuma obra com este status.';
-      body.innerHTML='<tr><td colspan="10"><div class="empty-state"><div class="icon">🏗</div><h3>Sem obras aqui</h3><p>'+msg+'</p></div></td></tr>';
+      body.innerHTML='<tr><td colspan="10"><div class="empty-state"><h3>Sem obras aqui</h3><p>'+msg+'</p></div></td></tr>';
       $('mtSummary').style.display='none';
       return;
     }
@@ -3605,11 +3629,11 @@ body:not([data-theme="escuro"]){
         '<td class="num money">'+brl(mtValor(o))+'</td>'+
         '<td style="font-size:12px;color:var(--gray-2);">'+dataBR(o.atualizadoEm||o.criadoEm||'')+'</td>'+
         '<td><div class="status-actions">'+
-          '<button class="st-btn'+(o.status==='aguardando'?' active-aguardando':'')+'" onclick="mtStatus(\''+o.id+'\',\'aguardando\')">⏳ Aguardando</button>'+
-          '<button class="st-btn'+(o.status==='andamento'?' active-andamento':'')+'" onclick="mtStatus(\''+o.id+'\',\'andamento\')">🔵 Andamento</button>'+
-          '<button class="st-btn'+(o.status==='finalizada'?' active-finalizada':'')+'" onclick="mtStatus(\''+o.id+'\',\'finalizada\')">✅ Finalizada</button>'+
+          '<button class="st-btn'+(o.status==='aguardando'?' active-aguardando':'')+'" onclick="mtStatus(\''+o.id+'\',\'aguardando\')">Aguardando</button>'+
+          '<button class="st-btn'+(o.status==='andamento'?' active-andamento':'')+'" onclick="mtStatus(\''+o.id+'\',\'andamento\')">Andamento</button>'+
+          '<button class="st-btn'+(o.status==='finalizada'?' active-finalizada':'')+'" onclick="mtStatus(\''+o.id+'\',\'finalizada\')">Finalizada</button>'+
         '</div></td>'+
-        '<td><div class="row-actions"><button class="icon-btn" onclick="mtExcluir(\''+o.id+'\')" title="Excluir">🗑</button></div></td>'+
+        '<td><div class="row-actions"><button class="icon-btn" onclick="mtExcluir(\''+o.id+'\')" title="Excluir" aria-label="Excluir"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 14h10l1-14M9 7V4h6v3"/></svg></button></div></td>'+
       '</tr>';
     }).join('');
 
@@ -3881,6 +3905,10 @@ body:not([data-theme="escuro"]){
       'padding:4px 10px;border-radius:20px;background:rgba(127,127,127,.10);' +
       'font-family:inherit;cursor:default;user-select:none}' +
       '#rm-nuvem .rm-nuvem-ponto{width:8px;height:8px;border-radius:50%;flex:none;display:block}' +
+      /* LINGUAGEM DE PRANCHA: o selo só aparece quando pede atenção. Nuvem
+         ligada é o normal -- dizer isso em toda barra, com bolinha verde, era
+         a "tag de ao vivo" dos painéis feitos por IA. */
+      '#rm-nuvem[data-estado="ligada"]{display:none!important}' +
       /* A COR DE CADA ESTADO MORA NA FOLHA, e nao no atributo style do selo.
          Escrita no elemento a cada troca, ela escapava da traducao do tema
          escuro numa das trocas (Conectando -> Só neste aparelho) e o cinza
@@ -4282,7 +4310,7 @@ body:not([data-theme="escuro"]){
 })();
 </script>
 <script>/* versão publicada (PADRAO_RM.md §3): sobe a cada publicação, junto com o CACHE do sw.js */
-const APP_VER='v127';
+const APP_VER='v128';
 </script>
 <script id="rmVersaoBloco">
 /* ===== SELO DE VERSÃO — igual em todos os sistemas (PADRAO_RM.md §3) =====

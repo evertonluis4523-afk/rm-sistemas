@@ -1455,7 +1455,9 @@ input,textarea,select{font-family:inherit;color:inherit}
 .card .k{font-size:11px;letter-spacing:.13em;text-transform:uppercase;color:var(--muted);font-weight:700;margin-bottom:7px;display:flex;align-items:center;gap:6px}
 .card .v{font-family:var(--mono);font-size:21px;font-weight:700}
 .card .s{font-size:12px;color:var(--muted);margin-top:3px;font-weight:560}
-.card.afa .v{color:var(--warn)} .card.sem .v{color:var(--red)} .card.atv .v{color:var(--ok)}
+.card.afa .v{color:var(--warn)} .card.sem .v{color:var(--red)}
+/* linguagem de prancha: número zero não pinta (0 sem CPF não é problema) */
+.rm-faixa .v.fx-zero{color:inherit!important}
 /* Cinco cartões, não quatro: a faixa é dividida por quantos existem, porque
    o de experiência só aparece quando há alguém em contrato. Com repeat(4)
    fixo o quinto caía sozinho numa segunda linha, largo como a página. */
@@ -2019,6 +2021,7 @@ table.list.fv-tab th,table.list.fv-tab td{padding-left:7px;padding-right:7px}tab
 .alm-imp-mes{margin:0 0 10px;padding:8px 11px;border-radius:8px;font-size:12.5px;font-weight:600;color:var(--rm-aviso,#9a5a0c);background:var(--rm-aviso-suave,#fff6e6)}
 .alm-imp-mes.ok{color:var(--rm-ok,#1f7a4d);background:var(--rm-ok-suave,#eaf7f0)}
 .rte-aviso{margin:0 0 12px;padding:9px 12px;border-radius:9px;font-size:12.5px;color:var(--rm-aviso,#9a5a0c);background:var(--rm-aviso-suave,#fff6e6)}
+.ia .ri-ico{display:block}
 .ia{border:0;background:none;color:#aeb4bd;cursor:pointer;padding:6px;border-radius:7px;line-height:1;font-size:14px;transition:.12s}
 .ia:hover{background:#f1f2f4;color:var(--ink)}
 .ia.del:hover{color:var(--red);background:var(--red-soft)}
@@ -2768,7 +2771,7 @@ kbd,code,pre,samp,.codigo,.chave,[data-mono]{
 .ciclo-data input{border:1.5px solid var(--line);border-radius:9px;padding:7px 9px;font-size:14px;
   font-weight:700;background:#fafbfc;color:var(--ink);font-family:inherit}
 .ciclo-cards{grid-template-columns:repeat(3,1fr)}
-.ciclo-cards .card.tot .v{color:var(--brand)}
+.ciclo-cards .card.tot .v{color:inherit}
 .ciclo-cards .dotk.o{background:var(--brand)}
 /* painel que aparece com o ciclo fechado */
 .ciclo-fim{margin:0 30px 14px;border:1px solid #cde8d9;background:#f2faf5;border-radius:13px;
@@ -3244,6 +3247,40 @@ html th{
    Só o canto e a cor da borda: em alguns sistemas ".card" é caixa sem fundo
    (a lista de funcionários do Recibos), e pintar o fundo mudaria a tela. */
 html .card{border-radius:var(--rm-raio-g);border-color:var(--rm-linha)}
+
+/* ---------- LINGUAGEM DE PRANCHA ----------
+   "20 sinais de que o teu dashboard foi feito por IA": cartão de número com
+   ícone colorido, faixa colorida na borda, cartão escuro de destaque, rótulo
+   em caixa alta espaçada em todo canto. A casa fala a língua da prancha
+   técnica (a mesma do papel M1): linha fina, escrita normal, cor só com
+   significado -- vermelho = problema, âmbar = vence logo, verde = pago ou
+   recebido; laranja RM só na marca e na ação principal. Caixa alta só no
+   carimbo e no cabeçalho de tabela. Regra em PADRAO_RM 3c. */
+/* o nome do sistema ao lado da marca, em escrita normal */
+html .rm-brand .sub{text-transform:none!important;letter-spacing:0!important;font-size:13px!important;font-weight:600!important}
+/* FAIXA DE NÚMEROS: o contêiner dos números do topo leva a classe
+   .rm-faixa; as caixas viram células de uma faixa só, divididas por fio.
+   O fio de cada célula é sombra de 1px à direita e embaixo -- a última
+   coluna e a última linha são cortadas pela borda da faixa, e a célula que
+   falta na última linha fica branca (com gap+fundo cinza ela virava um
+   bloco cinza). */
+html .rm-faixa{gap:0!important;background:var(--rm-superficie)!important;border:1px solid var(--rm-linha)!important;
+  border-radius:6px!important;overflow:hidden!important;box-shadow:none!important}
+html .rm-faixa>*{border:0!important;border-radius:0!important;background:transparent!important;
+  box-shadow:1px 0 0 var(--rm-linha),0 1px 0 var(--rm-linha)!important;transform:none!important}
+html .rm-faixa>*::before,html .rm-faixa>*::after{content:none!important}
+html .rm-faixa>:is(button,a,[onclick],[role=button]):hover{background:var(--rm-superficie-2)!important}
+html .rm-faixa :is(.lbl,.lab,.label,.k,.k-label,.sum-lbl,.rm-fx-r){text-transform:none!important;letter-spacing:0!important;
+  font-size:12.5px!important;font-weight:600!important;color:var(--rm-apagado)}
+html .rm-faixa :is(.lbl,.lab,.label,.k,.k-label) :is(svg,.ico,.dot,.dotk,.k-ico),
+html .rm-faixa :is(.lbl,.lab,.label,.k,.k-label)>span:empty{display:none!important}
+/* faixa que já mora no alto de um painel: sem caixa própria, só o fio de baixo */
+html .rm-faixa.rm-faixa-painel{border:0!important;border-bottom:1px solid var(--rm-linha)!important;border-radius:0!important}
+html .rm-faixa :is(.val,.v,.value,.k-value,.num){font-variant-numeric:tabular-nums}
+/* a cor do número: só quando pede atenção (a célula diz, o número pinta) */
+html .rm-faixa .rm-fx-ruim{color:var(--rm-perigo)!important}
+html .rm-faixa .rm-fx-aviso{color:var(--rm-aviso)!important}
+html .rm-faixa .rm-fx-bom{color:var(--rm-ok)!important}
 
 /* ---------- CANTO E COR VALEM EM QUALQUER LUGAR ----------
    Uma regra de lugar (".appbar .btn", ".toolbar .btn") pode deixar o botão
@@ -3945,7 +3982,7 @@ if(window.RM_CELULAR) document.body.classList.add('rm-campo');
     <!-- FUNCIONÁRIOS -->
     <div class="view on" id="v-func">
       <div class="pend" id="pendPainel" hidden></div>
-      <div class="cards">
+      <div class="cards rm-faixa rm-faixa-painel">
         <div class="card"><div class="k"><span class="dotk b"></span>Cadastrados</div><div class="v" id="cTot">0</div></div>
         <div class="card atv"><div class="k"><span class="dotk g"></span>Ativos</div><div class="v" id="cAtv">0</div></div>
         <div class="card exp" id="cardExp" hidden title="com contrato 15 + 75 em andamento"><div class="k"><span class="dotk o"></span>Em experiência</div><div class="v" id="cExp">0</div><div class="s" id="cExpS">com contrato 15 + 75 em andamento</div></div>
@@ -3981,7 +4018,7 @@ if(window.RM_CELULAR) document.body.classList.add('rm-campo');
             <input type="checkbox" id="repFuncComAdiant" checked><span>Incluir a coluna de adiantamento do mês</span></label></div>
           <div class="f span4"><span class="lab">Adiantamento pago no mês</span><select id="repFuncMes"></select></div>
           <div class="f span3"><span class="lab">Ano</span><input id="repFuncAno" class="mono" type="number" min="2020" max="2099"></div>
-          <div class="f span5" style="align-self:flex-end"><button class="btn-act save" id="btnRepFuncSal" style="width:100%">📄 Gerar relatório de funcionários e salários</button></div>
+          <div class="f span5" style="align-self:flex-end"><button class="btn-act save" id="btnRepFuncSal" style="width:100%">Gerar relatório de funcionários e salários</button></div>
         </div>
         <div class="sub" style="margin-top:8px;font-family:var(--sans)" id="repFuncHint">Lista funcionários ativos/afastados com data de admissão, salário atual e o valor de adiantamento pago na competência escolhida (puxado dos recibos já gerados naquele mês).</div>
       </div>
@@ -3994,13 +4031,13 @@ if(window.RM_CELULAR) document.body.classList.add('rm-campo');
         <div class="section-lab">Calendário de aniversários <span class="ln"></span></div>
         <div class="form-grid">
           <div class="f span5"><span class="lab">Mês exibido</span><select id="anivMes"></select></div>
-          <div class="f span7" style="align-self:flex-end"><button class="btn-act save" id="btnRepAniv" style="width:100%;justify-content:center">🎂 Gerar relatório do mês em PDF</button></div>
+          <div class="f span7" style="align-self:flex-end"><button class="btn-act save" id="btnRepAniv" style="width:100%;justify-content:center">Gerar relatório do mês em PDF</button></div>
         </div>
       </div>
 
       <div class="aniv-hero" id="anivHoje" aria-live="polite"></div>
 
-      <div class="cards aniv-cards">
+      <div class="cards aniv-cards rm-faixa rm-faixa-painel">
         <div class="card"><div class="k"><span class="dotk b"></span>Aniversariantes no mês</div><div class="v" id="anivTotal">0</div></div>
         <div class="card atv"><div class="k"><span class="dotk g"></span>Próximo aniversário</div><div class="v" id="anivProximo" style="font-size:17px">—</div><div class="s" id="anivProximoNome"></div></div>
         <div class="card afa"><div class="k"><span class="dotk w"></span>Sem data cadastrada</div><div class="v" id="anivSemData">0</div><div class="s">funcionários ativos, em teste ou afastados</div></div>
@@ -4055,14 +4092,14 @@ if(window.RM_CELULAR) document.body.classList.add('rm-campo');
           <p>RHID, ponto e Unimed num pacote para a contabilidade.</p>
         </div>
         <div class="pf-actions">
-          <button class="btn-act dim" id="pfPrintTodos">🖨️ Fichas em branco</button>
-          <button class="btn-act dim" id="pfPrintUm">🖨️ Ficha selecionada</button>
+          <button class="btn-act dim" id="pfPrintTodos">Fichas em branco</button>
+          <button class="btn-act dim" id="pfPrintUm">Ficha selecionada</button>
           <button class="btn-act dim" id="pfImportRhid">⇧ Importar cartão RHID</button>
           <input type="file" id="pfRhidFile" accept="application/pdf,.pdf" hidden>
           <button class="btn-act dim" id="pfImportUnimed">⇧ Importar Unimed</button>
           <input type="file" id="pfUnimedFile" accept=".csv,.xlsx,.xls,text/csv" hidden>
           <button class="btn-act dim" id="pfExcel" title="Baixa só a planilha, sem o PDF">⭳ Só o Excel</button>
-          <button class="btn-act save" id="pfRelatorio" title="Abre a pré-visualização do relatório; de lá, salva o PDF e o Excel juntos">📦 Pacote da contabilidade</button>
+          <button class="btn-act save" id="pfRelatorio" title="Abre a pré-visualização do relatório; de lá, salva o PDF e o Excel juntos">Pacote da contabilidade</button>
         </div>
       </div>
       <!-- etapas do mes: o que ja foi feito antes de mandar o pacote -->
@@ -4121,7 +4158,7 @@ if(window.RM_CELULAR) document.body.classList.add('rm-campo');
         </details>
       </div>
 
-      <div class="cards c5">
+      <div class="cards c5 rm-faixa rm-faixa-painel">
         <div class="card"><div class="k"><span class="dotk b"></span>PF na competência</div><div class="v" id="pfQtd">0</div><div class="s" id="pfPeriodo">—</div></div>
         <div class="card atv"><div class="k"><span class="dotk g"></span>Horas trabalhadas</div><div class="v" id="pfTrab">00:00</div><div class="s">funcionário selecionado</div></div>
         <div class="card afa"><div class="k"><span class="dotk w"></span>Horas extras</div><div class="v" id="pfExtra">00:00</div><div class="s">inclui trabalho no fim de semana</div></div>
@@ -4186,7 +4223,7 @@ if(window.RM_CELULAR) document.body.classList.add('rm-campo');
         <label class="ciclo-data"><span>Pago em</span><input type="date" id="salDataCiclo"></label>
         <button class="ciclo-nav" id="cicloNext" title="Próximo ciclo" aria-label="Próximo ciclo">›</button>
         <button class="btn-act dim" id="cicloHoje" title="Volta para o ciclo da vez">Hoje</button>
-        <button class="btn-act dim" id="btnVerFechamentos" title="Abre o arquivo desta competência">📁 Fechamentos</button>
+        <button class="btn-act dim" id="btnVerFechamentos" title="Abre o arquivo desta competência">Fechamentos</button>
       </div>
       <div class="pay-flow" id="salPayFlow">
         <span class="flow-step" data-flow="calculado">1. Valores lançados</span>
@@ -4202,7 +4239,7 @@ if(window.RM_CELULAR) document.body.classList.add('rm-campo');
           <button class="btn-act dim" id="cicloReabrir">Reabrir este ciclo</button>
         </div>
       </div>
-      <div class="cards ciclo-cards">
+      <div class="cards ciclo-cards rm-faixa rm-faixa-painel">
         <div class="card atv"><div class="k"><span class="dotk g"></span>Banco</div><div class="v" id="salCicloBanco">R$ 0,00</div><div class="s" id="salCicloBancoS">a depositar</div></div>
         <div class="card afa"><div class="k"><span class="dotk w"></span>Espécie · PF</div><div class="v" id="salCicloPF">R$ 0,00</div><div class="s" id="salCicloPFS">em espécie</div></div>
         <div class="card tot"><div class="k"><span class="dotk o"></span>Total do ciclo</div><div class="v" id="salCicloTotal">R$ 0,00</div><div class="s" id="salCicloTotalS">—</div></div>
@@ -4217,7 +4254,7 @@ if(window.RM_CELULAR) document.body.classList.add('rm-campo');
         <button class="btn-act dim" id="btnSalResto" data-so="pagamento" style="align-self:flex-end" title="Usa o adiantamento da planilha da contabilidade; sem planilha, o que foi pago no adiantamento do mês">Pagto = salário − adiant.</button>
         <button class="btn-act dim" id="btnSalLimpa" style="align-self:flex-end" title="Zera os valores deste ciclo (não mexe no salário do cadastro nem nos vales, extras e descontos) para lançar de novo">Limpar valores</button>
         <button class="btn-act dim" id="btnSalDet" data-so="pagamento" style="align-self:flex-end" title="Mostra na tabela a base líquida e os almoços; os dois continuam na ficha de qualquer jeito">Ocultar base e almoços</button>
-        <button class="btn-act dim" id="btnImportAlmocos" data-so="pagamento" style="align-self:flex-end" title="Puxa o valor 'A pagar' do mês (competência) direto do sistema de Almoços">🍽️ Importar Almoços</button>
+        <button class="btn-act dim" id="btnImportAlmocos" data-so="pagamento" style="align-self:flex-end" title="Puxa o valor 'A pagar' do mês (competência) direto do sistema de Almoços">Importar Almoços</button>
         <button class="btn-act dim" id="btnImportXlsx" style="align-self:flex-end">⭳ Importar Excel</button>
         <input type="file" id="xlsxFile" accept=".xlsx,.xls" style="display:none">
       </div>
@@ -4247,14 +4284,14 @@ if(window.RM_CELULAR) document.body.classList.add('rm-campo');
         <span class="tot">Total salários: <b id="salTotFixo">R$ 0,00</b></span>
         <label data-so="pagamento" style="display:flex;gap:6px;align-items:center;cursor:pointer;font-size:12.5px;font-weight:600;color:var(--gray)"><input type="checkbox" id="chkDetRec"> Detalhar valores no recibo</label>
         <span style="display:flex;gap:10px;flex-wrap:wrap">
-          <button class="btn-act dim" id="btnRelConfAdiant" data-so="adiantamento" title="PDF só do adiantamento, separado em banco e PF — para conferir antes de depositar/pagar">📋 Relatório adiantamento</button>
+          <button class="btn-act dim" id="btnRelConfAdiant" data-so="adiantamento" title="PDF só do adiantamento, separado em banco e PF — para conferir antes de depositar/pagar">Relatório adiantamento</button>
           <button class="btn-act save" id="btnGerarAdiant" data-so="adiantamento">Recibos adiantamento →</button>
           <button class="btn-act dim" id="btnConfLoteAd" data-so="adiantamento" title="Confirma como pagos todos os adiantamentos selecionados e com valor">✓ Confirmar lote adiant.</button>
-          <button class="btn-act dim" id="btnFecharAdiant" data-so="adiantamento" style="color:var(--gray)" title="Arquiva os valores de adiantamento da competência selecionada e limpa os campos pro próximo mês">🔒 Fechar Adiantamento</button>
-          <button class="btn-act dim" id="btnRelConfPagto" data-so="pagamento" title="PDF só do pagamento, separado em banco e PF — para conferir antes de depositar/pagar">📋 Relatório pagamento</button>
+          <button class="btn-act dim" id="btnFecharAdiant" data-so="adiantamento" style="color:var(--gray)" title="Arquiva os valores de adiantamento da competência selecionada e limpa os campos pro próximo mês">Fechar Adiantamento</button>
+          <button class="btn-act dim" id="btnRelConfPagto" data-so="pagamento" title="PDF só do pagamento, separado em banco e PF — para conferir antes de depositar/pagar">Relatório pagamento</button>
           <button class="btn-act save" id="btnGerarPagto" data-so="pagamento">Recibos pagamento →</button>
           <button class="btn-act dim" id="btnConfLotePg" data-so="pagamento" title="Confirma como pagos todos os pagamentos selecionados e com valor">✓ Confirmar lote pagto.</button>
-          <button class="btn-act dim" id="btnFecharPagto" data-so="pagamento" style="color:var(--gray)" title="Arquiva os valores de pagamento da competência selecionada e limpa os campos pro próximo mês">🔒 Fechar Pagamento</button></span>
+          <button class="btn-act dim" id="btnFecharPagto" data-so="pagamento" style="color:var(--gray)" title="Arquiva os valores de pagamento da competência selecionada e limpa os campos pro próximo mês">Fechar Pagamento</button></span>
       </div>
     </div>
 
@@ -4331,7 +4368,7 @@ if(window.RM_CELULAR) document.body.classList.add('rm-campo');
           <div class="f span3"><span class="lab">Valor de cada prêmio (R$)</span><input id="asPremio" class="mono" placeholder="170,00"></div>
         </div>
       </div>
-      <div class="cards">
+      <div class="cards rm-faixa rm-faixa-painel">
         <div class="card atv"><div class="k"><span class="dotk g"></span>Assíduos</div><div class="v" id="asAssiduos">0</div><div class="s" id="asAssiduosS">1 prêmio + 1 rancho</div></div>
         <div class="card afa"><div class="k"><span class="dotk w"></span>Faltaram</div><div class="v" id="asFaltaram">0</div><div class="s" id="asFaltaramS">concorrem ao sorteio</div></div>
         <div class="card"><div class="k"><span class="dotk b"></span>Total prêmios</div><div class="v" id="asTotPremio">R$ 0,00</div></div>
@@ -4342,7 +4379,7 @@ if(window.RM_CELULAR) document.body.classList.add('rm-campo');
       </div>
       <div class="sortbox">
         <div class="sortname" id="asSortNome">—</div>
-        <button class="btn-act save" id="btnSortear">🎲 Sortear rancho extra</button>
+        <button class="btn-act save" id="btnSortear">Sortear rancho extra</button>
       </div>
       <div class="filters">
         <div class="section-lab" style="margin:0;flex:1">Decida quem foi assíduo e quem faltou <span class="ln"></span></div>
@@ -4366,15 +4403,15 @@ if(window.RM_CELULAR) document.body.classList.add('rm-campo');
         <p class="note" style="margin:8px 0 0">Use <b>{nome}</b> para o primeiro nome (sai em destaque) e <b>{mes}</b> para o mês. Fica salvo e vale para os próximos meses. <button type="button" class="btn-mini" id="asEnvPadrao">Restaurar textos</button></p>
       </details>
       <div class="sheetfoot"><span>Cada mês guarda seus próprios dados — troque o mês no topo.</span>
-        <button class="btn-act dim" id="btnAsEnvelopes" title="A lista e um envelope A4 por ganhador, para dobrar e pôr o prêmio">🖨 Lista + envelopes</button>
-        <button class="btn-act save" id="btnAsGerarArquivo">📄 Gerar arquivo para o grupo</button>
+        <button class="btn-act dim" id="btnAsEnvelopes" title="A lista e um envelope A4 por ganhador, para dobrar e pôr o prêmio">Lista + envelopes</button>
+        <button class="btn-act save" id="btnAsGerarArquivo">Gerar arquivo para o grupo</button>
       </div>
     </div>
 
     <!-- TERCEIROS (CADASTRO) -->
     <!-- INDICAÇÕES -->
     <div class="view" id="v-indic">
-      <div class="cards">
+      <div class="cards rm-faixa rm-faixa-painel">
         <div class="card"><div class="k"><span class="dotk b"></span>Em andamento</div><div class="v" id="inAnd">0</div></div>
         <div class="card afa"><div class="k"><span class="dotk w"></span>Vencem em 15 dias</div><div class="v" id="inProx">0</div></div>
         <div class="card sem"><div class="k"><span class="dotk r"></span>A resolver</div><div class="v" id="inVenc">0</div></div>
@@ -4401,7 +4438,7 @@ if(window.RM_CELULAR) document.body.classList.add('rm-campo');
     </div>
 
     <div class="view" id="v-terc">
-      <div class="cards">
+      <div class="cards rm-faixa rm-faixa-painel">
         <div class="card"><div class="k"><span class="dotk b"></span>Terceiros</div><div class="v" id="tcTot">0</div></div>
         <div class="card atv"><div class="k"><span class="dotk g"></span>Com CPF</div><div class="v" id="tcCpf">0</div></div>
         <div class="card afa"><div class="k"><span class="dotk w"></span>Com CNPJ</div><div class="v" id="tcCnpj">0</div></div>
@@ -4678,7 +4715,7 @@ if(window.RM_CELULAR) document.body.classList.add('rm-campo');
             </select>
             <button class="btn-act dim" id="relMovLoteAplicar" style="padding:6px 12px;font-size:12px">Aplicar</button>
           </span>
-          <button class="btn-act save" id="btnRelMovPDF" style="padding:6px 12px;font-size:12px">📄 PDF da conferência</button>
+          <button class="btn-act save" id="btnRelMovPDF" style="padding:6px 12px;font-size:12px">PDF da conferência</button>
         </div>
         <!-- O aviso de duplicidade fica ENCOSTADO na tabela, e nao no alto da
              aba: quem esta conferindo linha por linha esta olhando para ca',
@@ -4696,7 +4733,7 @@ if(window.RM_CELULAR) document.body.classList.add('rm-campo');
 
       <!-- VISÃO GERAL -->
       <div class="relpane" id="relp-geral">
-        <div class="cards c4">
+        <div class="cards c4 rm-faixa rm-faixa-painel">
           <!-- O aviso de pendente fica DENTRO do card do total, e nao numa
                linha solta: quem estranhar o numero olha logo abaixo dele e
                acha a explicacao, sem procurar. -->
@@ -4709,7 +4746,7 @@ if(window.RM_CELULAR) document.body.classList.add('rm-campo');
 
         <div id="relBuscaWrap" style="display:none">
           <div class="section-lab" style="margin-top:18px">Extrato da pessoa <span class="ln"></span>
-            <button class="btn-act save" id="btnExtratoPDF" style="padding:6px 12px;font-size:12px">📄 Extrato</button></div>
+            <button class="btn-act save" id="btnExtratoPDF" style="padding:6px 12px;font-size:12px">Extrato</button></div>
           <div id="relBuscaResult"></div>
         </div>
 
@@ -4735,7 +4772,7 @@ if(window.RM_CELULAR) document.body.classList.add('rm-campo');
           <div class="audit-card warn"><div class="ak">Pagamentos pendentes</div><div class="av" id="relTPendente">R$ 0,00</div><div class="as">recibos ainda não confirmados</div></div>
           <div class="audit-card bad"><div class="ak">Saldo contratado</div><div class="av" id="relTSaldo">R$ 0,00</div><div class="as">contratado menos pago</div></div>
         </div>
-        <div class="section-lab">Pagamentos por terceiro e obra <span class="ln"></span><button class="btn-act save" id="btnRelTercPDF" style="padding:6px 12px;font-size:12px">📄 Relatório de terceiros</button></div>
+        <div class="section-lab">Pagamentos por terceiro e obra <span class="ln"></span><button class="btn-act save" id="btnRelTercPDF" style="padding:6px 12px;font-size:12px">Relatório de terceiros</button></div>
         <div class="tbl-wrap">
           <table class="list">
             <thead><tr><th>Data</th><th>Terceiro / Empresa</th><th>Obra</th><th>Serviço / NF</th><th>Tipo</th><th class="r">Este pagamento</th><th class="r">Pago acumulado</th><th class="r">Saldo</th><th>Situação</th><th class="r">Ações</th></tr></thead>
@@ -4747,7 +4784,7 @@ if(window.RM_CELULAR) document.body.classList.add('rm-campo');
       <!-- CUSTOS & ENCARGOS -->
       <div class="relpane" id="relp-custos">
         <div class="rel-note">Composição dos salários; referência, não conferência do líquido.</div>
-        <div class="cards c4">
+        <div class="cards c4 rm-faixa rm-faixa-painel">
           <div class="card"><div class="k"><span class="dotk b"></span>Salário base</div><div class="v" id="relCBase">R$ 0,00</div></div>
           <div class="card atv"><div class="k"><span class="dotk g"></span>Benefícios</div><div class="v" id="relCBenef">R$ 0,00</div><div class="s">banheiro + almoço + acréscimos</div></div>
           <div class="card afa"><div class="k"><span class="dotk w"></span>Horas extras (inf.)</div><div class="v" id="relCHe">R$ 0,00</div></div>
@@ -4790,7 +4827,7 @@ if(window.RM_CELULAR) document.body.classList.add('rm-campo');
         <div class="section-lab">Exportar dados do ano <span class="ln"></span></div>
         <div class="form-grid">
           <div class="f span6"><button class="btn-act dim" id="btnRelCSV" style="width:100%">⬇ Exportar ano (CSV)</button></div>
-          <div class="f span6"><button class="btn-act save" id="btnRelAnualPDF" style="width:100%">📄 PDF anual consolidado</button></div>
+          <div class="f span6"><button class="btn-act save" id="btnRelAnualPDF" style="width:100%">PDF anual consolidado</button></div>
         </div>
         <div class="sheetfoot"><span>CSV: um item por linha. PDF: resumo do ano.</span></div>
       </div>
@@ -4807,12 +4844,12 @@ if(window.RM_CELULAR) document.body.classList.add('rm-campo');
           <div class="f span3"><span class="lab">Situação</span><select id="bhFiltro"><option value="todos">Todas</option><option value="pendente">Pendente</option><option value="recuperando">Recuperando</option><option value="quitado">Quitado</option><option value="emdia">Em dia</option></select></div>
         </div>
       </div>
-      <div class="cards c3">
+      <div class="cards c3 rm-faixa rm-faixa-painel">
         <div class="card sem"><div class="k"><span class="dotk r"></span>Horas faltadas</div><div class="v" id="bhTotFaltas">0h</div></div>
         <div class="card atv"><div class="k"><span class="dotk g"></span>Horas recuperadas</div><div class="v" id="bhTotRecup">0h</div></div>
         <div class="card"><div class="k"><span class="dotk b"></span>Saldo pendente</div><div class="v" id="bhTotSaldo">0h</div></div>
       </div>
-      <div class="cards c4">
+      <div class="cards c4 rm-faixa rm-faixa-painel">
         <div class="card"><div class="k"><span class="dotk b"></span>Em dia</div><div class="v" id="bhQtdDia">0</div><div class="s">sem faltas</div></div>
         <div class="card atv"><div class="k"><span class="dotk g"></span>Quitados</div><div class="v" id="bhQtdQuit">0</div><div class="s">recuperaram tudo</div></div>
         <div class="card afa"><div class="k"><span class="dotk w"></span>Recuperando</div><div class="v" id="bhQtdRecup">0</div><div class="s">em andamento</div></div>
@@ -4843,7 +4880,7 @@ if(window.RM_CELULAR) document.body.classList.add('rm-campo');
          soma da assiduidade, o horario e as anotacoes do candidato. Os valores
          ficam em Empresa > Beneficios -- aqui so' se le. -->
     <div class="view" id="v-entrev">
-      <div class="cards" id="entCards"></div>
+      <div class="cards rm-faixa rm-faixa-painel" id="entCards"></div>
       <div class="addzone ent-duas">
         <div>
           <div class="section-lab">Benefícios mensais <span class="ln"></span></div>
@@ -4863,7 +4900,7 @@ if(window.RM_CELULAR) document.body.classList.add('rm-campo');
             <div class="f span12"><span class="lab">Anotações da entrevista</span><textarea id="enNotas" rows="5" placeholder="experiência, onde mora, disponibilidade, pretensão..."></textarea></div>
           </div>
           <div class="row" style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap;align-items:center">
-            <button class="btn-act save" id="enImprimir">🖨 Imprimir folha de benefícios</button>
+            <button class="btn-act save" id="enImprimir">Imprimir folha de benefícios</button>
             <button class="btn-act dim" id="enNova">Nova entrevista</button>
             <span id="enDica" class="ent-dica">A entrevista entra na lista abaixo assim que tiver nome, e dali em diante grava sozinha.</span>
           </div>
@@ -4882,8 +4919,8 @@ if(window.RM_CELULAR) document.body.classList.add('rm-campo');
           </div>
           <div class="f span6" style="align-self:flex-end">
             <div style="display:flex;gap:8px;flex-wrap:wrap">
-              <button class="btn-act save" id="admAbrir" style="flex:1">📄 Abrir ficha para preencher</button>
-              <button class="btn-act" id="admLancarBt" title="Cria ou atualiza o funcionário na aba Funcionários com o que está na ficha">👤 Lançar no cadastro</button>
+              <button class="btn-act save" id="admAbrir" style="flex:1">Abrir ficha para preencher</button>
+              <button class="btn-act" id="admLancarBt" title="Cria ou atualiza o funcionário na aba Funcionários com o que está na ficha">Lançar no cadastro</button>
               <button class="btn-act dim" id="admNovaFicha">Nova ficha</button>
             </div>
           </div>
@@ -5083,7 +5120,7 @@ if(window.RM_CELULAR) document.body.classList.add('rm-campo');
   <div class="mfoot"><span class="note" id="prevInfo" style="flex:1;text-align:left"></span>
     <button class="btn-act dim" data-close>Fechar</button>
     <button class="btn-act" id="prevXlsx">⬇ Excel</button>
-    <button class="btn-act save" id="prevGerar">📄 Gerar PDF</button></div>
+    <button class="btn-act save" id="prevGerar">Gerar PDF</button></div>
 </div></div>
 
 <!-- MODAL EDITAR FUNÇÃO DE UM GRUPO (relatório "Por função") -->
@@ -5367,7 +5404,7 @@ if(window.RM_CELULAR) document.body.classList.add('rm-campo');
       </div>
       <div class="section-lab rs-sec">Faltas <span class="ln"></span></div>
       <div class="rs-flt" id="rsFaltasPonto"></div>
-      <div class="rs-flt-ler"><button type="button" class="btn-act dim" id="rsRhidBtn">📄 Ler cartão do RHID (PDF)</button>
+      <div class="rs-flt-ler"><button type="button" class="btn-act dim" id="rsRhidBtn">Ler cartão do RHID (PDF)</button>
         <span>O cartão individual do mês da saída, gerado no RHID até o dia da saída. Vale só para esta simulação.</span>
         <input type="file" id="rsRhidFile" accept="application/pdf,.pdf" hidden></div>
       <div class="form-grid">
@@ -5417,7 +5454,7 @@ if(window.RM_CELULAR) document.body.classList.add('rm-campo');
     <div class="form-grid" style="margin-bottom:12px">
       <div class="f span4"><span class="lab">Mês dos almoços</span><select id="almImpMes"></select></div>
       <div class="f span3"><span class="lab">Ano</span><input id="almImpAno" class="mono" type="number" min="2020" max="2099"></div>
-      <div class="f span5" style="align-self:flex-end"><button class="btn-act dim" id="almImpBuscar" style="width:100%">🔎 Buscar almoços</button></div>
+      <div class="f span5" style="align-self:flex-end"><button class="btn-act dim" id="almImpBuscar" style="width:100%">Buscar almoços</button></div>
     </div>
     <p style="color:var(--muted);font-size:12.5px;margin:0 0 12px">Traz o <b>A pagar</b>, pareado por nome; confira antes de aplicar.</p>
     <div id="almImportList"></div>
@@ -5479,29 +5516,29 @@ if(window.RM_CELULAR) document.body.classList.add('rm-campo');
     <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
       <div class="section-lab" style="margin:0;flex:1">Adiantamento <span class="ln"></span></div>
       <button class="btn-act dim" id="fechAdiantEdit" style="padding:6px 11px;font-size:11.5px">✏️ Editar</button>
-      <button class="btn-act save" id="fechAdiantSave" style="padding:6px 11px;font-size:11.5px;display:none">💾 Salvar correções</button>
+      <button class="btn-act save" id="fechAdiantSave" style="padding:6px 11px;font-size:11.5px;display:none">Salvar correções</button>
       <button class="btn-act dim" id="fechAdiantCancel" style="padding:6px 11px;font-size:11.5px;display:none">✕ Cancelar</button>
-      <button class="btn-act dim" id="fechAdiantPdf" style="padding:6px 11px;font-size:11.5px">📄 PDF</button>
-      <button class="btn-act dim" id="fechAdiantXlsx" style="padding:6px 11px;font-size:11.5px">📊 Excel</button>
-      <button class="btn-act save" id="fechAdiantFull" style="padding:6px 11px;font-size:11.5px">🔎 Relatório completo</button>
+      <button class="btn-act dim" id="fechAdiantPdf" style="padding:6px 11px;font-size:11.5px">PDF</button>
+      <button class="btn-act dim" id="fechAdiantXlsx" style="padding:6px 11px;font-size:11.5px">Excel</button>
+      <button class="btn-act save" id="fechAdiantFull" style="padding:6px 11px;font-size:11.5px">Relatório completo</button>
     </div>
     <div id="fechAdiantInfo" style="font-size:12.5px;color:var(--muted);margin:8px 0 14px"></div>
     <div class="tbl-wrap" style="max-height:26vh;overflow:auto;margin-bottom:18px"><table class="list" style="font-size:12px"><thead><tr><th>Funcionário</th><th class="c">Admissão</th><th class="c">Método</th><th class="r">Salário</th><th class="r">Adiantamento</th></tr></thead><tbody id="fechAdiantBody"></tbody></table></div>
     <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
       <div class="section-lab" style="margin:0;flex:1">Pagamento <span class="ln"></span></div>
       <button class="btn-act dim" id="fechPagtoEdit" style="padding:6px 11px;font-size:11.5px">✏️ Editar</button>
-      <button class="btn-act save" id="fechPagtoSave" style="padding:6px 11px;font-size:11.5px;display:none">💾 Salvar correções</button>
+      <button class="btn-act save" id="fechPagtoSave" style="padding:6px 11px;font-size:11.5px;display:none">Salvar correções</button>
       <button class="btn-act dim" id="fechPagtoCancel" style="padding:6px 11px;font-size:11.5px;display:none">✕ Cancelar</button>
-      <button class="btn-act dim" id="fechPagtoPdf" style="padding:6px 11px;font-size:11.5px">📄 PDF</button>
-      <button class="btn-act dim" id="fechPagtoXlsx" style="padding:6px 11px;font-size:11.5px">📊 Excel</button>
-      <button class="btn-act save" id="fechPagtoFull" style="padding:6px 11px;font-size:11.5px">🔎 Relatório completo</button>
+      <button class="btn-act dim" id="fechPagtoPdf" style="padding:6px 11px;font-size:11.5px">PDF</button>
+      <button class="btn-act dim" id="fechPagtoXlsx" style="padding:6px 11px;font-size:11.5px">Excel</button>
+      <button class="btn-act save" id="fechPagtoFull" style="padding:6px 11px;font-size:11.5px">Relatório completo</button>
     </div>
     <div id="fechPagtoInfo" style="font-size:12.5px;color:var(--muted);margin:8px 0 14px"></div>
     <div class="tbl-wrap" style="max-height:26vh;overflow:auto"><table class="list" style="font-size:12px"><thead><tr><th>Funcionário</th><th class="c">Admissão</th><th class="c">Método</th><th class="r">Base líq.</th><th class="r">Almoços</th><th class="r">Pagamento</th></tr></thead><tbody id="fechPagtoBody"></tbody></table></div>
     <p style="font-size:11px;color:var(--muted);margin-top:6px">Ao editar, os campos são corrigidos direto (sem recálculo automático entre eles) — confira o total depois de mudar Base ou Almoços.</p>
     <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:20px">
       <div class="section-lab" style="margin:0;flex:1">Planilha da contabilidade <span class="ln"></span></div>
-      <button class="btn-act dim" id="fechPlanVer" style="padding:6px 11px;font-size:11.5px">📋 Ver planilha recebida</button>
+      <button class="btn-act dim" id="fechPlanVer" style="padding:6px 11px;font-size:11.5px">Ver planilha recebida</button>
     </div>
     <div id="fechPlanInfo" style="font-size:12.5px;color:var(--muted);margin:8px 0 0"></div>
   </div>
@@ -5551,9 +5588,9 @@ if(window.RM_CELULAR) document.body.classList.add('rm-campo');
 <!-- PRINT -->
 <div class="print-ov" id="printOv">
   <div class="print-bar"><span class="ttl">Pré-visualização</span><span class="info" id="printInfo"></span><div class="spacer"></div>
-    <button class="btn ghost so-ficha" id="admLancarBar" hidden title="Cria ou atualiza o funcionário na aba Funcionários com o que está nesta ficha">👤 Lançar no cadastro</button>
+    <button class="btn ghost so-ficha" id="admLancarBar" hidden title="Cria ou atualiza o funcionário na aba Funcionários com o que está nesta ficha">Lançar no cadastro</button>
     <button class="btn ghost" id="printClose">Fechar</button>
-    <button class="btn ghost" id="pfPacoteSalvar" hidden title="Baixa o Excel e salva o PDF deste relatório, com o mesmo nome">💾 Salvar pacote (PDF + Excel)</button><button class="btn primary" id="printNow" title="No programa, abre o PDF nítido (vetorial) para imprimir ou salvar">🖨️ Imprimir / PDF</button></div>
+    <button class="btn ghost" id="pfPacoteSalvar" hidden title="Baixa o Excel e salva o PDF deste relatório, com o mesmo nome">Salvar pacote (PDF + Excel)</button><button class="btn primary" id="printNow" title="No programa, abre o PDF nítido (vetorial) para imprimir ou salvar">Imprimir / PDF</button></div>
   <div class="print-scroll" id="printScroll"></div>
 </div>
 
@@ -6196,6 +6233,12 @@ function doLogin(){
    real — quem edita ainda tem permissão de escrita no banco (senão nem o
    resto do trabalho dela funcionaria). */
 const ADMIN_EMAIL='evertonluis4523@gmail.com';
+/* ícones de traço dos botões de linha (no lugar dos emojis -- linguagem
+   de prancha: um conjunto só, monocromático, na cor do texto) */
+function ri(n){var I={'ver': '<svg class="ri-ico" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>', 'hist': '<svg class="ri-ico" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19V5M4 19h16M8 15l3-4 3 2 5-6"/></svg>', 'editar': '<svg class="ri-ico" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16v4zM14 6l4 4"/></svg>', 'imprimir': '<svg class="ri-ico" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 9V3h10v6M7 17H4v-7h16v7h-3M7 14h10v7H7z"/></svg>', 'pdf': '<svg class="ri-ico" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H6v18h12V7l-4-4zM14 3v4h4M9 13h6M9 17h6"/></svg>', 'pessoa': '<svg class="ri-ico" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg>', 'pino': '<svg class="ri-ico" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 17v5M8 3h8l-1 6 3 3v2H6v-2l3-3z"/></svg>', 'preencher': '<svg class="ri-ico" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg>', 'busca': '<svg class="ri-ico" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>', 'lista': '<svg class="ri-ico" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01"/></svg>', 'bolo': '<svg class="ri-ico" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 21h16v-8H4zM4 16c2 1.5 4 1.5 6 0s4-1.5 6 0 4 1.5 4 0M12 13V9M12 6V5"/></svg>', 'calendario': '<svg class="ri-ico" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16v16H4zM4 10h16M8 3v4M16 3v4"/></svg>'};return I[n]||'';}
+/* número zero na faixa fica sem cor: a cor diz problema, e 0 não é */
+function fxZera(){document.querySelectorAll('.rm-faixa .v').forEach(v=>v.classList.toggle('fx-zero',/^(0|R\$\s*0,00|—)$/.test(v.textContent.trim())));}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',fxZera);else setTimeout(fxZera,0);
 function isAdminUser(){
   if(!useFirebase) return true; // modo local (sem contas): não há o que restringir
   return !!(fb && fb.auth && fb.auth.currentUser && fb.auth.currentUser.email===ADMIN_EMAIL);
@@ -6915,7 +6958,7 @@ function renderContratos(){
   const vencendo=avisar.filter(x=>x.c.faltam<=0).length;
   const ctSub=vencendo?'Há contrato vencendo hoje ou já vencido — decida prorrogar ou encerrar.'
         :'Avisamos com '+CONTRATO_EXP.aviso1+' dias no 1º contrato e '+CONTRATO_EXP.aviso2+' no 2º.';
-  painel.innerHTML='<div class="ct-cab" title="'+ctSub+'"><span class="ct-ico">'+(vencendo?'⚠':'📌')+'</span>'
+  painel.innerHTML='<div class="ct-cab" title="'+ctSub+'"><span class="ct-ico">'+(vencendo?'⚠':ri('pino'))+'</span>'
     +'<b>'+(avisar.length===1?'Um contrato de experiência a vencer':avisar.length+' contratos de experiência a vencer')+'</b>'
     +'<span class="ct-sub'+(vencendo?' urg':'')+'">'+ctSub+'</span></div>'
     +'<div class="ct-lista">'+avisar.map(function(x){
@@ -7273,6 +7316,7 @@ function renderEmps(){
   $('#cAtv').textContent=visiveis.filter(e=>e.status==='ativo').length;
   $('#cAfa').textContent=visiveis.filter(e=>e.status==='afast').length;
   $('#cSem').textContent=visiveis.filter(e=>!e.doc).length;
+  fxZera();
   const q=buscaTxt($('#fSearch').value),f=$('#fStatus').value,b=$('#empBody');b.innerHTML='';
   const admin=isAdminUser();
   /* AFASTADO EM GRUPO PRÓPRIO, embaixo. Misturado na lista, quem está
@@ -7292,7 +7336,7 @@ function renderEmps(){
   const empLinha=e=>{
     const doc=e.doc?'<span class="mono">'+(docTipoDe(e)==='CPF'?'':esc(docTipoDe(e))+' ')+esc(e.doc)+'</span>':'<span class="sub miss">sem CPF</span>';
     const tr=el('tr');
-    const pin=e.obsCadastro?' <span title="'+esc(e.obsCadastro)+'" style="cursor:help">📌</span>':'';
+    const pin=e.obsCadastro?' <span title="'+esc(e.obsCadastro)+'" style="cursor:help">'+ri('pino')+'</span>':'';
     /* CADA DADO NA SUA COLUNA. Tudo embaixo do nome (função, adm., carteira,
        prazo, aniversário, banco, telefone) quebrava em duas ou três linhas
        diferentes em cada pessoa, e o olho não achava nada. Em coluna, a data
@@ -7325,7 +7369,7 @@ function renderEmps(){
       '<td class="emp-doc" data-label="CPF">'+doc+'</td>'+
       '<td class="r mono" data-label="Salário fixo">'+(e.salario>0?'R$ '+fmtBRL(e.salario):'<span class="sub">—</span>')+'</td>'+
       '<td data-label="Situação"><span class="badge '+badgeStatus(e.status,e.afastMotivo)+'</span></td>'+
-      '<td class="r" data-label="Ações"><div class="rowact"><button class="ia" data-ever="'+e.id+'" title="Ver o cadastro completo">👁</button><button class="ia" data-eh="'+e.id+'" title="Histórico de salário">📊</button><button class="ia" data-ed="'+e.id+'" title="Editar">✎</button>'+(admin?'<button class="ia del" data-de="'+e.id+'" title="Mover para a lixeira">✕</button>':'')+'</div></td>';
+      '<td class="r" data-label="Ações"><div class="rowact"><button class="ia" data-ever="'+e.id+'" title="Ver o cadastro completo">'+ri('ver')+'</button><button class="ia" data-eh="'+e.id+'" title="Histórico de salário">'+ri('hist')+'</button><button class="ia" data-ed="'+e.id+'" title="Editar">✎</button>'+(admin?'<button class="ia del" data-de="'+e.id+'" title="Mover para a lixeira">✕</button>':'')+'</div></td>';
     return tr;
   };
   const empLiga=c=>{
@@ -7369,7 +7413,7 @@ function renderEmps(){
           '<td class="r mono" data-label="Di\u00e1ria a receber"><b>'+(e.salario>0&&dias>0?'R$ '+fmtBRL(diariaTeste(e,dias)):'\u2014')+'</b></td>'+
           '<td class="r" data-label="A\u00e7\u00f5es"><div class="rowact">'+
             '<button class="btn-mini" data-efetivar="'+e.id+'" title="Passa a contar em todas as abas de c\u00e1lculo, a partir da data de in\u00edcio">Efetivar</button>'+
-            '<button class="ia" data-ever="'+e.id+'" title="Ver o cadastro completo">👁</button><button class="ia" data-ed="'+e.id+'" title="Editar">\u270e</button></div></td></tr>';});
+            '<button class="ia" data-ever="'+e.id+'" title="Ver o cadastro completo">'+ri('ver')+'</button><button class="ia" data-ed="'+e.id+'" title="Editar">\u270e</button></div></td></tr>';});
       ht+='</tbody></table></div>';tb.innerHTML=ht;
       tb.querySelectorAll('[data-tdias]').forEach(x=>x.onchange=()=>{
         const emp=state.employees.find(y=>y.id===x.dataset.tdias);
@@ -7389,7 +7433,7 @@ function renderEmps(){
     let ht='<div class="section-lab sec-tog" data-togoff="1" role="button" tabindex="0" aria-expanded="'+aberto+'" style="padding:14px 30px 0"><span><span class="cav">'+(aberto?'▾':'▸')+'</span> Funcionários desligados / demissão ('+ocultosL.length+')</span><span class="ln"></span><span class="tog-hint">'+(aberto?'ocultar':'ver')+'</span></div>';
     if(aberto){ht+='<div class="tbl-wrap"><table class="list emp-list cartao-mob"><tbody>';
     ocultosL.forEach((e,idx)=>{const doc=e.doc?'<span class="mono">'+esc(docTipoDe(e))+' '+esc(e.doc)+'</span>':'<span class="sub miss">sem CPF</span>';
-      ht+='<tr class="row-off"><td class="forn" data-label="Funcionário">'+empCab(e)+'</td><td data-label="CPF / CNPJ">'+doc+'</td><td class="r mono" data-label="Salário fixo">'+(e.salario>0?'R$ '+fmtBRL(e.salario):'\u2014')+'</td><td data-label="Situação"><span class="badge '+badgeStatus(e.status,e.afastMotivo)+'</span></td><td data-label="Desligamento">'+(e.dtDesligamento?fmtDate(e.dtDesligamento):'\u2014')+'</td><td class="r" data-label="Ações"><div class="rowact"><button class="ia" data-ever="'+e.id+'" title="Ver o cadastro completo">👁</button><button class="ia" data-reactv="'+e.id+'" title="Reativar">\u21a9</button><button class="ia" data-ed="'+e.id+'" title="Editar">\u270e</button>'+(admin?'<button class="ia del" data-delforever="'+e.id+'" title="Excluir definitivamente">\u2715</button>':'')+'</div></td></tr>';});
+      ht+='<tr class="row-off"><td class="forn" data-label="Funcionário">'+empCab(e)+'</td><td data-label="CPF / CNPJ">'+doc+'</td><td class="r mono" data-label="Salário fixo">'+(e.salario>0?'R$ '+fmtBRL(e.salario):'\u2014')+'</td><td data-label="Situação"><span class="badge '+badgeStatus(e.status,e.afastMotivo)+'</span></td><td data-label="Desligamento">'+(e.dtDesligamento?fmtDate(e.dtDesligamento):'\u2014')+'</td><td class="r" data-label="Ações"><div class="rowact"><button class="ia" data-ever="'+e.id+'" title="Ver o cadastro completo">'+ri('ver')+'</button><button class="ia" data-reactv="'+e.id+'" title="Reativar">\u21a9</button><button class="ia" data-ed="'+e.id+'" title="Editar">\u270e</button>'+(admin?'<button class="ia del" data-delforever="'+e.id+'" title="Excluir definitivamente">\u2715</button>':'')+'</div></td></tr>';});
     ht+='</tbody></table></div>';}
     ob.innerHTML=ht;
     const tg=ob.querySelector('[data-togoff]');
@@ -7406,7 +7450,7 @@ function renderEmps(){
     if(!lixeiraL.length){lx.innerHTML='';lx.style.display='none';}
     else{lx.style.display='block';let ht='<div class="section-lab" style="padding:14px 30px 0"><span style="color:var(--muted)">Lixeira — '+lixeiraL.length+' funcionário(s) excluído(s)</span><span class="ln"></span></div><div class="tbl-wrap"><table class="list emp-list cartao-mob"><tbody>';
     lixeiraL.forEach((e,idx)=>{const doc=e.doc?'<span class="mono">'+esc(docTipoDe(e))+' '+esc(e.doc)+'</span>':'<span class="sub miss">sem CPF</span>';
-      ht+='<tr class="row-off"><td class="forn" data-label="Funcionário">'+empCab(e,{baixo:e.excluidoEm?'<div class="sub">excluído em '+fmtDate(e.excluidoEm.slice(0,10))+'</div>':''})+'</td><td data-label="CPF / CNPJ">'+doc+'</td><td class="r mono" data-label="Salário fixo">'+(e.salario>0?'R$ '+fmtBRL(e.salario):'—')+'</td><td data-label="Situação"><span class="badge '+badgeStatus(e.status,e.afastMotivo)+'</span></td><td class="r" data-label="Ações"><div class="rowact"><button class="ia" data-ever="'+e.id+'" title="Ver o cadastro completo">👁</button><button class="ia" data-restaurar="'+e.id+'" title="Restaurar">↩</button>'+(admin?'<button class="ia del" data-delforever="'+e.id+'" title="Excluir definitivamente">✕</button>':'')+'</div></td></tr>';});
+      ht+='<tr class="row-off"><td class="forn" data-label="Funcionário">'+empCab(e,{baixo:e.excluidoEm?'<div class="sub">excluído em '+fmtDate(e.excluidoEm.slice(0,10))+'</div>':''})+'</td><td data-label="CPF / CNPJ">'+doc+'</td><td class="r mono" data-label="Salário fixo">'+(e.salario>0?'R$ '+fmtBRL(e.salario):'—')+'</td><td data-label="Situação"><span class="badge '+badgeStatus(e.status,e.afastMotivo)+'</span></td><td class="r" data-label="Ações"><div class="rowact"><button class="ia" data-ever="'+e.id+'" title="Ver o cadastro completo">'+ri('ver')+'</button><button class="ia" data-restaurar="'+e.id+'" title="Restaurar">↩</button>'+(admin?'<button class="ia del" data-delforever="'+e.id+'" title="Excluir definitivamente">✕</button>':'')+'</div></td></tr>';});
     ht+='</tbody></table></div>';lx.innerHTML=ht;
     lx.querySelectorAll('[data-restaurar]').forEach(x=>x.onclick=()=>restaurarEmp(x.dataset.restaurar));
     lx.querySelectorAll('[data-delforever]').forEach(x=>x.onclick=()=>delEmpForever(x.dataset.delforever));
@@ -7625,7 +7669,7 @@ function verFuncionario(id){
   if(hs.length) h += '<div class="ver-sec"><div class="ver-tit">Últimas mudanças de salário</div><ul class="ver-lista">'
     + hs.map(x=>'<li>'+esc(fmtDate(x.data))+': '+(x.anterior>0?'R$ '+fmtBRL(x.anterior)+' → ':'')+'R$ '+fmtBRL(x.novo)+'</li>').join('')+'</ul></div>';
   h += verSecao('Observação do cadastro', [['Observação', e.obsCadastro]]);
-  if(ficha) h += '<div class="ver-sec"><button class="btn-act dim" type="button" id="verFichaDele">📄 Ver a ficha de admissão</button></div>';
+  if(ficha) h += '<div class="ver-sec"><button class="btn-act dim" type="button" id="verFichaDele">Ver a ficha de admissão</button></div>';
   verAbre(titlePt(e.nome), 'Funcionário · cadastro completo', h, () => openEmp(e.id));
   const bf = $('#verFichaDele'); if(bf) bf.onclick = () => verFichaAdm(ficha.id);
 }
@@ -8208,7 +8252,7 @@ function entListaRender(){
       +'<td class="mono" style="white-space:nowrap" data-label="Telefone">'+(e.fone?esc(e.fone):'<span class="sub">—</span>')+'</td>'
       +'<td data-label="Anotações"><span class="sub">'+esc(n.length>90?n.slice(0,88)+'…':n||'—')+'</span></td>'
       +'<td class="r" data-label="Ações"><div class="rowact">'
-      +'<button class="ia" data-enver="'+e.id+'" title="Ver a entrevista">👁</button>'
+      +'<button class="ia" data-enver="'+e.id+'" title="Ver a entrevista">'+ri('ver')+'</button>'
       +'<button class="ia" data-enabrir="'+e.id+'" title="Abrir para completar">✎</button>'
       +'<button class="ia del" data-endel="'+e.id+'" title="Excluir a entrevista">✕</button></div></td></tr>';
   });
@@ -8765,9 +8809,9 @@ function admListaRender(){
           : '<span class="sub">só na ficha</span>')+'</td>'
       + '<td data-label="Alterada"><span class="sub">'+esc(admQuando(f))+'</span></td>'
       + '<td class="r" data-label="Ações"><div class="rowact">'
-      + '<button class="ia" data-fver="'+f.id+'" title="Ver a ficha">👁</button>'
+      + '<button class="ia" data-fver="'+f.id+'" title="Ver a ficha">'+ri('ver')+'</button>'
       + '<button class="ia" data-fabrir="'+f.id+'" title="Abrir para corrigir">✎</button>'
-      + '<button class="ia" data-flanc="'+f.id+'" title="'+(emp?'Atualizar o cadastro com os dados desta ficha':'Criar no cadastro de funcionários')+'">'+(emp?'⟳':'👤')+'</button>'
+      + '<button class="ia" data-flanc="'+f.id+'" title="'+(emp?'Atualizar o cadastro com os dados desta ficha':'Criar no cadastro de funcionários')+'">'+(emp?'⟳':ri('pessoa'))+'</button>'
       + '<button class="ia del" data-fdel="'+f.id+'" title="Excluir a ficha">✕</button>'
       + '</div></td></tr>';
   });
@@ -9110,6 +9154,7 @@ function renderTerc(){
   $('#tcCpf').textContent=state.terceiros.filter(t=>t.docTipo==='CPF'&&t.doc).length;
   $('#tcCnpj').textContent=state.terceiros.filter(t=>t.docTipo==='CNPJ'&&t.doc).length;
   $('#tcSem').textContent=state.terceiros.filter(t=>!t.doc).length;
+  fxZera();
   const q=buscaTxt($('#tfSearch').value),b=$('#tercBody');b.innerHTML='';
   const list=state.terceiros.filter(t=>!q||tercChave(t).includes(q.normalize('NFD').replace(/[̀-ͯ]/g,'')));
   if(!list.length){b.innerHTML='<tr><td colspan="5"><div class="empty"><b>Nenhum terceiro</b>Cadastre prestadores de serviço para emitir recibos.</div></td></tr>';return;}
@@ -9121,7 +9166,7 @@ function renderTerc(){
     const tr=el('tr');
     tr.innerHTML='<td class="idx">'+i+'</td><td class="forn">'+esc(titlePt(t.nome))+(t.pix?'<div class="sub">PIX: '+esc(t.pix)+'</div>':'')+'</td><td data-label="CPF / CNPJ">'+doc+'</td>'+
       '<td data-label="Tipo de serviço">'+(t.servico?esc(t.servico):'<span class="sub">—</span>')+cts+'</td>'+
-      '<td class="r" data-label="Ações"><div class="rowact"><button class="ia" data-tver="'+t.id+'" title="Ver o cadastro completo">👁</button><button class="ia" data-thist="'+t.id+'" title="Histórico de pagamentos">📜</button><button class="ia" data-ted="'+t.id+'" title="Editar">✎</button><button class="ia del" data-tde="'+t.id+'" title="Excluir">✕</button></div></td>';
+      '<td class="r" data-label="Ações"><div class="rowact"><button class="ia" data-tver="'+t.id+'" title="Ver o cadastro completo">'+ri('ver')+'</button><button class="ia" data-thist="'+t.id+'" title="Histórico de pagamentos">'+ri('lista')+'</button><button class="ia" data-ted="'+t.id+'" title="Editar">✎</button><button class="ia del" data-tde="'+t.id+'" title="Excluir">✕</button></div></td>';
     b.appendChild(tr);
   });
   b.querySelectorAll('[data-ted]').forEach(x=>x.onclick=()=>openTerc(x.dataset.ted));
@@ -9730,7 +9775,7 @@ function renderTercPend(){
     '<td data-label="Obra / NF">'+esc(m.obra||'—')+(m.nfReferencia?'<div class="sub">'+esc(m.nfReferencia)+'</div>':'')+'</td>'+
     '<td class="r val" data-label="Valor">R$ '+fmtBRL(m.valorPrevisto)+'</td>'+
     '<td data-label="Situação"><button class="btn-mini" data-payedit="'+m.id+'" title="Conferir: data, valor e forma efetivos">'+statusMovHTML(m.status)+'</button></td>'+
-    '<td class="r" data-label="Ações"><div class="rowact"><button class="ia" data-tok="'+m.id+'" title="Confirmar como pago (valor e data do recibo)">✓</button><button class="ia" data-recedit="'+m.id+'" title="Editar o recibo">📝</button><button class="ia" data-payver="'+m.id+'" title="2ª via do recibo">🖨</button></div></td></tr>').join('');
+    '<td class="r" data-label="Ações"><div class="rowact"><button class="ia" data-tok="'+m.id+'" title="Confirmar como pago (valor e data do recibo)">✓</button><button class="ia" data-recedit="'+m.id+'" title="Editar o recibo">'+ri('editar')+'</button><button class="ia" data-payver="'+m.id+'" title="2ª via do recibo">'+ri('imprimir')+'</button></div></td></tr>').join('');
   b.querySelectorAll('[data-payedit]').forEach(x=>x.onclick=()=>abrirPayModal(x.dataset.payedit));
   b.querySelectorAll('[data-payver]').forEach(x=>x.onclick=()=>verReciboDoMov(x.dataset.payver));
   b.querySelectorAll('[data-thist]').forEach(x=>x.onclick=()=>abrirHistTerc(x.dataset.thist));
@@ -9766,7 +9811,7 @@ function abrirHistTerc(tid){
       '<td>'+esc(m.obra||'—')+(m.nfReferencia?'<div class="sub">'+esc(m.nfReferencia)+'</div>':'')+'</td><td>'+esc(m.servico||'—')+'</td>'+
       '<td class="sub">'+esc(TIPO_PAG_TERC[m.tipoPagamento]||'Pagamento')+'</td>'+
       '<td class="r val">R$ '+fmtBRL(m.status==='pendente'?m.valorPrevisto:valorMovPago(m))+'</td><td><button class="btn-mini" data-payedit="'+m.id+'">'+statusMovHTML(m.status)+'</button></td>'+
-      '<td class="r" style="white-space:nowrap">'+(podeEditarRecTerc(m)&&m.status!=='cancelado'?'<button class="ia" data-recedit="'+m.id+'" title="Editar o recibo">📝</button>':'')+'<button class="ia" data-payver="'+m.id+'" title="2ª via do recibo">🖨</button></td></tr>').join('')
+      '<td class="r" style="white-space:nowrap">'+(podeEditarRecTerc(m)&&m.status!=='cancelado'?'<button class="ia" data-recedit="'+m.id+'" title="Editar o recibo">'+ri('editar')+'</button>':'')+'<button class="ia" data-payver="'+m.id+'" title="2ª via do recibo">'+ri('imprimir')+'</button></td></tr>').join('')
     :'<tr><td colspan="8"><div class="empty"><b>Nenhum pagamento ainda</b>Os recibos emitidos para este terceiro aparecem aqui.</div></td></tr>';
   $('#thPags').querySelectorAll('[data-payedit]').forEach(x=>x.onclick=()=>abrirPayModal(x.dataset.payedit));
   $('#thPags').querySelectorAll('[data-payver]').forEach(x=>x.onclick=()=>verReciboDoMov(x.dataset.payver));
@@ -12306,7 +12351,7 @@ function assidLista(){
   // relatorios, aqui carregando o nome de quem ganhou em vez de um valor.
   // vertical-align:middle nas duas celulas: sem isso, o nome (15px) alinha
   // pela linha de base com o rotulo (11px) ao lado e sobe torto na faixa.
-  html+='<table style="margin-bottom:14px"><tr class="grand rmd-tot"><td style="font-size:11px;font-weight:465;opacity:.85;vertical-align:middle">🎉 SORTEADO DO RANCHO EXTRA</td>'
+  html+='<table style="margin-bottom:14px"><tr class="grand rmd-tot"><td style="font-size:11px;font-weight:465;opacity:.85;vertical-align:middle">SORTEADO DO RANCHO EXTRA</td>'
     +'<td class="center" style="font-size:15px;vertical-align:middle">'+(rec.sortNome?esc(titlePt(rec.sortNome)):'Ninguém faltou neste mês')+'</td></tr></table>';
 
   html+='<div class="sec rmd-sec">Ganhadores da assiduidade — '+assiduos.length+'</div>';
@@ -12588,7 +12633,7 @@ function relBodyRender(list,ano){
       '<td class="r val" data-label="Banco">'+(terc?'<span class="sub">—</span>':'R$ '+fmtBRL(r.banco))+'</td>'+
       '<td class="r val" data-label="Espécie (PF)">'+(terc?'<span class="sub">—</span>':'R$ '+fmtBRL(r.pf))+'</td>'+
       '<td class="r val" data-label="Total">R$ '+fmtBRL(r.total)+'</td>'+
-      '<td class="r" data-label="Ações"><div class="rowact"><button class="ia" data-rdet="'+r.key+'" title="Ver cada recibo do mês, com descontos e acréscimos">👁</button><button class="ia" data-rpdf="'+r.key+'" title="Exportar PDF">📄</button><button class="ia del" data-rdel="'+r.key+'" title="Excluir">✕</button></div></td>';
+      '<td class="r" data-label="Ações"><div class="rowact"><button class="ia" data-rdet="'+r.key+'" title="Ver cada recibo do mês, com descontos e acréscimos">'+ri('ver')+'</button><button class="ia" data-rpdf="'+r.key+'" title="Exportar PDF">'+ri('pdf')+'</button><button class="ia del" data-rdel="'+r.key+'" title="Excluir">✕</button></div></td>';
     b.appendChild(tr);});
   b.querySelectorAll('[data-rdet]').forEach(x=>x.onclick=()=>relDetalhes(x.dataset.rdet));
   b.querySelectorAll('[data-rpdf]').forEach(x=>x.onclick=()=>exportRelPDF(x.dataset.rpdf));
@@ -12694,7 +12739,7 @@ function relFuncaoResumo(list){
       const g=grupos[fn];
       return '<tr><td class="forn">'+esc(fn)+'</td><td class="c mono">'+Object.keys(g.pessoas).length+'</td><td class="r val">R$ '+fmtBRL(g.tot)+'</td>'
         +'<td class="r" data-label="Ações"><div class="rowact">'
-        +'<button class="ia" data-relfpdf="'+esc(fn)+'" title="Exportar PDF desta função">📄</button>'
+        +'<button class="ia" data-relfpdf="'+esc(fn)+'" title="Exportar PDF desta função">'+ri('pdf')+'</button>'
         +'<button class="ia" data-relfedit="'+esc(fn)+'" title="Editar função de quem está aqui">✎</button>'
         +'<button class="ia del" data-relfhide="'+esc(fn)+'" title="Ocultar esta função da tabela">✕</button>'
         +'</div></td></tr>';
@@ -13057,7 +13102,7 @@ function renderBH(){
       '<td class="r val" style="'+(r.saldo>0?'color:var(--red)':'')+'">'+fmtHM(r.saldo)+'</td>'+
       '<td class="c mono">'+r.pct+'%</td>'+
       '<td class="c"><span class="badge '+bhSitBadge(r.sit)+'</span></td>'+
-      '<td class="r" data-label="Ações"><div class="rowact"><button class="ia" data-bhdet="'+e.id+'" title="Detalhes">👁</button><button class="ia" data-bhf="'+e.id+'" title="Registrar falta" style="color:var(--red)">＋F</button><button class="ia" data-bhr="'+e.id+'" title="Registrar recuperação" style="color:var(--ok)">＋R</button></div></td>';
+      '<td class="r" data-label="Ações"><div class="rowact"><button class="ia" data-bhdet="'+e.id+'" title="Detalhes">'+ri('ver')+'</button><button class="ia" data-bhf="'+e.id+'" title="Registrar falta" style="color:var(--red)">＋F</button><button class="ia" data-bhr="'+e.id+'" title="Registrar recuperação" style="color:var(--ok)">＋R</button></div></td>';
     b.appendChild(tr);});
   b.querySelectorAll('[data-bhdet]').forEach(x=>x.onclick=()=>bhDetalhe(x.dataset.bhdet));
   b.querySelectorAll('[data-bhf]').forEach(x=>x.onclick=()=>bhOpenFalta(x.dataset.bhf));
@@ -13194,7 +13239,7 @@ function renderEmpr(){
       '<td class="r val" data-label="Pago">R$ '+fmtBRL(pago)+'</td>'+
       '<td class="r val" data-label="Saldo">R$ '+fmtBRL(saldo)+'</td>'+
       '<td class="c mono" data-label="Parcelas">'+em.parcelas.filter(p=>p.pago).length+'/'+em.parcelas.length+'</td>'+
-      '<td class="r" data-label="Ações"><div class="rowact"><button class="ia" data-eedit="'+em.id+'_'+em.empId+'" title="Editar">✎</button><button class="ia" data-edetail="'+em.id+'_'+em.empId+'" title="Detalhes">👁</button><button class="ia del" data-edelete="'+em.id+'_'+em.empId+'" title="Excluir">✕</button></div></td>';
+      '<td class="r" data-label="Ações"><div class="rowact"><button class="ia" data-eedit="'+em.id+'_'+em.empId+'" title="Editar">✎</button><button class="ia" data-edetail="'+em.id+'_'+em.empId+'" title="Detalhes">'+ri('ver')+'</button><button class="ia del" data-edelete="'+em.id+'_'+em.empId+'" title="Excluir">✕</button></div></td>';
     b.appendChild(tr);});
   b.querySelectorAll('[data-eedit]').forEach(x=>x.onclick=()=>{const[emId,empId]=x.dataset.eedit.split('_');const e=state.employees.find(y=>y.id===empId);const em=e&&e.emprestimos.find(y=>y.id===emId);if(em)showEmprDetail(em,empId,true);});
   b.querySelectorAll('[data-edetail]').forEach(x=>x.onclick=()=>{const[emId,empId]=x.dataset.edetail.split('_');const e=state.employees.find(y=>y.id===empId);const em=e.emprestimos.find(y=>y.id===emId);showEmprDetail(em,empId);});
@@ -14446,11 +14491,11 @@ function renderAniversariantes(){
     const nomes=hojeLista.map(x=>titlePt(x.e.nome)).join(hojeLista.length===2?' e ':', ');
     const idades=hojeLista.map(x=>titlePt(x.e.nome)+' · '+(ano-x.p.ano)+' anos').join(' • ');
     aviso.className='aniv-hero today';
-    aviso.innerHTML='<div class="aniv-hero-icon">🎂</div><div><div class="aniv-hero-k">Aniversário hoje</div><div class="aniv-hero-title">'+esc(nomes)+'</div><div class="aniv-hero-sub">'+esc(idades)+' — não esqueça de parabenizar!</div></div>';
+    aviso.innerHTML='<div class="aniv-hero-icon">'+ri('bolo')+'</div><div><div class="aniv-hero-k">Aniversário hoje</div><div class="aniv-hero-title">'+esc(nomes)+'</div><div class="aniv-hero-sub">'+esc(idades)+' — não esqueça de parabenizar!</div></div>';
   }else{
     const proximoAtual=aniversariantesDoMes(hoje.getMonth()).find(x=>x.p.dia>hoje.getDate());
     aviso.className='aniv-hero';
-    aviso.innerHTML='<div class="aniv-hero-icon">📅</div><div><div class="aniv-hero-k">Aviso do dia</div><div class="aniv-hero-title">Hoje não há aniversariante.</div><div class="aniv-hero-sub">'+(proximoAtual?'Próximo deste mês: dia '+String(proximoAtual.p.dia).padStart(2,'0')+' — '+esc(titlePt(proximoAtual.e.nome))+'.':'Não há outro aniversário cadastrado neste mês.')+'</div></div>';
+    aviso.innerHTML='<div class="aniv-hero-icon">'+ri('calendario')+'</div><div><div class="aniv-hero-k">Aviso do dia</div><div class="aniv-hero-title">Hoje não há aniversariante.</div><div class="aniv-hero-sub">'+(proximoAtual?'Próximo deste mês: dia '+String(proximoAtual.p.dia).padStart(2,'0')+' — '+esc(titlePt(proximoAtual.e.nome))+'.':'Não há outro aniversário cadastrado neste mês.')+'</div></div>';
   }
 
   const b=$('#anivBody');b.innerHTML='';
@@ -14464,7 +14509,7 @@ function renderAniversariantes(){
       '<td>'+esc(funcaoPadrao(e.funcao)||'—')+'</td><td class="c">'+fmtDate(e.nascimento)+'</td>'+
       '<td class="c mono">'+(ano-x.p.ano)+' anos</td>'+
       '<td><span class="badge '+badgeStatus(e.status,e.afastMotivo)+'</span></td>'+
-      '<td class="c"><button class="btn-mini" type="button" title="Montar o card de aniversário deste funcionário">🎂 Card</button></td>';
+      '<td class="c"><button class="btn-mini" type="button" title="Montar o card de aniversário deste funcionário">Card</button></td>';
     tr.querySelector('button').onclick=()=>cardAnivAbrir(e);
     b.appendChild(tr);
   });
@@ -14927,7 +14972,7 @@ function renderCli(){
       '<td data-label="Referente a">'+referCel+'</td>'+
       '<td class="r val" data-label="Valor">R$ '+fmtBRL(cliTotal(c))+'</td>'+
       '<td class="c sub" data-label="Data">'+dt+'</td>'+
-      '<td class="r" data-label="Ações"><div class="rowact"><button class="ia" data-cpr="'+c.id+'" title="Reimprimir">🖨</button><button class="ia" data-ced="'+c.id+'" title="Editar">✎</button><button class="ia del" data-cde="'+c.id+'" title="Excluir">✕</button></div></td>';
+      '<td class="r" data-label="Ações"><div class="rowact"><button class="ia" data-cpr="'+c.id+'" title="Reimprimir">'+ri('imprimir')+'</button><button class="ia" data-ced="'+c.id+'" title="Editar">✎</button><button class="ia del" data-cde="'+c.id+'" title="Excluir">✕</button></div></td>';
     b.appendChild(tr);});
   b.querySelectorAll('[data-cpr]').forEach(x=>x.onclick=()=>{const c=state.clientes.find(y=>y.id===x.dataset.cpr);printCliente(c);});
   b.querySelectorAll('[data-ced]').forEach(x=>x.onclick=()=>editCli(x.dataset.ced));
@@ -15152,7 +15197,7 @@ function renderResc(){
       '<td class="sub" data-label="Método">'+(r.metodo==='pf'?'Espécie (PF)':'Banco')+'</td>'+
       '<td class="r val" data-label="Valor">R$ '+fmtBRL(r.valor)+'</td>'+
       '<td class="c sub" data-label="Data">'+dt+'</td>'+
-      '<td class="r" data-label="Ações"><div class="rowact"><button class="ia" data-rspr="'+r.id+'" title="Reimprimir">🖨</button><button class="ia" data-rsed="'+r.id+'" title="Editar">✎</button><button class="ia del" data-rsde="'+r.id+'" title="Excluir">✕</button></div></td>';
+      '<td class="r" data-label="Ações"><div class="rowact"><button class="ia" data-rspr="'+r.id+'" title="Reimprimir">'+ri('imprimir')+'</button><button class="ia" data-rsed="'+r.id+'" title="Editar">✎</button><button class="ia del" data-rsde="'+r.id+'" title="Excluir">✕</button></div></td>';
     b.appendChild(tr);});
   b.querySelectorAll('[data-rspr]').forEach(x=>x.onclick=()=>{const r=state.rescisoes.find(y=>y.id===x.dataset.rspr);printRescisao(r);});
   b.querySelectorAll('[data-rsed]').forEach(x=>x.onclick=()=>editResc(x.dataset.rsed));
@@ -16932,7 +16977,7 @@ function renderExLista(){
     '<td class="c sub" data-label="Data">'+(fmtDate(m.dataPrevista)||'—')+'</td>'+
     '<td data-label="Situação"><button class="btn-mini" data-payedit="'+m.id+'" title="Conferir: data, valor e forma efetivos">'+statusMovHTML(m.status)+'</button></td>'+
     '<td class="r" data-label="Ações"><div class="rowact">'+(m.status==='pendente'?'<button class="ia" data-exok="'+m.id+'" title="Confirmar como pago (valor e data do recibo)">✓</button>':'')+
-      '<button class="ia" data-expr="'+m.id+'" title="2ª via">🖨</button><button class="ia del" data-exdel="'+m.id+'" title="Excluir">✕</button></div></td></tr>').join('');
+      '<button class="ia" data-expr="'+m.id+'" title="2ª via">'+ri('imprimir')+'</button><button class="ia del" data-exdel="'+m.id+'" title="Excluir">✕</button></div></td></tr>').join('');
   b.querySelectorAll('[data-payedit]').forEach(x=>x.onclick=()=>abrirPayModal(x.dataset.payedit));
   b.querySelectorAll('[data-expr]').forEach(x=>x.onclick=()=>{const m=state.movimentos[x.dataset.expr];if(m)imprimirExtras([m],true);});
   b.querySelectorAll('[data-exok]').forEach(x=>x.onclick=()=>{const m=state.movimentos[x.dataset.exok];if(!m)return;
@@ -17444,7 +17489,7 @@ function renderPF(){
     lin.push('<tr'+(c.feriado?' class="pf-feriado"':(fim?' class="pf-weekend"':''))+' data-pfdate="'+iso+'">'+
       '<td class="pf-day">'+fmtDate(iso)+'</td><td class="pf-dow">'+PF_DIAS[dow]+
         (c.feriado?'<span class="pf-fer-tag">'+esc(c.feriado)+'</span>':'')+'</td>'+
-      '<td><button type="button" class="btn-mini" data-pffill="'+iso+'" title="Preencher este dia com o horário padrão">⚡</button></td>'+
+      '<td><button type="button" class="btn-mini" data-pffill="'+iso+'" title="Preencher este dia com o horário padrão">'+ri('preencher')+'</button></td>'+
       '<td><select data-pfedit data-field="s">'+pfStatusOpts(c.s)+'</select></td>'+
       ['m1','m2','t1','t2'].map(k=>'<td><input class="pf-time" data-pfedit data-field="'+k+'" inputmode="numeric" placeholder="--:--" value="'+esc(r[k]||'')+'"></td>').join('')+
       '<td><input class="pf-obs" data-pfedit data-field="obs" value="'+esc(r.obs||'')+'" placeholder="opcional"></td>'+
@@ -18559,7 +18604,7 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape'){if(fecharSemPerder(
    juntos a cada publicacao, e ha uma prova automatica que falha se um subir
    sem o outro. Assim o numero na tela e o mesmo do arquivo que o aparelho
    guardou, e dizer "estou na v81" passa a significar alguma coisa. */
-const APP_VER='v298';
+const APP_VER='v299';
 (function(){var p=document.getElementById('verPill'); if(p)p.textContent=APP_VER;})();
 
 if('serviceWorker' in navigator){
@@ -19043,9 +19088,9 @@ function renderRelConferencia(){
        so' avisa erro e' pior que nenhum botao. */
     const temDesc=(m.tipo==='pagamento'||m.tipo==='adiantamento')&&m.pessoaTipo!=='terceiro';
     tr.innerHTML='<td class="c"><input type="checkbox" class="relmov-sel" data-selid="'+m.id+'"'+(m.status==='cancelado'?' disabled':'')+'></td><td class="mono">'+(m.dataPagamento?fmtDate(m.dataPagamento):(m.dataPrevista?fmtDate(m.dataPrevista):'—'))+'</td><td class="mono">'+compTexto(m.competencia)+'</td><td><div class="forn">'+esc(titlePt(m.nome||''))+(dups[m.id]?'<span class="dup-tag" title="Há outro lançamento para esta pessoa, do mesmo tipo, no mesmo dia">repetido</span>':'')+'</div>'+(m.obra?'<div class="sub">'+esc(m.obra)+'</div>':'')+'</td><td>'+esc(tipoMovTexto(m))+'</td><td class="r val">R$ '+fmtBRL(m.valorPrevisto||0)+'</td><td class="r val">'+((m.status==='pendente'||m.status==='cancelado')?'—':'R$ '+fmtBRL(pg))+'</td><td class="r '+(Math.abs(df)<.005?'pay-diff zero':'pay-diff')+'">'+((m.status==='pendente'||m.status==='cancelado')?'—':(df>0?'+ ':'')+'R$ '+fmtBRL(df))+'</td><td>'+esc(metodoMovTexto(m.metodo))+'</td><td>'+statusMovHTML(m.status)+'</td><td class="r" style="white-space:nowrap">'
-    +(temDesc?'<button class="ia" data-paydesc="'+m.id+'" title="Ver descontos e acréscimos deste recibo">🔎</button>':'')
-    +'<button class="ia" data-payver="'+m.id+'" title="Ver o recibo desta linha (2ª via)">🗎</button>'
-    +(podeEditarRecTerc(m)&&m.status!=='cancelado'?'<button class="ia" data-recedit="'+m.id+'" title="Editar o recibo">📝</button>':'')
+    +(temDesc?'<button class="ia" data-paydesc="'+m.id+'" title="Ver descontos e acréscimos deste recibo">'+ri('busca')+'</button>':'')
+    +'<button class="ia" data-payver="'+m.id+'" title="Ver o recibo desta linha (2ª via)">'+ri('pdf')+'</button>'
+    +(podeEditarRecTerc(m)&&m.status!=='cancelado'?'<button class="ia" data-recedit="'+m.id+'" title="Editar o recibo">'+ri('editar')+'</button>':'')
     +'<button class="ia" data-payedit="'+m.id+'" title="Conferir o pagamento (data, valor e forma efetivos)">✎</button></td>';b.appendChild(tr);});
   b.querySelectorAll('[data-payedit]').forEach(x=>x.onclick=()=>abrirPayModal(x.dataset.payedit));
   b.querySelectorAll('[data-recedit]').forEach(x=>x.onclick=()=>abrirEdicaoRecTerc(x.dataset.recedit));
@@ -19090,8 +19135,8 @@ function renderRelTerceiros(){
   $('#relTContrato').textContent='R$ '+fmtBRL(contrato);$('#relTPago').textContent='R$ '+fmtBRL(pago);$('#relTPendente').textContent='R$ '+fmtBRL(pend);$('#relTSaldo').textContent='R$ '+fmtBRL(cts.reduce((s,x)=>s+Math.max(0,x.c.valor-(paidBy[x.t.id+'|'+obraChave(x.c.obra)]||0)),0));
   b.innerHTML='';if(!list.length){b.innerHTML='<tr><td colspan="10"><div class="empty"><b>Nenhum pagamento de terceiro encontrado</b>Use os filtros acima ou emita um recibo de terceiro.</div></td></tr>';return;}
   list.forEach(m=>{const t=state.terceiros.find(x=>x.id===m.pessoaId)||{},ac=paidBy[m.pessoaId+'|'+obraChave(m.obra)]||0,ctr=tercContratos(t).find(c=>obraChave(c.obra)===obraChave(m.obra)),saldo=ctr?Math.max(0,ctr.valor-ac):0,valor=(m.status==='pendente'?Number(m.valorPrevisto)||0:valorMovPago(m)),tr=el('tr',m.status==='cancelado'?'row-off':'');tr.innerHTML='<td>'+((m.dataPagamento||m.dataPrevista)?fmtDate(m.dataPagamento||m.dataPrevista):'—')+'</td><td><div class="forn">'+esc(m.nome||'')+'</div><div class="sub">'+esc(t.doc||'')+'</div></td><td>'+esc(m.obra||'—')+'</td><td>'+esc(m.servico||'—')+(m.nfReferencia?'<div class="sub">'+esc(m.nfReferencia)+'</div>':'')+'</td><td>'+esc((({adiantamento:'Adiantamento',parcial:'Parcial',saldo:'Saldo final'})[m.tipoPagamento]||'Pagamento'))+'</td><td class="r val">R$ '+fmtBRL(valor)+'</td><td class="r val">R$ '+fmtBRL(ac)+'</td><td class="r val">'+(ctr?'R$ '+fmtBRL(saldo):'—')+'</td><td>'+statusMovHTML(m.status)+'</td><td class="r" style="white-space:nowrap">'
-    +'<button class="ia" data-payver="'+m.id+'" title="Ver o recibo desta linha (2ª via)">🗎</button>'
-    +(podeEditarRecTerc(m)&&m.status!=='cancelado'?'<button class="ia" data-recedit="'+m.id+'" title="Editar o recibo">📝</button>':'')
+    +'<button class="ia" data-payver="'+m.id+'" title="Ver o recibo desta linha (2ª via)">'+ri('pdf')+'</button>'
+    +(podeEditarRecTerc(m)&&m.status!=='cancelado'?'<button class="ia" data-recedit="'+m.id+'" title="Editar o recibo">'+ri('editar')+'</button>':'')
     +'<button class="ia" data-payedit="'+m.id+'" title="Conferir o pagamento (data, valor e forma efetivos)">✎</button></td>';b.appendChild(tr);});
   b.querySelectorAll('[data-payedit]').forEach(x=>x.onclick=()=>abrirPayModal(x.dataset.payedit));
   b.querySelectorAll('[data-recedit]').forEach(x=>x.onclick=()=>abrirEdicaoRecTerc(x.dataset.recedit));
@@ -23089,6 +23134,10 @@ initAuth();
       'padding:4px 10px;border-radius:20px;background:rgba(127,127,127,.10);' +
       'font-family:inherit;cursor:default;user-select:none}' +
       '#rm-nuvem .rm-nuvem-ponto{width:8px;height:8px;border-radius:50%;flex:none;display:block}' +
+      /* LINGUAGEM DE PRANCHA: o selo só aparece quando pede atenção. Nuvem
+         ligada é o normal -- dizer isso em toda barra, com bolinha verde, era
+         a "tag de ao vivo" dos painéis feitos por IA. */
+      '#rm-nuvem[data-estado="ligada"]{display:none!important}' +
       /* A COR DE CADA ESTADO MORA NA FOLHA, e nao no atributo style do selo.
          Escrita no elemento a cada troca, ela escapava da traducao do tema
          escuro numa das trocas (Conectando -> Só neste aparelho) e o cinza

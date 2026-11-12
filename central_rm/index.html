@@ -1298,8 +1298,6 @@ var RM_FONTE="@font-face{font-family:'Satoshi';src:url(data:font/woff2;base64,d0
     align-items: center;
     justify-content: center;
     z-index: 500;
-    backdrop-filter: blur(3px);
-    -webkit-backdrop-filter: blur(3px);
     opacity: 0;
     visibility: hidden;
     pointer-events: none;
@@ -2008,7 +2006,7 @@ var RM_FONTE="@font-face{font-family:'Satoshi';src:url(data:font/woff2;base64,d0
   .cmdk-overlay {
     position: fixed; inset: 0; background: rgba(12,13,17,.45);
     display: flex; align-items: flex-start; justify-content: center; padding-top: 12vh;
-    z-index: 600; backdrop-filter: blur(2px); -webkit-backdrop-filter: blur(2px);
+    z-index: 600;
     opacity: 0; visibility: hidden; pointer-events: none; transition: opacity .15s ease, visibility 0s linear .15s;
   }
   .cmdk-overlay.open { opacity: 1; visibility: visible; pointer-events: auto; transition: opacity .15s ease; }
@@ -2384,7 +2382,7 @@ var RM_FONTE="@font-face{font-family:'Satoshi';src:url(data:font/woff2;base64,d0
     --lk-brilho:rgba(242,70,24,.34);
     --lk-brilho2:rgba(242,70,24,.18);
     --lk-grade:rgba(255,255,255,.035);
-    --lk-cartao:rgba(24,24,29,.6);
+    --lk-cartao:#18181d;
     --lk-borda:rgba(255,255,255,.08);
     --lk-sombra:0 24px 60px rgba(0,0,0,.5), inset 0 1px 0 rgba(255,255,255,.06);
     --lk-titulo:#f4f4f5;
@@ -2412,7 +2410,7 @@ var RM_FONTE="@font-face{font-family:'Satoshi';src:url(data:font/woff2;base64,d0
      quase preto, como o resto da Central */
   body[data-theme="escuro"][data-tom="nitido"] #lock-screen {
     --lk-fundo:#1c1d1f;
-    --lk-cartao:rgba(38,39,43,.7);
+    --lk-cartao:#26272b;
     --lk-borda:rgba(255,255,255,.1);
     --lk-nota:#a7acb4;
     --lk-pe:#a2a6ae;
@@ -2421,7 +2419,7 @@ var RM_FONTE="@font-face{font-family:'Satoshi';src:url(data:font/woff2;base64,d0
   }
   body[data-theme="escuro"][data-tom="suave"] #lock-screen {
     --lk-fundo:#2a2b2e;
-    --lk-cartao:rgba(51,52,56,.72);
+    --lk-cartao:#333438;
     --lk-borda:rgba(255,255,255,.1);
     --lk-nota:#a9abb0;
     --lk-pe:#b4b6ba;
@@ -2433,7 +2431,7 @@ var RM_FONTE="@font-face{font-family:'Satoshi';src:url(data:font/woff2;base64,d0
     --lk-brilho:rgba(242,70,24,.17);
     --lk-brilho2:rgba(242,70,24,.10);
     --lk-grade:rgba(20,23,27,.055);
-    --lk-cartao:rgba(255,255,255,.82);
+    --lk-cartao:#ffffff;
     --lk-borda:rgba(20,23,27,.10);
     --lk-sombra:0 24px 60px rgba(20,23,27,.13), inset 0 1px 0 rgba(255,255,255,.9);
     --lk-titulo:#16171a;
@@ -2466,8 +2464,6 @@ var RM_FONTE="@font-face{font-family:'Satoshi';src:url(data:font/woff2;base64,d0
     background: var(--lk-cartao);
     border: 1px solid var(--lk-borda);
     border-radius: 20px;
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
     box-shadow: var(--lk-sombra);
     animation: lockIn .5s cubic-bezier(.2,.8,.2,1);
   }
@@ -3172,6 +3168,40 @@ html th{
    Só o canto e a cor da borda: em alguns sistemas ".card" é caixa sem fundo
    (a lista de funcionários do Recibos), e pintar o fundo mudaria a tela. */
 html .card{border-radius:var(--rm-raio-g);border-color:var(--rm-linha)}
+
+/* ---------- LINGUAGEM DE PRANCHA ----------
+   "20 sinais de que o teu dashboard foi feito por IA": cartão de número com
+   ícone colorido, faixa colorida na borda, cartão escuro de destaque, rótulo
+   em caixa alta espaçada em todo canto. A casa fala a língua da prancha
+   técnica (a mesma do papel M1): linha fina, escrita normal, cor só com
+   significado -- vermelho = problema, âmbar = vence logo, verde = pago ou
+   recebido; laranja RM só na marca e na ação principal. Caixa alta só no
+   carimbo e no cabeçalho de tabela. Regra em PADRAO_RM 3c. */
+/* o nome do sistema ao lado da marca, em escrita normal */
+html .rm-brand .sub{text-transform:none!important;letter-spacing:0!important;font-size:13px!important;font-weight:600!important}
+/* FAIXA DE NÚMEROS: o contêiner dos números do topo leva a classe
+   .rm-faixa; as caixas viram células de uma faixa só, divididas por fio.
+   O fio de cada célula é sombra de 1px à direita e embaixo -- a última
+   coluna e a última linha são cortadas pela borda da faixa, e a célula que
+   falta na última linha fica branca (com gap+fundo cinza ela virava um
+   bloco cinza). */
+html .rm-faixa{gap:0!important;background:var(--rm-superficie)!important;border:1px solid var(--rm-linha)!important;
+  border-radius:6px!important;overflow:hidden!important;box-shadow:none!important}
+html .rm-faixa>*{border:0!important;border-radius:0!important;background:transparent!important;
+  box-shadow:1px 0 0 var(--rm-linha),0 1px 0 var(--rm-linha)!important;transform:none!important}
+html .rm-faixa>*::before,html .rm-faixa>*::after{content:none!important}
+html .rm-faixa>:is(button,a,[onclick],[role=button]):hover{background:var(--rm-superficie-2)!important}
+html .rm-faixa :is(.lbl,.lab,.label,.k,.k-label,.sum-lbl,.rm-fx-r){text-transform:none!important;letter-spacing:0!important;
+  font-size:12.5px!important;font-weight:600!important;color:var(--rm-apagado)}
+html .rm-faixa :is(.lbl,.lab,.label,.k,.k-label) :is(svg,.ico,.dot,.dotk,.k-ico),
+html .rm-faixa :is(.lbl,.lab,.label,.k,.k-label)>span:empty{display:none!important}
+/* faixa que já mora no alto de um painel: sem caixa própria, só o fio de baixo */
+html .rm-faixa.rm-faixa-painel{border:0!important;border-bottom:1px solid var(--rm-linha)!important;border-radius:0!important}
+html .rm-faixa :is(.val,.v,.value,.k-value,.num){font-variant-numeric:tabular-nums}
+/* a cor do número: só quando pede atenção (a célula diz, o número pinta) */
+html .rm-faixa .rm-fx-ruim{color:var(--rm-perigo)!important}
+html .rm-faixa .rm-fx-aviso{color:var(--rm-aviso)!important}
+html .rm-faixa .rm-fx-bom{color:var(--rm-ok)!important}
 
 /* ---------- CANTO E COR VALEM EM QUALQUER LUGAR ----------
    Uma regra de lugar (".appbar .btn", ".toolbar .btn") pode deixar o botão
@@ -3920,6 +3950,88 @@ html[data-estilo="carimbo"] .module-card:hover .card-icon { transform: none; }
 html[data-estilo="carimbo"] .card-icon svg { width: 18px; height: 18px; }
 html[data-estilo="carimbo"] .card-name { font-size: 14.5px; font-weight: 650; }
 
+/* =============================== PRANCHA =============================== */
+/* "20 sinais de que o teu dashboard foi feito por IA": a linguagem da
+   prancha técnica, a mesma do papel M1. Linha fina no lugar de cartão com
+   sombra e faixa colorida; caixa alta só no carimbo; cor só com significado
+   (laranja RM = marca e ação, vermelho = problema); sem saudação -- a
+   abertura é a data e o que precisa de atenção, logo em cima. A grade do
+   fundo fica. Teste central-estilo-prancha. */
+html[data-estilo="prancha"] .dash-marca, html[data-estilo="prancha"] .dash-greeting { display: none; }
+html[data-estilo="prancha"] .dash-header { margin-bottom: 18px; align-items: flex-end; }
+html[data-estilo="prancha"] .dash-sub { margin: 0; font-size: 24px; font-weight: 650; letter-spacing: -.015em; color: var(--text); text-transform: none; }
+html[data-estilo="prancha"] .dash-sub b { font-weight: 650; }
+html[data-estilo="prancha"] .dash-sub .ds-ok { color: var(--text-muted); }
+html[data-estilo="prancha"] .dash-sub .ds-at { color: #B3123C; }
+html[data-estilo="prancha"] body[data-theme="escuro"] .dash-sub .ds-at { color: #FF8A63; }
+html[data-estilo="prancha"] .quick-chip { box-shadow: none; border-radius: 6px; padding: 6px 11px; animation: none; font-weight: 600; }
+html[data-estilo="prancha"] .quick-chip:hover { transform: none; box-shadow: none; border-color: var(--text-muted); }
+html[data-estilo="prancha"] .qc-ico { display: none; }
+html[data-estilo="prancha"] .topbar-tag { background: none; border: 0; padding: 0; color: var(--text-muted); font-weight: 600; }
+/* a ordem da tela: o que precisa de atenção logo abaixo da data */
+html[data-estilo="prancha"] #dashboard:not([style*="none"]) { display: flex !important; flex-direction: column; }
+html[data-estilo="prancha"] #dashboard > * { order: 3; }
+html[data-estilo="prancha"] #dashboard > .dash-header { order: 0; }
+html[data-estilo="prancha"] #dash-acoes-block { order: 1; margin-bottom: 22px; }
+html[data-estilo="prancha"] #dash-folha { order: 2; }
+html[data-estilo="prancha"] #dash-stats { order: 2; }
+/* títulos em escrita normal, sem o traço colorido */
+html[data-estilo="prancha"] .section-title { font-size: 13.5px; font-weight: 700; letter-spacing: 0; text-transform: none; color: var(--text); margin-bottom: 10px; }
+html[data-estilo="prancha"] .section-title::before { display: none; }
+html[data-estilo="prancha"] #dashboard .rm-collapsible { border-radius: 6px; }
+html[data-estilo="prancha"] #dashboard .rm-collapse-head { margin: 0; }
+html[data-estilo="prancha"] #dashboard .rm-collapse-title { font-family: inherit; font-size: 13.5px; font-weight: 700; letter-spacing: 0; text-transform: none; }
+html[data-estilo="prancha"] .sec-count { font-family: inherit; letter-spacing: 0; text-transform: none; font-weight: 650; }
+/* o que precisa de atenção: linhas de lista, sem bolinha nem faixa; só o urgente é vermelho */
+html[data-estilo="prancha"] .ri-resumo { display: block; }
+html[data-estilo="prancha"] .ri-resumo .acao { border: 0; border-top: 1px solid var(--divider); border-radius: 0; margin: 0; padding: 10px 2px; box-shadow: none; background: transparent; }
+html[data-estilo="prancha"] .ri-resumo .acao:first-child { border-top: 0; }
+html[data-estilo="prancha"] .acao.clic:hover { transform: none; box-shadow: none; background: var(--card-hover); }
+html[data-estilo="prancha"] .acao-dot { display: none; }
+html[data-estilo="prancha"] .acao-t { font-weight: 600; }
+html[data-estilo="prancha"] .acao.s-crit .acao-t { color: #B3123C; }
+html[data-estilo="prancha"] body[data-theme="escuro"] .acao.s-crit .acao-t { color: #FF8A63; }
+/* os números do dia: uma faixa com linhas finas, rótulo em cima, número com a unidade */
+html[data-estilo="prancha"] .dash-folha { display: block; text-align: right; margin: 0 2px 6px; font: 600 9.5px var(--mono); letter-spacing: .12em; color: var(--text-muted); }
+html[data-estilo="prancha"] .dash-stats { gap: 0; background: var(--card); border: 1px solid var(--divider); border-radius: 6px; overflow: hidden; margin-bottom: 26px; }
+html[data-estilo="prancha"] .stat-tile { display: flex; flex-direction: column; background: transparent; border-radius: 0; box-shadow: none;
+  padding: 15px 18px 14px; border-left: 1px solid var(--divider); animation: none; }
+html[data-estilo="prancha"] .stat-tile:first-child { border-left: 0; }
+html[data-estilo="prancha"] .stat-tile.click:hover { transform: none; box-shadow: none; background: var(--card-hover); }
+html[data-estilo="prancha"] .stat-icon { display: none; }
+html[data-estilo="prancha"] .stat-lbl { order: -1; margin: 0 0 8px; color: var(--text-muted); font-family: inherit; font-size: 12.5px; font-weight: 600; letter-spacing: 0; text-transform: none; }
+html[data-estilo="prancha"] .stat-lbl .st-dot { background: #B3123C !important; border-radius: 1px; }
+html[data-estilo="prancha"] .stat-num,
+html[data-estilo="prancha"] .stat-num.ok { color: var(--text); font-size: 28px; font-weight: 700; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+html[data-estilo="prancha"] .stat-tile.warn .stat-num, html[data-estilo="prancha"] .stat-num.urgent { color: #B3123C; }
+html[data-estilo="prancha"] body[data-theme="escuro"] .stat-tile.warn .stat-num { color: #FF8A63; }
+@media (max-width: 820px) {
+  html[data-estilo="prancha"] .dash-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  html[data-estilo="prancha"] .stat-tile { padding: 12px 14px; }
+  html[data-estilo="prancha"] .stat-tile:nth-child(odd) { border-left: 0; }
+  html[data-estilo="prancha"] .stat-tile:nth-child(n+3) { border-top: 1px solid var(--divider); }
+}
+/* sistemas: a cor da categoria sai; ícone de traço, sem fundo */
+html[data-estilo="prancha"] .module-card { box-shadow: none; border-radius: 6px; padding: 12px 14px; gap: 12px; min-height: 66px; animation: none; }
+html[data-estilo="prancha"] .module-card::after { display: none; }
+html[data-estilo="prancha"] .module-card:hover { transform: none; box-shadow: none; border-color: var(--text-muted); }
+html[data-estilo="prancha"] .card-icon { width: 22px; height: 22px; background: none; border-radius: 0; }
+html[data-estilo="prancha"] .module-card:hover .card-icon { transform: none; }
+html[data-estilo="prancha"] .card-icon svg { width: 18px; height: 18px; }
+html[data-estilo="prancha"] .card-icon svg * { stroke: var(--text-muted); }
+html[data-estilo="prancha"] .card-name { font-size: 14px; font-weight: 650; }
+html[data-estilo="prancha"] .card-st.urg { color: #B3123C; font-weight: 650; }
+html[data-estilo="prancha"] body[data-theme="escuro"] .card-st.urg { color: #FF8A63; }
+/* lateral: grupos em escrita normal, sem as bolinhas coloridas */
+html[data-estilo="prancha"] .nav-label { font-family: inherit; text-transform: none; letter-spacing: 0; font-size: 12px; font-weight: 650; }
+html[data-estilo="prancha"] .nav-label .nl-dot { display: none; }
+html[data-estilo="prancha"] .nav-item.active { background: color-mix(in srgb, var(--text) 6%, transparent); }
+/* variação dos indicadores sem a pílula colorida */
+html[data-estilo="prancha"] .ri-var { background: none !important; padding: 0; }
+/* carregando: o bloco cinza fica, sem o brilho correndo */
+html[data-estilo="prancha"] .rm-esq::after { display: none; }
+html[data-estilo="prancha"] .rm-esq { border-radius: 6px; }
+
 /* celular: os dois estilos encolhem como o Clássico */
 @media (max-width: 560px) {
   html[data-estilo] #dash-sections .dash-grid { grid-template-columns: 1fr; }
@@ -3934,7 +4046,7 @@ html[data-estilo="carimbo"] .card-name { font-size: 14.5px; font-weight: 650; }
 <script>
 /* estilo do painel aplicado antes de pintar (o último escolhido neste
    aparelho); a escolha por usuário é confirmada depois, no bloco ESTILO */
-try { var _e = localStorage.getItem('rm_estilo_ultimo'); if (_e === 'viva' || _e === 'carimbo') document.documentElement.setAttribute('data-estilo', _e); } catch (e) { }
+try { var _e = localStorage.getItem('rm_estilo_ultimo'); if (_e === 'viva' || _e === 'carimbo' || _e === 'prancha') document.documentElement.setAttribute('data-estilo', _e); } catch (e) { }
 </script>
 </head>
 <body data-theme="claro">
@@ -4190,7 +4302,7 @@ try { var _e = localStorage.getItem('rm_estilo_ultimo'); if (_e === 'viva' || _e
         <div class="quick-chips" id="dash-quick"></div>
       </div>
       <div class="section-block" id="dash-aniv-block" style="display:none;">
-        <div class="section-title" style="--cat:#e08a1e">🎂 Aniversariantes de hoje</div>
+        <div class="section-title" style="--cat:#e08a1e">Aniversariantes de hoje</div>
         <div id="dash-aniv-today"></div>
       </div>
       <div class="section-block" id="dash-contrato-block" style="display:none;">
@@ -4829,7 +4941,7 @@ try { var _e = localStorage.getItem('rm_estilo_ultimo'); if (_e === 'viva' || _e
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js" crossorigin="anonymous"></script>
 
 <script>/* versão publicada (PADRAO_RM.md §3): sobe a cada publicação, junto com o CACHE do sw.js */
-const APP_VER='v167';
+const APP_VER='v168';
 </script>
 <script>
   /* ===== LOGIN (Firebase Authentication) =====
@@ -5160,7 +5272,7 @@ const APP_VER='v167';
     });
     const aniversarios = _aniversariantesHoje.map(p => {
       const idade = idadeCompletaHoje(p.nascimento);
-      return { urgent: false, icon: 'cake', t: p.nome, s: idade ? ('Completa ' + idade + ' anos hoje 🎂') : 'Aniversário hoje 🎂', go: "openModule('recibos')" };
+      return { urgent: false, icon: 'cake', t: p.nome, s: idade ? ('Completa ' + idade + ' anos hoje') : 'Aniversário hoje', go: "openModule('recibos')" };
     });
     // vencidas/vencendo hoje primeiro (mais urgente), depois aniversários,
     // almoço e agenda de hoje, e por último as contas que só vencem nos
@@ -5314,7 +5426,7 @@ const APP_VER='v167';
     host.innerHTML = _aniversariantesHoje.map(p => {
       const idade = idadeCompletaHoje(p.nascimento);
       return `<div class="dash-agenda-item">
-        <span style="flex:none;font-size:17px">🎂</span>
+        
         <span class="t">${escHtml(p.nome)} <span style="font-weight:500;color:var(--text-muted)">${idade ? ('completa ' + idade + ' anos hoje') : 'faz aniversário hoje'}</span></span>
       </div>`;
     }).join('');
@@ -5742,7 +5854,7 @@ const APP_VER='v167';
     document.getElementById('agdock-count').textContent = String(n);
     document.getElementById('agdock-fab-count').textContent = String(n);
     body.innerHTML = items.map(it => `<div class="agdock-msg" onclick="showAgenda()">
-      <div class="m-time${it.time?'':' none'}">${it.time ? ('⏰ ' + it.time) : 'Sem horário'}</div>
+      <div class="m-time${it.time?'':' none'}">${it.time ? ('' + it.time) : 'Sem horário'}</div>
       <div class="m-text">${escHtml(it.text)}</div>
       ${it.note ? `<div class="m-note">${escHtml(it.note)}</div>` : ''}
       ${contatoDe(it) ? `<button class="m-wa" title="Avisar ${escHtml(contatoDe(it).nome||'')} no WhatsApp" onclick="event.stopPropagation(); avisarWhats('${it.id}')">Avisar ${escHtml((contatoDe(it).nome||'').split(' ')[0])}</button>` : ''}
@@ -8533,7 +8645,7 @@ const APP_VER='v167';
     el.innerHTML = '<div class="ri-resumo">' + L.map(function (o) {
       var cor = SEV_COR[o.s] || SEV_COR.info;
       var clic = o.go ? ' clic" tabindex="0" role="button" onclick="' + o.go + '"' : '"';
-      return '<div class="acao' + clic + ' style="--sev:' + cor + '">'
+      return '<div class="acao s-' + (o.s || 'info') + clic + ' style="--sev:' + cor + '">'
         + '<span class="acao-dot"></span>'
         + '<div class="acao-txt"><div class="acao-t">' + o.t + '</div>'
         + (o.d ? '<div class="acao-s">' + o.d + '</div>' : '') + '</div>'
@@ -10315,7 +10427,9 @@ const APP_VER='v167';
   function dashSubLinha(){
     const el = document.getElementById('dash-date'); if (!el) return;
     const now = new Date();
-    const dia = now.toLocaleDateString('pt-BR', { weekday:'long', day:'numeric', month:'long' }).toUpperCase();
+    const prancha = document.documentElement.getAttribute('data-estilo') === 'prancha';
+    const diaTxt = now.toLocaleDateString('pt-BR', { weekday:'long', day:'numeric', month:'long' });
+    const dia = prancha ? diaTxt.charAt(0).toUpperCase() + diaTxt.slice(1) : diaTxt.toUpperCase();
     /* o campo de severidade e 's' (ver renderAcoes); 'ok' e o item que o
        proprio calculo devolve quando nao ha mais nada a fazer */
     /* Enquanto o banco nao respondeu, RM_ORIENTACOES nem existe -- e dizer
@@ -10323,10 +10437,13 @@ const APP_VER='v167';
        em que o dono confia no sistema. Ate os dados chegarem, so a data. */
     if (!window.RM_ORIENTACOES) { el.textContent = dia; return; }
     const n = window.RM_ORIENTACOES.filter(o => o && o.s !== 'ok').length;
-    el.innerHTML = dia + (n
+    el.innerHTML = prancha
+      ? dia + ' · <b class="' + (n ? 'ds-at">' + n + (n > 1 ? ' pontos de atenção' : ' ponto de atenção') : 'ds-ok">tudo em dia') + '</b>'
+      : dia + (n
       ? ' · <b style="color:var(--rm-marca-txt)">' + n + (n > 1 ? ' pontos de atenção' : ' ponto de atenção') + '</b>'
       : ' · <b style="color:var(--rm-ok,#1F9D57)">tudo em dia</b>');
   }
+  window.dashSubLinha = dashSubLinha;
   dashSubLinha();
   document.addEventListener('rm:dados', dashSubLinha);
 
@@ -10902,7 +11019,7 @@ const APP_VER='v167';
     } catch (e) { }
     try {
       if (typeof _aniversariantesHoje !== 'undefined' && _aniversariantesHoje.length) {
-        L.push({ s: 'info', t: _aniversariantesHoje.length > 1 ? _aniversariantesHoje.length + ' aniversariantes hoje 🎂' : esc(_aniversariantesHoje[0].nome) + ' faz aniversário hoje 🎂', d: 'Um parabéns cai bem', go: "openModule('recibos')" });
+        L.push({ s: 'info', t: _aniversariantesHoje.length > 1 ? _aniversariantesHoje.length + ' aniversariantes hoje' : esc(_aniversariantesHoje[0].nome) + ' faz aniversário hoje', d: 'Um parabéns cai bem', go: "openModule('recibos')" });
       }
     } catch (e) { }
     try {
@@ -11644,7 +11761,7 @@ const APP_VER='v167';
     }
     var chips = ['mes', 'tri', 'ano'].map(function (k) { return '<button type="button" class="ri-chip' + (k === p ? ' on' : '') + '" onclick="rmResPeriodo(\'' + k + '\')">' + { mes: 'Mês', tri: 'Trimestre', ano: 'Ano' }[k] + '</button>'; }).join('');
     return '<div class="res">' +
-      '<div class="res-top"><div><div class="res-tit">Meus resultados <span class="res-so">🔒 só no seu login</span></div>' +
+      '<div class="res-top"><div><div class="res-tit">Meus resultados <span class="res-so">só no seu login</span></div>' +
       '<div class="res-sub">Contado sozinho a partir do que os sistemas registraram · ' + dmy(iv.ini) + '/' + iv.ini.slice(0, 4) + ' a ' + (parcial ? dmy(hoje()) + ' (parcial)' : dmy(iv.fim) + '/' + iv.fim.slice(0, 4)) + ' · comparado com ' + ivA.rot + '</div></div>' +
       '<div class="res-acoes">' + chips + '<span class="res-nav"><button type="button" class="ri-chip" onclick="rmResAnda(1)" title="Período anterior">◀</button><b class="res-per">' + esc(iv.rot) + '</b><button type="button" class="ri-chip" onclick="rmResAnda(-1)"' + (resDesloc ? '' : ' disabled') + ' title="Período seguinte">▶</button></span>' +
       '<button type="button" class="docs-bt" onclick="rmResConfig()">⚙ Valores de referência</button><button type="button" class="docs-bt pri" onclick="rmResImprimir()">Imprimir / PDF</button></div></div>' +
@@ -11860,8 +11977,8 @@ const APP_VER='v167';
    por usuário, como a escala.
    ========================================================================== */
 (function () {
-  var OPCOES = [['classico', 'Clássico'], ['viva', 'Viva'], ['carimbo', 'Carimbo']];
-  var VALIDOS = { classico: 1, viva: 1, carimbo: 1 };
+  var OPCOES = [['classico', 'Clássico'], ['viva', 'Viva'], ['carimbo', 'Carimbo'], ['prancha', 'Prancha']];
+  var VALIDOS = { classico: 1, viva: 1, carimbo: 1, prancha: 1 };
   function chave(k) { try { return (typeof prefKey === 'function') ? prefKey(k) : k; } catch (e) { return k; } }
   function atual() {
     try {
@@ -11880,7 +11997,8 @@ const APP_VER='v167';
   function aplicar(v) {
     var h = document.documentElement;
     if (!v || v === 'classico') h.removeAttribute('data-estilo'); else h.setAttribute('data-estilo', v);
-    if (v === 'carimbo') folha();
+    if (v === 'carimbo' || v === 'prancha') folha();
+    try { if (typeof window.dashSubLinha === 'function') window.dashSubLinha(); } catch (e) { }
   }
   function marcar(v) {
     var seg = document.getElementById('rm-seg-estilo'); if (!seg) return;
@@ -11900,7 +12018,8 @@ const APP_VER='v167';
     var MINI = {
       classico: '<i style="background:#7A2E52"></i><i style="background:#B3123C"></i><i style="background:#2f74d0"></i><b></b><b></b><b></b>',
       viva: '<i style="background:linear-gradient(140deg,#E2365B,#9b1033)"></i><i style="background:linear-gradient(140deg,#4C8EE8,#2160B8)"></i><i style="background:linear-gradient(140deg,#2FB574,#16804A)"></i><b class="t" style="--c:#C2185B"></b><b class="t" style="--c:#EA8A12"></b><b class="t" style="--c:#2F74D0"></b>',
-      carimbo: '<i class="f"></i><i class="f"></i><i class="f"></i><b class="k" style="--c:#B3123C"></b><b class="k" style="--c:#E08A1E"></b><b class="k" style="--c:#2F74D0"></b>'
+      carimbo: '<i class="f"></i><i class="f"></i><i class="f"></i><b class="k" style="--c:#B3123C"></b><b class="k" style="--c:#E08A1E"></b><b class="k" style="--c:#2F74D0"></b>',
+      prancha: '<i class="f"></i><i class="f"></i><i class="f"></i><b></b><b></b><b></b>'
     };
     sec.innerHTML =
       '<div class="settings-label">Estilo do painel</div>' +
@@ -11910,7 +12029,7 @@ const APP_VER='v167';
           + '<div class="estilo-mini em-' + o[0] + '">' + MINI[o[0]] + '</div><div class="theme-name">' + o[1] + '</div></div>';
       }).join('') + '</div>' +
       '<div style="font-size:11px;color:var(--text-muted);margin-top:8px;font-weight:500;line-height:1.45">' +
-      'Viva: cores das categorias. Carimbo: claro e técnico.</div>';
+      'Viva: cores das categorias. Carimbo: claro e técnico. Prancha: linha fina, cor só no que pede atenção.</div>';
     /* logo depois do Tema */
     var tema = document.getElementById('theme-grid');
     var secTema = tema ? tema.closest('.settings-section') : null;
@@ -14720,6 +14839,10 @@ body{ height:100vh; height:100dvh; overscroll-behavior:none; }
       'padding:4px 10px;border-radius:20px;background:rgba(127,127,127,.10);' +
       'font-family:inherit;cursor:default;user-select:none}' +
       '#rm-nuvem .rm-nuvem-ponto{width:8px;height:8px;border-radius:50%;flex:none;display:block}' +
+      /* LINGUAGEM DE PRANCHA: o selo só aparece quando pede atenção. Nuvem
+         ligada é o normal -- dizer isso em toda barra, com bolinha verde, era
+         a "tag de ao vivo" dos painéis feitos por IA. */
+      '#rm-nuvem[data-estado="ligada"]{display:none!important}' +
       /* A COR DE CADA ESTADO MORA NA FOLHA, e nao no atributo style do selo.
          Escrita no elemento a cada troca, ela escapava da traducao do tema
          escuro numa das trocas (Conectando -> Só neste aparelho) e o cinza

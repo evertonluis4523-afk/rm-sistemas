@@ -2159,6 +2159,40 @@ html th{
    (a lista de funcionários do Recibos), e pintar o fundo mudaria a tela. */
 html .card{border-radius:var(--rm-raio-g);border-color:var(--rm-linha)}
 
+/* ---------- LINGUAGEM DE PRANCHA ----------
+   "20 sinais de que o teu dashboard foi feito por IA": cartão de número com
+   ícone colorido, faixa colorida na borda, cartão escuro de destaque, rótulo
+   em caixa alta espaçada em todo canto. A casa fala a língua da prancha
+   técnica (a mesma do papel M1): linha fina, escrita normal, cor só com
+   significado -- vermelho = problema, âmbar = vence logo, verde = pago ou
+   recebido; laranja RM só na marca e na ação principal. Caixa alta só no
+   carimbo e no cabeçalho de tabela. Regra em PADRAO_RM 3c. */
+/* o nome do sistema ao lado da marca, em escrita normal */
+html .rm-brand .sub{text-transform:none!important;letter-spacing:0!important;font-size:13px!important;font-weight:600!important}
+/* FAIXA DE NÚMEROS: o contêiner dos números do topo leva a classe
+   .rm-faixa; as caixas viram células de uma faixa só, divididas por fio.
+   O fio de cada célula é sombra de 1px à direita e embaixo -- a última
+   coluna e a última linha são cortadas pela borda da faixa, e a célula que
+   falta na última linha fica branca (com gap+fundo cinza ela virava um
+   bloco cinza). */
+html .rm-faixa{gap:0!important;background:var(--rm-superficie)!important;border:1px solid var(--rm-linha)!important;
+  border-radius:6px!important;overflow:hidden!important;box-shadow:none!important}
+html .rm-faixa>*{border:0!important;border-radius:0!important;background:transparent!important;
+  box-shadow:1px 0 0 var(--rm-linha),0 1px 0 var(--rm-linha)!important;transform:none!important}
+html .rm-faixa>*::before,html .rm-faixa>*::after{content:none!important}
+html .rm-faixa>:is(button,a,[onclick],[role=button]):hover{background:var(--rm-superficie-2)!important}
+html .rm-faixa :is(.lbl,.lab,.label,.k,.k-label,.sum-lbl,.rm-fx-r){text-transform:none!important;letter-spacing:0!important;
+  font-size:12.5px!important;font-weight:600!important;color:var(--rm-apagado)}
+html .rm-faixa :is(.lbl,.lab,.label,.k,.k-label) :is(svg,.ico,.dot,.dotk,.k-ico),
+html .rm-faixa :is(.lbl,.lab,.label,.k,.k-label)>span:empty{display:none!important}
+/* faixa que já mora no alto de um painel: sem caixa própria, só o fio de baixo */
+html .rm-faixa.rm-faixa-painel{border:0!important;border-bottom:1px solid var(--rm-linha)!important;border-radius:0!important}
+html .rm-faixa :is(.val,.v,.value,.k-value,.num){font-variant-numeric:tabular-nums}
+/* a cor do número: só quando pede atenção (a célula diz, o número pinta) */
+html .rm-faixa .rm-fx-ruim{color:var(--rm-perigo)!important}
+html .rm-faixa .rm-fx-aviso{color:var(--rm-aviso)!important}
+html .rm-faixa .rm-fx-bom{color:var(--rm-ok)!important}
+
 /* ---------- CANTO E COR VALEM EM QUALQUER LUGAR ----------
    Uma regra de lugar (".appbar .btn", ".toolbar .btn") pode deixar o botão
    mais baixo ou mais estreito, mas não inventa outro canto nem outra cor. */
@@ -2836,7 +2870,7 @@ body:not([data-theme="escuro"]){
 
     <!-- ============ VIEW: LANÇAMENTOS ============ -->
     <div class="view on" id="view-lanc">
-      <div class="cards" id="cards"></div>
+      <div class="cards rm-faixa rm-faixa-painel" id="cards"></div>
 
       <div class="addzone">
         <div class="section-lab"><span id="formTitle">Nova conta</span><span class="ln"></span></div>
@@ -2956,7 +2990,7 @@ body:not([data-theme="escuro"]){
 
     <!-- ============ VIEW: CRÉDITOS ============ -->
     <div class="view" id="view-cred">
-      <div class="cards cards-cred" id="credCards"></div>
+      <div class="cards cards-cred rm-faixa rm-faixa-painel" id="credCards"></div>
       <div class="addzone">
         <div class="section-lab"><span id="credFormTitle">Novo crédito</span><span class="ln"></span></div>
         <p class="cred-exp">Cheque (ou outro pagamento) entregue adiantado a um fornecedor. Cada compra lançada para ele no Contas é abatida do saldo, até acabar.</p>
@@ -3727,10 +3761,10 @@ function renderCards(){
     if(c.pago && (c.dataPagamento||'').slice(0,7)===mes){ pagoMes+=c.valor; }
   });
   $('cards').innerHTML=`
-    <div class="card pend"><div class="k"><span class="dotk w"></span>Total em aberto</div><div class="v">${brl(pend)}</div><div class="s">tudo que falta pagar</div></div>
-    <div class="card venc"><div class="k"><span class="dotk r"></span>Vencidas</div><div class="v">${brl(venc)}</div><div class="s">${nVenc} conta(s) em atraso</div></div>
-    <div class="card"><div class="k"><span class="dotk b"></span>A vencer (7 dias)</div><div class="v">${brl(prox)}</div><div class="s">${nProx} conta(s) próximas</div></div>
-    <div class="card pago"><div class="k"><span class="dotk g"></span>Pago no mês</div><div class="v">${brl(pagoMes)}</div><div class="s">pagamentos deste mês</div></div>`;
+    <div class="card"><div class="k"><span class="dotk w"></span>Total em aberto</div><div class="v">${brl(pend)}</div><div class="s">tudo que falta pagar</div></div>
+    <div class="card${nVenc?' venc':''}"><div class="k"><span class="dotk r"></span>Vencidas</div><div class="v">${brl(venc)}</div><div class="s">${nVenc} conta(s) em atraso</div></div>
+    <div class="card${nProx?' pend':''}"><div class="k"><span class="dotk b"></span>A vencer (7 dias)</div><div class="v">${brl(prox)}</div><div class="s">${nProx} conta(s) próximas</div></div>
+    <div class="card${pagoMes>0?' pago':''}"><div class="k"><span class="dotk g"></span>Pago no mês</div><div class="v">${brl(pagoMes)}</div><div class="s">pagamentos deste mês</div></div>`;
 }
 
 /* ============================================================
@@ -3917,7 +3951,7 @@ function renderCred(){
   let saldoTot=0, forns=new Set(), usadoTot=0;
   todos.forEach(cr=>{ const sd=credSaldo(cr); usadoTot+=credUsado(cr.id); if(sd>0.004){ saldoTot+=sd; forns.add(credChave(cr.fornecedor)); } });
   $('credCards').innerHTML=`
-    <div class="card pago"><div class="k"><span class="dotk g"></span>Saldo em crédito</div><div class="v">${brl(saldoTot)}</div><div class="s">${forns.size} fornecedor(es) com saldo</div></div>
+    <div class="card${saldoTot>0.004?' pago':''}"><div class="k"><span class="dotk g"></span>Saldo em crédito</div><div class="v">${brl(saldoTot)}</div><div class="s">${forns.size} fornecedor(es) com saldo</div></div>
     <div class="card"><div class="k"><span class="dotk b"></span>Já abatido</div><div class="v">${brl(usadoTot)}</div><div class="s">compras pagas com crédito</div></div>
     <div class="card"><div class="k"><span class="dotk w"></span>Créditos</div><div class="v">${todos.length}</div><div class="s">registrados</div></div>`;
   const q=credChave($('cr_busca').value), mostra=$('cr_mostra').value;
@@ -4702,6 +4736,10 @@ document.addEventListener('visibilitychange',()=>{ if(!document.hidden) checkDue
       'padding:4px 10px;border-radius:20px;background:rgba(127,127,127,.10);' +
       'font-family:inherit;cursor:default;user-select:none}' +
       '#rm-nuvem .rm-nuvem-ponto{width:8px;height:8px;border-radius:50%;flex:none;display:block}' +
+      /* LINGUAGEM DE PRANCHA: o selo só aparece quando pede atenção. Nuvem
+         ligada é o normal -- dizer isso em toda barra, com bolinha verde, era
+         a "tag de ao vivo" dos painéis feitos por IA. */
+      '#rm-nuvem[data-estado="ligada"]{display:none!important}' +
       /* A COR DE CADA ESTADO MORA NA FOLHA, e nao no atributo style do selo.
          Escrita no elemento a cada troca, ela escapava da traducao do tema
          escuro numa das trocas (Conectando -> Só neste aparelho) e o cinza
@@ -5103,7 +5141,7 @@ document.addEventListener('visibilitychange',()=>{ if(!document.hidden) checkDue
 })();
 </script>
 <script>/* versão publicada (PADRAO_RM.md §3): sobe a cada publicação, junto com o CACHE do sw.js */
-const APP_VER='v78';
+const APP_VER='v79';
 </script>
 <script id="rmVersaoBloco">
 /* ===== SELO DE VERSÃO — igual em todos os sistemas (PADRAO_RM.md §3) =====

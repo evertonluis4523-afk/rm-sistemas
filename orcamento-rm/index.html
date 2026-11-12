@@ -3509,6 +3509,40 @@ html th{
    (a lista de funcionários do Recibos), e pintar o fundo mudaria a tela. */
 html .card{border-radius:var(--rm-raio-g);border-color:var(--rm-linha)}
 
+/* ---------- LINGUAGEM DE PRANCHA ----------
+   "20 sinais de que o teu dashboard foi feito por IA": cartão de número com
+   ícone colorido, faixa colorida na borda, cartão escuro de destaque, rótulo
+   em caixa alta espaçada em todo canto. A casa fala a língua da prancha
+   técnica (a mesma do papel M1): linha fina, escrita normal, cor só com
+   significado -- vermelho = problema, âmbar = vence logo, verde = pago ou
+   recebido; laranja RM só na marca e na ação principal. Caixa alta só no
+   carimbo e no cabeçalho de tabela. Regra em PADRAO_RM 3c. */
+/* o nome do sistema ao lado da marca, em escrita normal */
+html .rm-brand .sub{text-transform:none!important;letter-spacing:0!important;font-size:13px!important;font-weight:600!important}
+/* FAIXA DE NÚMEROS: o contêiner dos números do topo leva a classe
+   .rm-faixa; as caixas viram células de uma faixa só, divididas por fio.
+   O fio de cada célula é sombra de 1px à direita e embaixo -- a última
+   coluna e a última linha são cortadas pela borda da faixa, e a célula que
+   falta na última linha fica branca (com gap+fundo cinza ela virava um
+   bloco cinza). */
+html .rm-faixa{gap:0!important;background:var(--rm-superficie)!important;border:1px solid var(--rm-linha)!important;
+  border-radius:6px!important;overflow:hidden!important;box-shadow:none!important}
+html .rm-faixa>*{border:0!important;border-radius:0!important;background:transparent!important;
+  box-shadow:1px 0 0 var(--rm-linha),0 1px 0 var(--rm-linha)!important;transform:none!important}
+html .rm-faixa>*::before,html .rm-faixa>*::after{content:none!important}
+html .rm-faixa>:is(button,a,[onclick],[role=button]):hover{background:var(--rm-superficie-2)!important}
+html .rm-faixa :is(.lbl,.lab,.label,.k,.k-label,.sum-lbl,.rm-fx-r){text-transform:none!important;letter-spacing:0!important;
+  font-size:12.5px!important;font-weight:600!important;color:var(--rm-apagado)}
+html .rm-faixa :is(.lbl,.lab,.label,.k,.k-label) :is(svg,.ico,.dot,.dotk,.k-ico),
+html .rm-faixa :is(.lbl,.lab,.label,.k,.k-label)>span:empty{display:none!important}
+/* faixa que já mora no alto de um painel: sem caixa própria, só o fio de baixo */
+html .rm-faixa.rm-faixa-painel{border:0!important;border-bottom:1px solid var(--rm-linha)!important;border-radius:0!important}
+html .rm-faixa :is(.val,.v,.value,.k-value,.num){font-variant-numeric:tabular-nums}
+/* a cor do número: só quando pede atenção (a célula diz, o número pinta) */
+html .rm-faixa .rm-fx-ruim{color:var(--rm-perigo)!important}
+html .rm-faixa .rm-fx-aviso{color:var(--rm-aviso)!important}
+html .rm-faixa .rm-fx-bom{color:var(--rm-ok)!important}
+
 /* ---------- CANTO E COR VALEM EM QUALQUER LUGAR ----------
    Uma regra de lugar (".appbar .btn", ".toolbar .btn") pode deixar o botão
    mais baixo ou mais estreito, mas não inventa outro canto nem outra cor. */
@@ -4659,7 +4693,7 @@ body[data-theme="escuro"] .cob-t input[type=date]{color-scheme:dark}
     <!-- CHAPAS / BOBINAS (R$/kg) -->
     <div class="panel" data-panel="chapas">
       <div class="db-h"><h3>Chapas e bobinas</h3><span class="s">R$ por kg</span></div>
-      <p class="note">Por kg, sem IPI — orce pelo <b>🧮 Calcular perfil</b>.</p>
+      <p class="note">Por kg, sem IPI — orce pelo <b>Calcular perfil</b>.</p>
       <div class="db-bar"><span class="note" style="margin:0">Uma coluna por fornecedor; o menor preço de cada material fica em verde.</span></div>
       <div class="db-tw"><table class="dbtbl limpa"><thead id="chapasHead"></thead>
         <tbody id="chapasBody"></tbody></table></div>
@@ -6571,7 +6605,7 @@ function abrirDetalheCotacao(id){
 
     '<div class="cot-det-footer">'+
       (comprada?'<button class="btn-sm" onclick="setCompradoDe(\''+idA+'\',\'\');abrirDetalheCotacao(\''+idA+'\')">↩ Reabrir</button>':'')+
-      ((ci&&ci.economia>0&&!comprada)?'<button class="btn-sm" onclick="comprarCombo(\''+idA+'\');abrirDetalheCotacao(\''+idA+'\')">🔀 Registrar compra combinada</button>':'')+
+      ((ci&&ci.economia>0&&!comprada)?'<button class="btn-sm" onclick="comprarCombo(\''+idA+'\');abrirDetalheCotacao(\''+idA+'\')">Registrar compra combinada</button>':'')+
       '<button class="btn-sm" onclick="fecharDetalheCotacao()">Fechar</button>'+
       '<button class="btn-sm red" onclick="gerarPDFMelhorCombinacao(\''+idA+'\')">▣ PDF da melhor combinação</button>'+
     '</div></div>';
@@ -8822,7 +8856,7 @@ function recPintaFontes(ativa){
   box.innerHTML='<select id="recSel" style="flex:1 1 260px;min-width:0" onchange="if(this.value!==\'\')recUsa(+this.value)"><option value="">— escolha uma cópia —</option>'
     +REC_FONTES.map((f,i)=>'<option value="'+i+'"'+(i===ativa?' selected':'')+'>'+escapeAttr(f.rot)+'</option>').join('')+'</select>'
     +'<button class="btn-sm" onclick="recNuvem()" title="Versões guardadas na nuvem antes de cada alteração do cadastro (14 dias)">☁ Versões na nuvem</button>'
-    +'<button class="btn-sm" onclick="document.getElementById(\'recFile\').click()">📂 Arquivo de backup…</button>';
+    +'<button class="btn-sm" onclick="document.getElementById(\'recFile\').click()">Arquivo de backup…</button>';
 }
 function recNuvem(){
   if(!FB.db){toast('Sem ligação com a nuvem');return;}
@@ -9355,7 +9389,7 @@ function renderSaved(){
      ninguém decidir perder. Passou de ORC_COBRAR_DIAS sem mudar de status,
      ganha a etiqueta; no topo, quantos são e um atalho para vê-los. */
   const cobrar=all.filter(e=>orcDiasSemResposta(e)>=ORC_COBRAR_DIAS);
-  const aviso=cobrar.length&&fst!=='enviado'?'<div class="saved-cobrar">⏰ <b>'+cobrar.length+'</b> orçamento(s) enviado(s) há mais de '+ORC_COBRAR_DIAS+' dias sem resposta. <button class="btn-sm" onclick="document.getElementById(\'savedFilter\').value=\'enviado\';renderSaved()">Ver enviados</button></div>':'';
+  const aviso=cobrar.length&&fst!=='enviado'?'<div class="saved-cobrar"><b>'+cobrar.length+'</b> orçamento(s) enviado(s) há mais de '+ORC_COBRAR_DIAS+' dias sem resposta. <button class="btn-sm" onclick="document.getElementById(\'savedFilter\').value=\'enviado\';renderSaved()">Ver enviados</button></div>':'';
   const porId={}; all.forEach(e=>porId[e.id]=e);
   host.innerHTML=aviso+list.map(e=>{
     const quando=e.salvoEm||(e.ts?new Date(e.ts).toLocaleDateString('pt-BR'):'');
@@ -10093,7 +10127,7 @@ function cobImprimir(){
   const o=cobAtual(); if(!o) return; const e=o;
   const c=cobContas(o), av=cobAvisos(o).filter(a=>a.t!=='costuma');
   let h='<style>@media print{.cob-pr td,.cob-pr th{font-size:10.5px;padding:4px 6px}.cob-pr .fora td{color:#999;text-decoration:line-through}.cob-pr .g td{font-weight:700;background:#f1f1ef;text-transform:uppercase;letter-spacing:.04em;font-size:10px}.cob-pr .ck{width:14px;height:14px;border:1px solid #444;display:inline-block}}</style>';
-  h+='<div class="rel-cards">'+relCard('Orçado',brl(c.orcado))+relCard('Comprado',brl(c.comprado),'ok',c.nComprados+' de '+c.n+' itens')+relCard('Falta comprar',brl(c.falta),c.nFalta?'warn':'',c.nFalta+' item(ns)')+'</div>';
+  h+='<div class="rel-cards rm-faixa">'+relCard('Orçado',brl(c.orcado))+relCard('Comprado',brl(c.comprado),'ok',c.nComprados+' de '+c.n+' itens')+relCard('Falta comprar',brl(c.falta),c.nFalta?'warn':'',c.nFalta+' item(ns)')+'</div>';
   if(av.length) h+='<div class="rel-sec">Avisos</div><ul>'+av.map(a=>'<li>'+a.txt+'</li>').join('')+'</ul>';
   h+='<table class="reltbl cob-pr"><thead><tr><th>Item</th><th class="r">Orçado</th><th class="r">Comprado</th><th>Fornecedor</th><th>Compra</th><th>Entrega</th><th>Situação</th><th>Conferido</th></tr></thead><tbody>';
   COB_GRUPOS.forEach(([g,rot])=>{ const ls=o.linhas.filter(l=>l.grupo===g); if(!ls.length) return;
@@ -10233,7 +10267,7 @@ function relatorioMetrics(list,ano){
 }
 function relCard(k,v,cls,s){ return '<div class="rel-card'+(cls?' '+cls:'')+'"><div class="k">'+k+'</div><div class="v">'+v+'</div>'+(s?'<div class="s">'+s+'</div>':'')+'</div>'; }
 function relatorioHTML(ano,m){
-  let h='<div class="rel-cards">';
+  let h='<div class="rel-cards rm-faixa">';
   h+=relCard('Orçado no ano',fmtR(m.orcado),'', m.n+' orçamento(s)');
   h+=relCard('Aprovado',fmtR(m.aprovado),'ok', m.nAprov+' ganho(s) · conversão '+num(m.conversao,0)+'%');
   h+=relCard('Em aberto',fmtR(m.emAberto),'warn', m.nAberto+' aguardando');
@@ -10298,7 +10332,7 @@ function printRelArea(titulo,sub,inner){
   const area=document.getElementById('relPrintArea');
   /* miolo M1 (PADRAO_RM 5) só no papel: os cartões viram a faixa cinza e os
      títulos de seção levam o traço laranja; a tela do relatório não muda */
-  inner=String(inner).replace(/class="rel-cards"/g,'class="rel-cards rmd-kpis"').replace(/class="rel-sec"/g,'class="rel-sec rmd-sec"');
+  inner=String(inner).replace(/class="rel-cards( rm-faixa)?"/g,'class="rel-cards rmd-kpis"').replace(/class="rel-sec"/g,'class="rel-sec rmd-sec"');
   /* o timbrado e o pe da papelaria, como nos outros impressos -- antes o
      relatorio saia so' com o titulo */
   area.innerHTML='<style>@media print{'+papelariaCSS()+'}</style>'+cabecalhoPDF(titulo)
@@ -10720,7 +10754,7 @@ function applyImport(){
    publicacao, e ha uma prova automatica que falha se um subir sem o outro.
    Assim o numero na tela e' o mesmo do arquivo que o aparelho guardou, e
    dizer "estou na v15" passa a significar alguma coisa. */
-const APP_VER='v162';
+const APP_VER='v163';
 (function(){ try{ const p=document.getElementById('verPill'); if(p)p.textContent=APP_VER; }catch(e){} })();
 /* Versao nova assumiu com a pagina aberta: avisa, em vez de recarregar por
    conta propria e jogar fora um orcamento pela metade. */
@@ -15810,6 +15844,10 @@ function orcDocHTML(modo,valores,fora){
       'padding:4px 10px;border-radius:20px;background:rgba(127,127,127,.10);' +
       'font-family:inherit;cursor:default;user-select:none}' +
       '#rm-nuvem .rm-nuvem-ponto{width:8px;height:8px;border-radius:50%;flex:none;display:block}' +
+      /* LINGUAGEM DE PRANCHA: o selo só aparece quando pede atenção. Nuvem
+         ligada é o normal -- dizer isso em toda barra, com bolinha verde, era
+         a "tag de ao vivo" dos painéis feitos por IA. */
+      '#rm-nuvem[data-estado="ligada"]{display:none!important}' +
       /* A COR DE CADA ESTADO MORA NA FOLHA, e nao no atributo style do selo.
          Escrita no elemento a cada troca, ela escapava da traducao do tema
          escuro numa das trocas (Conectando -> Só neste aparelho) e o cinza

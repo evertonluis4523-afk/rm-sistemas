@@ -1758,8 +1758,8 @@ html[data-fam=light] .ico-btn.fechado .ib-lbl{color:#1f6b41}
 /* SUMMARY BAR */
 .sum-item{display:flex;flex-direction:column;gap:2px}
 .sum-lbl{font-size:var(--fs-micro);color:var(--muted);text-transform:uppercase;letter-spacing:.6px;font-weight:700}
-.sum-val{font-family:'JetBrains Mono',monospace;font-size:17px;font-weight:800;color:#057E49}
-.sum-val.pagar{color:#8C6800}
+.sum-val{font-family:'JetBrains Mono',monospace;font-size:17px;font-weight:800;color:var(--ink)}
+.sum-val.pagar{color:var(--ink)}
 
 /* BRUSH BAR */
 .brushbar{position:sticky;top:0;z-index:30;display:flex;gap:6px;overflow-x:auto;
@@ -1819,8 +1819,8 @@ html[data-fam] .brushbar .chip.on,.brushbar .chip.on{
    e' como se chega a versoes que divergem. Ficou uma so'. */
 .resumo-inline{display:flex;gap:18px;align-items:center;margin-left:14px;flex:0 0 auto}
 .resumo-inline .sum-item{gap:0}
-.resumo-inline .sum-lbl{font-size:var(--fs-xs);color:var(--muted);text-transform:uppercase;
-  letter-spacing:.6px;font-weight:700}
+.resumo-inline .sum-lbl{font-size:var(--fs-xs);color:var(--muted);text-transform:none;
+  letter-spacing:0;font-weight:700}
 .resumo-inline .sum-val{font-size:var(--fs-lg);font-weight:800;font-family:'JetBrains Mono',monospace}
 .brush-dica{margin-left:auto;font-size:var(--fs-xs);color:var(--muted);white-space:nowrap;
   padding-left:14px;font-weight:560;flex:0 0 auto}
@@ -2570,6 +2570,40 @@ html th{
    (a lista de funcionários do Recibos), e pintar o fundo mudaria a tela. */
 html .card{border-radius:var(--rm-raio-g);border-color:var(--rm-linha)}
 
+/* ---------- LINGUAGEM DE PRANCHA ----------
+   "20 sinais de que o teu dashboard foi feito por IA": cartão de número com
+   ícone colorido, faixa colorida na borda, cartão escuro de destaque, rótulo
+   em caixa alta espaçada em todo canto. A casa fala a língua da prancha
+   técnica (a mesma do papel M1): linha fina, escrita normal, cor só com
+   significado -- vermelho = problema, âmbar = vence logo, verde = pago ou
+   recebido; laranja RM só na marca e na ação principal. Caixa alta só no
+   carimbo e no cabeçalho de tabela. Regra em PADRAO_RM 3c. */
+/* o nome do sistema ao lado da marca, em escrita normal */
+html .rm-brand .sub{text-transform:none!important;letter-spacing:0!important;font-size:13px!important;font-weight:600!important}
+/* FAIXA DE NÚMEROS: o contêiner dos números do topo leva a classe
+   .rm-faixa; as caixas viram células de uma faixa só, divididas por fio.
+   O fio de cada célula é sombra de 1px à direita e embaixo -- a última
+   coluna e a última linha são cortadas pela borda da faixa, e a célula que
+   falta na última linha fica branca (com gap+fundo cinza ela virava um
+   bloco cinza). */
+html .rm-faixa{gap:0!important;background:var(--rm-superficie)!important;border:1px solid var(--rm-linha)!important;
+  border-radius:6px!important;overflow:hidden!important;box-shadow:none!important}
+html .rm-faixa>*{border:0!important;border-radius:0!important;background:transparent!important;
+  box-shadow:1px 0 0 var(--rm-linha),0 1px 0 var(--rm-linha)!important;transform:none!important}
+html .rm-faixa>*::before,html .rm-faixa>*::after{content:none!important}
+html .rm-faixa>:is(button,a,[onclick],[role=button]):hover{background:var(--rm-superficie-2)!important}
+html .rm-faixa :is(.lbl,.lab,.label,.k,.k-label,.sum-lbl,.rm-fx-r){text-transform:none!important;letter-spacing:0!important;
+  font-size:12.5px!important;font-weight:600!important;color:var(--rm-apagado)}
+html .rm-faixa :is(.lbl,.lab,.label,.k,.k-label) :is(svg,.ico,.dot,.dotk,.k-ico),
+html .rm-faixa :is(.lbl,.lab,.label,.k,.k-label)>span:empty{display:none!important}
+/* faixa que já mora no alto de um painel: sem caixa própria, só o fio de baixo */
+html .rm-faixa.rm-faixa-painel{border:0!important;border-bottom:1px solid var(--rm-linha)!important;border-radius:0!important}
+html .rm-faixa :is(.val,.v,.value,.k-value,.num){font-variant-numeric:tabular-nums}
+/* a cor do número: só quando pede atenção (a célula diz, o número pinta) */
+html .rm-faixa .rm-fx-ruim{color:var(--rm-perigo)!important}
+html .rm-faixa .rm-fx-aviso{color:var(--rm-aviso)!important}
+html .rm-faixa .rm-fx-bom{color:var(--rm-ok)!important}
+
 /* ---------- CANTO E COR VALEM EM QUALQUER LUGAR ----------
    Uma regra de lugar (".appbar .btn", ".toolbar .btn") pode deixar o botão
    mais baixo ou mais estreito, mas não inventa outro canto nem outra cor. */
@@ -3230,9 +3264,9 @@ body:not([data-theme="escuro"]){
     <span style="font-size:var(--fs-sm);color:var(--muted)">Ocultar afastados/demitidos</span>
   </label>
   <div class="spacer"></div>
-  <button class="ico-btn" id="btnBatch" title="Marcação em lote"><span>⚡</span><span class="ib-lbl">Lote</span></button>
-  <button class="ico-btn" id="btnDays" title="Editar dias"><span>📅</span><span class="ib-lbl">Dias</span></button>
-  <button class="ico-btn" id="btnFechar" title="Fechar o mês: trava as marcações depois de mandar à contabilidade"><span>🔒</span><span class="ib-lbl">Fechar</span></button>
+  <button class="ico-btn" id="btnBatch" title="Marcação em lote"><span><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h10M18 16l2 2 3-4"/></svg></span><span class="ib-lbl">Lote</span></button>
+  <button class="ico-btn" id="btnDays" title="Editar dias"><span><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16v16H4zM4 10h16M8 3v4M16 3v4"/></svg></span><span class="ib-lbl">Dias</span></button>
+  <button class="ico-btn" id="btnFechar" title="Fechar o mês: trava as marcações depois de mandar à contabilidade"><span><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 11h12v10H6zM8 11V7a4 4 0 0 1 8 0v4"/></svg></span><span class="ib-lbl">Fechar</span></button>
   <!-- O custo do mes e o a pagar moravam numa FAIXA PROPRIA de 59px logo
        abaixo. Sao dois numeros: cabem na ponta desta linha, e a faixa inteira
        deixa de existir. -->
@@ -3258,9 +3292,9 @@ body:not([data-theme="escuro"]){
     <input class="mono" id="cfgValor" type="number" inputmode="decimal" step="0.5" style="background:var(--surface)">
   </div>
   <button class="btn" id="empDedup" style="width:100%;margin-bottom:8px" title="Junta funcionários com o mesmo nome (mesmo com erro de digitação) num só, preservando o histórico">⇄ Juntar nomes duplicados</button>
-  <button class="btn" id="cfgDays" style="width:100%;margin-bottom:8px">📅 Editar dias / feriados</button>
+  <button class="btn" id="cfgDays" style="width:100%;margin-bottom:8px">Editar dias / feriados</button>
   <div style="display:flex;gap:8px;margin-bottom:8px">
-    <button class="btn" id="cfgBackup" style="flex:1">💾 Backup</button>
+    <button class="btn" id="cfgBackup" style="flex:1">Backup</button>
     <button class="btn" id="cfgRestore" style="flex:1">↻ Restaurar</button>
   </div>
   <input type="file" id="cfgFile" accept="application/json" style="display:none">
@@ -3341,13 +3375,13 @@ body:not([data-theme="escuro"]){
     <div class="rep-filter-note">Os filtros valem para a prévia e para todas as exportações deste relatório.</div>
   </div>
   <div class="rep-tools" style="flex-wrap:wrap">
-    <button class="btn" id="repXlsx">📊 Excel</button>
+    <button class="btn" id="repXlsx">Excel</button>
     <button class="btn" id="repCopy">Copiar</button>
-    <button class="btn primary" id="repPrint">🖨 Imprimir / PDF</button>
+    <button class="btn primary" id="repPrint">Imprimir / PDF</button>
   </div>
   <div class="rep-tools" style="flex-wrap:wrap">
-    <button class="btn" id="repAnual" style="flex:1">📅 Relatório anual (Excel, 12 meses)</button>
-    <button class="btn" id="empArquivados" style="flex:1" title="Histórico completo de quem saiu da equipe">🗄 Desligados / Demitidos (<span id="arqCount">0</span>)</button>
+    <button class="btn" id="repAnual" style="flex:1">Relatório anual (Excel, 12 meses)</button>
+    <button class="btn" id="empArquivados" style="flex:1" title="Histórico completo de quem saiu da equipe">Desligados / Demitidos (<span id="arqCount">0</span>)</button>
   </div>
   <div id="repBody"></div>
   <button class="btn primary" id="repClose" style="margin-top:14px;width:100%">Fechar</button>
@@ -3625,7 +3659,7 @@ function renderFechado(){
     bt.title=f?'Mês fechado — toque para reabrir':'Fechar o mês: trava as marcações depois de mandar à contabilidade'; }
   if(!cx) return;
   if(!f){ cx.style.display='none'; cx.innerHTML=''; return; }
-  cx.innerHTML='<div class="mes-fechado"><div class="mf-t">🔒 '+esc(fmtMes(DB.mesAtual))+' fechado em '+fmtDataBR(f.em)
+  cx.innerHTML='<div class="mes-fechado"><div class="mf-t">'+esc(fmtMes(DB.mesAtual))+' fechado em '+fmtDataBR(f.em)
     +'<span class="mf-s">'+(f.por?'por '+esc(f.por)+' · ':'')+brl(f.valorDia)+' por dia · as marcações estão travadas</span></div>'
     +'<button class="desl-btn" onclick="reabrirMesUI()">Reabrir o mês</button></div>';
   cx.style.display='block';
@@ -4411,7 +4445,7 @@ function renderArqList(){
         '<div class="note" style="margin:2px 0 0">'+esc(setorPadrao(a.setor)||'Sem setor')+(motivoLbl?' · '+esc(motivoLbl):'')+'</div>'+
         '<div class="note" style="margin:2px 0 0">'+periodo+' · '+nMeses+' mês(es) com lançamento · arquivado em '+new Date(a.arquivadoEm||0).toLocaleDateString('pt-BR')+'</div>'+
       '</div>'+
-      '<button class="btn-sm" data-arqpdf="'+i+'" title="Gerar PDF com o histórico completo">📄 PDF</button>'+
+      '<button class="btn-sm" data-arqpdf="'+i+'" title="Gerar PDF com o histórico completo">PDF</button>'+
       '<button class="btn-sm" data-arqrestore="'+i+'" title="Voltar pra lista de funcionários ativos">↺ Restaurar</button>'+
       '<button class="del" data-arqdel="'+i+'" title="Excluir definitivamente do arquivo (não dá pra desfazer)">×</button>'+
     '</div>';
@@ -5607,7 +5641,7 @@ function setFbStatus(state){
     state==='ok'? '☁️ Nuvem conectada — '+DB.funcionarios.length+' funcionários sincronizados.' :
     state==='connecting'? '☁️ Conectando à nuvem…' :
     state==='error'? '⚠️ Sem acesso à nuvem. Confira a regra do nó <b>almocos</b> no Firebase (<code>".read": true, ".write": true</code>).' :
-    '📴 Modo local (sem nuvem).'; }
+    'Modo local (sem nuvem).'; }
 }
 function hasLocalData(){
   if(DB.funcionarios && DB.funcionarios.length) return true;
@@ -5774,7 +5808,7 @@ fbInit();
 /* Sobe junto com o nome do cache do sw.js, sempre: se um subir sem o outro,
    o numero na tela deixa de significar alguma coisa. Ha uma prova automatica
    que falha quando os dois discordam. */
-const APP_VER='v108';
+const APP_VER='v109';
 (function(){var p=document.getElementById('verPill'); if(p)p.textContent=APP_VER;})();
 if('serviceWorker' in navigator){
   if(location.protocol.startsWith('http')){ navigator.serviceWorker.register('./sw.js').catch(()=>{}); }
@@ -6311,6 +6345,10 @@ setTimeout(fitGrid, 300);
       'padding:4px 10px;border-radius:20px;background:rgba(127,127,127,.10);' +
       'font-family:inherit;cursor:default;user-select:none}' +
       '#rm-nuvem .rm-nuvem-ponto{width:8px;height:8px;border-radius:50%;flex:none;display:block}' +
+      /* LINGUAGEM DE PRANCHA: o selo só aparece quando pede atenção. Nuvem
+         ligada é o normal -- dizer isso em toda barra, com bolinha verde, era
+         a "tag de ao vivo" dos painéis feitos por IA. */
+      '#rm-nuvem[data-estado="ligada"]{display:none!important}' +
       /* A COR DE CADA ESTADO MORA NA FOLHA, e nao no atributo style do selo.
          Escrita no elemento a cada troca, ela escapava da traducao do tema
          escuro numa das trocas (Conectando -> Só neste aparelho) e o cinza
