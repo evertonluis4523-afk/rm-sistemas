@@ -2590,7 +2590,23 @@ tr.det-achado{animation:det-achado 1.6s ease-out}
   .folha{width:auto;min-height:auto;box-shadow:none;margin:0;padding:5mm 14mm;page-break-after:always}
   .folha:last-child{page-break-after:auto}
   .recibo{height:143mm}
+  /* PAPEIS DE RH COM O RODAPE DO PADRAO (PADRAO_RM 5). "Como ficaria os
+     recibos com rodape se sao 2 por folha?" -- nao ficam: a folha do recibo
+     (2 por A4, 143 mm cada, para cortar) e a lista de ponto PF (vai para a
+     parede) continuam na folha sem margem acima. So' os papeis de um
+     documento por pagina (solicitacao, advertencia, pedido de demissao,
+     beneficios e ficha de admissao) vao numa pagina propria, com margem
+     e o rodape na margem: telefone | site | Pagina X de Y. Da' pagina 2 em
+     diante, o cabecalho de continuacao. */
+  .folha.rh-folha{page:rh;padding:0 !important}
 }
+@page rh{size:A4;margin:12mm 14mm 17mm;
+  @bottom-left{content:"51 99789-7879 · @rm.estruturas";font-family:Satoshi,Arial,sans-serif;font-size:7.5pt;color:#4A515B;border-top:.6pt solid #c9cdd2;vertical-align:top;padding-top:2.2mm}
+  @bottom-center{content:"www.rmestruturas.com.br";font-family:Satoshi,Arial,sans-serif;font-size:7.5pt;color:#4A515B;border-top:.6pt solid #c9cdd2;vertical-align:top;padding-top:2.2mm}
+  @bottom-right{content:"Página " counter(page) " de " counter(pages);font-family:Satoshi,Arial,sans-serif;font-size:7.5pt;color:#4A515B;border-top:.6pt solid #c9cdd2;vertical-align:top;padding-top:2.2mm}
+  @top-left{content:"Recursos humanos";font-family:Satoshi,Arial,sans-serif;font-size:7.5pt;font-weight:700;color:#C1310B;letter-spacing:.06em;border-bottom:.6pt solid #c9cdd2;vertical-align:bottom;padding-bottom:1.8mm}
+  @top-right{content:"RM Estruturas Pré-Fabricadas";font-family:Satoshi,Arial,sans-serif;font-size:7.5pt;color:#6E747C;border-bottom:.6pt solid #c9cdd2;vertical-align:bottom;padding-bottom:1.8mm}}
+@page rh:first{@top-left{content:none;border:0}@top-right{content:none;border:0}}
 
 /* ---- tela de entrada, padrao da casa ----
    Era o primeiro contato com cada sistema e cada um tinha o seu: uns com o
@@ -8018,7 +8034,7 @@ function ceGerar(){
      de relatorio, onde a imagem tem altura fixa. Aqui dentro da .folha ele
      saia em tamanho natural e esmagava a coluna da direita -- o CNPJ chegou a
      quebrar no meio do numero. */
-  sc.innerHTML='<div class="folha">'
+  sc.innerHTML='<div class="folha rh-folha">'
     + cabRM('Recursos humanos')
     + '<div class="carta-tit">Solicitação</div>'
     + '<div class="carta-txt">'
@@ -8212,7 +8228,7 @@ function entImprimir(){
   const sc=$('#printScroll'); if(!sc)return;
   const e=entEstado(), bens=entBens(), som=entSomados(), ls=entHorario();
   const quem=String(e.nome||'').trim();
-  sc.innerHTML='<div class="folha ent-folha">'+cabRM('Recursos humanos')
+  sc.innerHTML='<div class="folha rh-folha ent-folha">'+cabRM('Recursos humanos')
     +'<div class="carta-tit">Benefícios e horário de trabalho</div>'
     +(quem||e.funcao?'<div class="ent-f-quem">'+(quem?'Candidato(a): <b>'+esc(titlePt(quem))+'</b>':'')
       +(e.funcao?(quem?' · ':'')+'Função: <b>'+esc(e.funcao)+'</b>':'')+'</div>':'')
@@ -8415,7 +8431,7 @@ function admDepLinha(i, campo, rot){
 function admFichaHTML(){
   const cfg = state.cfg || {};
   const deps = admEstado().deps;
-  let h = '<div class="folha adm-folha">'
+  let h = '<div class="folha rh-folha adm-folha">'
   + cabRM('Recursos humanos')
   + '<div class="adm-tit">FICHA DE ADMISSÃO DE EMPREGADO</div>'
   + '<div class="adm-sub">DOCUMENTO INTERNO</div>';
@@ -8919,7 +8935,7 @@ function adGerar(){
   const sc=$('#printScroll'); if(!sc)return;
   const cidade=(cfg.cidadeEmissao||'Estrela').trim();   /* data da carta: cidade, nao a linha inteira do timbrado */
   const razao=(cfg.razao||'Nunes e Kuhn Estruturas Metálicas Ltda').toUpperCase();
-  sc.innerHTML='<div class="folha">'
+  sc.innerHTML='<div class="folha rh-folha">'
     + cabRM('Recursos humanos')
     + '<div class="carta-tit">Advertência</div>'
     + '<div class="adv-dest">Ao Sr.(a) <b>'+esc(nome)+'</b><br>CPF: <b>'+esc(cpf)+'</b></div>'
@@ -9008,7 +9024,7 @@ function pdGerar(){
   const dataCurta=pdLinha(9)+'/'+pdLinha(9)+'/'+pdLinha(16);
   const assFunc='<div class="bloco"><div class="linha"></div>'+(cheio?'<div class="quem">'+esc(nome)+'</div>':'')+'<div class="papel">Assinatura do(a) funcionário(a)</div></div>';
   const assResp=menor?'<div class="bloco"><div class="linha"></div><div class="papel">Responsável legal (menor de idade)</div></div>':'';
-  sc.innerHTML='<div class="folha pd-folha">'
+  sc.innerHTML='<div class="folha rh-folha pd-folha">'
     +cabRM('Recursos humanos')
     +'<div class="carta-tit">Pedido de demissão</div>'
     +'<div class="pd-par pd-data">'+esc(cidade)+', '+pdLinha(14)+' de '+pdLinha(42)+' de '+ano+'.</div>'
@@ -18543,7 +18559,7 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape'){if(fecharSemPerder(
    juntos a cada publicacao, e ha uma prova automatica que falha se um subir
    sem o outro. Assim o numero na tela e o mesmo do arquivo que o aparelho
    guardou, e dizer "estou na v81" passa a significar alguma coisa. */
-const APP_VER='v297';
+const APP_VER='v298';
 (function(){var p=document.getElementById('verPill'); if(p)p.textContent=APP_VER;})();
 
 if('serviceWorker' in navigator){
