@@ -9710,8 +9710,10 @@ function cobEscolhe(id){ COB_SEL=id; COB_ABERTA={}; COB_SELS={}; cobRender(); }
    preciso marcar individualmente cada um." Marca os itens (ou todos do
    mesmo fornecedor, que é como chega o pedido) e aplica de uma vez a data
    da compra, a previsão de entrega ou o recebido. Item com entrega em
-   partes não recebe a previsão (cada parte tem a sua); o recebido marca
-   todas as partes. Teste orcamento-compras-em-lote. */
+   partes: o lote age na PRÓXIMA parte que ainda não chegou ("e se uma
+   parte do material o fornecedor entrega antes e o restante depois?") --
+   a 1ª carga chegou, marca a 1ª; a 2ª chegou, marca de novo e fecha.
+   Teste orcamento-compras-em-lote. */
 let COB_SELS={};
 function cobSelLinhas(){ const o=cobAtual(); return o?(o.linhas||[]).filter(l=>COB_SELS[l.lid]):[]; }
 function cobSelMarca(lid,on){ if(on) COB_SELS[lid]=true; else delete COB_SELS[lid]; cobRender(); }
@@ -9726,25 +9728,27 @@ function cobLoteHTML(o){
       +'<button type="button" class="btn-sm" onclick="cobLoteDatas()">Aplicar datas</button><button type="button" class="btn-sm" onclick="cobLoteRecebe()">Marcar recebido</button>'
       +'<button type="button" class="btn-sm" onclick="cobSelTodos(false)">Limpar</button>':'')+'</div>';
 }
+/* a próxima entrega que ainda não chegou (cria a única, se não houver nenhuma) */
+function cobProxEntrega(l){
+  if(!Array.isArray(l.entregas)) l.entregas=[];
+  if(!l.entregas.length) l.entregas.push({eid:cobNovoId('en'),desc:'',prev:'',recebido:''});
+  return l.entregas.find(x=>!x.recebido)||null;
+}
 function cobLoteDatas(){
   const ls=cobSelLinhas(), dc=(document.getElementById('cobLoteCompra')||{}).value||'', de=(document.getElementById('cobLoteEnt')||{}).value||'';
   if(!ls.length) return; if(!dc&&!de){ toast('Escolha a data da compra ou da entrega'); return; }
   let partes=0;
   ls.forEach(l=>{ if(dc) l.dataCompra=dc;
-    if(de){ if(!Array.isArray(l.entregas)) l.entregas=[];
-      if(l.entregas.length>1){ partes++; return; }
-      if(!l.entregas.length) l.entregas.push({eid:cobNovoId('en'),desc:'',prev:'',recebido:''});
-      l.entregas[0].prev=de; } });
-  cobMudou(); toast(ls.length+' item(ns) com a data'+(partes?' · '+partes+' com entrega em partes ficou(aram) como estava(m)':''));
+    if(de){ const x=cobProxEntrega(l); if(x){ x.prev=de; if(l.entregas.length>1) partes++; } } });
+  cobMudou(); toast(ls.length+' item(ns) com a data'+(partes?' · em '+partes+' com entrega em partes, na próxima parte':''));
 }
 function cobLoteRecebe(){
   const ls=cobSelLinhas(); if(!ls.length) return;
-  const hoje=rmDiaISO(); let n=0, sem=0;
+  const hoje=rmDiaISO(); let n=0, sem=0, parte=0;
   ls.forEach(l=>{ if(!cobComprou(l)){ sem++; return; }
-    if(!Array.isArray(l.entregas)) l.entregas=[];
-    if(!l.entregas.length) l.entregas.push({eid:cobNovoId('en'),desc:'',prev:'',recebido:''});
-    l.entregas.forEach(x=>{ if(!x.recebido) x.recebido=hoje; }); n++; });
-  cobMudou(); toast(n+' item(ns) recebido(s)'+(sem?' · '+sem+' sem compra lançada ficou(aram) de fora':''));
+    const x=cobProxEntrega(l); if(!x) return;
+    x.recebido=hoje; n++; if(l.entregas.some(y=>!y.recebido)) parte++; });
+  cobMudou(); toast(n+' entrega(s) marcada(s) como recebida(s)'+(parte?' · '+parte+' item(ns) ainda com parte por chegar':'')+(sem?' · '+sem+' sem compra lançada ficou(aram) de fora':''));
 }
 function cobSet(lid,campo,val){
   const l=cobLinha(lid); if(!l) return;
@@ -10690,7 +10694,7 @@ function applyImport(){
    publicacao, e ha uma prova automatica que falha se um subir sem o outro.
    Assim o numero na tela e' o mesmo do arquivo que o aparelho guardou, e
    dizer "estou na v15" passa a significar alguma coisa. */
-const APP_VER='v160';
+const APP_VER='v161';
 (function(){ try{ const p=document.getElementById('verPill'); if(p)p.textContent=APP_VER; }catch(e){} })();
 /* Versao nova assumiu com a pagina aberta: avisa, em vez de recarregar por
    conta propria e jogar fora um orcamento pela metade. */
