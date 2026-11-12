@@ -3153,7 +3153,7 @@ const DB_NODE = "maquinas_rm";
    visivel, nenhum de nos dois tinha como saber se o aparelho estava rodando o
    que foi publicado ou uma copia velha do cache do app instalado. Diagnostico
    por adivinhacao custa mais caro que um rodape. */
-const APP_VER='v45';
+const APP_VER='v46';
 const STORE_KEY = "rm_maquinas_v1";
 
 const CORES = [
@@ -7416,7 +7416,7 @@ if ('serviceWorker' in navigator) {
     /* o pé antigo (fixo, dentro da página) sai: o novo mora na margem.
        A linha de nota dele ("atualizado em") vai para o fim do documento. */
     var nota = '';
-    [].slice.call(raiz.querySelectorAll('#rm-pe-imp,.pe,.sheetfoot,.foot,.rodape')).forEach(function(e){
+    [].slice.call(raiz.querySelectorAll('#rm-pe-imp,.pe,.rm-pe,.sheetfoot,.foot,.rodape')).forEach(function(e){
       if (e.id !== 'rm-pe-imp' && e.textContent.toLowerCase().indexOf(PE_SITE) < 0) return;
       /* só o pé: um bloco com tabela, totais ou texto comprido não é rodapé */
       if (e.id !== 'rm-pe-imp' && (e.querySelector('table,.totbox,.tot') || e.textContent.length > 400)) return;

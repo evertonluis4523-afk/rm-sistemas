@@ -10350,7 +10350,7 @@ function applyImport(){
    publicacao, e ha uma prova automatica que falha se um subir sem o outro.
    Assim o numero na tela e' o mesmo do arquivo que o aparelho guardou, e
    dizer "estou na v15" passa a significar alguma coisa. */
-const APP_VER='v156';
+const APP_VER='v157';
 (function(){ try{ const p=document.getElementById('verPill'); if(p)p.textContent=APP_VER; }catch(e){} })();
 /* Versao nova assumiu com a pagina aberta: avisa, em vez de recarregar por
    conta propria e jogar fora um orcamento pela metade. */
@@ -10969,7 +10969,7 @@ function esqPDFMonta(L,fotos,reduzidas){
       +    (esqM2(e)>0?(' · '+num(esqM2(e),2)+' m² cada'):'')+'</div>'
       +  '<div class="des">'+escapeAttr(esqDesc(e)||'—')+'</div>'
       +  (e.obs?'<div class="obs">'+escapeAttr(e.obs)+'</div>':'')
-      +  '<table class="resp"><tr>'
+      +  '<table class="resp rmd-livre"><tr>'
       +    '<td><span>Preço unitário</span><div class="ln"></div></td>'
       +    '<td><span>Preço total ('+q+')</span><div class="ln"></div></td>'
       +    '<td><span>Prazo</span><div class="ln"></div></td>'
@@ -10979,64 +10979,50 @@ function esqPDFMonta(L,fotos,reduzidas){
 
   const est='@page{size:210mm 297mm;margin:12mm}*{box-sizing:border-box}'
     +'body{font-family:"Satoshi",Arial,Helvetica,sans-serif;color:#202124;margin:0;background:#fff;font-size:11px}'
-    +'.top{border-bottom:5px solid #D53309;padding:0 0 11px;margin-bottom:14px;display:flex;align-items:center;gap:13px}'
-    +'.top img{height:42px;width:auto;display:block}'
-    +'.brand{font-size:19px;font-weight:900;letter-spacing:.4px;color:#D53309;line-height:1.05}'
-    +'.brand span{color:#17181b}.subbrand{font-size:9px;color:#666;margin-top:3px;text-transform:uppercase;letter-spacing:1.2px}'
-    +'.title{background:#17181b;color:#fff;padding:12px 15px;border-radius:7px 7px 0 0;font-size:15px;font-weight:800}'
-    +'.info{border:1px solid #ddd;border-top:0;padding:11px 14px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px 20px;margin-bottom:14px}'
-    +'.label{font-size:8px;text-transform:uppercase;color:#777;font-weight:800;letter-spacing:.6px}'
-    +'.value{font-size:12px;font-weight:700;margin-top:2px}'
-    +'.nota{padding:9px 12px;background:#f7f7f7;border-left:3px solid #D53309;color:#444;font-size:9.5px;line-height:1.5;margin-bottom:14px}'
+    /* miolo M1 (PADRAO_RM 5): título, faixa de dados e seção vêm do kit */
     /* Miniatura: coluna de 34 mm e altura TRAVADA em 34 mm. Antes eram 62 mm
        de largura com altura livre -- uma foto em pe' esticava o bloco e cada
        peca ocupava quase a folha inteira. Travada, cabem seis por pagina e a
        linha de cima fica alinhada com a de baixo. */
-    +'.it{display:grid;grid-template-columns:34mm 1fr;gap:6mm;border:1px solid #ddd;border-radius:6px;'
-    +'padding:5mm;margin-bottom:5mm;break-inside:avoid;page-break-inside:avoid}'
+    +'.it{display:grid;grid-template-columns:34mm 1fr;gap:6mm;border-top:.5px solid #d9dce0;'
+    +'padding:4mm 0;break-inside:avoid;page-break-inside:avoid}'
     +'.im{border:1px solid #e3e3e3;border-radius:4px;overflow:hidden;background:#fafafa;'
     +'display:flex;align-items:center;justify-content:center;height:34mm}'
     +'.im img{max-width:100%;max-height:34mm;width:auto;height:auto;display:block;object-fit:contain}'
     +'.semfoto{color:#aaa;font-size:8px}'
-    +'.cod{font-size:17px;font-weight:900;color:#D53309;letter-spacing:.5px}'
-    +'.med{font-size:14px;font-weight:800;margin-top:1mm}'
-    +'.qtd{font-size:11px;font-weight:700;color:#333;margin-top:1mm}'
-    +'.des{font-size:10px;color:#555;margin-top:2mm;line-height:1.5}'
-    +'.obs{font-size:9.5px;color:#8a4704;background:#fff6ec;padding:2mm 3mm;border-radius:4px;margin-top:2mm}'
+    +'.cod{font-size:11px;font-weight:700;color:#C1310B;letter-spacing:.04em}'
+    +'.med{font-size:12px;font-weight:700;margin-top:1mm}'
+    +'.qtd{font-size:9.5px;font-weight:600;color:#141414;margin-top:1mm}'
+    +'.des{font-size:9px;color:#4A515B;margin-top:2mm;line-height:1.5}'
+    +'.obs{font-size:8.5px;color:#4A515B;margin-top:2mm}'
     +'.resp{width:100%;border-collapse:collapse;margin-top:4mm}'
     +'.resp td{padding:0 3mm 0 0;vertical-align:top;width:33%}'
     +'.resp span{font-size:7.5px;text-transform:uppercase;color:#888;font-weight:800;letter-spacing:.5px}'
     +'.resp .ln{border-bottom:1px solid #999;height:7mm}'
-    +'.fim{border:1px solid #ddd;border-radius:7px;padding:5mm;margin-top:3mm;break-inside:avoid}'
-    +'.fim h3{margin:0 0 3mm;font-size:12px}'
+    +'.fim{margin-top:2mm;break-inside:avoid}'
     +'.fim table{width:100%;border-collapse:collapse}'
     +'.fim td{padding:0 4mm 4mm 0;vertical-align:top;width:50%}'
     +'.fim span{font-size:7.5px;text-transform:uppercase;color:#888;font-weight:800;letter-spacing:.5px}'
-    +'.fim .ln{border-bottom:1px solid #999;height:8mm}'
-    +'.foot{margin-top:6mm;padding-top:3mm;border-top:1px solid #ddd;color:#777;font-size:8px;display:flex;justify-content:space-between}';
+    +'.fim .ln{border-bottom:1px solid #999;height:8mm}';
 
   const html='<!doctype html><html><head><meta charset="utf-8"><title>Pedido de orçamento — esquadrias</title><style>'+RM_FONTE+'</style>'
     +'<style>'+est+'</style></head><body>'
     +cabecalhoPDF('Pedido de orçamento · esquadrias')
-    +'<div class="title">Pedido de orçamento — esquadrias</div>'
-    +'<div class="info">'
-    +'<div><div class="label">Cliente</div><div class="value">'+cliente+'</div></div>'
-    +'<div><div class="label">Obra</div><div class="value">'+obra+'</div></div>'
-    +'<div><div class="label">Data</div><div class="value">'+hoje+'</div></div>'
-    +(forn?'<div><div class="label">Fornecedor</div><div class="value">'+forn+'</div></div>':'')
-    +'<div><div class="label">Itens</div><div class="value">'+L.length+' · '+un+' unidade(s)</div></div>'
-    +'<div><div class="label">Área total</div><div class="value">'+num(m2,2)+' m²</div></div>'
+    +'<h1 class="rmd-tit">'+obra+'</h1><div class="rmd-subtit">'+hoje+'</div>'
+    +'<div class="rmd-dados">'
+    +'<div><span>Cliente</span><b>'+cliente+'</b></div>'
+    +(forn?'<div><span>Fornecedor</span><b>'+forn+'</b></div>':'')
+    +'<div><span>Itens</span><b>'+L.length+' · '+un+' unidade(s)</b></div>'
+    +'<div><span>Área total</span><b>'+num(m2,2)+' m²</b></div>'
     +'</div>'
-    +'<div class="nota">Os itens estão identificados de <b>'+esqCod(0)+'</b> a <b>'+esqCod(L.length-1)+'</b>, '
-    +'com imagem, medidas e quantidade. Favor preencher <b>preço, prazo e observação</b> ao lado de cada item, '
-    +'e as condições no fim da folha. Medidas em milímetros, no formato largura × altura.</div>'
+    +'<div class="rmd-obs" style="margin:6px 0 3mm">Preencher preço, prazo e observação em cada item ('+esqCod(0)
+    +(L.length>1?' a '+esqCod(L.length-1):'')+') e as condições no fim. Medidas em mm, largura × altura.</div>'
     +itens
-    +'<div class="fim"><h3>Condições da proposta</h3><table>'
+    +'<div class="fim"><div class="rmd-sec">Condições da proposta</div><table class="rmd-livre">'
     +'<tr><td><span>Valor total</span><div class="ln"></div></td><td><span>Condição de pagamento</span><div class="ln"></div></td></tr>'
     +'<tr><td><span>Prazo de entrega</span><div class="ln"></div></td><td><span>Validade da proposta</span><div class="ln"></div></td></tr>'
     +'<tr><td><span>Frete</span><div class="ln"></div></td><td><span>Instalação (inclusa ou não)</span><div class="ln"></div></td></tr>'
     +'</table></div>'
-    +'<div class="foot"><span>RM Estruturas · pedido de orçamento de esquadrias</span><span>Gerado em '+hoje+'</span></div>'
     +'</body></html>';
 
   if(reduzidas) toast(reduzidas+' imagem(ns) saíram com a definição da miniatura — o arquivo grande delas foi colado noutro computador.');
@@ -12041,7 +12027,7 @@ function cnmPDF(){
   const qtd=v=>{ const n=cnmNum(v); return String(v==null?'':v).trim()===''?'':num(n,n%1?2:0); };
   let corpo='';
   servs.forEach(s=>{
-    corpo+='<div class="sv"><div class="sv-h"><b>'+escapeAttr(s.nome||'Serviço')+'</b>'
+    corpo+='<div class="sv"><div class="sv-h rmd-grupo"><b>'+escapeAttr(s.nome||'Serviço')+'</b>'
       +'<span>'+(cnmRm2(s)>0?brl(cnmRm2(s))+'/m² · ':'')+'<b>'+brl(cnmSub(s))+'</b></span></div>'
       +(s.itens.length?'<table><thead><tr><th class="l">Item / descrição</th><th class="l" style="width:22mm">Unid.</th><th style="width:22mm">Qtd.</th>'
         +(s.modo==='item'?'<th style="width:28mm">Valor unit.</th><th style="width:28mm">Total</th>':'')+'</tr></thead><tbody>'
@@ -12051,36 +12037,25 @@ function cnmPDF(){
   });
   const est='@page{size:210mm 297mm;margin:12mm}*{box-sizing:border-box}'
     +'body{font-family:"Satoshi",Arial,Helvetica,sans-serif;color:#202124;margin:0;background:#fff;font-size:11px}'
-    +'.title{background:#17181b;color:#fff;padding:12px 15px;border-radius:7px 7px 0 0;font-size:15px;font-weight:800;-webkit-print-color-adjust:exact;print-color-adjust:exact}'
-    +'.info{border:1px solid #ddd;border-top:0;padding:11px 14px;display:grid;grid-template-columns:2fr 1.3fr 1fr 1fr;gap:7px 20px;margin-bottom:14px}'
-    +'.label{font-size:8px;text-transform:uppercase;color:#777;font-weight:800;letter-spacing:.6px}'
-    +'.value{font-size:12px;font-weight:700;margin-top:2px}'
-    +'.sv{border:1px solid #ddd;border-radius:6px;margin-bottom:4mm;break-inside:avoid;page-break-inside:avoid;overflow:hidden}'
-    +'.sv-h{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:7px 10px;background:#f6f7f8;font-size:12px;-webkit-print-color-adjust:exact;print-color-adjust:exact}'
-    +'.sv-h span{font-size:11px;color:#444}'
+    /* miolo M1 (PADRAO_RM 5): título, dados, grupo (laranja), tabela e total vêm do kit */
+    +'.sv{margin-bottom:3mm;break-inside:avoid;page-break-inside:avoid}'
+    +'.sv-h{display:flex;justify-content:space-between;align-items:baseline;gap:10px}'
     +'table{width:100%;border-collapse:collapse}'
-    +'th{font-size:8px;text-transform:uppercase;letter-spacing:.6px;color:#777;font-weight:800;text-align:right;padding:5px 10px;border-bottom:1px solid #ddd}'
-    +'td{padding:5px 10px;border-bottom:1px solid #eee;text-align:right;font-size:10.5px}'
-    +'th.l,td.l{text-align:left}tr:last-child td{border-bottom:0}'
-    +'.res{border:1px solid #ddd;border-radius:6px;margin-top:6mm;break-inside:avoid;page-break-inside:avoid;overflow:hidden}'
-    +'.res td{font-size:11px}.res .tot td{font-size:14px;font-weight:900;background:#17181b;color:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact}'
-    +'.res .tot td span{color:#FF7A4D}'
-    +'.foot{margin-top:6mm;padding-top:3mm;border-top:1px solid #ddd;color:#777;font-size:8px;display:flex;justify-content:space-between}';
+    +'th,td{text-align:right}th.l,td.l{text-align:left}'
+    +'.res{break-inside:avoid;page-break-inside:avoid}';
   const html='<!doctype html><html><head><meta charset="utf-8"><title>Chave na mão — '+escapeAttr(S.obra||'obra')+'</title><style>'+RM_FONTE+'</style>'
     +'<style>'+est+'</style></head><body>'
     +cabecalhoPDF('Detalhamento de obra · chave na mão')
-    +'<div class="title">Detalhamento da obra — chave na mão</div>'
-    +'<div class="info">'
-    +'<div><div class="label">Obra</div><div class="value">'+escapeAttr(S.obra||'—')+'</div></div>'
-    +'<div><div class="label">Cidade</div><div class="value">'+escapeAttr(d.cidade||'—')+'</div></div>'
-    +'<div><div class="label">Metragem total</div><div class="value">'+(m2>0?num(m2,2)+' m²':'—')+'</div></div>'
-    +'<div><div class="label">Data</div><div class="value">'+hoje+'</div></div>'
-    +(S.cliente?'<div style="grid-column:1/-1"><div class="label">Cliente</div><div class="value">'+escapeAttr(S.cliente)+'</div></div>':'')
+    +'<h1 class="rmd-tit">'+escapeAttr(S.obra||S.cliente||'Obra')+'</h1><div class="rmd-subtit">'+hoje+'</div>'
+    +'<div class="rmd-dados">'
+    +(S.cliente?'<div><span>Cliente</span><b>'+escapeAttr(S.cliente)+'</b></div>':'')
+    +'<div><span>Cidade</span><b>'+escapeAttr(d.cidade||'—')+'</b></div>'
+    +'<div><span>Metragem total</span><b>'+(m2>0?num(m2,2)+' m²':'—')+'</b></div>'
     +'</div>'+corpo
+    +'<div class="rmd-sec">Resumo da obra</div>'
     +'<table class="res"><thead><tr><th class="l">Serviço</th><th>R$/m²</th><th>Valor</th></tr></thead><tbody>'
     +servs.map(s=>'<tr><td class="l">'+escapeAttr(s.nome||'Serviço')+'</td><td>'+brl(cnmRm2(s))+'</td><td>'+brl(cnmSub(s))+'</td></tr>').join('')
-    +'<tr class="tot"><td class="l">Total da obra</td><td>'+(m2>0?brl(tot/m2):'—')+'</td><td><span>'+brl(tot)+'</span></td></tr></tbody></table>'
-    +'<div class="foot"><span>RM Estruturas · detalhamento de obra chave na mão</span><span>Gerado em '+hoje+'</span></div>'
+    +'<tr class="tot rmd-tot"><td class="l">Total da obra</td><td>'+(m2>0?brl(tot/m2):'—')+'</td><td>'+brl(tot)+'</td></tr></tbody></table>'
     +'</body></html>';
   esqEntregaPDF(html,nomeArquivoSeguro('RM_Chave_na_mao_'+(S.obra||S.cliente||'obra')+'.pdf'));
 }
@@ -12437,52 +12412,36 @@ function esqPDFInterno(){
   });
   const est2='@page{size:297mm 210mm;margin:10mm}*{box-sizing:border-box}'
     +'body{font-family:"Satoshi",Arial,Helvetica,sans-serif;color:#202124;margin:0;background:#fff;font-size:10px}'
-    +'.top{border-bottom:5px solid #D53309;padding:0 0 9px;margin-bottom:12px;display:flex;align-items:center;gap:12px}'
-    +'.top img{height:36px}.brand{font-size:17px;font-weight:900;color:#D53309}.brand span{color:#17181b}'
-    +'.subbrand{font-size:8px;color:#666;text-transform:uppercase;letter-spacing:1.1px;margin-top:2px}'
-    +'.title{background:#17181b;color:#fff;padding:10px 13px;border-radius:6px 6px 0 0;font-size:13px;font-weight:800}'
-    +'.info{border:1px solid #ddd;border-top:0;padding:9px 12px;display:grid;grid-template-columns:repeat(4,1fr);gap:6px 18px;margin-bottom:12px}'
-    +'.label{font-size:7.5px;text-transform:uppercase;color:#777;font-weight:800}'
-    +'.value{font-size:11px;font-weight:700;margin-top:2px}'
+    /* miolo M1 (PADRAO_RM 5): título, dados, tabela e resumo vêm do kit */
     +'table{width:100%;border-collapse:collapse}'
-    +'th{background:#17181b;color:#fff;padding:6px;font-size:8px;text-transform:uppercase;text-align:left}'
-    +'td{padding:6px;border-bottom:1px solid #e2e2e2;vertical-align:top}'
+    +'th{text-align:left}td{vertical-align:top}'
     +'td.r,th.r{text-align:right}td.c,th.c{text-align:center}'
     +'td small{display:block;color:#777;font-size:8px;margin-top:2px}'
     +'tr.confirmado td.s{color:#0a7a45;font-weight:800}'
     +'tr.estimado td.s{color:#8a4704;font-weight:800}'
     +'tr.sem td.s{color:#b3123c;font-weight:800}'
-    +'.tot{margin-top:12px;display:grid;grid-template-columns:repeat(4,1fr);gap:9px}'
-    +'.card{border:1px solid #ddd;border-radius:6px;padding:9px}'
-    +'.card .k{font-size:7.5px;text-transform:uppercase;color:#777;font-weight:800}'
-    +'.card .v{font-size:15px;font-weight:900;margin-top:3px}'
-    +'.nota{margin-top:10px;padding:8px 10px;background:#f7f7f7;border-left:3px solid #D53309;color:#555;font-size:8.5px;line-height:1.5}'
-    +'.foot{margin-top:10px;padding-top:6px;border-top:1px solid #ddd;color:#777;font-size:7.5px;display:flex;justify-content:space-between}';
+    +'';
   const html='<!doctype html><html><head><meta charset="utf-8"><title>Esquadrias — custos</title><style>'+RM_FONTE+'</style>'
     +'<style>'+est2+'</style></head><body>'+cabecalhoPDF('Custos de esquadrias · uso interno')
-    +'<div class="title">Esquadrias — custos (uso interno)</div>'
-    +'<div class="info">'
-    +'<div><div class="label">Cliente</div><div class="value">'+escapeAttr(S.cliente||'—')+'</div></div>'
-    +'<div><div class="label">Obra</div><div class="value">'+escapeAttr(S.obra||'—')+'</div></div>'
-    +'<div><div class="label">Itens</div><div class="value">'+L.length+' · '+unt+' un.</div></div>'
-    +'<div><div class="label">Área</div><div class="value">'+num(m2t,2)+' m²</div></div>'
+    +'<h1 class="rmd-tit">'+escapeAttr(S.obra||S.cliente||'Esquadrias')+'</h1><div class="rmd-subtit">'+hoje+' · uso interno</div>'
+    +'<div class="rmd-dados">'
+    +'<div><span>Cliente</span><b>'+escapeAttr(S.cliente||'—')+'</b></div>'
+    +'<div><span>Itens</span><b>'+L.length+' · '+unt+' un.</b></div>'
+    +'<div><span>Área</span><b>'+num(m2t,2)+' m²</b></div>'
     +'</div>'
     +'<table><thead><tr><th class="c">Cód.</th><th>Tipo e descrição</th><th class="c">Medida</th>'
     +'<th class="r">m²</th><th class="r">Qtd</th><th class="r">Custo un.</th><th class="r">R$/m²</th>'
     +'<th class="r">Total</th><th class="c">Situação</th><th>Fornecedor</th></tr></thead>'
     +'<tbody>'+linhas+'</tbody></table>'
-    +'<div class="tot">'
-    +'<div class="card"><div class="k">Informado</div><div class="v" style="color:#0a7a45">'+brl(conf)+'</div></div>'
-    +'<div class="card"><div class="k">Sugerido pelo banco</div><div class="v" style="color:#8a4704">'+brl(est)+'</div></div>'
-    +'<div class="card"><div class="k">Total</div><div class="v">'+brl(conf+est)+'</div></div>'
-    +'<div class="card"><div class="k">Média geral</div><div class="v">'+(m2t>0?('R$ '+num((conf+est)/m2t,2)+'/m²'):'—')+'</div></div>'
+    +'<div class="rmd-res" style="margin-top:10px">'
+    +'<div><span>Informado</span><b>'+brl(conf)+'</b></div>'
+    +'<div><span>Sugerido pelo banco</span><b>'+brl(est)+'</b></div>'
+    +'<div><span>Média geral</span><b>'+(m2t>0?('R$ '+num((conf+est)/m2t,2)+'/m²'):'—')+'</b></div>'
+    +'<div class="rmd-res-total"><span>Total</span><b>'+brl(conf+est)+'</b></div>'
     +'</div>'
-    +'<div class="nota"><b>Sugerido</b> é valor provisório, tirado do R$/m² de referência do mesmo tipo — '
-    +'a soma dos preços dividida pela soma das áreas das cotações informadas, que é como o fornecedor '
-    +'forma preço. <b>Informado</b> é o preço digitado ou recebido do fornecedor. '
-    +(sem?('<b>'+sem+' item(ns) ainda sem preço</b> — o total abaixo não os inclui. '):'')
-    +'Documento de uso interno: não enviar ao cliente nem ao fornecedor.</div>'
-    +'<div class="foot"><span>RM Estruturas · custos de esquadrias · uso interno</span><span>Gerado em '+hoje+'</span></div>'
+    +'<div class="rmd-obs" style="margin-top:8px">Sugerido: provisório, pelo R$/m² de referência do tipo. Informado: preço do fornecedor. '
+    +(sem?('<b>'+sem+' item(ns) sem preço</b> fora do total. '):'')
+    +'Uso interno: não enviar ao cliente nem ao fornecedor.</div>'
     +'</body></html>';
   esqEntregaPDF(html,nomeArquivoSeguro('RM_Esquadrias_custos_'+((S.obra||S.cliente||'obra'))+'.pdf'));
 }
@@ -12498,7 +12457,7 @@ function esqBase(){
     const v=tipos[t].slice().sort(function(a,b){return String(b.data).localeCompare(String(a.data));});
     const rs=v.map(function(x){return x.m2preco;});
     const med=esqMediana(rs);
-    corpo+='<tr class="g"><td colspan="6"><b>'+escapeAttr(t)+'</b> · '+v.length+(v.length>1?' cotações':' cotação')
+    corpo+='<tr class="g rmd-grupo"><td colspan="6"><b>'+escapeAttr(t)+'</b> · '+v.length+(v.length>1?' cotações':' cotação')
       +' · mediana <b>R$ '+num(med,2)+'/m²</b>'
       +(v.length>1?(' · de R$ '+num(Math.min.apply(null,rs),2)+' a R$ '+num(Math.max.apply(null,rs),2)
         +' ('+num((Math.max.apply(null,rs)/Math.min.apply(null,rs)-1)*100,0)+'% de variação)'):'')
@@ -12515,25 +12474,17 @@ function esqBase(){
   const html='<!doctype html><html><head><meta charset="utf-8"><title>Base de preços — esquadrias</title><style>'+RM_FONTE+''
     +'@page{size:210mm 297mm;margin:12mm}*{box-sizing:border-box}'
     +'body{font-family:"Satoshi",Arial,Helvetica,sans-serif;color:#202124;margin:0;font-size:11px}'
-    +'.top{border-bottom:5px solid #D53309;padding:0 0 9px;margin-bottom:12px;display:flex;align-items:center;gap:12px}'
-    +'.top img{height:36px}.brand{font-size:17px;font-weight:900;color:#D53309}.brand span{color:#17181b}'
-    +'.subbrand{font-size:11px;color:#666;text-transform:uppercase;letter-spacing:1.1px;margin-top:2px}'
-    +'.title{background:#17181b;color:#fff;padding:10px 13px;border-radius:6px;font-size:14px;font-weight:800;margin-bottom:12px}'
-    +'table{width:100%;border-collapse:collapse}'
-    +'th{background:#17181b;color:#fff;padding:6px;font-size:11px;text-transform:uppercase;text-align:left}'
-    +'td{padding:5px 6px;border-bottom:1px solid #e6e6e6}'
-    +'tr.g td{background:#f4f6f9;border-top:2px solid #D53309;font-size:12px;padding:7px 6px}'
+    /* miolo M1 (PADRAO_RM 5): título, tabela e grupo (laranja) vêm do kit */
+    +'table{width:100%;border-collapse:collapse}th{text-align:left}'
     +'td.r,th.r{text-align:right}td.c,th.c{text-align:center}'
-    +'.nota{margin-top:12px;padding:8px 10px;background:#f7f7f7;border-left:3px solid #D53309;color:#555;font-size:11px;line-height:1.5}'
     +'</style></head><body>'+cabecalhoPDF('Base de preços · esquadrias')
-    +'<div class="title">Base de preços — esquadrias</div>'
+    +'<h1 class="rmd-tit">Base de preços</h1><div class="rmd-subtit">'+Object.keys(tipos).length
+    +(Object.keys(tipos).length>1?' tipos':' tipo')+' · '+H.length+(H.length>1?' cotações confirmadas':' cotação confirmada')
+    +' · '+new Date().toLocaleDateString('pt-BR')+'</div>'
     +'<table><thead><tr><th>Data</th><th>Obra</th><th class="c">Medida</th><th class="r">m²</th>'
     +'<th class="r">Valor</th><th class="r">R$/m²</th></tr></thead><tbody>'+corpo+'</tbody></table>'
-    +'<div class="nota">Só entram aqui cotações marcadas como <b>confirmadas</b>. Estimativa não alimenta a '
-    +'base: se alimentasse, o sistema passaria a aprender com o próprio chute e o erro andaria sozinho a cada obra.<br>'
-    +'A referência de cada tipo é a <b>soma dos preços dividida pela soma das áreas</b> — ponderada, que é como o '
-    +'fornecedor forma preço. A peça que sai da curva (mais que o dobro ou menos que a metade da mediana do grupo) '
-    +'fica de fora do cálculo até ser confirmada na tela do banco, e continua no histórico.</div>'
+    +'<div class="rmd-obs" style="margin-top:8px">Só cotações confirmadas. Referência do tipo: soma dos preços ÷ soma das áreas. '
+    +'Peça fora da curva (mais que o dobro ou menos que a metade da mediana) fica fora do cálculo até ser confirmada.</div>'
     +'</body></html>';
   esqEntregaPDF(html,nomeArquivoSeguro('RM_Esquadrias_base_de_precos.pdf'));
 }
@@ -16098,7 +16049,7 @@ function orcDocHTML(modo,valores,fora){
     /* o pé antigo (fixo, dentro da página) sai: o novo mora na margem.
        A linha de nota dele ("atualizado em") vai para o fim do documento. */
     var nota = '';
-    [].slice.call(raiz.querySelectorAll('#rm-pe-imp,.pe,.sheetfoot,.foot,.rodape')).forEach(function(e){
+    [].slice.call(raiz.querySelectorAll('#rm-pe-imp,.pe,.rm-pe,.sheetfoot,.foot,.rodape')).forEach(function(e){
       if (e.id !== 'rm-pe-imp' && e.textContent.toLowerCase().indexOf(PE_SITE) < 0) return;
       /* só o pé: um bloco com tabela, totais ou texto comprido não é rodapé */
       if (e.id !== 'rm-pe-imp' && (e.querySelector('table,.totbox,.tot') || e.textContent.length > 400)) return;

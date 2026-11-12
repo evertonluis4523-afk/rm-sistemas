@@ -1320,6 +1320,8 @@ input,textarea,select{font-family:inherit;color:inherit}
    medida da tela (13 px, logo de 52) as duas colunas nao cabem ao lado da
    logo numa A4 */
 .folha .head{padding-left:0;padding-right:0}
+/* fio do timbrado do modelo A (PADRAO_RM 5): laranja de 2 px e, 2 px abaixo, o grafite fino */
+.folha .head::after{box-shadow:0 3.5px 0 -.5px #141414}
 .folha .head .logo img{height:36px}
 .folha .head .co{font-size:9.5px;line-height:1.6;letter-spacing:.01em}
 .tb2-rz{font-weight:700;color:#141414}
@@ -1531,16 +1533,17 @@ table.list.ent-cfg th,table.list.ent-cfg td{padding:6px 8px}
 @media(max-width:600px){.ent-duas{padding-left:16px;padding-right:16px}#entLista{padding:0 16px 18px!important}table.list.ent-hr th,table.list.ent-hr td{padding:8px 6px;font-size:12.5px}table.list.ent-hr td.mono{white-space:nowrap}.ent-ben-l{padding:12px}.ent-tot .v{font-size:24px}}
 /* folha de beneficios (impressa) */
 .ent-folha .ent-f-quem{font-size:13px;margin:-4px 0 14px}
-.ent-folha .ent-f-sec{font-size:11px;letter-spacing:.13em;text-transform:uppercase;color:#585758;font-weight:700;margin:16px 0 6px;border-bottom:1.5px solid #d9dbe0;padding-bottom:4px}
+.ent-folha .ent-f-sec{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#141414;font-weight:700;margin:16px 0 6px;border-left:3px solid #F24619;padding-left:7px;-webkit-print-color-adjust:exact;print-color-adjust:exact}
 .ent-folha .ent-f-tab{width:100%;border-collapse:collapse;font-size:13px}
 .ent-folha .ent-f-tab td{padding:7px 6px;border-bottom:1px solid #eceef1;vertical-align:top}
 .ent-folha .ent-f-tab tr.h td{font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:#585758;font-weight:700}
 .ent-folha .ent-f-tab .r{text-align:right;white-space:nowrap}
 .ent-folha .d{font-size:11.5px;color:#585758}
-.ent-folha .ent-f-tot{display:flex;justify-content:space-between;align-items:center;margin-top:10px;padding:10px 14px;border:1.5px solid #141414;border-radius:8px}
-.ent-folha .ent-f-tot .k{font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;font-weight:800}
-.ent-folha .ent-f-tot .v{font-size:20px;font-weight:800;color:#D53309;white-space:nowrap}
-.ent-folha .ent-f-tot .v small{font-size:11px;color:#585758}
+.ent-folha .ent-f-tot{display:flex;justify-content:space-between;align-items:center;margin-top:10px;padding:9px 12px;background:#141414;color:#fff;border-radius:3px;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.ent-folha .ent-f-tot .k{font-size:10px;letter-spacing:.12em;text-transform:uppercase;font-weight:700;color:#c9cdd2}
+.ent-folha .ent-f-tot .d{color:#c9cdd2}
+.ent-folha .ent-f-tot .v{font-size:18px;font-weight:700;color:#fff;white-space:nowrap}
+.ent-folha .ent-f-tot .v small{font-size:11px;color:#c9cdd2}
 .ent-folha .ent-f-nota{margin-top:18px;font-size:11px;color:#585758}
 
 .rel-chart{display:flex;align-items:flex-end;gap:6px;height:140px;padding:16px 20px 6px;border-bottom:1px solid var(--line)}
@@ -1678,11 +1681,11 @@ table.list td.c,table.list th.c{text-align:center}
    Sem isso a impressao sairia com trinta retangulos cinza. */
 .adm-folha{padding:14mm 13mm 10mm}
 .adm-tit{font-size:19px;font-weight:800;letter-spacing:-.3px;margin-top:10px}
-.adm-sub{font-size:11px;letter-spacing:1.2px;color:var(--muted);margin-top:2px;font-weight:600}
+.adm-sub{font-size:10px;letter-spacing:1.2px;color:#6E747C;margin-top:2px;font-weight:600}
 .adm-secao{display:flex;align-items:center;gap:9px;margin:15px 0 8px}
-.adm-secao>span{font-size:12px;font-weight:800;letter-spacing:1.1px;color:var(--red);
-  white-space:nowrap}
-.adm-secao>i{flex:1;height:2px;background:var(--red);display:block}
+.adm-secao>span{font-size:11px;font-weight:700;letter-spacing:.14em;color:#141414;
+  white-space:nowrap;border-left:3px solid #F24619;padding-left:7px;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.adm-secao>i{display:none}
 .adm-linha{display:flex;gap:7px;margin-bottom:6px}
 .adm-cx{flex:1;min-width:0;border:1px solid var(--line);border-radius:6px;padding:5px 8px 6px}
 .adm-rot{font-size:11px;font-weight:800;letter-spacing:.6px;color:#4A4D52;
@@ -2514,8 +2517,10 @@ tr.det-achado{animation:det-achado 1.6s ease-out}
 /* ---- carta de emprego ----
    O carimbo vai onde se assina, e e TEXTO: alinha sozinho, sai nitido em
    qualquer tamanho e nao entorta como um escaneado. */
-.carta-tit{text-align:center;font-size:14pt;letter-spacing:.18em;text-transform:uppercase;
-  font-weight:800;color:#16171a;margin:4mm 0 9mm}
+/* titulo no miolo M1 (PADRAO_RM 5): 20 px, negrito, sem maiuscula espacada --
+   o mesmo de todo documento da casa; o texto da carta nao muda */
+.carta-tit{text-align:left;font-size:20px;letter-spacing:-.01em;text-transform:none;
+  font-weight:700;color:#141414;margin:3mm 0 8mm}
 .carta-txt p{text-align:justify;margin:0 0 4mm;line-height:1.85;font-size:11.5pt;color:#1d2127}
 .carta-local{margin-top:12mm;text-align:right;font-size:11.5pt;color:#1d2127}
 .carta-ass{margin-top:22mm;display:flex;justify-content:center}
@@ -2909,7 +2914,7 @@ tr.sal-japago>td.conf,tr.sal-japago>td.chk{opacity:1}
 .pf-table .pf-day{font-weight:800}.pf-table .pf-dow{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.03em;font-weight:560}
 .pf-legend{display:flex;gap:14px;align-items:center;flex-wrap:wrap;font-size:12px;color:var(--muted);margin-top:8px;font-weight:560}.pf-legend i{display:inline-block;width:11px;height:11px;border-radius:3px;margin-right:5px;vertical-align:-1px;border:1px solid #d9dde2}.pf-legend .we{background:#fff1c9}.pf-legend .bl{background:#eef0f2}.pf-legend .pd{background:#fff}
 .pf-empty{padding:34px 20px;text-align:center;color:var(--muted)}.pf-empty b{display:block;color:var(--ink);margin-bottom:5px}
-.pf-folha{font-family:"Satoshi","Segoe UI",Arial,sans-serif;color:#1d2127;padding:7mm 10mm 6mm!important;position:relative;display:flex;flex-direction:column}.pf-folha .head,.pf-relatorio .head{flex-direction:row;padding:0 0 3.2mm;gap:10mm;align-items:flex-start}.pf-folha .head .logo img,.pf-relatorio .head .logo img{height:34px}.pf-folha .head .co,.pf-relatorio .head .co{text-align:right;font-size:9.5px;line-height:1.6;color:#6E747C;font-weight:500}.pf-folha .head .co .nm,.pf-relatorio .head .co .nm{font-size:9.5px;color:#6c7480;margin-bottom:1px}.pf-folha .tb2-tipo,.pf-relatorio .tb2-tipo{margin-top:4mm;font-size:8px}.pf-folha .tb2-tipo+.pf-tit,.pf-relatorio .tb2-tipo+.pf-tit{margin-top:1mm}.pf-tit{margin-top:4mm;font-size:14px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;color:#141414}.pf-sub{font-size:9.5px;color:#6E747C;margin:1px 0 3mm}.pf-folha .foot,.pf-relatorio .foot{margin-top:auto;padding-top:2.6mm;border-top:1px solid #e6e6e1;font-size:7.5px;color:#6E747C;letter-spacing:.06em;text-transform:uppercase}.pf-folha .foot .lin,.pf-relatorio .foot .lin{display:grid;grid-template-columns:1fr 1fr 1fr;align-items:center;gap:10px}.pf-folha .foot .c,.pf-relatorio .foot .c{text-align:center;font-weight:700;color:#6c7480}.pf-folha .foot .d,.pf-relatorio .foot .d{text-align:right}.pf-folha .foot .d img,.pf-relatorio .foot .d img{height:18px;width:auto;display:inline-block;vertical-align:middle;opacity:.9}.pf-folha .foot .nota,.pf-relatorio .foot .nota{margin-top:1.5mm;text-align:center;font-size:7px;color:#6F747A;letter-spacing:.03em;text-transform:none}.pf-folha .pf-print-meta{display:grid;grid-template-columns:1fr 48mm;gap:1.2mm 8mm;margin-bottom:2.5mm;font-size:8.5pt}.pf-folha .pf-print-meta b{font-weight:800}.pf-folha .pf-print-meta .full{grid-column:1/-1}.pf-folha table{width:100%;border-collapse:collapse;font-size:7pt;table-layout:fixed;border-left:hidden;border-right:hidden}.pf-folha tbody td:nth-child(2){text-transform:uppercase}.pf-folha th,.pf-folha td{box-sizing:border-box;border:0;border-bottom:.75pt solid #d5d9de;border-left:.75pt solid #e1e4e8;padding:.5mm 1mm;text-align:center;height:6.1mm}.pf-folha th{background:#F2F4F7;color:#4A515B;font-size:6.3pt;font-weight:700;text-transform:uppercase;letter-spacing:.04em;height:5.4mm;border-bottom:1.2pt solid #c8ccd2;-webkit-print-color-adjust:exact;print-color-adjust:exact}.pf-folha th.pf-group{color:#D53309;border-bottom:1.5pt solid #F24619}.pf-folha td.obs{text-align:left}.pf-folha tr{page-break-inside:avoid}.pf-folha tr.weekend td,.pf-relatorio tr.weekend td{background:#FDEDE1;color:#6b4a36;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.pf-folha{font-family:"Satoshi","Segoe UI",Arial,sans-serif;color:#1d2127;padding:7mm 10mm 6mm!important;position:relative;display:flex;flex-direction:column}.pf-folha .head,.pf-relatorio .head{flex-direction:row;padding:0 0 3.2mm;gap:10mm;align-items:flex-start}.pf-folha .head .logo img,.pf-relatorio .head .logo img{height:34px}.pf-folha .head .co,.pf-relatorio .head .co{text-align:right;font-size:9.5px;line-height:1.6;color:#6E747C;font-weight:500}.pf-folha .head .co .nm,.pf-relatorio .head .co .nm{font-size:9.5px;color:#6c7480;margin-bottom:1px}.pf-folha .tb2-tipo,.pf-relatorio .tb2-tipo{margin-top:4mm;font-size:8px}.pf-folha .tb2-tipo+.pf-tit,.pf-relatorio .tb2-tipo+.pf-tit{margin-top:1mm}.pf-tit{margin-top:4mm;font-size:18px;font-weight:700;letter-spacing:-.01em;text-transform:none;color:#141414}.pf-sub{font-size:9.5px;color:#6E747C;margin:1px 0 3mm}.pf-folha .foot,.pf-relatorio .foot{margin-top:auto;padding-top:2.6mm;border-top:1px solid #e6e6e1;font-size:7.5px;color:#6E747C;letter-spacing:.06em;text-transform:uppercase}.pf-folha .foot .lin,.pf-relatorio .foot .lin{display:grid;grid-template-columns:1fr 1fr 1fr;align-items:center;gap:10px}.pf-folha .foot .c,.pf-relatorio .foot .c{text-align:center;font-weight:700;color:#6c7480}.pf-folha .foot .d,.pf-relatorio .foot .d{text-align:right}.pf-folha .foot .d img,.pf-relatorio .foot .d img{height:18px;width:auto;display:inline-block;vertical-align:middle;opacity:.9}.pf-folha .foot .nota,.pf-relatorio .foot .nota{margin-top:1.5mm;text-align:center;font-size:7px;color:#6F747A;letter-spacing:.03em;text-transform:none}.pf-folha .pf-print-meta{display:grid;grid-template-columns:1fr 48mm;gap:1.2mm 8mm;margin-bottom:2.5mm;font-size:8.5pt}.pf-folha .pf-print-meta b{font-weight:800}.pf-folha .pf-print-meta .full{grid-column:1/-1}.pf-folha table{width:100%;border-collapse:collapse;font-size:7pt;table-layout:fixed;border-left:hidden;border-right:hidden}.pf-folha tbody td:nth-child(2){text-transform:uppercase}.pf-folha th,.pf-folha td{box-sizing:border-box;border:0;border-bottom:.75pt solid #d5d9de;border-left:.75pt solid #e1e4e8;padding:.5mm 1mm;text-align:center;height:6.1mm}.pf-folha th{background:#F2F4F7;color:#4A515B;font-size:6.3pt;font-weight:700;text-transform:uppercase;letter-spacing:.04em;height:5.4mm;border-bottom:1.2pt solid #c8ccd2;-webkit-print-color-adjust:exact;print-color-adjust:exact}.pf-folha th.pf-group{color:#D53309;border-bottom:1.5pt solid #F24619}.pf-folha td.obs{text-align:left}.pf-folha tr{page-break-inside:avoid}.pf-folha tr.weekend td,.pf-relatorio tr.weekend td{background:#FDEDE1;color:#6b4a36;-webkit-print-color-adjust:exact;print-color-adjust:exact}
 .pf-folha tr.feriado td,.pf-relatorio tr.feriado td{background:#E3EEFB;color:#2b4868;-webkit-print-color-adjust:exact;print-color-adjust:exact}
 .pf-folha tr.feriado td.obs{font-size:7pt;font-weight:700;text-align:left}.pf-folha tr.blocked td{background:#F2F4F7;color:#727a83;-webkit-print-color-adjust:exact;print-color-adjust:exact}.pf-folha tr.blocked td.write{font-size:11pt;font-weight:800;letter-spacing:.12em}.pf-folha tr.blocked td.write.msg{font-size:6.3pt;font-weight:700;letter-spacing:.01em;text-transform:none;padding:1mm 3mm}.pf-folha .pf-sign{margin:7mm auto 3mm;width:95mm;border-top:.75pt solid #272b30;text-align:center;padding-top:1.2mm;font-size:7.5pt;text-transform:uppercase;letter-spacing:.08em;page-break-inside:avoid}
 .pf-relatorio{font-family:"Satoshi","Segoe UI",Arial,sans-serif;color:#1d2127;padding:8mm 10mm 6mm!important;display:flex;flex-direction:column}.pf-relatorio .pf-rmeta{margin:0 0 4mm;font-size:9pt;display:grid;grid-template-columns:1fr 1fr;gap:2mm}.pf-relatorio .pf-rcards{display:grid;grid-template-columns:repeat(5,1fr);gap:2mm;margin:4mm 0}.pf-relatorio .pf-rcard{border:.75pt solid #cfd4d9;border-top:2.25pt solid #f24618;padding:2.4mm}.pf-relatorio .pf-rcard small{font-size:6.8pt;color:#6b737c;text-transform:uppercase;font-weight:800}.pf-relatorio .pf-rcard b{display:block;font-size:13pt;margin-top:1mm}.pf-relatorio table{width:100%;border-collapse:collapse;font-size:7pt}
@@ -18538,7 +18543,7 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape'){if(fecharSemPerder(
    juntos a cada publicacao, e ha uma prova automatica que falha se um subir
    sem o outro. Assim o numero na tela e o mesmo do arquivo que o aparelho
    guardou, e dizer "estou na v81" passa a significar alguma coisa. */
-const APP_VER='v296';
+const APP_VER='v297';
 (function(){var p=document.getElementById('verPill'); if(p)p.textContent=APP_VER;})();
 
 if('serviceWorker' in navigator){
@@ -23692,7 +23697,7 @@ initAuth();
     /* o pé antigo (fixo, dentro da página) sai: o novo mora na margem.
        A linha de nota dele ("atualizado em") vai para o fim do documento. */
     var nota = '';
-    [].slice.call(raiz.querySelectorAll('#rm-pe-imp,.pe,.sheetfoot,.foot,.rodape')).forEach(function(e){
+    [].slice.call(raiz.querySelectorAll('#rm-pe-imp,.pe,.rm-pe,.sheetfoot,.foot,.rodape')).forEach(function(e){
       if (e.id !== 'rm-pe-imp' && e.textContent.toLowerCase().indexOf(PE_SITE) < 0) return;
       /* só o pé: um bloco com tabela, totais ou texto comprido não é rodapé */
       if (e.id !== 'rm-pe-imp' && (e.querySelector('table,.totbox,.tot') || e.textContent.length > 400)) return;

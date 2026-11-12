@@ -5774,7 +5774,7 @@ fbInit();
 /* Sobe junto com o nome do cache do sw.js, sempre: se um subir sem o outro,
    o numero na tela deixa de significar alguma coisa. Ha uma prova automatica
    que falha quando os dois discordam. */
-const APP_VER='v107';
+const APP_VER='v108';
 (function(){var p=document.getElementById('verPill'); if(p)p.textContent=APP_VER;})();
 if('serviceWorker' in navigator){
   if(location.protocol.startsWith('http')){ navigator.serviceWorker.register('./sw.js').catch(()=>{}); }
@@ -6935,7 +6935,7 @@ setTimeout(fitGrid, 300);
     /* o pé antigo (fixo, dentro da página) sai: o novo mora na margem.
        A linha de nota dele ("atualizado em") vai para o fim do documento. */
     var nota = '';
-    [].slice.call(raiz.querySelectorAll('#rm-pe-imp,.pe,.sheetfoot,.foot,.rodape')).forEach(function(e){
+    [].slice.call(raiz.querySelectorAll('#rm-pe-imp,.pe,.rm-pe,.sheetfoot,.foot,.rodape')).forEach(function(e){
       if (e.id !== 'rm-pe-imp' && e.textContent.toLowerCase().indexOf(PE_SITE) < 0) return;
       /* só o pé: um bloco com tabela, totais ou texto comprido não é rodapé */
       if (e.id !== 'rm-pe-imp' && (e.querySelector('table,.totbox,.tot') || e.textContent.length > 400)) return;
