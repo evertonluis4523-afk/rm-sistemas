@@ -1706,6 +1706,7 @@ table.items tbody tr.dragover td{box-shadow:inset 0 2px 0 var(--red)}
 .db-dots{color:var(--muted);font-weight:800;letter-spacing:0}
 .db-fcol i{display:block;font-style:normal;font-size:10px;font-weight:550;letter-spacing:0;text-transform:none;color:var(--muted);min-height:13px}
 .db-fcol.ref i{color:var(--red)}
+.db-fcol .db-unid{display:block;margin:2px 0 0 auto;height:22px;padding:0 4px;font-size:10.5px;border:1px solid var(--line);border-radius:6px;background:var(--panel,transparent);color:inherit}
 .db-nova{min-width:118px;text-align:center;vertical-align:bottom}
 .db-novab{border:1.5px dashed var(--red);border-radius:9px;background:none;color:var(--red);padding:7px 10px;font:inherit;font-size:12px;font-weight:750;cursor:pointer;white-space:nowrap}
 .db-novab:hover{background:var(--red-soft)}
@@ -2979,7 +2980,7 @@ function nomeArquivoSeguro(s,limite){
   text-transform:none;white-space:nowrap;cursor:default;user-select:all}
 @media print{.appbar .verpill{display:none!important}}
 .cp-panel{margin:20px 0;border:1px solid #dce3ed;border-radius:12px;padding:18px;background:#f7f9fc;color:#253249}.cp-panel summary{cursor:pointer;font-size:17px;font-weight:750}.cp-note{font-size:13px;line-height:1.6;color:#576577;margin:10px 0;font-weight:530}.cp-table{width:100%;border-collapse:collapse;font-size:13px;font-weight:530}.cp-table th,.cp-table td{padding:9px 6px;border-bottom:1px solid #dee5ef;text-align:left;vertical-align:top}.cp-table th{font-size:11px;text-transform:uppercase;color:#5d6878;font-weight:600}.cp-table select{max-width:230px;padding:7px;border:1px solid #ccd5e0;border-radius:6px;background:#fff}.cp-table small{display:block;margin-top:4px;color:#657185}.cp-good{color:#087443}.cp-bad{color:#b43d19}.cp-scroll{overflow:auto}.cp-dialog{width:min(720px,94vw);max-height:90vh;overflow:auto;border:1px solid #d2dbe8;border-radius:14px;padding:24px;color:#233046;box-shadow:0 20px 80px #0003}.cp-dialog::backdrop{background:#14233488}.cp-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:14px 0}.cp-grid label{font-size:13px;font-weight:600}.cp-grid input,.cp-grid select{width:100%;margin-top:6px;padding:10px;border:1px solid #ccd5e0;border-radius:6px;font:inherit}.cp-dialog button,.cp-panel button{padding:8px 12px;border:1px solid #cbd5e0;border-radius:6px;background:#fff;color:inherit;cursor:pointer}.cp-dialog .primary{background:#bc350e;color:#fff}.cp-tag{display:block;font-size:12px;margin:4px 0;color:#496182;font-weight:560}.cp-print-status{display:none}.sheet.supplier .cp-panel{display:none}.cp-report{display:none}.cp-total{padding:12px;background:#eaf0f7;border-radius:8px;margin-top:10px;font-size:14px;font-weight:505}.cp-warn{padding:10px;background:#fff1df;color:#8a4704;margin:10px 0;font-size:13px;font-weight:530}
-.cp-groups{display:grid;grid-template-columns:repeat(auto-fit,minmax(245px,1fr));gap:10px;margin:10px 0 18px}.cp-group{border:1px solid #dce3ed;border-radius:10px;background:#fff;padding:13px;min-width:0}.cp-group.isolated{border-color:#f0b39f;background:#fffaf8}.cp-group-title{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:9px}.cp-group-title b{font-size:14px}.cp-group-title span{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:#8b5a49;background:#fff0eb;border-radius:999px;padding:4px 7px;font-weight:750}.cp-group-fields{display:grid;grid-template-columns:1.15fr .85fr;gap:8px}.cp-group-fields.one{grid-template-columns:1fr}.cp-group label{font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:#697587;font-weight:700}.cp-group select,.cp-group input{width:100%;margin-top:5px;padding:0 8px;border:1px solid #ccd5e0;border-radius:var(--rm-raio,9px);background:#fff;font:inherit;font-size:14px;color:#253249}.cp-group-meta{margin-top:9px;font-size:12px;line-height:1.45;color:#657185}.cp-group-result{margin-top:7px;font-size:12px;font-weight:700}.cp-group-result.good{color:#087443}.cp-group-result.bad{color:#b43d19}
+.cp-groups{display:grid;grid-template-columns:repeat(auto-fit,minmax(245px,1fr));gap:10px;margin:10px 0 18px}.cp-group{border:1px solid #dce3ed;border-radius:10px;background:#fff;padding:13px;min-width:0}.cp-group.isolated{border-color:#f0b39f;background:#fffaf8}.cp-group-title{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:9px}.cp-group-title b{font-size:14px}.cp-group-title span{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:#8b5a49;background:#fff0eb;border-radius:999px;padding:4px 7px;font-weight:750}.cp-group-fields{display:grid;grid-template-columns:1.15fr .85fr;gap:8px}.cp-group-fields.one{grid-template-columns:1fr}.cp-group label{font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:#697587;font-weight:700}.cp-group select,.cp-group input{width:100%;margin-top:5px;padding:0 8px;border:1px solid #ccd5e0;border-radius:var(--rm-raio,9px);background:#fff;font:inherit;font-size:14px;color:#253249}.cp-group-meta{margin-top:9px;font-size:12px;line-height:1.45;color:#657185}.cp-group-result{margin-top:7px;font-size:12px;font-weight:700}.cp-group-result.good{color:#087443}.cp-group .cp-gun select{width:auto;height:auto;margin:0;padding:0 2px;border:0;background:transparent;font-size:11px;font-weight:700;letter-spacing:.04em;color:#697587;cursor:pointer}.cp-group-result.bad{color:#b43d19}
 /* ===================== CHAVE NA MAO ===================== */
 .cnm-obra{display:grid;grid-template-columns:2fr 1.3fr .8fr;gap:12px;align-items:end}
 .cnm-obra label{display:block}
@@ -4632,7 +4633,7 @@ body[data-theme="escuro"] .cob-t input[type=date]{color-scheme:dark}
 
     <!-- TELHAS -->
     <div class="panel" data-panel="telhas">
-      <div class="db-h"><h3>Telhas</h3><span class="s"><span id="telhaCount">0</span> telhas · R$ por metro</span></div>
+      <div class="db-h"><h3>Telhas</h3><span class="s"><span id="telhaCount">0</span> telhas · R$/m² ou R$/m conforme o fornecedor</span></div>
       <!-- A Brastelha (e qualquer outra que so' faca telha) aproveita ESTA
            lista: mesma telha, mesma descricao, uma coluna de preço por
            fornecedor (out/2026: antes era um "Preços de:" por vez). -->
@@ -5767,8 +5768,9 @@ function brasDB(){
   if(!S.brastelha.unid||typeof S.brastelha.unid!=='object')S.brastelha.unid={};
   return S.brastelha;
 }
-/* a tabela da Brastelha é por m² (cumeeira, sem área, por metro) */
-function brasUnid(L){return !L?'m':L.semArea?'m':(brasDB().unid[L.id]||'m2');}
+/* A Brastelha cobra por metro linear (pedido fechado: R$/m, cada medida
+   arredondada ao cm). A linha pode ser trocada para R$/m² no catálogo. */
+function brasUnid(L){return !L?'m':L.semArea?'m':(brasDB().unid[L.id]||'m');}
 /* O fornecedor Brastelha do cadastro (criado se ainda não existir) */
 function brasForn(cria){
   let f=(S.fornecedores||[]).find(x=>cpNorm(x.nome)==='BRASTELHA');
@@ -8059,7 +8061,7 @@ function menorDe(vs){const ok=vs.filter(v=>v>0);return ok.length>1?Math.min(...o
 /* título da coluna: o nome, "referência", quando mudou e o menu ⋯ */
 function fornTh(area,nome,i){
   const ref=cpNorm(nome)===cpNorm(areaRef(area)),quando=fornAtualEm(nome,area);
-  return '<th class="r db-fcol'+(ref?' ref':'')+'"><button type="button" class="db-fbt" data-fm="'+escapeAttr(area)+'" data-fi="'+i+'" title="Ações de '+escapeAttr(nome)+'"><b>'+escapeAttr(nome)+'</b><span class="db-dots" aria-hidden="true">⋯</span></button><i>'+(ref?'referência':'')+(ref&&quando?' · ':'')+(quando?'atualizado '+quando:'')+'</i></th>';
+  return '<th class="r db-fcol'+(ref?' ref':'')+'"><button type="button" class="db-fbt" data-fm="'+escapeAttr(area)+'" data-fi="'+i+'" title="Ações de '+escapeAttr(nome)+'"><b>'+escapeAttr(nome)+'</b><span class="db-dots" aria-hidden="true">⋯</span></button><i>'+(ref?'referência':'')+(ref&&quando?' · ':'')+(quando?'atualizado '+quando:'')+'</i>'+(area==='telhas'&&cpForn(nome)?'<select class="db-unid no-print" aria-label="Unidade do preço de '+escapeAttr(nome)+'" title="Como '+escapeAttr(nome)+' cobra a telha (cumeeira é sempre por metro)" onchange="setTelhaUnid(\''+escapeAttr(nome).replace(/'/g,"\\'")+'\',this.value)"><option value="m2"'+(telhaUnidForn(nome)==='m2'?' selected':'')+'>R$/m²</option><option value="m"'+(telhaUnidForn(nome)==='m'?' selected':'')+'>R$/m</option></select>':'')+'</th>';
 }
 /* janelinha presa a um botão (menu ⋯, escolher fornecedor, ⚙ Categoria) */
 function dbPop(anc,html){
@@ -8366,6 +8368,30 @@ function addPerfil(){
    preco na propria telha (t.preco), que e' onde ele sempre esteve -- mexer
    nisso quebraria orcamento salvo, catalogo e reajuste em massa. Os demais
    ficam em f.telhas[id]. */
+/* UNIDADE DO PREÇO DE TELHA, POR FORNECEDOR. "Se a Brastelha calcula por
+   metro linear, tudo que temos no banco de dados para comparar está errado,
+   pois considerava como a Perfitec que faz por m²." A Perfitec cobra por m²
+   (área útil = metros x largura útil); a Brastelha e os demais, por metro.
+   Fica no fornecedor (f.telhaUnid) e troca no cabeçalho da coluna. Cumeeira
+   e acessório (sem largura útil) e as linhas do catálogo Brastelha (que já
+   gravam R$/m) são sempre por metro. Teste orcamento-telha-unidade-fornecedor. */
+function telhaUnidForn(nome){
+  const f=cpForn(nome);
+  if(f&&(f.telhaUnid==='m'||f.telhaUnid==='m2'))return f.telhaUnid;
+  return cpNorm(nome)===cpNorm(cpRefNome())?'m2':'m';
+}
+function telhaModoDe(t,nome){return t&&!t.bras&&telhaLarguraUtilMm(t)>0?telhaUnidForn(nome):'m';}
+/* o mesmo preço levado a R$/m, para comparar fornecedores de unidades diferentes */
+function telhaPrecoMetroDe(t,nome){
+  const v=telhaPrecoDe(t,nome); if(!(v>0))return null;
+  return telhaModoDe(t,nome)==='m2'?Math.round(v*telhaLarguraUtilMm(t)/1000*10000)/10000:v;
+}
+function setTelhaUnid(nome,v){
+  const f=cpForn(nome); if(!f)return;
+  f.telhaUnid=v==='m2'?'m2':'m';
+  marcaAtual(nome,'telhas');
+  save(); recompute(); renderLines(); renderDBTelhas(); toast('Preços de telha de '+nome+' em '+(f.telhaUnid==='m2'?'R$/m²':'R$/m'));
+}
 function telhaPrecoDe(t,nome){
   if(cpNorm(nome)===cpNorm(cpRefNome())) return Number(t.preco)>0?Number(t.preco):null;
   const f=cpForn(nome); const v=f&&f.telhas&&f.telhas[t.id];
@@ -8401,13 +8427,13 @@ function renderDBTelhas(){
       <input class="din mono r sm" inputmode="decimal" value="${ls.length===1?Math.round(ls[0]):''}" placeholder="${ls.length>1?'várias':'—'}" onchange="setTelhaCatLargura(${ci},this)"> mm</label></div>
       <div class="db-tw"><table class="dbtbl limpa"><thead><tr><th>Telha</th>${cols.map((n,i)=>fornTh('telhas',n,i)).join('')}<th class="db-nova"><button type="button" class="db-novab" onclick="fornAdd('telhas',this)">＋ Fornecedor</button></th><th></th></tr></thead><tbody>`;
     S.telhas.filter(t=>t.cat===cat).forEach(t=>{
-      const ref=t.precoRef&&telhaById(t.precoRef),vs=cols.map(n=>telhaPrecoDe(t,n)||0),mn=menorDe(vs);
+      const ref=t.precoRef&&telhaById(t.precoRef),vs=cols.map(n=>telhaPrecoDe(t,n)||0),vm=cols.map(n=>telhaPrecoMetroDe(t,n)||0),mn=menorDe(vm);
       const cel=cols.map((n,i)=>{const v=vs[i],val=v>0?String(v).replace('.',','):'',r=cpNorm(n)===cpNorm(cpRefNome());
         let inp;
         if(t.bras)inp='<input class="din mono r sm" value="'+val+'" placeholder="—" readonly tabindex="-1" style="opacity:.6;cursor:pointer" title="Preço no Catálogo Brastelha" onclick="BRAS_SEL=Object.assign({},'+escapeAttr(JSON.stringify(t.bras))+');openBras()">';
         else if(ref&&r)inp='<input class="din mono r sm" value="'+val+'" placeholder="—" readonly tabindex="-1" style="opacity:.6;cursor:default" title="Segue o preço de: '+escapeAttr(ref.desc)+' — mude lá">';
-        else inp='<input class="din mono r sm" value="'+val+'" placeholder="—" title="R$/m de '+escapeAttr(n)+'" onchange="setTelhaPreco(\''+t.id+'\',\''+escapeAttr(n).replace(/'/g,"\\'")+'\',this.value)">';
-        return '<td class="r'+(v>0&&v===mn?' cat-menor':'')+'">'+inp+'</td>';}).join('');
+        else inp='<input class="din mono r sm" value="'+val+'" placeholder="—" title="'+(telhaModoDe(t,n)==='m2'?'R$/m²':'R$/m')+' de '+escapeAttr(n)+'" onchange="setTelhaPreco(\''+t.id+'\',\''+escapeAttr(n).replace(/'/g,"\\'")+'\',this.value)">';
+        return '<td class="r'+(v>0&&vm[i]===mn?' cat-menor':'')+'">'+inp+'</td>';}).join('');
       html+=`<tr><td>${t.codigo?'<span class="db-cod">'+escapeAttr(t.codigo)+'</span> ':''}${escapeAttr(t.desc)}<span class="db-sub">${telhaLarguraUtilMm(t)>0?Math.round(telhaLarguraUtilMm(t))+' mm úteis':'sem área'}${ref?' · segue '+(ehCumeeiraTelha(ref)?'a cumeeira TP-40':'a telha simples'):''}</span></td>${cel}<td></td>
         <td class="r db-ra" style="white-space:nowrap"><button class="editx" title="Editar telha" onclick="openEditTelha('${t.id}')">${editIcon()}</button><button class="delx" onclick="delTelha('${t.id}')">${trash()}</button></td></tr>`;
     });
@@ -10694,7 +10720,7 @@ function applyImport(){
    publicacao, e ha uma prova automatica que falha se um subir sem o outro.
    Assim o numero na tela e' o mesmo do arquivo que o aparelho guardou, e
    dizer "estou na v15" passa a significar alguma coisa. */
-const APP_VER='v161';
+const APP_VER='v162';
 (function(){ try{ const p=document.getElementById('verPill'); if(p)p.textContent=APP_VER; }catch(e){} })();
 /* Versao nova assumiu com a pagina aberta: avisa, em vez de recarregar por
    conta propria e jogar fora um orcamento pela metade. */
@@ -13422,8 +13448,8 @@ function cpStore(){
    telha térmica: ela recebe grupo próprio e continua sendo cobrada por metro. */
 const CP_GROUP_DEF={
  metalica:{nome:'Estrutura metálica',modo:'',unidade:'',ajuda:'Aplica o fornecedor a todos os perfis. R$/kg, largura e peso continuam respeitando cada espessura e perfil.'},
- 'telha-termica':{nome:'Telhas térmicas / forro',modo:'m2',unidade:'R$/m²',ajuda:'Um preço por m² para todas as medidas de telha térmica e telha térmica com forro.'},
- 'telha-simples':{nome:'Telhas simples',modo:'m2',unidade:'R$/m²',ajuda:'Um preço por m² para as telhas simples deste orçamento.'},
+ 'telha-termica':{nome:'Telhas térmicas / forro',modo:'m2',unidade:'R$/m²',ajuda:'Um preço para todas as medidas de telha térmica e telha térmica com forro.'},
+ 'telha-simples':{nome:'Telhas simples',modo:'m2',unidade:'R$/m²',ajuda:'Um preço para as telhas simples deste orçamento.'},
  cumeeira:{nome:'Cumeeiras',modo:'m',unidade:'R$/m',ajuda:'Grupo isolado. Não herda o preço das telhas térmicas ou do forro.'},
  avulsos:{nome:'Outros itens',modo:'',unidade:'',ajuda:'Sem cadastro: o custo é o valor digitado na linha. O fornecedor aqui organiza o resumo de compra.'}
 };
@@ -13495,14 +13521,27 @@ function cpGroupSetSupplier(chave,fornecedor){
  });
  save();renderLines();
 }
-function cpGroupSetRate(chave,valor){
+/* telha térmica/simples: o preço do grupo vem na unidade do fornecedor
+   (Perfitec R$/m², Brastelha R$/m), e dá para trocar ao lado do valor */
+function cpGroupModo(chave,f){
+ const def=cpGroupDef(chave); if(def.modo!=='m2')return def.modo;
+ const q=f&&cpGroupQuote(chave,f); return q&&(q.mode==='m'||q.mode==='m2')?q.mode:telhaUnidForn(f||cpRefNome());
+}
+function cpGroupSetRate(chave,valor,modo){
  const rows=chave==='outros'?[]:cpRows().filter(r=>cpGroupKey(r.l,r.p,r.k)===chave);
  const g=cpGroupCfg(chave),f=g.supplier||cpGroupSelected(chave,rows)||cpRefNome(),v=parseValorBR(valor),def=cpGroupDef(chave);
+ const md=def.modo==='m2'&&(modo==='m'||modo==='m2')?modo:cpGroupModo(chave,f);
  g.supplier=f;
- if(v>0)g.quotes[cpNorm(f)]={value:v,mode:def.modo,date:rmDiaISO()};
+ if(v>0)g.quotes[cpNorm(f)]={value:v,mode:md,date:rmDiaISO()};
  else delete g.quotes[cpNorm(f)];
  if(chave!=='outros')rows.forEach(r=>{r.l.compra.supplier=f;r.l.compra.escolhido=true;});
  save();renderLines();
+}
+/* base de cobrança da telha: m² (preço por m²) ou metros (preço por metro) */
+function cpBaseTelha(c,l,p,miudo){
+ const m2=c.modo==='m2',q=m2?num(telhaAreaM2(l,p,c.metros),2)+' m²':num(c.metros,2)+' m';
+ const pr=c.preco>0&&(c.modo==='m'||m2)?brl(c.preco)+(m2?'/m²':'/m'):'';
+ return miudo?q+(pr?'<small>'+pr+(m2?' · '+num(c.metros,2)+' m':'')+'</small>':''):q+(pr?' · '+pr:'');
 }
 function cpGroupStats(chave,rows,fornecedor){
  let ref=0,tot=0,semPreco=false,area=0,metros=0,peso=0;
@@ -13567,7 +13606,7 @@ function cpSignature(l,p){return JSON.stringify([l.comp||p.comp||0,l.qtd||0]);}
 function cpRef(l,p,k){
  const metros=(l.comp||p.comp||0)/1000*(l.qtd||0);
  const nome=cpRefNome();
- if(k==='t'){ const m=cpMeterCadastro(p,nome); return m>0?metros*m:null; }
+ if(k==='t'){ const m=cpMeterCadastro(p,nome); return m>0?(telhaModoDe(p,nome)==='m2'?telhaAreaM2(l,p,metros):metros)*m:null; }
  const rate=cpRateCadastro(p,nome);
  return rate>0&&p.slitter>0?metros*kgM(p)*rate:null;
 }
@@ -13609,7 +13648,7 @@ function cpCalc(l,p,k,supplier,row){
     resposta do fornecedor para esta obra, o cadastro é o preço de prateleira. */
  let pk=k==='p'?(rate&&rate.value>0?rate.value:cpRateCadastro(p,f)):null;
  let preco=k==='t'?(shared.meter>0?shared.meter:cpMeterCadastro(p,f)):null;
- let modo=k==='p'?'kg':'m',tot=k==='p'?(pk!=null&&pesoTot!=null?pk*pesoTot:null):(preco>0?preco*metros:null),warning='';
+ let modo=k==='p'?'kg':(shared.meter>0?'m':telhaModoDe(p,f)),tot=k==='p'?(pk!=null&&pesoTot!=null?pk*pesoTot:null):(preco>0?(modo==='m2'?preco*telhaAreaM2(l,p,metros):preco*metros):null),warning='';
  const grupo=cpGroupKey(l,p,k),gq=cpGroupQuote(grupo,f);
  if(k==='t'&&gq){
   preco=Number(gq.value);modo=gq.mode||CP_GROUP_DEF[grupo].modo;
@@ -13695,7 +13734,9 @@ function cpGroupCard(chave,rows){
  const qtd=rows.length;
  if(!qtd)return '';
  const options='<option value="">'+(!f&&new Set((rows||[]).map(cpRowForn).filter(Boolean)).size>1?'Vários fornecedores':'Selecione…')+'</option>'+names.map(n=>'<option value="'+escapeAttr(n)+'" '+(cpNorm(n)===cpNorm(f)?'selected':'')+'>'+escapeAttr(n)+'</option>').join('');
- const campo=def.modo?'<label>'+def.unidade+'<input inputmode="decimal" value="'+escapeAttr(q?q.value:'')+'" placeholder="0,00" onchange="cpGroupSetRate(\''+chave+'\',this.value)"></label>':'';
+ const gm=def.modo==='m2'?cpGroupModo(chave,f):'';
+ const campo=!def.modo?'':def.modo!=='m2'?'<label>'+def.unidade+'<input inputmode="decimal" value="'+escapeAttr(q?q.value:'')+'" placeholder="0,00" onchange="cpGroupSetRate(\''+chave+'\',this.value)"></label>'
+  :'<label><span class="cp-gun"><select aria-label="Unidade do preço do grupo" onchange="cpGroupSetRate(\''+chave+'\',this.closest(\'label\').querySelector(\'input\').value,this.value)"><option value="m2"'+(gm==='m2'?' selected':'')+'>R$/m²</option><option value="m"'+(gm==='m'?' selected':'')+'>R$/m</option></select></span><input inputmode="decimal" value="'+escapeAttr(q?q.value:'')+'" placeholder="0,00" onchange="cpGroupSetRate(\''+chave+'\',this.value,this.closest(\'label\').querySelector(\'select\').value)"></label>';
  let medida='';
  if(st){
   if(chave==='metalica')medida=num(st.peso,2)+' kg calculados';
@@ -13729,7 +13770,7 @@ function cpRender(){
   /* item de categoria: o preco de cada fornecedor cadastrado, lado a lado */
   const outros=r.k==='c'&&!catItemManual(r.p)?cpNames('c',r.l).filter(n=>cpNorm(n)!==cpNorm(c.supplier)).map(n=>{const v=catItemPrecoDe(r.cat,r.p,n);return v==null?'':escapeAttr(n)+' '+brl(v*(r.l.qtd||0));}).filter(Boolean).join(' · '):'';
   const opts=cpNames(r.k,r.l);
-  return '<tr><td><b>'+escapeAttr(cpRowLabel(r))+'</b><small>'+qtdTxt+'</small></td><td><select aria-label="Fornecedor do item '+(i+1)+'" onchange="cpChoose('+i+',this.value)">'+(r.k==='a'&&!c.supplier?'<option value="" selected>— fornecedor —</option>':'')+opts.map(f=>'<option '+(cpNorm(f)===cpNorm(c.supplier)?'selected':'')+'>'+escapeAttr(f)+'</option>').join('')+'</select>'+(ou?(outros?'<small>Outros: '+outros+'</small>':''):'<br><button type="button" onclick="cpEdit('+i+')" style="margin-top:6px">Cotar / comparar</button>')+'</td><td>'+(r.k==='p'?(c.larg!=null?num(c.larg,2)+' mm':'Largura não informada')+'<small>'+(c.pesoKnown?num(c.pesoTot,2)+' kg'+(c.weightQuoted?' · peso cotado':''):'Peso não informado')+'</small>':ou?(c.preco?brl(c.preco)+' / '+escapeAttr(r.k==='c'?(r.p.unidade||'un'):'un'):'—')+(r.k==='c'&&malhaAreaM2(r.p)?'<small>'+num(malhaAreaM2(r.p)*(r.l.qtd||0),2)+' m²</small>':''):num(c.metros,2)+' m')+'</td><td>'+(c.semPreco?'<b class="cp-bad">'+(r.k==='a'?'Sem valor na linha':'Cotação pendente')+'</b>':brl(c.tot))+(r.k==='a'?'':'<small>Ref. '+escapeAttr(c.refNome||cpRefNome())+': '+(c.ref==null?'sem referência':brl(c.ref))+'</small>')+'<small class="'+(c.delta<0?'cp-bad':'cp-good')+'">'+cpDelta(c)+'</small>'+(c.warning?'<small class="cp-bad">'+escapeAttr(c.warning)+'</small>':'')+'</td></tr>';
+  return '<tr><td><b>'+escapeAttr(cpRowLabel(r))+'</b><small>'+qtdTxt+'</small></td><td><select aria-label="Fornecedor do item '+(i+1)+'" onchange="cpChoose('+i+',this.value)">'+(r.k==='a'&&!c.supplier?'<option value="" selected>— fornecedor —</option>':'')+opts.map(f=>'<option '+(cpNorm(f)===cpNorm(c.supplier)?'selected':'')+'>'+escapeAttr(f)+'</option>').join('')+'</select>'+(ou?(outros?'<small>Outros: '+outros+'</small>':''):'<br><button type="button" onclick="cpEdit('+i+')" style="margin-top:6px">Cotar / comparar</button>')+'</td><td>'+(r.k==='p'?(c.larg!=null?num(c.larg,2)+' mm':'Largura não informada')+'<small>'+(c.pesoKnown?num(c.pesoTot,2)+' kg'+(c.weightQuoted?' · peso cotado':''):'Peso não informado')+'</small>':ou?(c.preco?brl(c.preco)+' / '+escapeAttr(r.k==='c'?(r.p.unidade||'un'):'un'):'—')+(r.k==='c'&&malhaAreaM2(r.p)?'<small>'+num(malhaAreaM2(r.p)*(r.l.qtd||0),2)+' m²</small>':''):cpBaseTelha(c,r.l,r.p,true))+'</td><td>'+(c.semPreco?'<b class="cp-bad">'+(r.k==='a'?'Sem valor na linha':'Cotação pendente')+'</b>':brl(c.tot))+(r.k==='a'?'':'<small>Ref. '+escapeAttr(c.refNome||cpRefNome())+': '+(c.ref==null?'sem referência':brl(c.ref))+'</small>')+'<small class="'+(c.delta<0?'cp-bad':'cp-good')+'">'+cpDelta(c)+'</small>'+(c.warning?'<small class="cp-bad">'+escapeAttr(c.warning)+'</small>':'')+'</td></tr>';
  }).join('');
  let otherReport='';
  if(otherInfo.count){
@@ -13748,13 +13789,13 @@ function cpRender(){
  const comparableBase=rows.length;
  host.innerHTML='<summary>Conferir fornecedores <span style="font-weight:465">· por grupo e por item · '+rows.length+' itens</span>'+(pending?' <span class="cp-pend">· '+pending+' pendente(s)</span>':'')+'</summary><p class="cp-note">Fornecedor por grupo; a linha cotada à parte prevalece.</p>'+(groupsHTML?'<h4 style="margin:14px 0 4px">Cotação por grupo</h4><div class="cp-groups">'+groupsHTML+'</div>':'')+(pending?'<div class="cp-warn">Total parcial: '+pending+' item(ns) aguardam cotação. Não considere o total como compra fechada.</div>':'')+'<h4 style="margin:14px 0 4px">Exceções e conferência por item</h4><div class="cp-scroll"><table class="cp-table"><thead><tr><th>Item / nomenclatura</th><th>Fornecedor</th><th>Base de cobrança</th><th>Custo e referência</th></tr></thead><tbody>'+body+'</tbody></table></div>'+(!rows.length?'<p class="cp-note">Adicione perfis ou telhas acima para começar.</p>':'')+'<h4 style="margin:18px 0 4px">Resumo por fornecedor</h4><div class="cp-scroll"><table class="cp-table">'+summary+'</table></div><div class="cp-total">'+(comparable?cpDelta({delta,ref:refSum}):'Sem itens comparáveis')+' · '+comparable+'/'+comparableBase+' itens comparados</div><p class="cp-note">Materiais antes de frete e desconto.</p>';
  let report=document.getElementById('cpReport');if(!report){report=document.createElement('div');report.id='cpReport';report.className='cp-report';document.querySelector('.sheet').insertBefore(report,document.querySelector('.sheetfoot'));}
- report.innerHTML='<h3>Mapa interno de compras</h3><p>Custos de materiais antes de frete e desconto'+(pending?' · TOTAL PARCIAL: '+pending+' cotação(ões) pendente(s)':'')+'</p><table><thead><tr><th>Item / quantidade / comprimento</th><th>Fornecedor</th><th>Largura / peso</th><th>Custo</th><th>Referência</th><th>Comparação</th></tr></thead><tbody>'+rows.map(r=>{const c=cpCalc(r.l,r.p,r.k,null,r),ou=r.k==='c'||r.k==='a';return '<tr><td>'+escapeAttr(r.k==='p'?r.p.grupo+' '+r.p.dims+' #'+r.p.esp:cpRowLabel(r))+'<br>'+(ou?num(r.l.qtd,0)+' '+escapeAttr(r.k==='c'?(r.p.unidade||'un'):'un'):num(r.l.qtd,0)+' × '+num(r.l.comp||r.p.comp,0)+' mm')+'</td><td>'+escapeAttr(c.supplier||'—')+'</td><td>'+(r.k==='p'?(c.larg!=null?num(c.larg,2)+' mm':'—')+' / '+(c.pesoKnown?num(c.pesoTot,2)+' kg':'—'):ou?(c.preco?brl(c.preco)+'/un':'—'):num(c.metros,2)+' m')+'</td><td>'+(c.semPreco?'Pendente':brl(c.tot))+'</td><td>'+(c.ref==null?'Sem referência':brl(c.ref))+'</td><td>'+cpDelta(c)+(c.warning?'<br>'+escapeAttr(c.warning):'')+'</td></tr>';}).join('')+otherReport+'</tbody></table><p>'+(comparable?cpDelta({delta,ref:refSum}):'Sem comparação')+' · '+comparable+'/'+comparableBase+' itens comparáveis.</p>';
+ report.innerHTML='<h3>Mapa interno de compras</h3><p>Custos de materiais antes de frete e desconto'+(pending?' · TOTAL PARCIAL: '+pending+' cotação(ões) pendente(s)':'')+'</p><table><thead><tr><th>Item / quantidade / comprimento</th><th>Fornecedor</th><th>Largura / peso</th><th>Custo</th><th>Referência</th><th>Comparação</th></tr></thead><tbody>'+rows.map(r=>{const c=cpCalc(r.l,r.p,r.k,null,r),ou=r.k==='c'||r.k==='a';return '<tr><td>'+escapeAttr(r.k==='p'?r.p.grupo+' '+r.p.dims+' #'+r.p.esp:cpRowLabel(r))+'<br>'+(ou?num(r.l.qtd,0)+' '+escapeAttr(r.k==='c'?(r.p.unidade||'un'):'un'):num(r.l.qtd,0)+' × '+num(r.l.comp||r.p.comp,0)+' mm')+'</td><td>'+escapeAttr(c.supplier||'—')+'</td><td>'+(r.k==='p'?(c.larg!=null?num(c.larg,2)+' mm':'—')+' / '+(c.pesoKnown?num(c.pesoTot,2)+' kg':'—'):ou?(c.preco?brl(c.preco)+'/un':'—'):cpBaseTelha(c,r.l,r.p))+'</td><td>'+(c.semPreco?'Pendente':brl(c.tot))+'</td><td>'+(c.ref==null?'Sem referência':brl(c.ref))+'</td><td>'+cpDelta(c)+(c.warning?'<br>'+escapeAttr(c.warning):'')+'</td></tr>';}).join('')+otherReport+'</tbody></table><p>'+(comparable?cpDelta({delta,ref:refSum}):'Sem comparação')+' · '+comparable+'/'+comparableBase+' itens comparáveis.</p>';
 }
 function cpInput(id,label,value,type='number'){return '<label>'+label+'<input id="'+id+'" type="'+type+'" '+(type==='number'?'min="0" step="any"':'')+' value="'+escapeAttr(value==null?'':value)+'"></label>';}
 function cpEdit(i,supplier){
  const r=cpRows()[i];if(!r)return;const {l,p,k}=r,f=supplier||cpSupplier(l),db=cpStore(),sh=db.profiles[cpProfileKey(p,f,k)]||{},lo=l.compra.quotes[cpNorm(f)]||{},rate=k==='p'?db.rates[cpRateKey(l,p,f)]:null;
  let d=document.getElementById('cpDialog');if(!d){d=document.createElement('dialog');d.id='cpDialog';d.className='cp-dialog no-print';document.body.appendChild(d);}else if(d.open)d.close();
- d.innerHTML='<form id="cpForm"><h2 style="margin:0">Cotação recebida</h2><p class="cp-note">'+escapeAttr(k==='p'?p.tipo+' '+p.dims+' #'+p.esp:p.desc)+' · '+num(l.comp||p.comp,0)+' mm × '+num(l.qtd,0)+' peças</p><div class="cp-grid"><label>Fornecedor<select id="cpF" onchange="cpEdit('+i+',this.value)">'+cpNames(k,l).map(n=>'<option '+(cpNorm(n)===cpNorm(f)?'selected':'')+'>'+escapeAttr(n)+'</option>').join('')+'</select></label>'+cpInput('cpDate','Data da cotação',(/^\d{4}-\d{2}-\d{2}$/.test(sh.date||rate?.date||'')?(sh.date||rate?.date):rmDiaISO()),'date')+'</div>'+(k==='p'?'<div class="cp-grid"><label>Categoria de preço do item<select id="cpCategory" onchange="cpCategory('+i+',this.value,document.getElementById(\'cpF\').value)"><option value="padrao" '+(cpCat(l,p)==='padrao'?'selected':'')+'>Padrão de catálogo</option><option value="especial" '+(cpCat(l,p)==='especial'?'selected':'')+'>Fora do padrão</option></select></label>'+cpInput('cpRate','R$/kg · '+cpMaterial(p)+' · '+p.esp+' mm',rate?.value)+'</div><p class="cp-note">Este preço será usado por todos os perfis desta espessura, material e categoria para '+escapeAttr(f)+'.</p><div class="cp-grid">'+cpInput('cpWidth','Largura cobrada deste perfil (mm)',sh.width)+cpInput('cpWeight','Peso cotado por peça (kg) — opcional',sh.weights?.[String(l.comp||p.comp)])+'</div><p class="cp-note">O peso cotado tem prioridade sobre a largura e vale apenas para este comprimento. Sem peso, informe a largura realmente cobrada. Campos vazios usam o catálogo somente para Perfitec.</p>':'<div class="cp-grid">'+cpInput('cpMeter','Preço por metro desta telha (R$/m)',sh.meter)+'</div>')+'<details '+(lo.fixed?'open':'')+'><summary>Preço fechado por peça ou lote desta linha</summary><div class="cp-grid"><label>Como cobrar<select id="cpMode"><option value="auto">Usar '+(k==='p'?'R$/kg':'R$/m')+'</option><option value="peca" '+(lo.fixed?.mode==='peca'?'selected':'')+'>Valor por peça</option><option value="total" '+(lo.fixed?.mode==='total'?'selected':'')+'>Total do lote desta linha</option></select></label>'+cpInput('cpFixed','Valor fechado (R$)',lo.fixed?.value)+'</div><p class="cp-note">Substitui o cálculo por kg/metro apenas nesta linha. Mudança de quantidade ou comprimento exige reconfirmar. Duplicar a linha não duplica esta cotação fechada.</p></details><div class="cp-grid">'+cpInput('cpDoc','Referência da proposta / observação',sh.note||'','text')+'</div><p id="cpError" class="cp-bad" role="alert"></p><div style="display:flex;gap:10px"><button class="primary" type="submit">Salvar e selecionar fornecedor</button><button type="button" onclick="document.getElementById(\'cpDialog\').close()">Cancelar</button></div><h3>Comparar esta linha</h3><table class="cp-table"><thead><tr><th>Fornecedor</th><th>Largura / peso</th><th>Total</th></tr></thead><tbody>'+cpNames(k,l).map(n=>{const c=cpCalc(l,p,k,n);return '<tr><td>'+escapeAttr(n)+'</td><td>'+(k==='p'?(c.larg==null?'—':num(c.larg,2)+' mm')+' / '+(c.pesoKnown?num(c.pesoTot,2)+' kg':'—'):num(c.metros,2)+' m')+'</td><td>'+(c.semPreco?'Sem cotação':brl(c.tot))+'<small>'+cpDelta(c)+'</small></td></tr>';}).join('')+'</tbody></table></form>';
+ d.innerHTML='<form id="cpForm"><h2 style="margin:0">Cotação recebida</h2><p class="cp-note">'+escapeAttr(k==='p'?p.tipo+' '+p.dims+' #'+p.esp:p.desc)+' · '+num(l.comp||p.comp,0)+' mm × '+num(l.qtd,0)+' peças</p><div class="cp-grid"><label>Fornecedor<select id="cpF" onchange="cpEdit('+i+',this.value)">'+cpNames(k,l).map(n=>'<option '+(cpNorm(n)===cpNorm(f)?'selected':'')+'>'+escapeAttr(n)+'</option>').join('')+'</select></label>'+cpInput('cpDate','Data da cotação',(/^\d{4}-\d{2}-\d{2}$/.test(sh.date||rate?.date||'')?(sh.date||rate?.date):rmDiaISO()),'date')+'</div>'+(k==='p'?'<div class="cp-grid"><label>Categoria de preço do item<select id="cpCategory" onchange="cpCategory('+i+',this.value,document.getElementById(\'cpF\').value)"><option value="padrao" '+(cpCat(l,p)==='padrao'?'selected':'')+'>Padrão de catálogo</option><option value="especial" '+(cpCat(l,p)==='especial'?'selected':'')+'>Fora do padrão</option></select></label>'+cpInput('cpRate','R$/kg · '+cpMaterial(p)+' · '+p.esp+' mm',rate?.value)+'</div><p class="cp-note">Este preço será usado por todos os perfis desta espessura, material e categoria para '+escapeAttr(f)+'.</p><div class="cp-grid">'+cpInput('cpWidth','Largura cobrada deste perfil (mm)',sh.width)+cpInput('cpWeight','Peso cotado por peça (kg) — opcional',sh.weights?.[String(l.comp||p.comp)])+'</div><p class="cp-note">O peso cotado tem prioridade sobre a largura e vale apenas para este comprimento. Sem peso, informe a largura realmente cobrada. Campos vazios usam o catálogo somente para Perfitec.</p>':'<div class="cp-grid">'+cpInput('cpMeter','Preço por metro desta telha (R$/m)',sh.meter)+'</div>')+'<details '+(lo.fixed?'open':'')+'><summary>Preço fechado por peça ou lote desta linha</summary><div class="cp-grid"><label>Como cobrar<select id="cpMode"><option value="auto">Usar '+(k==='p'?'R$/kg':'R$/m')+'</option><option value="peca" '+(lo.fixed?.mode==='peca'?'selected':'')+'>Valor por peça</option><option value="total" '+(lo.fixed?.mode==='total'?'selected':'')+'>Total do lote desta linha</option></select></label>'+cpInput('cpFixed','Valor fechado (R$)',lo.fixed?.value)+'</div><p class="cp-note">Substitui o cálculo por kg/metro apenas nesta linha. Mudança de quantidade ou comprimento exige reconfirmar. Duplicar a linha não duplica esta cotação fechada.</p></details><div class="cp-grid">'+cpInput('cpDoc','Referência da proposta / observação',sh.note||'','text')+'</div><p id="cpError" class="cp-bad" role="alert"></p><div style="display:flex;gap:10px"><button class="primary" type="submit">Salvar e selecionar fornecedor</button><button type="button" onclick="document.getElementById(\'cpDialog\').close()">Cancelar</button></div><h3>Comparar esta linha</h3><table class="cp-table"><thead><tr><th>Fornecedor</th><th>Largura / peso</th><th>Total</th></tr></thead><tbody>'+cpNames(k,l).map(n=>{const c=cpCalc(l,p,k,n);return '<tr><td>'+escapeAttr(n)+'</td><td>'+(k==='p'?(c.larg==null?'—':num(c.larg,2)+' mm')+' / '+(c.pesoKnown?num(c.pesoTot,2)+' kg':'—'):cpBaseTelha(c,l,p))+'</td><td>'+(c.semPreco?'Sem cotação':brl(c.tot))+'<small>'+cpDelta(c)+'</small></td></tr>';}).join('')+'</tbody></table></form>';
  d.querySelector('form').onsubmit=e=>{e.preventDefault();cpSave(i);};d.showModal();
 }
 function cpCategory(i,v,f){const r=cpRows()[i];r.l.compra.category=v;save();renderLines();cpEdit(i,f);}
@@ -14011,7 +14052,7 @@ function catalogoPrecos(){
     return kg>0&&kgBarra>0?{g:String(p.grupo||''),t:String(p.tipo||''),d:String(p.dims||''),e:String(p.esp||''),v:r2(kg*kgBarra)}:null;
   }).filter(Boolean);
   const cols=fornCols('telhas');
-  const telhas=(S.telhas||[]).map(t=>{const v=menor(cols.map(n=>telhaPrecoDe(t,n)||0));
+  const telhas=(S.telhas||[]).map(t=>{const v=menor(cols.map(n=>telhaPrecoMetroDe(t,n)||0));
     return v>0?{g:String(t.cat||''),d:String(t.desc||''),v:r2(v)}:null;}).filter(Boolean);
   return {perfis,telhas};
 }
@@ -15312,7 +15353,7 @@ function orcDocHTML(modo,valores,fora){
     let rows='',sP=0,sM=0,sA=0,sT=0;
     S.linhasTelha.forEach(l=>{const t=telhaById(l.telhaId);if(!t)return;const c=telhaCalc(l,t),q=l.qtd||0,a=telhaAreaM2(l,t,c.metros);
       sP+=q;sM+=c.metros||0;sA+=a;sT+=c.tot||0;
-      rows+=linha(h(t.desc),[num(l.comp||0,0),'<b>'+q+'</b>',num(c.metros||0,2),num(a,2)],c.preco>0?brl(c.preco)+'/m':'—',c.semPreco?'—':brl(c.tot));});
+      rows+=linha(h(t.desc),[num(l.comp||0,0),'<b>'+q+'</b>',num(c.metros||0,2),num(a,2)],c.preco>0?brl(c.preco)+(c.modo==='m2'?'/m²':'/m'):'—',c.semPreco?'—':brl(c.tot));});
     pecas+=sP;
     blocos.push({t:'Telhas',head:'<th class="r">Compr. (mm)</th><th class="r">Qtd.</th><th class="r">Metros</th><th class="r">Área (m²)</th>',rows,tot:['',sP,num(sM,2),num(sA,2)],tv:sT,area:sA});
   }
