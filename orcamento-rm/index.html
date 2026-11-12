@@ -4166,6 +4166,10 @@ body:not([data-theme="escuro"]){
 .cob-ler-pe{display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:10px 14px;font-size:13px;color:var(--muted)}
 .cob-ler .btn-sm.cob-ler-ok{background:var(--ink);color:var(--surface);border-color:var(--ink)}
 .cob-ler .btn-sm.cob-ler-ok:disabled{opacity:.45;cursor:default}
+.cob-ler-lendo .cob-ler-cab{border-bottom:0}
+.cob-ler-lendo b::before{content:'';display:inline-block;width:12px;height:12px;margin-right:8px;border:2px solid var(--line);border-top-color:var(--ink);border-radius:50%;vertical-align:-1px;animation:cobGira .8s linear infinite}
+@keyframes cobGira{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.cob-ler-lendo b::before{animation:none}}
 .cob-av{display:flex;gap:10px;align-items:center;padding:9px 12px;font-size:13.5px;background:var(--surface)}
 .cob-av+.cob-av{border-top:1px solid var(--line-2)}
 .cob-av .ic{flex:none;width:20px;height:20px;border-radius:50%;display:grid;place-items:center;font-weight:800;font-size:12px;color:#fff;background:var(--rm-erro)}
@@ -9624,7 +9628,7 @@ function cobRender(){
       ?'<div class="cob-man-cab"><input class="din cob-man-ob" value="'+escapeAttr(o.obra||'')+'" aria-label="Nome da obra" onchange="cobSetObra(\'obra\',this.value)"><input class="din" value="'+escapeAttr(o.cliente||'')+'" placeholder="Cliente" aria-label="Cliente" onchange="cobSetObra(\'cliente\',this.value)"></div><p>obra sem orçamento no sistema'+(quando?' · '+quando:'')+'</p>'
       :'<h3>'+escapeAttr(cobNomeObra(o))+'</h3><p>'+escapeAttr([o.cliente,o.numero?'Orçamento Nº '+o.numero:'',quando,cobOrc(o.id)?'':'o orçamento não está mais nos Salvos'].filter(Boolean).join(' · '))+'</p>'
         +(cobOrc(o.id)?'<p class="cob-fonte">Linhas do orçamento salvo'+(cobOrc(o.id).salvoEm?' em '+escapeAttr(String(cobOrc(o.id).salvoEm).replace(/:\d{2}$/,'')):'')+'. Mudou o orçamento? Salve (Atualizar este) e a lista acompanha.</p>':''))+'</div>'
-    +'<span style="flex:1"></span><label class="btn-sm cob-ler-bt" title="O PDF do orçamento fechado: o sistema lança o valor e o fornecedor nos itens da obra">Ler orçamento do fornecedor<input type="file" accept="application/pdf,.pdf" hidden onchange="cobLeFornecedor(this.files[0]);this.value=\'\'"></label><button type="button" class="btn-sm" onclick="cobImprimir()">Imprimir lista</button><button type="button" class="btn-sm" onclick="cobTirar()" title="'+(o.manual?'Tira a obra desta aba':'Tira a obra desta aba; o orçamento continua salvo')+'">Tirar do controle</button></div>';
+    +'<span style="flex:1"></span><label class="btn-sm cob-ler-bt" title="O orçamento fechado (PDF ou foto): o sistema lança o valor e o fornecedor nos itens da obra">Ler orçamento do fornecedor<input type="file" accept="application/pdf,.pdf,image/png,image/jpeg,image/webp,.jpg,.jpeg,.png,.webp" hidden onchange="cobLeFornecedor(this.files[0]);this.value=\'\'"></label><button type="button" class="btn-sm" onclick="cobImprimir()">Imprimir lista</button><button type="button" class="btn-sm" onclick="cobTirar()" title="'+(o.manual?'Tira a obra desta aba':'Tira a obra desta aba; o orçamento continua salvo')+'">Tirar do controle</button></div>';
   h+=cobLerHTML(o);
   h+='<div class="cob-kpis"><div><span>Orçado</span><b>'+brl(c.orcado)+'</b><small>'+c.n+' linha(s) na obra</small></div>'
     +'<div><span>Comprado</span><b>'+brl(c.comprado)+'</b><small>'+c.nComprados+' de '+c.n+' itens</small></div>'
@@ -9744,8 +9748,10 @@ function cobTiraAnexo(lid){ const l=cobLinha(lid); if(!l||!l.anexo) return; if(!
    compra e data de entrega. Precisa ter opção de ler conforme o tipo, em
    alguns casos compro metálica de fornecedores diferentes."
 
-   O PDF é lido pelo texto (foto ou escaneado não tem texto: esses continuam
-   à mão). Cada linha do PDF que tem valor vira um item do fornecedor -- o
+   O PDF é lido pelo texto. Foto do orçamento e PDF escaneado ("alguns
+   fornecedores mandam imagem ao invés do PDF") passam pelo OCR (Tesseract,
+   português, carregado na hora como o leitor de PDF): a foto vira as mesmas
+   linhas de texto e segue o mesmo caminho. Cada linha que tem valor vira um item do fornecedor -- o
    valor é o último R$ da linha (o total dela), depois de tirar o que é
    medida (#2,00, 2,00 mm, 12,50 kg, 75x40x15). Cada item vai para a linha
    da obra mais parecida, só dentro do tipo escolhido em "Aplicar em": conta
@@ -9758,6 +9764,37 @@ function cobTiraAnexo(lid){ const l=cobLinha(lid); if(!l||!l.anexo) return; if(!
 let COB_LER=null;
 const COB_DINHEIRO=/(?:R\$\s*)?(\d{1,3}(?:\.\d{3})+,\d{2}|\d+,\d{2})(?![\d,])/g;
 const COB_PAL_VAZIA=new Set(['com','para','sem','das','dos','unid','und','pcs','barra','barras','orcados','orcado','metros','total','unit','unitario','valor','preco']);
+/* OCR: o "#" da espessura costuma sair como "%" ("%2,00") -- volta a ser "#" */
+const COB_OCR={js:'https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js',worker:'https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/worker.min.js',
+  core:'https://cdn.jsdelivr.net/npm/tesseract.js-core@5.1.1',lang:'https://cdn.jsdelivr.net/npm/@tesseract.js-data/por@1.0.0/4.0.0_best_int'};
+function cobLimpaLinha(t){ return String(t||'').replace(/%\s*(?=\d+[.,]\d)/g,'#').replace(/\s+/g,' ').trim(); }
+function cobOcrJs(){
+  return new Promise((ok,er)=>{
+    if(window.Tesseract) return ok();
+    const s=document.createElement('script'); s.src=COB_OCR.js; s.onload=()=>ok(); s.onerror=()=>er(new Error('ocr')); document.head.appendChild(s);
+  });
+}
+/* as linhas de texto de imagens (foto do orçamento ou páginas de PDF escaneado) */
+async function cobLinhasOcr(fontes){
+  await cobOcrJs();
+  const w=await Tesseract.createWorker('por',1,{workerPath:COB_OCR.worker,corePath:COB_OCR.core,langPath:COB_OCR.lang}), out=[];
+  try{ for(let k=0;k<fontes.length;k++){ const r=await w.recognize(fontes[k]); ((r&&r.data&&r.data.lines)||[]).forEach(l=>{ const t=cobLimpaLinha(l.text), b=l.bbox||{};
+      if(t) out.push({t:t,y:k*1e6+(b.y0||0),h:Math.max(1,(b.y1||0)-(b.y0||0))}); }); } }
+  finally{ try{ await w.terminate(); }catch(e){} }
+  return out;
+}
+/* PDF escaneado: cada página vira imagem para o OCR */
+async function cobPaginasPdf(buf){
+  await cobPdfJs();
+  const d=await pdfjsLib.getDocument({data:new Uint8Array(buf.slice(0))}).promise, out=[];
+  for(let i=1;i<=Math.min(d.numPages,6);i++){
+    const p=await d.getPage(i), v=p.getViewport({scale:2}), c=document.createElement('canvas');
+    c.width=Math.ceil(v.width); c.height=Math.ceil(v.height);
+    const x=c.getContext('2d'); x.fillStyle='#fff'; x.fillRect(0,0,c.width,c.height);
+    await p.render({canvasContext:x,viewport:v}).promise; out.push(c);
+  }
+  return out;
+}
 function cobPdfJs(){
   return new Promise((ok,er)=>{
     if(window.pdfjsLib) return ok();
@@ -9766,14 +9803,17 @@ function cobPdfJs(){
     s.onerror=()=>er(new Error('pdf.js')); document.head.appendChild(s);
   });
 }
-/* as linhas da página na ordem de leitura (cima para baixo, esquerda para a direita) */
+/* as linhas da página na ordem de leitura (cima para baixo, esquerda para a
+   direita), com a altura da linha e a posição: é pelo espaço entre elas que
+   as linhas de um mesmo produto se juntam */
 async function cobLinhasPdf(buf){
   await cobPdfJs();
-  const d=await pdfjsLib.getDocument({data:new Uint8Array(buf)}).promise, out=[];
+  const d=await pdfjsLib.getDocument({data:new Uint8Array(buf.slice(0))}).promise, out=[];
   for(let i=1;i<=d.numPages;i++){
     const tc=await (await d.getPage(i)).getTextContent(), lin=[];
-    tc.items.forEach(it=>{ if(!it.str||!it.str.trim()) return; const y=Math.round(it.transform[5]), l=lin.find(q=>Math.abs(q.y-y)<3); if(l) l.it.push(it); else lin.push({y,it:[it]}); });
-    lin.sort((a,b)=>b.y-a.y).forEach(l=>{ const t=l.it.sort((a,b)=>a.transform[4]-b.transform[4]).map(x=>x.str).join(' ').replace(/\s+/g,' ').trim(); if(t) out.push(t); });
+    tc.items.forEach(it=>{ if(!it.str||!it.str.trim()) return; const y=Math.round(it.transform[5]), l=lin.find(q=>Math.abs(q.y-y)<3);
+      if(l){ l.it.push(it); l.h=Math.max(l.h,it.height||0); } else lin.push({y,h:it.height||Math.abs(it.transform[3])||10,it:[it]}); });
+    lin.sort((a,b)=>b.y-a.y).forEach(l=>{ const t=cobLimpaLinha(l.it.sort((a,b)=>a.transform[4]-b.transform[4]).map(x=>x.str).join(' ')); if(t) out.push({t:t,y:i*1e6-l.y,h:l.h||10}); });
   }
   return out;
 }
@@ -9783,22 +9823,75 @@ function cobSemMedida(t){
     .replace(/\d+(?:[.,]\d+)?\s*[x×]\s*\d+(?:[.,]\d+)?(?:\s*[x×]\s*\d+(?:[.,]\d+)?)*/gi,' ')
     .replace(/\d+(?:[.,]\d+)?\s*(?:mm|cm|kgs?|m2|m²|mts?|m|pcs?|pç|un|und|unid|t|ton|br|barras?)(?![a-z0-9])/gi,' ');
 }
-function cobItemFornecedor(txt){
-  const t=String(txt||'').replace(/\s+/g,' ').trim(), n=cobNorm(t);
-  if(!/[a-z]{3}/.test(n)) return null;
-  if(/\b(sub ?total|total geral|valor total|total do|total a pagar|desconto|icms|ipi|impostos?|validade|condicao|condicoes|pagamento|vencimento|parcela)\b/.test(n)||/^total\b/.test(n)) return null;
-  const vs=[...cobSemMedida(t).matchAll(COB_DINHEIRO)].map(m=>parseNumLoose(m[1]));
-  if(!vs.length) return null;
-  const valor=round2c(vs[vs.length-1]); if(!(valor>0)) return null;
-  const desc=t.replace(/R\$\s*/g,'').replace(new RegExp('(?:\\s+(?:\\d{1,3}(?:\\.\\d{3})+,\\d{2}|\\d+,\\d{2}))+\\s*$'),'').trim()||t;
-  return {txt:t,desc:desc,valor:valor};
+/* A TABELA DE PRODUTOS do orçamento, e só ela. "O sistema acaba lendo muita
+   coisa desnecessária" (pedido fechado da Brastelha): a declaração de
+   faturamento, os boletos 30/60/90 e os totais viravam linha, e o produto
+   escrito em duas linhas ("TELHA TP40 ... Compr.(m): 2,83" em cima, o código
+   e os valores embaixo) virava dois -- com o comprimento lido como preço.
+   - a tabela começa no cabeçalho (Descrição + Qtd/Valor/Total) e termina em
+     Totais / Total / Pagamento / Dados de entrega;
+   - as linhas de um produto se juntam pelo espaço: dentro do produto elas
+     ficam coladas, entre um produto e outro há um respiro;
+   - se o documento escreve R$ na tabela, só o que tem R$ é dinheiro (o
+     2,83 do comprimento não é); o valor do produto é o último da linha
+     maior que zero (a Perfiaço fecha a linha com o IPI "0,00");
+   - a linha de apoio embaixo do produto ("Medidas: ... MED: 15X50X150X50X15",
+     Perfiaço) é do produto de cima: é ali que está a bitola;
+   - o frete dos totais ("Valor Frete: R$ 821,07") entra como uma linha. */
+function cobItensDoTexto(linhas){
+  const L=linhas.map(l=>typeof l==='string'?{t:l,y:0,h:0}:l).map(l=>({t:cobLimpaLinha(l.t),y:+l.y||0,h:+l.h||0})).filter(l=>l.t).map(l=>Object.assign(l,{n:cobNorm(l.t)}));
+  const fim=n=>/^(totais|total\b|totalizando|sub ?total|valor total|pagamento|condic(ao|oes) de pag|dados de entrega|observac|informac|forma de pag)/.test(n);
+  const ini=L.findIndex(l=>/descri/.test(l.n)&&/(qtd|quant|valor|total|unit|preco)/.test(l.n));
+  let sec=ini>=0?L.slice(ini+1):L.slice(); const k=sec.findIndex(l=>fim(l.n)); const resto=k>=0?sec.slice(k):[]; if(k>=0) sec=sec.slice(0,k);
+  const usaRS=sec.some(l=>/R\$\s*\d/.test(l.t));
+  const valores=t=>[...cobSemMedida(t).matchAll(COB_DINHEIRO)].filter(m=>!usaRS||/^R\$/.test(m[0])).map(m=>parseNumLoose(m[1]));
+  const ruim=n=>/\b(boleto|parcela|vencimento|desconto|icms|ipi|impostos?|validade|pagamento|totalizando|faturamento|declaro)\b/.test(n);
+  const blocos=[]; let b=[];
+  sec.forEach((l,i)=>{ const a=sec[i-1]; if(a&&l.h&&a.h&&(l.y-a.y)>Math.max(l.h,a.h)*1.9&&b.length){ blocos.push(b); b=[]; } b.push(l); });
+  if(b.length) blocos.push(b);
+  /* a descrição sem o código, os valores e as colunas de número do fim */
+  const limpa=t=>{ const w=String(t).replace(/R\$\s*[\d.]+,\d{2}/g,' ').replace(/\b\d{6,}\b/g,' ').trim().split(/\s+/);
+    /* o número logo depois de "Compr.(m):" é o comprimento: fica, ajuda a conferir */
+    while(w.length&&/^([\d.,%]+|-|m|m2|m²|mts?|pc|pç|pcs|un|und|unid|kg|cx|br|t)$/i.test(w[w.length-1])&&!(w.length>1&&/:$/.test(w[w.length-2])&&/^\d/.test(w[w.length-1]))) w.pop();
+    return w.join(' ').trim(); };
+  const itens=[], ultimo=v=>{ for(let i=v.length-1;i>=0;i--) if(v[i]>0) return v[i]; return 0; };
+  blocos.forEach(bl=>{
+    const pr=bl.map((l,i)=>({i:i,v:ruim(l.n)?[]:valores(l.t)})).filter(x=>x.v.length&&ultimo(x.v)>0);
+    if(!pr.length) return;
+    if(pr.length===1){ itens.push({desc:bl.map(l=>limpa(l.t)).filter(Boolean).join(' '),valor:round2c(ultimo(pr[0].v))}); return; }
+    /* várias linhas com preço no mesmo bloco: as linhas soltas entre elas vão
+       para o produto de cima (a linha de apoio) -- ou para o de baixo, quando
+       a linha de preço não tem descrição (o nome vem na linha de cima dela) */
+    let de=0;
+    pr.forEach((p,k)=>{
+      const meio=bl.slice(de,p.i).map(l=>limpa(l.t)).filter(Boolean); let d=limpa(bl[p.i].t);
+      if(!/[a-z]{3}/.test(cobNorm(d))) d=meio.concat(d).join(' ');
+      else if(meio.length&&itens.length&&k>0) itens[itens.length-1].desc+=' '+meio.join(' ');
+      else if(meio.length) d=meio.concat(d).join(' ');
+      itens.push({desc:d,valor:round2c(ultimo(p.v))}); de=p.i+1;
+    });
+    const sobra=bl.slice(de).map(l=>limpa(l.t)).filter(Boolean); if(sobra.length) itens[itens.length-1].desc+=' '+sobra.join(' ');
+  });
+  resto.forEach(l=>{ const m=/frete[^\d]{0,25}?(\d{1,3}(?:\.\d{3})*,\d{2})/i.exec(l.t), v=m?parseNumLoose(m[1]):0;
+    if(v>0&&!itens.some(x=>/^frete$/i.test(x.desc))) itens.push({desc:'Frete',valor:round2c(v)}); });
+  return itens.filter(x=>x.valor>0&&/[a-z]{3}/.test(cobNorm(x.desc))).map(x=>({txt:x.desc,desc:x.desc,valor:x.valor}));
+}
+/* o total do documento, para conferir com a soma aplicada */
+function cobTotalDoc(linhas){
+  let tot=0;
+  linhas.forEach(l=>{ const t=typeof l==='string'?l:l.t, n=cobNorm(t);
+    if(/(valor total|total geral|total a pagar|total do (pedido|orcamento)|^total\b)/.test(n)&&!/sub ?total|total dos produtos/.test(n)){
+      const v=[...cobSemMedida(t).matchAll(COB_DINHEIRO)].map(m=>parseNumLoose(m[1])); if(v.length) tot=Math.max(tot,v[v.length-1]); } });
+  return round2c(tot);
 }
 /* bitola, espessura e palavras de um nome, para comparar */
 function cobAssina(s){
   const n=cobNorm(s).replace(/×/g,'x'), dims=[], esp=[];
   (n.match(/\d+(?:[.,]\d+)?(?:\s*x\s*\d+(?:[.,]\d+)?)+/g)||[]).forEach(g=>g.split(/\s*x\s*/).forEach(v=>dims.push(+v.replace(',','.'))));
   (n.match(/#\s*\d+(?:[.,]\d+)?|\d+[.,]\d+\s*mm|esp\.?\s*\d+(?:[.,]\d+)?/g)||[]).forEach(v=>{ const x=+(v.match(/\d+(?:[.,]\d+)?/)[0].replace(',','.')); if(x>0&&x<20) esp.push(x); });
-  const pal=new Set(n.replace(/[^a-z ]/g,' ').split(' ').filter(w=>w.length>=3&&!COB_PAL_VAZIA.has(w)));
+  /* "TP-40" e "TP40" são a mesma telha; AZ150/ALZ/zincalume são o galvalume */
+  const pal=new Set(n.replace(/([a-z])[\s-]?(\d)/g,'$1$2').split(/[^a-z0-9]+/).filter(w=>/^[a-z]/.test(w)&&w.length>=3&&!COB_PAL_VAZIA.has(w))
+    .map(w=>/^(alz\d*|az\d+|zincalume|aluzinc)$/.test(w)?'galvalume':w));
   return {dims,esp,pal};
 }
 function cobParecenca(a,b){
@@ -9814,13 +9907,27 @@ function cobParecenca(a,b){
   return s;
 }
 /* as linhas da obra que podem receber preço, no tipo escolhido */
-function cobLerAlvos(o,g){ return (o.linhas||[]).filter(l=>l.faz!==false&&(!g||l.grupo===g)); }
+/* com um tipo escolhido, o frete daquele tipo (Serviços) também recebe: o
+   pedido de telhas traz o "Valor Frete" das telhas */
+const cobEhFrete=l=>l.grupo==='srv'&&/frete/.test(cobNorm(l.nome));
+function cobLerAlvos(o,g){ return (o.linhas||[]).filter(l=>l.faz!==false&&(!g||l.grupo===g||(g!=='srv'&&cobEhFrete(l)))); }
 function cobLerCasa(){
   const o=cobAtual(), L=COB_LER; if(!o||!L) return;
   const alvos=cobLerAlvos(o,L.grupo).map(l=>({l,a:cobAssina([l.nome,l.det].join(' '))}));
   L.destino=L.itens.map(it=>{
+    if(it.desc==='Frete'){
+      const fr=alvos.map(x=>x.l).filter(cobEhFrete), tipo={tel:/telha/,met:/metal/}[L.grupo];
+      const um=(tipo&&fr.find(l=>tipo.test(cobNorm(l.nome))))||(fr.length===1?fr[0]:null);
+      return um?um.lid:'';
+    }
     let melhor=null, nota=1.99; const b=cobAssina(it.desc);
     alvos.forEach(x=>{ const s=cobParecenca(x.a,b); if(s>nota){ nota=s; melhor=x.l; } });
+    if(!melhor){
+      /* "TELHA TRAPEZOIDAL 0,50" e a telha do orçamento escrita de outro jeito:
+         sem bitola que decida, vale a palavra -- se só um item tem "telha" */
+      const com=alvos.filter(x=>[...x.a.pal].some(w=>w.length>=4&&b.pal.has(w)));
+      if(com.length===1) melhor=com[0].l;
+    }
     return melhor?melhor.lid:'';
   });
 }
@@ -9832,26 +9939,31 @@ function cobAchaFornecedor(linhas){
   cobLista().forEach(o=>(o.linhas||[]).forEach(l=>{ if(l.forn) usados.add(l.forn); }));
   const nomes=[...usados].sort((a,b)=>b.length-a.length);
   for(const nm of nomes){ const k=cobNorm(nm); if(k.length>=3&&T.includes(' '+k)) return nm; }
-  const l=topo.find(x=>{ const n=cobNorm(x); return /\b(ltda|eireli|s\/?a|epp|me)\b/.test(n)&&!/rm estruturas|nunes e kuhn/.test(n); });
+  const l=topo.find(x=>{ const n=cobNorm(x); return /\b(ltda|eireli|s\/?a|epp|me)\b/.test(n)&&!/rm estruturas|nunes ?(e|&) ?kuhn/.test(n); });
   return l?l.replace(/\b(cnpj|cpf)\b.*$/i,'').replace(/\s+/g,' ').trim().slice(0,60):'';
 }
 async function cobLeFornecedor(file){
   const o=cobAtual(); if(!o||!file) return;
-  if(!/pdf$/i.test(file.type||'')&&!/\.pdf$/i.test(file.name||'')){ alert('Escolha o PDF do orçamento do fornecedor.'); return; }
-  let linhas=[];
-  try{ linhas=await cobLinhasPdf(await file.arrayBuffer()); }
-  catch(e){ alert('Não foi possível ler este PDF.'); return; }
-  const itens=linhas.map(cobItemFornecedor).filter(Boolean);
-  if(!itens.length){ alert('Não achei linhas com preço neste PDF. Se ele for foto ou escaneado, não tem texto para ler: lance os valores à mão e anexe o arquivo na linha.'); return; }
-  let tot=0; linhas.forEach(x=>{ const n=cobNorm(x); if(/\btotal\b/.test(n)&&!/sub ?total/.test(n)){ const v=[...cobSemMedida(x).matchAll(COB_DINHEIRO)].map(m=>parseNumLoose(m[1])); if(v.length) tot=Math.max(tot,v[v.length-1]); } });
-  COB_LER={oid:o.id,file:file,nome:file.name||'orcamento-fornecedor.pdf',itens:itens,forn:cobAchaFornecedor(linhas),grupo:'',destino:[],docTotal:round2c(tot)};
+  const pdf=/pdf$/i.test(file.type||'')||/\.pdf$/i.test(file.name||''), img=/^image\/(png|jpe?g|webp|bmp|gif)$/i.test(file.type||'')||/\.(png|jpe?g|jfif|webp|bmp|gif)$/i.test(file.name||'');
+  if(!pdf&&!img){ alert(/\.hei[cf]$/i.test(file.name||'')?'Foto em HEIC (iPhone) não abre aqui: envie em JPG ou PNG.':'Escolha o PDF ou a foto (JPG, PNG) do orçamento do fornecedor.'); return; }
+  COB_LER={oid:o.id,lendo:true,nome:file.name||''}; cobRender();
+  let linhas=[], itens=[];
+  try{
+    const buf=await file.arrayBuffer();
+    if(pdf){ linhas=await cobLinhasPdf(buf); itens=cobItensDoTexto(linhas); }
+    /* foto, ou PDF sem texto (escaneado): OCR */
+    if(!itens.length){ linhas=await cobLinhasOcr(img?[file]:await cobPaginasPdf(buf)); itens=cobItensDoTexto(linhas); }
+  }catch(e){ COB_LER=null; cobRender(); alert('Não foi possível ler este arquivo'+(img?' (a leitura de foto precisa de internet na primeira vez).':'.')); return; }
+  if(!itens.length){ COB_LER=null; cobRender(); alert('Não achei linhas com preço neste arquivo. Se for foto, confira se está nítida e reta; senão, lance os valores à mão e anexe o arquivo na linha.'); return; }
+  COB_LER={oid:o.id,file:file,nome:file.name||(img?'orcamento-fornecedor.jpg':'orcamento-fornecedor.pdf'),itens:itens,forn:cobAchaFornecedor(linhas.map(l=>l.t)),grupo:'',destino:[],docTotal:cobTotalDoc(linhas)};
   cobLerCasa(); cobRender();
   const q=document.querySelector('#cobBody .cob-ler'); if(q&&q.scrollIntoView) q.scrollIntoView({block:'nearest'});
 }
 function cobLerHTML(o){
   const L=COB_LER; if(!L||L.oid!==o.id) return '';
+  if(L.lendo) return '<div class="cob-ler cob-ler-lendo"><div class="cob-ler-cab"><div><b>Lendo o orçamento do fornecedor…</b><span>'+escapeAttr(L.nome)+' · foto e PDF escaneado levam alguns segundos</span></div></div></div>';
   const alvos=cobLerAlvos(o,L.grupo), rot={}; COB_GRUPOS.forEach(([g,r])=>{ rot[g]=r; });
-  const opc=sel=>'<option value="">— não usar —</option>'+COB_GRUPOS.filter(([g])=>!L.grupo||g===L.grupo).map(([g,r])=>{
+  const opc=sel=>'<option value="">— não usar —</option>'+COB_GRUPOS.map(([g,r])=>{
     const ls=alvos.filter(l=>l.grupo===g); if(!ls.length) return '';
     return '<optgroup label="'+r+'">'+ls.map(l=>'<option value="'+l.lid+'"'+(l.lid===sel?' selected':'')+'>'+escapeAttr((l.nome||'Item sem nome').slice(0,70))+'</option>').join('')+'</optgroup>';
   }).join('');
@@ -9874,11 +9986,11 @@ function cobLerDestino(i,lid){ if(!COB_LER) return; COB_LER.destino[i]=lid||''; 
 function cobLerValor(i,v){ if(!COB_LER||!COB_LER.itens[i]) return; COB_LER.itens[i].valor=round2c(parseNumLoose(v)||0); cobRender(); }
 function cobLerFecha(){ COB_LER=null; cobRender(); }
 async function cobLerAplica(){
-  const o=cobAtual(), L=COB_LER; if(!o||!L||L.oid!==o.id) return;
+  const o=cobAtual(), L=COB_LER; if(!o||!L||L.oid!==o.id||L.lendo) return;
   const soma={}; L.itens.forEach((it,i)=>{ const d=L.destino[i]; if(d&&it.valor>0) soma[d]=round2c((soma[d]||0)+it.valor); });
   const lids=Object.keys(soma); if(!lids.length) return;
   let anexo=null;
-  try{ const id=cobNovoId('ax'); await idbPut(id,{blob:L.file,name:L.nome,type:L.file.type||'application/pdf'}); anexo={id:id,name:L.nome,size:L.file.size||0,addedAt:rmDiaISO()}; }catch(e){}
+  try{ const id=cobNovoId('ax'); await idbPut(id,{blob:L.file,name:L.nome,type:L.file.type||'application/octet-stream'}); anexo={id:id,name:L.nome,size:L.file.size||0,addedAt:rmDiaISO()}; }catch(e){}
   lids.forEach(lid=>{ const l=o.linhas.find(x=>x.lid===lid); if(!l) return;
     l.comprado=soma[lid]; if(L.forn) l.forn=L.forn; if(anexo&&!l.anexo) l.anexo=Object.assign({},anexo); });
   COB_LER=null; cobMudou();
@@ -10519,7 +10631,7 @@ function applyImport(){
    publicacao, e ha uma prova automatica que falha se um subir sem o outro.
    Assim o numero na tela e' o mesmo do arquivo que o aparelho guardou, e
    dizer "estou na v15" passa a significar alguma coisa. */
-const APP_VER='v158';
+const APP_VER='v159';
 (function(){ try{ const p=document.getElementById('verPill'); if(p)p.textContent=APP_VER; }catch(e){} })();
 /* Versao nova assumiu com a pagina aberta: avisa, em vez de recarregar por
    conta propria e jogar fora um orcamento pela metade. */
