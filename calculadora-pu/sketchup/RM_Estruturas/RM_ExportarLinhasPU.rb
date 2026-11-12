@@ -18,7 +18,7 @@ load File.join(File.dirname(__FILE__), 'deteccao_pu.rb')
 
 module RM_LinhasPU
 
-  VERSAO = '1.3.7'
+  VERSAO = '1.3.8'
 
   INCHES_TO_M  = 0.0254
   ADJACENCIA_M = 0.50
@@ -164,6 +164,30 @@ module RM_LinhasPU
       merge_intervals(ivs).each { |a0, a1| out << [p, a0, a1] } unless ivs.empty?
     end
     out
+  end
+
+  # ── PLACA ENTERRADA (contenção abaixo do baldrame) ──
+  # "Essas linhas inferiores não têm encontro adjacente com nada, por que
+  # está considerando linhas de PU?" A placa que corre ao lado da viga
+  # baldrame e desce abaixo dela fica enterrada: ali não se passa PU. Ela
+  # continua nas peças (aparece no 3D), mas não gera junta nenhuma -- nem a
+  # base no fundo dela, nem a junta com o pilar, nem a face de baixo da
+  # viga -- e não conta como "a placa mais baixa" da obra. A placa pendurada
+  # embaixo de uma viga intermediária só ENCOSTA na viga (topo = fundo da
+  # viga): essa continua normal.
+  def self.enterrada?(p, vigas)
+    tol = TOL_JUNTA_M / INCHES_TO_M; adj = ADJACENCIA_M / INCHES_TO_M
+    x0,x1,y0,y1,z0,z1 = p[:bounds]
+    return false if deitada?(p[:bounds])
+    vigas.any? do |v|
+      vx0,vx1,vy0,vy1,vz0,vz1 = v[:bounds]
+      gx = [vx0-x1, x0-vx1, 0].max; gy = [vy0-y1, y0-vy1, 0].max
+      next false if gx > adj || gy > adj
+      z1 > vz0 + tol && z1 < vz1 - tol && z0 < vz0 - tol
+    end
+  end
+  def self.placas_enterradas(placas, vigas)
+    placas.select { |p| enterrada?(p, vigas) }
   end
 
   TOL_JUNTA_M = 0.05
@@ -374,7 +398,8 @@ module RM_LinhasPU
     coletar_tudo(model.entities, pilares, placas, vigas)
     RM_DeteccaoPU.remover_chao!(pilares, placas)
 
-    linhas = gerar_linhas(pilares, placas, vigas)
+    enterradas = placas_enterradas(placas, vigas)
+    linhas = gerar_linhas(pilares, placas - enterradas, vigas)
 
     if linhas.empty?
       UI.messagebox("Nenhuma linha de PU encontrada.\n\nVerifique os nomes dos componentes.")

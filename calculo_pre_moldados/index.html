@@ -3074,11 +3074,11 @@ body:not([data-theme="escuro"]){
     </div>
     <div class="notas-bar no-print" id="notasBar"></div>
     <p class="notas-nota no-print">Cada nota tem o peso e o valor dela. Elas não se somam — o total abaixo é sempre o da nota aberta.</p>
-    <div class="nota-impressa"><b id="notaTituloImpresso">—</b><span class="ni-l">o peso e o valor abaixo são desta nota</span></div>
+    <div class="nota-impressa rmd-plano"><b id="notaTituloImpresso">—</b><span class="ni-l">o peso e o valor abaixo são desta nota</span></div>
   </div>
 
   <!-- ---------- KPIs ---------- -->
-  <div class="kpis">
+  <div class="kpis rmd-kpis">
     <div class="kpi"><div class="k-label">Peças</div><div class="k-val" id="kQtd">0</div><div class="k-sub" id="kQtdSub">nenhum item na lista</div></div>
     <div class="kpi"><div class="k-label">Área total</div><div class="k-val" id="kArea">0,00</div><div class="k-sub">m² — placas e contenções</div></div>
     <div class="kpi"><div class="k-label">Metros lineares</div><div class="k-val" id="kML">0,00</div><div class="k-sub">m — pilares e vigas</div></div>
@@ -3087,7 +3087,7 @@ body:not([data-theme="escuro"]){
   </div>
 
   <!-- ---------- MANIFESTO ---------- -->
-  <div class="card manifest-card">
+  <div class="card manifest-card rmd-plano">
     <div>
       <p class="eyebrow" style="margin-bottom:8px">Manifesto de transporte</p>
       <div class="manifest-main">
@@ -3100,7 +3100,7 @@ body:not([data-theme="escuro"]){
   </div>
 
   <!-- ---------- LISTA ---------- -->
-  <div class="card">
+  <div class="card rmd-plano">
     <div class="tbl-head">
       <p class="eyebrow" style="margin:0">Lista de peças</p>
       <span class="hint no-print" id="listaHint"></span>
@@ -3133,7 +3133,7 @@ body:not([data-theme="escuro"]){
     </div>
   </div>
 
-  <div class="version">RM Estruturas Pré-Fabricadas · Cálculo de Peças Pré-Moldados</div>
+  <div class="version no-print">RM Estruturas Pré-Fabricadas · Cálculo de Peças Pré-Moldados</div>
 </div>
 
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js" crossorigin="anonymous"></script>
@@ -5131,7 +5131,7 @@ if('serviceWorker' in navigator){
 })();
 </script>
 <script>/* versão publicada (PADRAO_RM.md §3): sobe a cada publicação, junto com o CACHE do sw.js */
-const APP_VER='v51';
+const APP_VER='v52';
 </script>
 <script id="rmVersaoBloco">
 /* ===== SELO DE VERSÃO — igual em todos os sistemas (PADRAO_RM.md §3) =====
@@ -5262,6 +5262,80 @@ const APP_VER='v51';
        - o fio do cabeçalho: laranja de 2 px e, logo abaixo, o grafite fino.
      Documento de medida exata (etiqueta, envelope, a folha do recibo em
      margem 0) e o que não tem timbrado ficam como estão. */
+  /* O MIOLO (modelo M1, PADRAO_RM 5): as peças de dentro do documento.
+     A tabela vale para todo documento com timbrado (cabeçalho cinza claro,
+     fio fino entre linhas, sem zebra, letra 9,5); o resto entra pela classe
+     que o documento usa:
+       .rmd-tit / .rmd-subtit  título (20 px; todo h1 do documento já é) e a linha cinza embaixo
+       .rmd-cabdoc  "rótulo · nome · data" numa linha só: o nome vira o título e a data a linha cinza
+       .rmd-dados  faixa cinza com os dados (rótulo pequeno em cima, <span>/<b>)
+       .rmd-sec    título de seção: maiúscula pequena com o traço laranja
+       .rmd-grupo  linha de grupo da tabela, em laranja
+       .rmd-sub    subtotal do grupo;  .rmd-tot  linha de total (tr ou div, fio preto)
+       .rmd-res    resumo à direita (<div><span>rótulo</span><b>valor</b></div>),
+                   com .rmd-res-total na caixa grafite do total
+       .rmd-cond   condições (lista);  .rmd-obs  observação
+       table.rmd-grade  grade (calendário, ficha de marcar): fio fino em todas as casas
+     Fica de fora: a ficha do montador (.tmf) e o que tiver .rmd-livre. */
+  var MIOLO = '@media print{html.rm-mi *{-webkit-print-color-adjust:exact;print-color-adjust:exact}'
+    + 'html.rm-mi table:not(.rmd-livre):not(.tmf table) th{background:#F2F4F7!important;color:#141414!important;font-size:7.5px!important;font-weight:700!important;letter-spacing:.08em!important;text-transform:uppercase!important;padding:5px 6px!important;border:0!important;border-bottom:.6px solid #c9cdd2!important}'
+    + 'html.rm-mi table:not(.rmd-livre):not(.tmf table) td{font-size:9.5px!important;padding:3.5px 6px!important;border-left:0!important;border-right:0!important;border-top:0!important;border-bottom:.5px solid #e3e5e8!important;background-color:transparent!important}'
+    + 'html.rm-mi table:not(.rmd-livre):not(.rmd-grade):not(.tmf table){border:0!important;border-collapse:collapse!important;border-radius:0!important}'
+    + 'html.rm-mi table:not(.rmd-livre) thead{display:table-header-group!important}'
+    + 'html.rm-mi table:not(.rmd-livre) tr{break-inside:avoid!important}'
+    + 'html.rm-mi :is(.head,.rm-head,.cab,.rm-cab,.timbre) :is(img,svg):not(.rmd-livre){height:36px!important;width:auto!important;max-width:none!important}'
+    + 'html.rm-mi .rm-sheet{border:0!important;border-radius:0!important;box-shadow:none!important;padding:0!important;background:none!important}'
+    + 'html.rm-mi table.rmd-grade:not(.rmd-livre) :is(th,td){border:.5px solid #d9dce0!important}'
+    + 'html.rm-mi :is(.rmd-tit,h1:not(.rmd-livre)){font-size:20px!important;font-weight:700!important;letter-spacing:-.01em!important;text-transform:none!important;color:#141414!important;margin:3px 0 4px!important}'
+    + 'html.rm-mi .rmd-cabdoc{display:block!important;margin:0!important;border:0!important}'
+    + 'html.rm-mi .rmd-cabdoc>span:first-child{display:none!important}'
+    + 'html.rm-mi .rmd-cabdoc>b{display:block!important;font-family:inherit!important;font-size:20px!important;font-weight:700!important;letter-spacing:-.01em!important;color:#141414!important;margin:3px 0 2px!important}'
+    + 'html.rm-mi .rmd-cabdoc>span:last-child{display:block!important;margin:0 0 12px!important;font-family:inherit!important;font-size:10px!important;letter-spacing:0!important;text-transform:none!important;color:#6E747C!important}'
+    + 'html.rm-mi .rmd-subtit{font-size:10px!important;color:#6E747C!important;margin:0 0 12px!important;text-transform:none!important;letter-spacing:0!important}'
+    + 'html.rm-mi .rmd-dados{display:grid!important;grid-template-columns:repeat(3,1fr)!important;gap:0!important;background:#F2F4F7!important;border:0!important;border-radius:4px!important;padding:6px 12px!important;margin:0 0 4px!important}'
+    + 'html.rm-mi .rmd-dados>div{padding:4px 0!important;border:0!important;background:none!important}'
+    + 'html.rm-mi .rmd-dados span{display:block!important;font-size:7px!important;font-weight:400!important;letter-spacing:.12em!important;text-transform:uppercase!important;color:#6E747C!important}'
+    + 'html.rm-mi .rmd-dados b{font-family:inherit!important;font-size:10px!important;font-weight:600!important;color:#141414!important}'
+    + 'html.rm-mi .rmd-sec{font-size:8px!important;font-weight:700!important;letter-spacing:.14em!important;text-transform:uppercase!important;color:#141414!important;margin:16px 0 6px!important;padding:0 0 0 7px!important;border:0!important;border-left:3px solid #F24619!important;background:none!important}'
+    + 'html.rm-mi tr.rmd-grupo td, html.rm-mi .rmd-grupo{font-size:9.5px!important;font-weight:700!important;color:#C1310B!important;text-transform:none!important;letter-spacing:0!important;padding:9px 6px 3.5px!important;border:0!important;border-bottom:.5px solid #d9dce0!important;background:none!important;border-radius:0!important}'
+    + 'html.rm-mi .rmd-grupo *{color:inherit!important;font-size:inherit!important}'
+    + 'html.rm-mi tr.rmd-sub td{font-weight:700!important;color:#4A515B!important;border-bottom:0!important;padding-bottom:6px!important}'
+    + 'html.rm-mi tr.rmd-tot td{font-weight:700!important;font-size:10px!important;color:#141414!important;border-top:1px solid #141414!important;border-bottom:0!important}'
+    + 'html.rm-mi div.rmd-tot{display:flex!important;justify-content:space-between!important;align-items:baseline!important;border:0!important;border-top:1px solid #141414!important;padding:6px 0 0!important;margin-top:10px!important;font-size:10px!important;font-weight:700!important;color:#141414!important}'
+    + 'html.rm-mi div.rmd-tot b{font-family:inherit!important;font-size:13px!important;color:#141414!important}'
+    + 'html.rm-mi .rmd-res{width:62mm!important;margin-left:auto!important;border-top:1px solid #141414!important}'
+    + 'html.rm-mi .rmd-res>div{display:flex!important;justify-content:space-between!important;padding:3.5px 0!important;border-bottom:.5px solid #e3e5e8!important;font-size:9.5px!important}'
+    + 'html.rm-mi .rmd-res span{font-size:7px!important;letter-spacing:.12em!important;text-transform:uppercase!important;color:#6E747C!important}'
+    + 'html.rm-mi .rmd-res>.rmd-res-total{background:#141414!important;color:#fff!important;padding:6px 8px!important;border:0!important;margin-top:4px!important;border-radius:3px!important}'
+    + 'html.rm-mi .rmd-res-total span{color:#c9cdd2!important}'
+    + 'html.rm-mi .rmd-res-total b{font-size:13px!important}'
+    + 'html.rm-mi :is(td,th):is(.money,.n,.r,.num,.valor,.t-num){text-align:right!important;font-variant-numeric:tabular-nums!important;white-space:nowrap}'
+    + 'html.rm-mi .rmd-cond{margin:0!important;padding-left:14px!important;font-size:9.5px!important}'
+    + 'html.rm-mi .rmd-cond li{margin:2px 0!important}'
+    + 'html.rm-mi .rmd-obs{font-size:8.5px!important;color:#4A515B!important}'
+    /* páginas que imprimem a PRÓPRIA TELA: os cartões de resumo viram a
+       faixa cinza (rótulo, valor, apoio) e o cartão em volta some. Só no
+       papel -- na tela eles continuam cartões. */
+    + 'html.rm-mi .rmd-kpis{display:grid!important;grid-template-columns:none!important;grid-auto-flow:column!important;grid-auto-columns:1fr!important;gap:0 14px!important;background:#F2F4F7!important;border:0!important;border-radius:4px!important;box-shadow:none!important;padding:6px 12px!important;margin:6px 0 10px!important}'
+    + 'html.rm-mi .rmd-kpis>*{background:none!important;border:0!important;border-radius:0!important;box-shadow:none!important;padding:4px 0!important;margin:0!important;min-height:0!important;min-width:0!important;color:#141414!important}'
+    + 'html.rm-mi .rmd-kpis>*::before,html.rm-mi .rmd-kpis>*::after{display:none!important}'
+    + 'html.rm-mi .rmd-kpis>* *{color:inherit!important;font-family:inherit!important;margin:0!important}'
+    + 'html.rm-mi .rmd-kpis>*>:first-child{font-size:7px!important;font-weight:400!important;letter-spacing:.12em!important;text-transform:uppercase!important;color:#6E747C!important;line-height:1.4!important}'
+    + 'html.rm-mi .rmd-kpis>*>:nth-child(2){font-size:11px!important;font-weight:700!important;letter-spacing:0!important;line-height:1.3!important}'
+    + 'html.rm-mi .rmd-kpis>*>:nth-child(n+3){font-size:7.5px!important;font-weight:400!important;color:#6E747C!important;letter-spacing:0!important;text-transform:none!important}'
+    + 'html.rm-mi .rmd-plano{background:none!important;border:0!important;border-radius:0!important;box-shadow:none!important;padding:0!important}'
+    + 'html.rm-mi .no-print{display:none!important}'
+    + 'html.rm-mi,html.rm-mi body{background:#fff!important}'
+    + '}';
+  /* As peças rmd-* também na TELA: a prévia do documento (o que o sistema
+     mostra antes de imprimir) sai igual ao papel. As regras gerais (toda
+     tabela, todo h1) ficam só no papel. */
+  var MIOLO_TELA = MIOLO.slice('@media print{'.length, -1).split('}').filter(function(r){
+      return /rmd-/.test(r) && !/table:not|:is\(\.head|rmd-kpis|rmd-plano/.test(r); })
+    .map(function(r){ return r.replace(/html\.rm-mi /g, '').replace(':is(.rmd-tit,h1:not(.rmd-livre))', '.rmd-tit'); }).join('}') + '}';
+  (function(){ function poe(){ if (document.getElementById('rm-miolo-tela') || !document.head) return;
+      var e = document.createElement('style'); e.id = 'rm-miolo-tela'; e.textContent = MIOLO_TELA; document.head.appendChild(e); }
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', poe); else poe(); })();
   var PE_FONE = '51 99789-7879', PE_INSTA = '@rm.estruturas', PE_SITE = 'www.rmestruturas.com.br';
   function papelA(raiz, viva, nome){
     if (!raiz || !raiz.querySelector || !raiz.querySelector('.tb2,.tb2-tipo') || raiz.querySelector('#rm-papel-a')) return false;
@@ -5283,8 +5357,10 @@ const APP_VER='v51';
     /* o pé antigo (fixo, dentro da página) sai: o novo mora na margem.
        A linha de nota dele ("atualizado em") vai para o fim do documento. */
     var nota = '';
-    [].slice.call(raiz.querySelectorAll('#rm-pe-imp,.pe,.sheetfoot')).forEach(function(e){
+    [].slice.call(raiz.querySelectorAll('#rm-pe-imp,.pe,.sheetfoot,.foot,.rodape')).forEach(function(e){
       if (e.id !== 'rm-pe-imp' && e.textContent.toLowerCase().indexOf(PE_SITE) < 0) return;
+      /* só o pé: um bloco com tabela, totais ou texto comprido não é rodapé */
+      if (e.id !== 'rm-pe-imp' && (e.querySelector('table,.totbox,.tot') || e.textContent.length > 400)) return;
       var n = e.querySelector('.nota'); if (n && e.id === 'rm-pe-imp') nota = limpa(n.textContent);
       if (e.parentNode) e.parentNode.removeChild(e); });
     var corpo = raiz.querySelector('body') || raiz;
@@ -5301,10 +5377,11 @@ const APP_VER='v51';
       + '@top-right{content:"RM Estruturas Pré-Fabricadas";' + al + 'color:#6E747C}}'
       + '@page:first{@top-left{content:none;border:0}@top-right{content:none;border:0}}'
       + '@media print{html body{padding-bottom:0!important}'
-      + '.head::after,.rm-cab::after,.cab::after{height:2px!important;background:#F24619!important;box-shadow:0 3.5px 0 -.5px #141414!important;'
+      + '.head::after,.rm-cab::after,.cab::after,.rm-head::after,.timbre::after{height:2px!important;background:#F24619!important;box-shadow:0 3.5px 0 -.5px #141414!important;'
       + '-webkit-print-color-adjust:exact;print-color-adjust:exact}.head::before{display:none!important}'
-      + '.rm-nota-fim{margin-top:6mm;font-size:7pt;color:#6E747C;text-align:center}}';
+      + '.rm-nota-fim{margin-top:6mm;font-size:7pt;color:#6E747C;text-align:center}}' + MIOLO;
     (raiz.querySelector('head') || raiz).appendChild(st);
+    if (raiz.classList) raiz.classList.add('rm-mi');
     return true;
   }
   function papelAHTML(html, nome){

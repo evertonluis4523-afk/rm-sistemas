@@ -11158,16 +11158,16 @@ function exportFechamentoPDF(tipo){
 
   let html='<div class="wrap">';
   html+=relPdfHead(cfg);
-  html+='<div class="title">Fechamento de '+(isAd?'Adiantamento':'Pagamento')+'</div>';
-  html+='<div class="subttl">'+esc(mesNome)+' de '+r.ano+' · fechado em '+new Date(r.ts).toLocaleDateString('pt-BR')+' '+new Date(r.ts).toLocaleTimeString('pt-BR').slice(0,5)+'</div>';
+  html+='<div class="title rmd-tit">Fechamento de '+(isAd?'Adiantamento':'Pagamento')+'</div>';
+  html+='<div class="subttl rmd-subtit">'+esc(mesNome)+' de '+r.ano+' · fechado em '+new Date(r.ts).toLocaleDateString('pt-BR')+' '+new Date(r.ts).toLocaleTimeString('pt-BR').slice(0,5)+'</div>';
 
   const banco=(r.itens||[]).filter(it=>it.metodo!=='pf'), pf=(r.itens||[]).filter(it=>it.metodo==='pf');
   const tbB=tabela(banco), tbP=tabela(pf);
-  html+='<div class="sec">Via banco (depósito) — '+tbB.qtd+'</div>'+tbB.html
-    +'<table><tr class="sub"><td>Subtotal banco</td><td class="money">R$ '+fmtBRL(tbB.sub)+'</td></tr></table>';
-  html+='<div class="sec">Em espécie — PF — '+tbP.qtd+'</div>'+tbP.html
-    +'<table><tr class="sub"><td>Subtotal PF (espécie)</td><td class="money">R$ '+fmtBRL(tbP.sub)+'</td></tr></table>';
-  html+='<table style="margin-top:10px"><tr class="grand"><td>TOTAL GERAL ('+(tbB.qtd+tbP.qtd)+')</td><td class="money">R$ '+fmtBRL(tbB.sub+tbP.sub)+'</td></tr></table>';
+  html+='<div class="sec rmd-sec">Via banco (depósito) — '+tbB.qtd+'</div>'+tbB.html
+    +'<table><tr class="sub rmd-sub"><td>Subtotal banco</td><td class="money">R$ '+fmtBRL(tbB.sub)+'</td></tr></table>';
+  html+='<div class="sec rmd-sec">Em espécie — PF — '+tbP.qtd+'</div>'+tbP.html
+    +'<table><tr class="sub rmd-sub"><td>Subtotal PF (espécie)</td><td class="money">R$ '+fmtBRL(tbP.sub)+'</td></tr></table>';
+  html+='<table style="margin-top:10px"><tr class="grand rmd-tot"><td>TOTAL GERAL ('+(tbB.qtd+tbP.qtd)+')</td><td class="money">R$ '+fmtBRL(tbB.sub+tbP.sub)+'</td></tr></table>';
   html+='<div class="foot">RM Estruturas Pré-Fabricadas · Folha de Pagamento</div></div>';
 
   /* A pré-visualização é outro modal. Se o arquivo de fechamentos continuar
@@ -11276,8 +11276,8 @@ function relatorioCompleto(tipo){
     +'.ok{color:#1d7a4a;font-weight:bold}.ruim{color:#D53309;font-weight:bold}';
 
   let html='<div class="wrap">'+relPdfHead(state.cfg)
-    +'<div class="title">Relatório completo de '+(isAd?'adiantamento':'pagamento')+'</div>'
-    +'<div class="subttl">'+esc(mesNome)+' de '+r.ano+' · '+itens.length+' funcionário'+(itens.length===1?'':'s')
+    +'<div class="title rmd-tit">Relatório completo de '+(isAd?'adiantamento':'pagamento')+'</div>'
+    +'<div class="subttl rmd-subtit">'+esc(mesNome)+' de '+r.ano+' · '+itens.length+' funcionário'+(itens.length===1?'':'s')
     +' · fechado em '+new Date(r.ts).toLocaleDateString('pt-BR')
     +' · emitido em '+new Date().toLocaleDateString('pt-BR')+'</div>';
 
@@ -11299,7 +11299,7 @@ function relatorioCompleto(tipo){
   }).join('')+'</tr></tbody></table>';
 
   // conferência
-  html+='<div class="sec">Conferência</div>';
+  html+='<div class="sec rmd-sec">Conferência</div>';
   if(!divergentes.length){
     html+='<div class="nota"><b class="ok">As '+itens.length+' linhas fecham.</b> '
       +'Em cada uma, a base mais os acréscimos menos os descontos dá exatamente o valor pago.</div>';
@@ -11326,7 +11326,7 @@ function relatorioCompleto(tipo){
   // detalhe dos empréstimos
   const comEmpr=itens.filter(it=>emprDe(it)&&emprDe(it).length);
   if(comEmpr.length){
-    html+='<div class="sec">Empréstimos descontados</div>'
+    html+='<div class="sec rmd-sec">Empréstimos descontados</div>'
       +'<table class="det"><thead><tr><th>Funcionário</th><th>Empréstimo</th>'
       +'<th>Parcela</th><th class="r">Valor</th></tr></thead><tbody>'
       +comEmpr.map(it=>emprDe(it).map(p=>'<tr><td>'+esc(titlePt(it.nome))+'</td><td>'+esc(p.desc||'—')+'</td>'
@@ -11337,7 +11337,7 @@ function relatorioCompleto(tipo){
   // detalhe dos lançamentos nomeados da folha
   const comExtra=itens.filter(it=>(it.folhaExtra||[]).length);
   if(comExtra.length){
-    html+='<div class="sec">Vales, extras e descontos</div>'
+    html+='<div class="sec rmd-sec">Vales, extras e descontos</div>'
       +'<table class="det"><thead><tr><th>Funcionário</th><th>Descrição</th>'
       +'<th class="r">Valor</th></tr></thead><tbody>'
       +comExtra.map(it=>(it.folhaExtra||[]).map(x=>'<tr><td>'+esc(titlePt(it.nome))+'</td>'
@@ -11348,7 +11348,7 @@ function relatorioCompleto(tipo){
   // como o dinheiro saiu
   const banco=itens.filter(it=>it.metodo!=='pf'), pf=itens.filter(it=>it.metodo==='pf');
   const soma=l=>l.reduce((t,it)=>t+n0(it[campoVal]),0);
-  html+='<div class="sec">Forma de pagamento</div>'
+  html+='<div class="sec rmd-sec">Forma de pagamento</div>'
     +'<table class="det"><tbody>'
     +'<tr><td>Via banco (depósito) — '+banco.length+'</td><td class="r">'+fmtBRL(soma(banco))+'</td></tr>'
     +'<tr><td>Em espécie — PF — '+pf.length+'</td><td class="r">'+fmtBRL(soma(pf))+'</td></tr>'
@@ -11397,8 +11397,8 @@ function verPlanilhaRecebida(){
     +'.pl tr:nth-child(even) td{background:#fbfcfd}'
     +'.nota{padding:9px 11px;background:#f5f6f8;border-left:3px solid #D53309;font-size:9px;line-height:1.55;margin:11px 0}';
   let html='<div class="wrap">'+relPdfHead(state.cfg)
-    +'<div class="title">Planilha da contabilidade</div>'
-    +'<div class="subttl">Competência '+esc(mes)+' · '+lin.length+' linha'+(lin.length===1?'':'s')
+    +'<div class="title rmd-tit">Planilha da contabilidade</div>'
+    +'<div class="subttl rmd-subtit">Competência '+esc(mes)+' · '+lin.length+' linha'+(lin.length===1?'':'s')
     +' · arquivo '+esc(pl.arquivo||'(sem nome)')+(pl.aba?' · aba '+esc(pl.aba):'')
     +' · importada em '+new Date(pl.em).toLocaleString('pt-BR')+(pl.por?' por '+esc(pl.por):'')+'</div>'
     +'<div class="nota">Cópia fiel do que foi recebido, com todas as colunas — inclusive as que o sistema '
@@ -11795,11 +11795,11 @@ function relatorioConferenciaPDF(tipo){
     // Sem titulo proprio aqui: agora cada tipo e um PDF a parte, e o titulo
     // da pagina (Relatorio de Conferencia -- Adiantamento/Pagamento) ja diz
     // qual e. Repetir "Adiantamento"/"Pagamento" logo abaixo era redundante.
-    let h='<div class="sec">Via banco (depósito) — '+tbB.qtd+'</div>'+(tbB.qtd?tbB.html:'<p style="color:#6D737C;font-size:11px;margin:0 0 8px">Nenhum valor.</p>')
-      +'<table><tr class="sub">'+pad+'<td class="money">Subtotal banco: R$ '+fmtBRL(tbB.sub)+'</td></tr></table>';
-    h+='<div class="sec">Em espécie — PF — '+tbP.qtd+'</div>'+(tbP.qtd?tbP.html:'<p style="color:#6D737C;font-size:11px;margin:0 0 8px">Nenhum valor.</p>')
-      +'<table><tr class="sub">'+pad+'<td class="money">Subtotal PF (espécie): R$ '+fmtBRL(tbP.sub)+'</td></tr></table>';
-    h+='<table style="margin-top:6px"><tr class="grand">'+pad+'<td class="money">TOTAL '+esc(titulo).toUpperCase()+' ('+(tbB.qtd+tbP.qtd)+'): R$ '+fmtBRL(tbB.sub+tbP.sub)+'</td></tr></table>';
+    let h='<div class="sec rmd-sec">Via banco (depósito) — '+tbB.qtd+'</div>'+(tbB.qtd?tbB.html:'<p style="color:#6D737C;font-size:11px;margin:0 0 8px">Nenhum valor.</p>')
+      +'<table><tr class="sub rmd-sub">'+pad+'<td class="money">Subtotal banco: R$ '+fmtBRL(tbB.sub)+'</td></tr></table>';
+    h+='<div class="sec rmd-sec">Em espécie — PF — '+tbP.qtd+'</div>'+(tbP.qtd?tbP.html:'<p style="color:#6D737C;font-size:11px;margin:0 0 8px">Nenhum valor.</p>')
+      +'<table><tr class="sub rmd-sub">'+pad+'<td class="money">Subtotal PF (espécie): R$ '+fmtBRL(tbP.sub)+'</td></tr></table>';
+    h+='<table style="margin-top:6px"><tr class="grand rmd-tot">'+pad+'<td class="money">TOTAL '+esc(titulo).toUpperCase()+' ('+(tbB.qtd+tbP.qtd)+'): R$ '+fmtBRL(tbB.sub+tbP.sub)+'</td></tr></table>';
     return {html:h, totalGeral:tbB.sub+tbP.sub, qtdGeral:tbB.qtd+tbP.qtd};
   };
 
@@ -11816,7 +11816,7 @@ function relatorioConferenciaPDF(tipo){
   const afastados=state.employees.filter(e=>e.status==='afast'&&!isOculto(e)&&e.status!=='excluido');
   let blocoAfast='';
   if(afastados.length){
-    blocoAfast='<div class="sec">Afastados — fora desta folha ('+afastados.length+')</div>'
+    blocoAfast='<div class="sec rmd-sec">Afastados — fora desta folha ('+afastados.length+')</div>'
       +'<table><thead><tr><th>Funcionário</th><th>Função</th><th>Situação</th>'
       +'<th>Afastado desde</th><th class="money">Salário fixo</th></tr></thead><tbody>'
       +sortByNome(afastados).map(e=>'<tr><td>'+esc(titlePt(e.nome))+'</td>'
@@ -11831,8 +11831,8 @@ function relatorioConferenciaPDF(tipo){
   }
 
   let html='<div class="wrap">'+relPdfHead(cfg);
-  html+='<div class="title">Relatório de Conferência — '+esc(lab)+' · Banco e PF</div>';
-  html+='<div class="subttl">'+mesNome+' de '+ano+' · gerado em '+new Date().toLocaleDateString('pt-BR')+' '+new Date().toLocaleTimeString('pt-BR').slice(0,5)+'</div>';
+  html+='<div class="title rmd-tit">Relatório de Conferência — '+esc(lab)+' · Banco e PF</div>';
+  html+='<div class="subttl rmd-subtit">'+mesNome+' de '+ano+' · gerado em '+new Date().toLocaleDateString('pt-BR')+' '+new Date().toLocaleTimeString('pt-BR').slice(0,5)+'</div>';
   html+=r.html;
   html+=blocoAfast;
   html+='<div class="foot">RM Estruturas Pré-Fabricadas · Folha de Pagamento · '+(usandoArquivo?'valores do fechamento arquivado':'valores conforme lançados na tela — confira antes de gerar os recibos')+'</div></div>';
@@ -12278,19 +12278,19 @@ function assidLista(){
   const css=relPdfCSS(RED,INK,GRAY);
   let html='<div class="wrap">';
   html+=relPdfHead(cfg);
-  html+='<div class="title">Prêmio Assiduidade &amp; Sorteio do Rancho</div>';
-  html+='<div class="subttl">'+esc(mesNome)+' de '+esc(ano)+' · gerado em '+new Date().toLocaleDateString('pt-BR')+' '+new Date().toLocaleTimeString('pt-BR').slice(0,5)+'</div>';
+  html+='<div class="title rmd-tit">Prêmio Assiduidade &amp; Sorteio do Rancho</div>';
+  html+='<div class="subttl rmd-subtit">'+esc(mesNome)+' de '+esc(ano)+' · gerado em '+new Date().toLocaleDateString('pt-BR')+' '+new Date().toLocaleTimeString('pt-BR').slice(0,5)+'</div>';
 
   // Destaque do sorteio — mesma faixa vermelha usada no TOTAL dos outros
   // relatorios, aqui carregando o nome de quem ganhou em vez de um valor.
   // vertical-align:middle nas duas celulas: sem isso, o nome (15px) alinha
   // pela linha de base com o rotulo (11px) ao lado e sobe torto na faixa.
-  html+='<table style="margin-bottom:14px"><tr class="grand"><td style="font-size:11px;font-weight:465;opacity:.85;vertical-align:middle">🎉 SORTEADO DO RANCHO EXTRA</td>'
+  html+='<table style="margin-bottom:14px"><tr class="grand rmd-tot"><td style="font-size:11px;font-weight:465;opacity:.85;vertical-align:middle">🎉 SORTEADO DO RANCHO EXTRA</td>'
     +'<td class="center" style="font-size:15px;vertical-align:middle">'+(rec.sortNome?esc(titlePt(rec.sortNome)):'Ninguém faltou neste mês')+'</td></tr></table>';
 
-  html+='<div class="sec">Ganhadores da assiduidade — '+assiduos.length+'</div>';
+  html+='<div class="sec rmd-sec">Ganhadores da assiduidade — '+assiduos.length+'</div>';
   if(!assiduos.length){
-    html+='<div class="subttl">Nenhum funcionário foi assíduo este mês.</div>';
+    html+='<div class="subttl rmd-subtit">Nenhum funcionário foi assíduo este mês.</div>';
   }else{
     // Cada assiduo leva as duas coisas -- o premio em dinheiro e o rancho --
     // e o arquivo precisa dizer as duas, nao so o valor.
@@ -12300,8 +12300,8 @@ function assidLista(){
     html+=t;
   }
   const totalRanchos=assiduos.length+(rec.sortNome?1:0);
-  html+='<table style="margin-top:10px"><tr class="grand"><td>TOTAL DE PRÊMIOS ('+assiduos.length+')</td><td class="money">R$ '+fmtBRL(assiduos.length*premio)+'</td></tr></table>';
-  html+='<div class="subttl" style="margin-top:8px">'+totalRanchos+' rancho'+(totalRanchos===1?'':'s')+' no total — '+assiduos.length+' de assiduidade'+(rec.sortNome?' + 1 sorteado':'')+'.</div>';
+  html+='<table style="margin-top:10px"><tr class="grand rmd-tot"><td>TOTAL DE PRÊMIOS ('+assiduos.length+')</td><td class="money">R$ '+fmtBRL(assiduos.length*premio)+'</td></tr></table>';
+  html+='<div class="subttl rmd-subtit" style="margin-top:8px">'+totalRanchos+' rancho'+(totalRanchos===1?'':'s')+' no total — '+assiduos.length+' de assiduidade'+(rec.sortNome?' + 1 sorteado':'')+'.</div>';
   html+='<div class="foot">RM Estruturas Pré-Fabricadas · Folha de Pagamento</div></div>';
   return {css,html,mes,mesNome,ano,assiduos,premio};
 }
@@ -12845,8 +12845,8 @@ function exportExtratoPDF(){
   const RED='#D53309', INK='#1d2127', GRAY='#585758';
   const css=relPdfCSS(RED,INK,GRAY);
   let html='<div class="wrap">'+relPdfHead(cfg);
-  html+='<div class="title">Extrato de Pagamentos</div>';
-  html+='<div class="subttl">'+(tipoF==='todos'?'Todos os tipos':(TIPO_LAB[tipoF]||tipoF))
+  html+='<div class="title rmd-tit">Extrato de Pagamentos</div>';
+  html+='<div class="subttl rmd-subtit">'+(tipoF==='todos'?'Todos os tipos':(TIPO_LAB[tipoF]||tipoF))
     +' · gerado em '+new Date().toLocaleDateString('pt-BR')+' '+new Date().toLocaleTimeString('pt-BR').slice(0,5)+'</div>';
   let algum=false;
   _extratoNomes.forEach(nome=>{
@@ -12855,14 +12855,14 @@ function exportExtratoPDF(){
     if(!linhas.length)return;
     algum=true;
     const t=totaisExtrato(linhas);
-    html+='<div class="sec">'+esc(titlePt(nome))+'</div>';
+    html+='<div class="sec rmd-sec">'+esc(titlePt(nome))+'</div>';
     html+='<table><thead><tr><th>Competência</th><th>Data do recibo</th><th>Tipo</th><th>Forma / Serviço</th><th class="money">Valor</th></tr></thead><tbody>';
     let anoAtual=null;
     linhas.forEach(l=>{
       if(l.ano!==anoAtual){
         anoAtual=l.ano;
         const somaAno=linhas.filter(x=>x.ano===anoAtual).reduce((s,x)=>s+x.valor,0);
-        html+='<tr class="sub"><td colspan="4">'+anoAtual+'</td><td class="money">R$ '+fmtBRL(somaAno)+'</td></tr>';
+        html+='<tr class="sub rmd-sub"><td colspan="4">'+anoAtual+'</td><td class="money">R$ '+fmtBRL(somaAno)+'</td></tr>';
       }
       html+='<tr><td>'+(MESES[l.mes].charAt(0).toUpperCase()+MESES[l.mes].slice(1))+'</td>'
         +'<td>'+(l.data?fmtDate(l.data):'—')+'</td><td>'+(TIPO_LAB[l.tipo]||l.tipo)+'</td>'
@@ -12870,7 +12870,7 @@ function exportExtratoPDF(){
         +'<td class="money">R$ '+fmtBRL(l.valor)+'</td></tr>';
     });
     html+='</tbody></table>';
-    html+='<table style="margin-bottom:14px"><tr class="grand"><td>TOTAL · '+esc(titlePt(nome))+' ('+linhas.length+' recibo'+(linhas.length===1?'':'s')+')</td>'
+    html+='<table style="margin-bottom:14px"><tr class="grand rmd-tot"><td>TOTAL · '+esc(titlePt(nome))+' ('+linhas.length+' recibo'+(linhas.length===1?'':'s')+')</td>'
       +'<td></td><td></td><td></td><td class="money">R$ '+fmtBRL(t.geral)+'</td></tr></table>';
   });
   if(!algum){toast('Nada para exportar com esse filtro','err');return;}
@@ -14086,8 +14086,8 @@ function exportRelPDF(key){
 
   let html='<div class="wrap">';
   html+=relPdfHead(cfg);
-  html+='<div class="title">Relat\u00f3rio de '+esc(tipo)+'</div>';
-  html+='<div class="subttl">'+esc(mesNome)+' de '+r.ano+' \u00b7 gerado em '+new Date().toLocaleDateString('pt-BR')+' '+new Date().toLocaleTimeString('pt-BR').slice(0,5)+'</div>';
+  html+='<div class="title rmd-tit">Relat\u00f3rio de '+esc(tipo)+'</div>';
+  html+='<div class="subttl rmd-subtit">'+esc(mesNome)+' de '+r.ano+' \u00b7 gerado em '+new Date().toLocaleDateString('pt-BR')+' '+new Date().toLocaleTimeString('pt-BR').slice(0,5)+'</div>';
 
   const tabela=(itens,mostrarMetodo)=>{
     let t='<table><thead><tr><th>Nome</th>'+(mostrarMetodo?'':'<th>Servi\u00e7o</th>')+(mostrarMetodo?'<th class="money">Sal\u00e1rio fixo</th>':'')+'<th class="money">Valor</th></tr></thead><tbody>';
@@ -14100,16 +14100,16 @@ function exportRelPDF(key){
   if(r.tipo==='terceiros'){
     const tb=tabela(r.itens||[],false);
     html+=tb.html;
-    html+='<table><tr class="grand"><td>TOTAL ('+tb.qtd+')</td><td class="money">R$ '+fmtBRL(tb.sub)+'</td></tr></table>';
+    html+='<table><tr class="grand rmd-tot"><td>TOTAL ('+tb.qtd+')</td><td class="money">R$ '+fmtBRL(tb.sub)+'</td></tr></table>';
   } else {
     const banco=(r.itens||[]).filter(it=>it.metodo!=='pf');
     const pf=(r.itens||[]).filter(it=>it.metodo==='pf');
     const tbB=tabela(banco,true), tbP=tabela(pf,true);
-    html+='<div class="sec">Via banco (dep\u00f3sito) \u2014 '+tbB.qtd+'</div>'+tbB.html
-      +'<table><tr class="sub"><td>Subtotal banco</td><td class="money">R$ '+fmtBRL(tbB.sub)+'</td></tr></table>';
-    html+='<div class="sec">Em esp\u00e9cie \u2014 PF \u2014 '+tbP.qtd+'</div>'+tbP.html
-      +'<table><tr class="sub"><td>Subtotal PF (esp\u00e9cie)</td><td class="money">R$ '+fmtBRL(tbP.sub)+'</td></tr></table>';
-    html+='<table style="margin-top:10px"><tr class="grand"><td>TOTAL GERAL ('+(tbB.qtd+tbP.qtd)+')</td><td class="money">R$ '+fmtBRL(tbB.sub+tbP.sub)+'</td></tr></table>';
+    html+='<div class="sec rmd-sec">Via banco (dep\u00f3sito) \u2014 '+tbB.qtd+'</div>'+tbB.html
+      +'<table><tr class="sub rmd-sub"><td>Subtotal banco</td><td class="money">R$ '+fmtBRL(tbB.sub)+'</td></tr></table>';
+    html+='<div class="sec rmd-sec">Em esp\u00e9cie \u2014 PF \u2014 '+tbP.qtd+'</div>'+tbP.html
+      +'<table><tr class="sub rmd-sub"><td>Subtotal PF (esp\u00e9cie)</td><td class="money">R$ '+fmtBRL(tbP.sub)+'</td></tr></table>';
+    html+='<table style="margin-top:10px"><tr class="grand rmd-tot"><td>TOTAL GERAL ('+(tbB.qtd+tbP.qtd)+')</td><td class="money">R$ '+fmtBRL(tbB.sub+tbP.sub)+'</td></tr></table>';
   }
   html+='<div class="foot">RM Estruturas Pr\u00e9-Fabricadas \u00b7 Folha de Pagamento</div></div>';
 
@@ -14125,15 +14125,15 @@ function exportFuncaoPDF(fn){
 
   let html='<div class="wrap">';
   html+=relPdfHead(cfg);
-  html+='<div class="title">Relatório por função — '+esc(fn)+'</div>';
-  html+='<div class="subttl">Ano '+ano+' · gerado em '+new Date().toLocaleDateString('pt-BR')+' '+new Date().toLocaleTimeString('pt-BR').slice(0,5)+'</div>';
+  html+='<div class="title rmd-tit">Relatório por função — '+esc(fn)+'</div>';
+  html+='<div class="subttl rmd-subtit">Ano '+ano+' · gerado em '+new Date().toLocaleDateString('pt-BR')+' '+new Date().toLocaleTimeString('pt-BR').slice(0,5)+'</div>';
 
   const nomes=Object.keys(g.pessoas).sort((a,b)=>g.pessoas[b]-g.pessoas[a]);
   let t='<table><thead><tr><th>Nome</th><th class="money">Total no ano</th></tr></thead><tbody>';
   nomes.forEach(n=>{t+='<tr><td>'+esc(titlePt(n))+'</td><td class="money">R$ '+fmtBRL(g.pessoas[n])+'</td></tr>';});
   t+='</tbody></table>';
   html+=t;
-  html+='<table style="margin-top:10px"><tr class="grand"><td>TOTAL ('+nomes.length+')</td><td class="money">R$ '+fmtBRL(g.tot)+'</td></tr></table>';
+  html+='<table style="margin-top:10px"><tr class="grand rmd-tot"><td>TOTAL ('+nomes.length+')</td><td class="money">R$ '+fmtBRL(g.tot)+'</td></tr></table>';
   html+='<div class="foot">RM Estruturas Pré-Fabricadas · Folha de Pagamento</div></div>';
 
   gerarPDF(css,html,('Relatorio_Funcao_'+fn+'_'+ano).replace(/[^a-z0-9]/gi,'_'));
@@ -14152,8 +14152,8 @@ function exportRelAnualPDF(){
 
   let html='<div class="wrap">';
   html+=relPdfHead(cfg);
-  html+='<div class="title">Relatório anual consolidado</div>';
-  html+='<div class="subttl">Ano '+ano+' · gerado em '+new Date().toLocaleDateString('pt-BR')+' '+new Date().toLocaleTimeString('pt-BR').slice(0,5)+'</div>';
+  html+='<div class="title rmd-tit">Relatório anual consolidado</div>';
+  html+='<div class="subttl rmd-subtit">Ano '+ano+' · gerado em '+new Date().toLocaleDateString('pt-BR')+' '+new Date().toLocaleTimeString('pt-BR').slice(0,5)+'</div>';
 
   html+='<table><thead><tr><th>Resumo</th><th class="money">Valor</th></tr></thead><tbody>'
     +'<tr><td>Total no ano</td><td class="money">R$ '+fmtBRL(tTot)+'</td></tr>'
@@ -14162,7 +14162,7 @@ function exportRelAnualPDF(){
     +'<tr><td>Terceiros</td><td class="money">R$ '+fmtBRL(tTerc)+'</td></tr>'
     +'</tbody></table>';
 
-  html+='<div class="sec">Lançamentos por mês</div>';
+  html+='<div class="sec rmd-sec">Lançamentos por mês</div>';
   let tl='<table><thead><tr><th>Mês</th><th>Tipo</th><th class="center">Qtd</th><th class="money">Banco</th><th class="money">PF</th><th class="money">Total</th></tr></thead><tbody>';
   list.slice().sort((a,b)=>a.mes-b.mes||(a.tipo>b.tipo?1:-1)).forEach(r=>{
     const mesNome=MESES[r.mes].charAt(0).toUpperCase()+MESES[r.mes].slice(1),terc=r.tipo==='terceiros';
@@ -14173,7 +14173,7 @@ function exportRelAnualPDF(){
 
   const nomesFuncoes=Object.keys(RELFUNC_GROUPS).sort((a,b)=>RELFUNC_GROUPS[b].tot-RELFUNC_GROUPS[a].tot);
   if(nomesFuncoes.length){
-    html+='<div class="sec">Por função</div>';
+    html+='<div class="sec rmd-sec">Por função</div>';
     let tf='<table><thead><tr><th>Função</th><th class="center">Pessoas</th><th class="money">Total no ano</th></tr></thead><tbody>';
     nomesFuncoes.forEach(fn=>{const g=RELFUNC_GROUPS[fn];tf+='<tr><td>'+esc(fn)+'</td><td class="center">'+Object.keys(g.pessoas).length+'</td><td class="money">R$ '+fmtBRL(g.tot)+'</td></tr>';});
     html+=tf+'</tbody></table>';
@@ -14183,14 +14183,14 @@ function exportRelAnualPDF(){
   state.employees.forEach(e=>{(e.historicoSalario||[]).forEach(h=>{if(h.data&&h.data.slice(0,4)===String(ano))reaj.push({data:h.data,nome:e.nome,anterior:h.anterior||0,novo:h.novo||0,pct:h.pct});});});
   reaj.sort((a,b)=>a.data.localeCompare(b.data));
   if(reaj.length){
-    html+='<div class="sec">Reajustes salariais</div>';
+    html+='<div class="sec rmd-sec">Reajustes salariais</div>';
     let tr_='<table><thead><tr><th>Data</th><th>Funcionário</th><th class="money">Anterior</th><th class="money">Novo</th><th class="money">Variação</th></tr></thead><tbody>';
     reaj.forEach(l=>{const pct=(l.pct===null||l.pct===undefined)?'—':((l.pct>=0?'+':'')+l.pct.toFixed(2).replace('.',',')+'%');
       tr_+='<tr><td>'+fmtDate(l.data)+'</td><td>'+esc(titlePt(l.nome))+'</td><td class="money">'+(l.anterior>0?'R$ '+fmtBRL(l.anterior):'—')+'</td><td class="money">R$ '+fmtBRL(l.novo)+'</td><td class="money">'+pct+'</td></tr>';});
     html+=tr_+'</tbody></table>';
   }
 
-  html+='<table style="margin-top:10px"><tr class="grand"><td>TOTAL GERAL DO ANO</td><td class="money">R$ '+fmtBRL(tTot)+'</td></tr></table>';
+  html+='<table style="margin-top:10px"><tr class="grand rmd-tot"><td>TOTAL GERAL DO ANO</td><td class="money">R$ '+fmtBRL(tTot)+'</td></tr></table>';
   html+='<div class="foot">RM Estruturas Pré-Fabricadas · Folha de Pagamento</div></div>';
 
   gerarPDF(css,html,('Relatorio_Anual_'+ano).replace(/[^a-z0-9]/gi,'_'));
@@ -14283,8 +14283,8 @@ function exportFuncionariosSalariosPDF(){
   const css=relPdfCSS(RED,INK,GRAY);
   let html='<div class="wrap">';
   html+=relPdfHead(cfg);
-  html+='<div class="title">Relatório de Funcionários e Salários</div>';
-  html+='<div class="subttl">'+(comAdiant?'Coluna de adiantamento referente a '+esc(mesNome)+' de '+ano+' · ':'')
+  html+='<div class="title rmd-tit">Relatório de Funcionários e Salários</div>';
+  html+='<div class="subttl rmd-subtit">'+(comAdiant?'Coluna de adiantamento referente a '+esc(mesNome)+' de '+ano+' · ':'')
     +'gerado em '+new Date().toLocaleDateString('pt-BR')+' '+new Date().toLocaleTimeString('pt-BR').slice(0,5)+'</div>';
 
   // Larguras fixas nas colunas de tamanho previsível: sem isso a tabela
@@ -14322,13 +14322,13 @@ function exportFuncionariosSalariosPDF(){
   });
   /* o total vai na MESMA tabela: numa tabela à parte as colunas não casavam
      e o valor do salário caía embaixo de "Última alteração" */
-  t+='</tbody><tfoot><tr class="grand"><td>TOTAL ('+list.length+' funcionário'+(list.length===1?'':'s')+')</td><td></td><td></td><td></td>'
+  t+='</tbody><tfoot><tr class="grand rmd-tot"><td>TOTAL ('+list.length+' funcionário'+(list.length===1?'':'s')+')</td><td></td><td></td><td></td>'
     +'<td class="money">R$ '+fmtBRL(tSal)+'</td>'
     +(comAdiant?'<td class="money">R$ '+fmtBRL(tAdi)+'</td>':'')
     +'<td></td></tr></tfoot></table>';
   html+=t;
-  if(comAdiant&&!hist&&!porMov.length)html+='<div class="subttl" style="margin-top:10px">Ainda não há recibos de adiantamento gerados para '+esc(mesNome)+'/'+ano+' — a coluna aparece vazia até os recibos daquele mês serem emitidos.</div>';
-  if(comAdiant&&porMov.length)html+='<div class="subttl" style="margin-top:10px">* '
+  if(comAdiant&&!hist&&!porMov.length)html+='<div class="subttl rmd-subtit" style="margin-top:10px">Ainda não há recibos de adiantamento gerados para '+esc(mesNome)+'/'+ano+' — a coluna aparece vazia até os recibos daquele mês serem emitidos.</div>';
+  if(comAdiant&&porMov.length)html+='<div class="subttl rmd-subtit" style="margin-top:10px">* '
     +porMov.length+(porMov.length===1?' valor vem':' valores vêm')+' do pagamento confirmado, e não de um recibo deste lote — '
     +esc(porMov.map(x=>titlePt(x.nome)+(x.data?' ('+fmtDate(x.data)+')':'')).join(', '))
     +'. Acontece com quem foi pago fora do lote do mês.</div>';
@@ -14340,7 +14340,7 @@ function exportFuncionariosSalariosPDF(){
   const obsCad=e=>[e.isentoINSS?'Isento de INSS':'',e.obsCadastro||''].filter(Boolean).join(' · ');
   const comObs=list.filter(e=>obsCad(e));
   if(comObs.length){
-    html+='<div class="sec" style="margin-top:16px">Observações do cadastro</div>';
+    html+='<div class="sec rmd-sec" style="margin-top:16px">Observações do cadastro</div>';
     html+='<table><thead><tr><th style="width:220px">Funcionário</th><th>Observação</th></tr></thead><tbody>'
       +comObs.map(e=>'<tr><td>'+esc(titlePt(e.nome))+'</td><td>'+esc(obsCad(e))+'</td></tr>').join('')
       +'</tbody></table>';
@@ -14796,11 +14796,11 @@ function exportAniversariantesPDF(){
   const css=relPdfCSS(RED,INK,GRAY);
   let html='<div class="wrap">';
   html+=relPdfHead(cfg);
-  html+='<div class="title">Relatório de Aniversariantes</div>';
-  html+='<div class="subttl">'+esc(mesNome)+' · gerado em '+new Date().toLocaleDateString('pt-BR')+' '+new Date().toLocaleTimeString('pt-BR').slice(0,5)+'</div>';
+  html+='<div class="title rmd-tit">Relatório de Aniversariantes</div>';
+  html+='<div class="subttl rmd-subtit">'+esc(mesNome)+' · gerado em '+new Date().toLocaleDateString('pt-BR')+' '+new Date().toLocaleTimeString('pt-BR').slice(0,5)+'</div>';
 
   if(!list.length){
-    html+='<div class="subttl" style="margin-top:10px">Nenhum funcionário com data de nascimento cadastrada em '+esc(mesNome)+'.</div>';
+    html+='<div class="subttl rmd-subtit" style="margin-top:10px">Nenhum funcionário com data de nascimento cadastrada em '+esc(mesNome)+'.</div>';
   } else {
     let t='<table><thead><tr><th class="center" style="width:40px">Dia</th><th>Funcionário</th><th>Função</th><th class="center">Nascimento</th><th class="center">Completa</th></tr></thead><tbody>';
     list.forEach(e=>{
@@ -14810,7 +14810,7 @@ function exportAniversariantesPDF(){
     });
     t+='</tbody></table>';
     html+=t;
-    html+='<table style="margin-top:10px"><tr class="grand"><td colspan="4">TOTAL</td><td class="center">'+list.length+' aniversariante'+(list.length===1?'':'s')+'</td></tr></table>';
+    html+='<table style="margin-top:10px"><tr class="grand rmd-tot"><td colspan="4">TOTAL</td><td class="center">'+list.length+' aniversariante'+(list.length===1?'':'s')+'</td></tr></table>';
   }
   html+='<div class="foot">RM Estruturas Pré-Fabricadas · Folha de Pagamento</div></div>';
 
@@ -15701,7 +15701,7 @@ function rsTabelaHTML(r,p){
   return '<table class="rs-tab"><tbody>'
     +r.verbas.map(v=>'<tr><td>'+esc(v.rot)+'</td><td class="c">'+esc(v.ref)+'</td><td class="r">'+R(v.valor)+'</td></tr>').join('')
     +'<tr class="tot"><td colspan="2">Total bruto</td><td class="r">'+R(r.bruto)+'</td></tr>'
-    +'<tr class="sec"><td colspan="3">Descontos</td></tr>'
+    +'<tr class="sec rmd-sec"><td colspan="3">Descontos</td></tr>'
     +(r.descontos.length?r.descontos.map(d=>'<tr class="desc"><td>'+esc(d.rot)
       +(d.k==='inss'&&d.auto?'<span class="aut">tabela 2026 sobre R$ '+fmtBRL(r.baseInss)+'</span>':'')
       +(d.k==='inss13'&&d.auto?'<span class="aut">tabela 2026 sobre R$ '+fmtBRL(r.baseInss13)+'</span>':'')
@@ -15769,8 +15769,8 @@ function rsImprimir(){
     +'.rs-custo{margin-top:10px;padding:9px 11px;background:#fdece6;display:flex;justify-content:space-between;font-size:12px;font-weight:800}'
     +'.rs-nota{font-size:9px;color:#5b626c;margin-top:12px}';
   const html='<div class="wrap"><div class="folha">'+relPdfHead(state.cfg,'Rescisão')
-    +'<div class="title">Simulação de rescisão</div>'
-    +'<div class="subttl">'+(rsModo==='contab'?'Conta da contabilidade (carteira) · ':'')+esc(titlePt(e.nome||''))+' · '+esc(T.nome)+(p.aviso&&T.aviso.length?' · aviso '+esc(RS_AVISO_LAB[p.aviso].toLowerCase()):'')
+    +'<div class="title rmd-tit">Simulação de rescisão</div>'
+    +'<div class="subttl rmd-subtit">'+(rsModo==='contab'?'Conta da contabilidade (carteira) · ':'')+esc(titlePt(e.nome||''))+' · '+esc(T.nome)+(p.aviso&&T.aviso.length?' · aviso '+esc(RS_AVISO_LAB[p.aviso].toLowerCase()):'')
     +' · contratação '+fmtDate(p.admissao)+' · saída '+fmtDate(p.saida)+' · salário R$ '+fmtBRL(p.salario)
     +(Math.abs(p.salCarteira-p.salario)>.005?' (carteira R$ '+fmtBRL(p.salCarteira)+')':'')+'</div>'
     +rsTabelaHTML(rsRes,p)
@@ -16073,7 +16073,7 @@ function kitRostoHTML(R){
     +'.kr .nt{margin-top:16px;font-size:10.5px;color:#1d2127;line-height:1.6}.kr .nt div+div{color:#6E747C}'
     +'.kr-pe{position:absolute;left:45px;right:45px;bottom:30px}.kr-pe .foot{margin-top:0}';
   const html='<div class="kr"><div class="wrap">'+relPdfHead(state.cfg,'Documentos da rescisão')
-    +'<div class="title">'+esc(R.titulo)+'</div><div class="subttl">'+esc(R.sub)+'</div>'
+    +'<div class="title rmd-tit">'+esc(R.titulo)+'</div><div class="subttl rmd-subtit">'+esc(R.sub)+'</div>'
     +'<table><thead><tr><th>Documento</th><th class="c">Vias</th><th class="c">Folhas</th><th class="c">Conferido</th></tr></thead><tbody>'
     +R.linhas.map(l=>'<tr><td>'+esc(l.nome)+(l.apoio?'<span class="ap">'+esc(l.apoio)+'</span>':'')+'</td><td class="c">'+esc(l.vias)+'</td><td class="c">'
       +(l.falta?'<span class="falta">falta</span>':esc(l.folhas))+'</td><td class="c"><span class="ok"></span></td></tr>').join('')
@@ -16475,9 +16475,9 @@ function ferImprimeProg(){
   });
   t+='</tbody></table>';
   const nprog=L.reduce((s,x)=>s+x.per.reduce((a,p)=>a+p.progs.length,0),0);
-  let html='<div class="wrap">'+relPdfHead(cfg,'Férias')+'<div class="title">Programação de Férias</div>'+
-    '<div class="subttl">Data base '+hojeBR+' · '+L.length+' empregado(s) · '+nprog+' férias programada(s)</div>'+t+
-    '<table style="margin-top:6px"><tr class="grand"><td>TOTAL DE EMPREGADOS</td><td class="money">'+L.length+'</td></tr></table>'+
+  let html='<div class="wrap">'+relPdfHead(cfg,'Férias')+'<div class="title rmd-tit">Programação de Férias</div>'+
+    '<div class="subttl rmd-subtit">Data base '+hojeBR+' · '+L.length+' empregado(s) · '+nprog+' férias programada(s)</div>'+t+
+    '<table style="margin-top:6px"><tr class="grand rmd-tot"><td>TOTAL DE EMPREGADOS</td><td class="money">'+L.length+'</td></tr></table>'+
     '<div class="foot">RM Estruturas Pré-Fabricadas · Programação de férias para a contabilidade</div></div>';
   gerarPDF(css,html,('Programacao_ferias_'+toISO(new Date())).replace(/[^a-z0-9_-]/gi,'_'),'landscape');
 }
@@ -18538,7 +18538,7 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape'){if(fecharSemPerder(
    juntos a cada publicacao, e ha uma prova automatica que falha se um subir
    sem o outro. Assim o numero na tela e o mesmo do arquivo que o aparelho
    guardou, e dizer "estou na v81" passa a significar alguma coisa. */
-const APP_VER='v295';
+const APP_VER='v296';
 (function(){var p=document.getElementById('verPill'); if(p)p.textContent=APP_VER;})();
 
 if('serviceWorker' in navigator){
@@ -19080,8 +19080,8 @@ function pdfMovTabela(list,terceiros){
   let h='<table><thead><tr><th>Data</th><th>Competência</th><th>Pessoa / Empresa</th><th>Tipo</th>'+(terceiros?'<th>Obra / NF</th>':'')+'<th class="money">Previsto</th><th class="money">Pago</th><th>Método</th><th>Situação</th></tr></thead><tbody>';
   list.forEach(m=>{h+='<tr><td>'+esc((m.dataPagamento||m.dataPrevista)?fmtDate(m.dataPagamento||m.dataPrevista):'—')+'</td><td>'+esc(compTexto(m.competencia))+'</td><td>'+esc(titlePt(m.nome||''))+'</td><td>'+esc(tipoMovTexto(m))+'</td>'+(terceiros?'<td>'+esc([m.obra,m.nfReferencia].filter(Boolean).join(' · ')||'—')+'</td>':'')+'<td class="money">R$ '+fmtBRL(m.valorPrevisto||0)+'</td><td class="money">'+((m.status==='pendente'||m.status==='cancelado')?'—':'R$ '+fmtBRL(valorMovPago(m)))+'</td><td>'+esc(metodoMovTexto(m.metodo))+'</td><td>'+esc(statusMovTexto(m.status))+'</td></tr>';});return h+'</tbody></table>';
 }
-function exportRelMovPDF(){const list=movimentosFiltrados();if(!list.length){toast('Nenhuma movimentação para exportar','err');return;}const ano=$('#relAno').value,css=relPdfCSS('#D53309','#1d2127','#585758'),prev=list.filter(m=>m.status!=='cancelado').reduce((s,m)=>s+(Number(m.valorPrevisto)||0),0),pg=list.reduce((s,m)=>s+valorMovPago(m),0);let html='<div class="wrap">'+relPdfHead(state.cfg)+'<div class="title">Conferência de pagamentos · '+esc(ano)+'</div><div class="subttl">Previsto R$ '+fmtBRL(prev)+' · pago/registrado R$ '+fmtBRL(pg)+' · '+list.length+' lançamentos · emitido em '+new Date().toLocaleString('pt-BR')+'</div>'+pdfMovTabela(list,false)+'<div class="foot">RM Estruturas Pré-Fabricadas · controle individual de pagamentos</div></div>';gerarPDF(css,html,'Conferencia_pagamentos_'+ano,'landscape');}
-function exportRelTercPDF(){const list=movimentosFiltrados().filter(m=>m.tipo==='terceiros');if(!list.length){toast('Nenhum pagamento de terceiro para exportar','err');return;}const ano=$('#relAno').value,css=relPdfCSS('#D53309','#1d2127','#585758'),prev=list.filter(m=>m.status!=='cancelado').reduce((s,m)=>s+(Number(m.valorPrevisto)||0),0),pg=list.reduce((s,m)=>s+valorMovPago(m),0);let html='<div class="wrap">'+relPdfHead(state.cfg)+'<div class="title">Relatório de pagamentos de terceiros · '+esc(ano)+'</div><div class="subttl">Previsto R$ '+fmtBRL(prev)+' · pago/registrado R$ '+fmtBRL(pg)+' · '+list.length+' lançamentos · emitido em '+new Date().toLocaleString('pt-BR')+'</div>'+pdfMovTabela(list,true)+'<div class="foot">RM Estruturas Pré-Fabricadas · pagamentos organizados por terceiro, obra e referência</div></div>';gerarPDF(css,html,'Pagamentos_terceiros_'+ano,'landscape');}
+function exportRelMovPDF(){const list=movimentosFiltrados();if(!list.length){toast('Nenhuma movimentação para exportar','err');return;}const ano=$('#relAno').value,css=relPdfCSS('#D53309','#1d2127','#585758'),prev=list.filter(m=>m.status!=='cancelado').reduce((s,m)=>s+(Number(m.valorPrevisto)||0),0),pg=list.reduce((s,m)=>s+valorMovPago(m),0);let html='<div class="wrap">'+relPdfHead(state.cfg)+'<div class="title rmd-tit">Conferência de pagamentos · '+esc(ano)+'</div><div class="subttl rmd-subtit">Previsto R$ '+fmtBRL(prev)+' · pago/registrado R$ '+fmtBRL(pg)+' · '+list.length+' lançamentos · emitido em '+new Date().toLocaleString('pt-BR')+'</div>'+pdfMovTabela(list,false)+'<div class="foot">RM Estruturas Pré-Fabricadas · controle individual de pagamentos</div></div>';gerarPDF(css,html,'Conferencia_pagamentos_'+ano,'landscape');}
+function exportRelTercPDF(){const list=movimentosFiltrados().filter(m=>m.tipo==='terceiros');if(!list.length){toast('Nenhum pagamento de terceiro para exportar','err');return;}const ano=$('#relAno').value,css=relPdfCSS('#D53309','#1d2127','#585758'),prev=list.filter(m=>m.status!=='cancelado').reduce((s,m)=>s+(Number(m.valorPrevisto)||0),0),pg=list.reduce((s,m)=>s+valorMovPago(m),0);let html='<div class="wrap">'+relPdfHead(state.cfg)+'<div class="title rmd-tit">Relatório de pagamentos de terceiros · '+esc(ano)+'</div><div class="subttl rmd-subtit">Previsto R$ '+fmtBRL(prev)+' · pago/registrado R$ '+fmtBRL(pg)+' · '+list.length+' lançamentos · emitido em '+new Date().toLocaleString('pt-BR')+'</div>'+pdfMovTabela(list,true)+'<div class="foot">RM Estruturas Pré-Fabricadas · pagamentos organizados por terceiro, obra e referência</div></div>';gerarPDF(css,html,'Pagamentos_terceiros_'+ano,'landscape');}
 
 (function iniciarControlePagamentos(){
   const ms=$('#relMesF');if(ms&&ms.options.length===1)MESES.forEach((m,i)=>{const o=el('option');o.value=i;o.textContent=m.charAt(0).toUpperCase()+m.slice(1);ms.appendChild(o);});
@@ -19186,7 +19186,7 @@ initAuth();
     /* a) sistema é a janela principal do app instalado */
     if (window.rmDesktop && typeof window.rmDesktop.salvarPDF === 'function') {
       aviso('Gerando PDF…');
-      (window.rmDesktop.abrirPDF || window.rmDesktop.salvarPDF)(html, nome)
+      (window.rmDesktop.abrirPDF || window.rmDesktop.salvarPDF)(window.rmPapelA ? window.rmPapelA(html, nome) : html, nome)
         .then(function (r) {
           if (r && r.ok) aviso('PDF pronto ✓');
           else if (r && r.cancelado) aviso('Salvamento cancelado.');
@@ -20229,7 +20229,7 @@ initAuth();
 
     var folha1 = '<div class="folha termo">'
       + relPdfHead(cfg,'EPI e uniforme')
-      + '<div class="title">Ficha de controle individual de EPI'
+      + '<div class="title rmd-tit">Ficha de controle individual de EPI'
       +   (ac ? ' · complementar' : '') + '</div>'
       /* O subtitulo nao repete nome e funcao -- eles estao no quadro de
          identificacao logo abaixo -- e NAO leva a data de emissao.
@@ -20240,7 +20240,7 @@ initAuth();
          assina data a entrega no quadro de assinatura, e cada linha da
          tabela tem a sua data -- e isso que vale. Mesmo motivo pelo qual o
          "na funcao desde" saiu. */
-      + '<div class="subttl">Folha 1 de 2 · termo de responsabilidade</div>'
+      + '<div class="subttl rmd-subtit">Folha 1 de 2 · termo de responsabilidade</div>'
       + identificacao
       + '<div class="lg"><div class="lg-tit">' + LEGISLACAO_TIT + '</div>' + NR1 + NR6 + '</div>'
       + '<div class="decl">' + DECLARACAO + '</div>'
@@ -20254,10 +20254,10 @@ initAuth();
 
     var folha2 = '<div class="folha">'
       + relPdfHead(cfg,'EPI e uniforme')
-      + '<div class="title">Equipamentos de proteção individual</div>'
-      + '<div class="subttl">Folha 2 de 2 · relação da função e controle de entregas</div>'
+      + '<div class="title rmd-tit">Equipamentos de proteção individual</div>'
+      + '<div class="subttl rmd-subtit">Folha 2 de 2 · relação da função e controle de entregas</div>'
       + identificacao
-      + '<div class="sec">' + (ac ? 'Equipamentos acrescentados' : 'Obrigatórios da função') + '</div>'
+      + '<div class="sec rmd-sec">' + (ac ? 'Equipamentos acrescentados' : 'Obrigatórios da função') + '</div>'
       + tabelaFicha(d.epis, data, n)
       + '</div>';
 
@@ -20276,10 +20276,10 @@ initAuth();
 
     return '<div class="wrap"><div class="folha">'
       + relPdfHead(cfg,'EPI e uniforme')
-      + '<div class="title">Controle de entregas e trocas</div>'
-      + '<div class="subttl">Folha de continuação</div>'
+      + '<div class="title rmd-tit">Controle de entregas e trocas</div>'
+      + '<div class="subttl rmd-subtit">Folha de continuação</div>'
       + blocoIdent(d)
-      + '<div class="sec">Entregas e trocas</div>'
+      + '<div class="sec rmd-sec">Entregas e trocas</div>'
       + tabelaFicha([], '', n)
       + '</div></div>';
   }
@@ -22278,8 +22278,8 @@ initAuth();
   function pdfMov(m) {
     if(typeof preVisualizarPDF!=='function'||typeof relPdfCSS!=='function'){aviso('Prévia de PDF indisponível','err');return;}
     var css=relPdfCSS('#D53309','#1d2127','#585758')+'.movpdf{width:100%;border-collapse:collapse;margin-top:14px;font-size:10px}.movpdf th,.movpdf td{border:1px solid #d9dde2;padding:7px;text-align:left}.movpdf th{background:#f3f4f6}.movbox{border:1px solid #d9dde2;border-radius:5px;padding:11px 13px;margin:10px 0;font-size:10.5px;line-height:1.6}.movhash{font-family:monospace;font-size:8px;word-break:break-all;color:#6c7480}.movass{border:1px solid #d9dde2;border-radius:5px;padding:10px 13px 6px;margin:10px 0;text-align:center}.movass .rot{font-size:8.5px;letter-spacing:.09em;text-transform:uppercase;color:#6c7480;margin-bottom:2px}.movass .nm{font-size:10.5px;font-weight:bold;border-top:1px solid #b9bec6;padding-top:5px;margin-top:2px}.movass .qd{font-size:8.5px;color:#6c7480;margin-top:2px}';
-    var html='<div class="wrap"><div class="folha">'+relPdfHead(state.cfg,'EPI e uniforme')+'<div class="title">Comprovante de movimentação de EPI e uniforme</div>'
-      +'<div class="subttl">Registro '+esc(m.id)+' · '+status(m)+'</div>'
+    var html='<div class="wrap"><div class="folha">'+relPdfHead(state.cfg,'EPI e uniforme')+'<div class="title rmd-tit">Comprovante de movimentação de EPI e uniforme</div>'
+      +'<div class="subttl rmd-subtit">Registro '+esc(m.id)+' · '+status(m)+'</div>'
       +'<div class="movbox"><b>Funcionário:</b> '+esc(bonito(m.nome))+'<br><b>Função:</b> '+esc(m.funcao||'—')+'<br><b>Registro:</b> '+esc(m.registro||'—')+'<br><b>Data:</b> '+br(m.data)+'<br><b>Movimento:</b> '+esc(TIPOS[m.tipo]||m.tipo)+'<br><b>Motivo:</b> '+esc(m.motivo||'—')+'<br><b>Responsável pela entrega:</b> '+esc(m.responsavel||'—')+'</div>'
       +docItens(m)+blocoAssinatura(m)+blocoCorrecoes(m)+'<div class="movbox"><b>Situação:</b> '+status(m)+'<br><b>Método:</b> '+esc(m.metodo||'—')+'<br><b>Confirmado em:</b> '+(m.confirmadoEm?new Date(m.confirmadoEm).toLocaleString('pt-BR'):'—')+(m.observacao?'<br><b>Observação:</b> '+esc(m.observacao):'')+(m.canceladoPor?'<br><b>Cancelamento:</b> '+esc(m.canceladoPor):'')+(m.provaServidor?'<br><b>Comprovante do servidor:</b><div class="movhash">'+esc(m.provaServidor)+'</div>':'')+'<br><b>Integridade local:</b><div class="movhash">'+esc(m.integridade||'processando')+'</div></div></div></div>';
     preVisualizarPDF(css,html,'Comprovante EPI - '+bonito(m.nome)+' - '+m.id,'portrait');
@@ -22405,8 +22405,8 @@ initAuth();
     var desligamento=!!deslTexto(e);
 
     var html='<div class="wrap"><div class="folha">'+relPdfHead(state.cfg,'EPI e uniforme')
-      +'<div class="title">Ficha de EPI — trocas e devoluções</div>'
-      +'<div class="subttl">'+esc(bonito(e.nome))+' · '+esc(e.funcao||'sem função')
+      +'<div class="title rmd-tit">Ficha de EPI — trocas e devoluções</div>'
+      +'<div class="subttl rmd-subtit">'+esc(bonito(e.nome))+' · '+esc(e.funcao||'sem função')
       +(e.registro?' · registro '+esc(e.registro):'')
       +(e.dtInicio?' · admissão '+br(e.dtInicio):'')
       +(deslTexto(e)?' · '+esc(deslTexto(e)):'')
@@ -22415,7 +22415,7 @@ initAuth();
        explicacao no alto ou no pe; sairam todas, a pedido. O titulo ja diz o
        que e a folha, e a tabela logo abaixo diz o resto. */
 
-    html+='<div class="sec">Trocas e entregas'+(ms.length?' — '+ms.length:'')+'</div>'
+    html+='<div class="sec rmd-sec">Trocas e entregas'+(ms.length?' — '+ms.length:'')+'</div>'
       +'<table class="movpdf movficha"><thead><tr><th style="width:62px">Data</th><th>Item</th><th style="width:52px">Qtd.</th>'
       +'<th style="width:150px">Entrega</th><th style="width:64px">Usado devolvido</th>'
       +'<th style="width:130px">Assinatura</th></tr></thead><tbody>'+linhasFicha(ms)+'</tbody></table>';
@@ -22430,7 +22430,7 @@ initAuth();
       var extras=doSistema.filter(function(x){return !lista(kit).some(function(k){return norm(k.nome)===norm(x.nome);});});
       var ultima=ultimaEntregaSistema(id);
 
-      html+='<div class="sec">Devolução no desligamento</div>'
+      html+='<div class="sec rmd-sec">Devolução no desligamento</div>'
         +'<table class="movpdf"><thead><tr><th>Item a devolver</th><th style="width:52px">CA</th>'
         +'<th style="width:96px">Última entrega</th><th style="width:118px">Consta em</th>'
         +'<th style="width:74px">Devolvido</th><th style="width:96px">Observação</th></tr></thead><tbody>';
@@ -23597,6 +23597,80 @@ initAuth();
        - o fio do cabeçalho: laranja de 2 px e, logo abaixo, o grafite fino.
      Documento de medida exata (etiqueta, envelope, a folha do recibo em
      margem 0) e o que não tem timbrado ficam como estão. */
+  /* O MIOLO (modelo M1, PADRAO_RM 5): as peças de dentro do documento.
+     A tabela vale para todo documento com timbrado (cabeçalho cinza claro,
+     fio fino entre linhas, sem zebra, letra 9,5); o resto entra pela classe
+     que o documento usa:
+       .rmd-tit / .rmd-subtit  título (20 px; todo h1 do documento já é) e a linha cinza embaixo
+       .rmd-cabdoc  "rótulo · nome · data" numa linha só: o nome vira o título e a data a linha cinza
+       .rmd-dados  faixa cinza com os dados (rótulo pequeno em cima, <span>/<b>)
+       .rmd-sec    título de seção: maiúscula pequena com o traço laranja
+       .rmd-grupo  linha de grupo da tabela, em laranja
+       .rmd-sub    subtotal do grupo;  .rmd-tot  linha de total (tr ou div, fio preto)
+       .rmd-res    resumo à direita (<div><span>rótulo</span><b>valor</b></div>),
+                   com .rmd-res-total na caixa grafite do total
+       .rmd-cond   condições (lista);  .rmd-obs  observação
+       table.rmd-grade  grade (calendário, ficha de marcar): fio fino em todas as casas
+     Fica de fora: a ficha do montador (.tmf) e o que tiver .rmd-livre. */
+  var MIOLO = '@media print{html.rm-mi *{-webkit-print-color-adjust:exact;print-color-adjust:exact}'
+    + 'html.rm-mi table:not(.rmd-livre):not(.tmf table) th{background:#F2F4F7!important;color:#141414!important;font-size:7.5px!important;font-weight:700!important;letter-spacing:.08em!important;text-transform:uppercase!important;padding:5px 6px!important;border:0!important;border-bottom:.6px solid #c9cdd2!important}'
+    + 'html.rm-mi table:not(.rmd-livre):not(.tmf table) td{font-size:9.5px!important;padding:3.5px 6px!important;border-left:0!important;border-right:0!important;border-top:0!important;border-bottom:.5px solid #e3e5e8!important;background-color:transparent!important}'
+    + 'html.rm-mi table:not(.rmd-livre):not(.rmd-grade):not(.tmf table){border:0!important;border-collapse:collapse!important;border-radius:0!important}'
+    + 'html.rm-mi table:not(.rmd-livre) thead{display:table-header-group!important}'
+    + 'html.rm-mi table:not(.rmd-livre) tr{break-inside:avoid!important}'
+    + 'html.rm-mi :is(.head,.rm-head,.cab,.rm-cab,.timbre) :is(img,svg):not(.rmd-livre){height:36px!important;width:auto!important;max-width:none!important}'
+    + 'html.rm-mi .rm-sheet{border:0!important;border-radius:0!important;box-shadow:none!important;padding:0!important;background:none!important}'
+    + 'html.rm-mi table.rmd-grade:not(.rmd-livre) :is(th,td){border:.5px solid #d9dce0!important}'
+    + 'html.rm-mi :is(.rmd-tit,h1:not(.rmd-livre)){font-size:20px!important;font-weight:700!important;letter-spacing:-.01em!important;text-transform:none!important;color:#141414!important;margin:3px 0 4px!important}'
+    + 'html.rm-mi .rmd-cabdoc{display:block!important;margin:0!important;border:0!important}'
+    + 'html.rm-mi .rmd-cabdoc>span:first-child{display:none!important}'
+    + 'html.rm-mi .rmd-cabdoc>b{display:block!important;font-family:inherit!important;font-size:20px!important;font-weight:700!important;letter-spacing:-.01em!important;color:#141414!important;margin:3px 0 2px!important}'
+    + 'html.rm-mi .rmd-cabdoc>span:last-child{display:block!important;margin:0 0 12px!important;font-family:inherit!important;font-size:10px!important;letter-spacing:0!important;text-transform:none!important;color:#6E747C!important}'
+    + 'html.rm-mi .rmd-subtit{font-size:10px!important;color:#6E747C!important;margin:0 0 12px!important;text-transform:none!important;letter-spacing:0!important}'
+    + 'html.rm-mi .rmd-dados{display:grid!important;grid-template-columns:repeat(3,1fr)!important;gap:0!important;background:#F2F4F7!important;border:0!important;border-radius:4px!important;padding:6px 12px!important;margin:0 0 4px!important}'
+    + 'html.rm-mi .rmd-dados>div{padding:4px 0!important;border:0!important;background:none!important}'
+    + 'html.rm-mi .rmd-dados span{display:block!important;font-size:7px!important;font-weight:400!important;letter-spacing:.12em!important;text-transform:uppercase!important;color:#6E747C!important}'
+    + 'html.rm-mi .rmd-dados b{font-family:inherit!important;font-size:10px!important;font-weight:600!important;color:#141414!important}'
+    + 'html.rm-mi .rmd-sec{font-size:8px!important;font-weight:700!important;letter-spacing:.14em!important;text-transform:uppercase!important;color:#141414!important;margin:16px 0 6px!important;padding:0 0 0 7px!important;border:0!important;border-left:3px solid #F24619!important;background:none!important}'
+    + 'html.rm-mi tr.rmd-grupo td, html.rm-mi .rmd-grupo{font-size:9.5px!important;font-weight:700!important;color:#C1310B!important;text-transform:none!important;letter-spacing:0!important;padding:9px 6px 3.5px!important;border:0!important;border-bottom:.5px solid #d9dce0!important;background:none!important;border-radius:0!important}'
+    + 'html.rm-mi .rmd-grupo *{color:inherit!important;font-size:inherit!important}'
+    + 'html.rm-mi tr.rmd-sub td{font-weight:700!important;color:#4A515B!important;border-bottom:0!important;padding-bottom:6px!important}'
+    + 'html.rm-mi tr.rmd-tot td{font-weight:700!important;font-size:10px!important;color:#141414!important;border-top:1px solid #141414!important;border-bottom:0!important}'
+    + 'html.rm-mi div.rmd-tot{display:flex!important;justify-content:space-between!important;align-items:baseline!important;border:0!important;border-top:1px solid #141414!important;padding:6px 0 0!important;margin-top:10px!important;font-size:10px!important;font-weight:700!important;color:#141414!important}'
+    + 'html.rm-mi div.rmd-tot b{font-family:inherit!important;font-size:13px!important;color:#141414!important}'
+    + 'html.rm-mi .rmd-res{width:62mm!important;margin-left:auto!important;border-top:1px solid #141414!important}'
+    + 'html.rm-mi .rmd-res>div{display:flex!important;justify-content:space-between!important;padding:3.5px 0!important;border-bottom:.5px solid #e3e5e8!important;font-size:9.5px!important}'
+    + 'html.rm-mi .rmd-res span{font-size:7px!important;letter-spacing:.12em!important;text-transform:uppercase!important;color:#6E747C!important}'
+    + 'html.rm-mi .rmd-res>.rmd-res-total{background:#141414!important;color:#fff!important;padding:6px 8px!important;border:0!important;margin-top:4px!important;border-radius:3px!important}'
+    + 'html.rm-mi .rmd-res-total span{color:#c9cdd2!important}'
+    + 'html.rm-mi .rmd-res-total b{font-size:13px!important}'
+    + 'html.rm-mi :is(td,th):is(.money,.n,.r,.num,.valor,.t-num){text-align:right!important;font-variant-numeric:tabular-nums!important;white-space:nowrap}'
+    + 'html.rm-mi .rmd-cond{margin:0!important;padding-left:14px!important;font-size:9.5px!important}'
+    + 'html.rm-mi .rmd-cond li{margin:2px 0!important}'
+    + 'html.rm-mi .rmd-obs{font-size:8.5px!important;color:#4A515B!important}'
+    /* páginas que imprimem a PRÓPRIA TELA: os cartões de resumo viram a
+       faixa cinza (rótulo, valor, apoio) e o cartão em volta some. Só no
+       papel -- na tela eles continuam cartões. */
+    + 'html.rm-mi .rmd-kpis{display:grid!important;grid-template-columns:none!important;grid-auto-flow:column!important;grid-auto-columns:1fr!important;gap:0 14px!important;background:#F2F4F7!important;border:0!important;border-radius:4px!important;box-shadow:none!important;padding:6px 12px!important;margin:6px 0 10px!important}'
+    + 'html.rm-mi .rmd-kpis>*{background:none!important;border:0!important;border-radius:0!important;box-shadow:none!important;padding:4px 0!important;margin:0!important;min-height:0!important;min-width:0!important;color:#141414!important}'
+    + 'html.rm-mi .rmd-kpis>*::before,html.rm-mi .rmd-kpis>*::after{display:none!important}'
+    + 'html.rm-mi .rmd-kpis>* *{color:inherit!important;font-family:inherit!important;margin:0!important}'
+    + 'html.rm-mi .rmd-kpis>*>:first-child{font-size:7px!important;font-weight:400!important;letter-spacing:.12em!important;text-transform:uppercase!important;color:#6E747C!important;line-height:1.4!important}'
+    + 'html.rm-mi .rmd-kpis>*>:nth-child(2){font-size:11px!important;font-weight:700!important;letter-spacing:0!important;line-height:1.3!important}'
+    + 'html.rm-mi .rmd-kpis>*>:nth-child(n+3){font-size:7.5px!important;font-weight:400!important;color:#6E747C!important;letter-spacing:0!important;text-transform:none!important}'
+    + 'html.rm-mi .rmd-plano{background:none!important;border:0!important;border-radius:0!important;box-shadow:none!important;padding:0!important}'
+    + 'html.rm-mi .no-print{display:none!important}'
+    + 'html.rm-mi,html.rm-mi body{background:#fff!important}'
+    + '}';
+  /* As peças rmd-* também na TELA: a prévia do documento (o que o sistema
+     mostra antes de imprimir) sai igual ao papel. As regras gerais (toda
+     tabela, todo h1) ficam só no papel. */
+  var MIOLO_TELA = MIOLO.slice('@media print{'.length, -1).split('}').filter(function(r){
+      return /rmd-/.test(r) && !/table:not|:is\(\.head|rmd-kpis|rmd-plano/.test(r); })
+    .map(function(r){ return r.replace(/html\.rm-mi /g, '').replace(':is(.rmd-tit,h1:not(.rmd-livre))', '.rmd-tit'); }).join('}') + '}';
+  (function(){ function poe(){ if (document.getElementById('rm-miolo-tela') || !document.head) return;
+      var e = document.createElement('style'); e.id = 'rm-miolo-tela'; e.textContent = MIOLO_TELA; document.head.appendChild(e); }
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', poe); else poe(); })();
   var PE_FONE = '51 99789-7879', PE_INSTA = '@rm.estruturas', PE_SITE = 'www.rmestruturas.com.br';
   function papelA(raiz, viva, nome){
     if (!raiz || !raiz.querySelector || !raiz.querySelector('.tb2,.tb2-tipo') || raiz.querySelector('#rm-papel-a')) return false;
@@ -23618,8 +23692,10 @@ initAuth();
     /* o pé antigo (fixo, dentro da página) sai: o novo mora na margem.
        A linha de nota dele ("atualizado em") vai para o fim do documento. */
     var nota = '';
-    [].slice.call(raiz.querySelectorAll('#rm-pe-imp,.pe,.sheetfoot')).forEach(function(e){
+    [].slice.call(raiz.querySelectorAll('#rm-pe-imp,.pe,.sheetfoot,.foot,.rodape')).forEach(function(e){
       if (e.id !== 'rm-pe-imp' && e.textContent.toLowerCase().indexOf(PE_SITE) < 0) return;
+      /* só o pé: um bloco com tabela, totais ou texto comprido não é rodapé */
+      if (e.id !== 'rm-pe-imp' && (e.querySelector('table,.totbox,.tot') || e.textContent.length > 400)) return;
       var n = e.querySelector('.nota'); if (n && e.id === 'rm-pe-imp') nota = limpa(n.textContent);
       if (e.parentNode) e.parentNode.removeChild(e); });
     var corpo = raiz.querySelector('body') || raiz;
@@ -23636,10 +23712,11 @@ initAuth();
       + '@top-right{content:"RM Estruturas Pré-Fabricadas";' + al + 'color:#6E747C}}'
       + '@page:first{@top-left{content:none;border:0}@top-right{content:none;border:0}}'
       + '@media print{html body{padding-bottom:0!important}'
-      + '.head::after,.rm-cab::after,.cab::after{height:2px!important;background:#F24619!important;box-shadow:0 3.5px 0 -.5px #141414!important;'
+      + '.head::after,.rm-cab::after,.cab::after,.rm-head::after,.timbre::after{height:2px!important;background:#F24619!important;box-shadow:0 3.5px 0 -.5px #141414!important;'
       + '-webkit-print-color-adjust:exact;print-color-adjust:exact}.head::before{display:none!important}'
-      + '.rm-nota-fim{margin-top:6mm;font-size:7pt;color:#6E747C;text-align:center}}';
+      + '.rm-nota-fim{margin-top:6mm;font-size:7pt;color:#6E747C;text-align:center}}' + MIOLO;
     (raiz.querySelector('head') || raiz).appendChild(st);
+    if (raiz.classList) raiz.classList.add('rm-mi');
     return true;
   }
   function papelAHTML(html, nome){

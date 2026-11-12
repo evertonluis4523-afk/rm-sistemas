@@ -2713,36 +2713,36 @@ body.pm-interno .orc-selo { display: inline-block; }
      !important -- era o unico lugar do papel onde a marca nao aparecia onde
      deveria, e o cabecalho ficava com a laranja so na regua e no simbolo.
      De quebra sai um bloco chapado de tinta preta. */
-  .doc-tag{margin-top:5px !important;background:none !important;
+  .doc-tag{margin-top:12px !important;background:none !important;
     color:var(--red) !important;padding:0 !important;border-radius:0 !important;
-    font-size:9px !important;letter-spacing:.16em !important;font-weight:700 !important;
+    font-size:8px !important;letter-spacing:.16em !important;font-weight:700 !important;
     -webkit-print-color-adjust:exact;print-color-adjust:exact}
 
   /* Os dados do topo ficavam numa grade de 12 colunas. No documento do
      fornecedor sobram tres campos e NOVE colunas ficavam vazias -- era o que
      dava o ar de folha em branco. Vira faixa que se ajusta a quantidade. */
+  /* miolo M1 (PADRAO_RM 5): faixa cinza, rótulo pequeno em cima, sem grade */
   .meta,.meta-extra{display:flex !important;flex-wrap:wrap;gap:0 !important;
-    border:1px solid #dde1e6 !important;border-top:0 !important;background:#fbfcfd !important;
-    padding:0 !important;border-radius:0;
+    border:0 !important;background:#F2F4F7 !important;
+    padding:6px 12px !important;border-radius:4px;margin-top:8px;
     -webkit-print-color-adjust:exact;print-color-adjust:exact}
-  .meta .fld,.meta-extra .fld{grid-column:auto !important;flex:1 1 165px;min-width:145px;
-    padding:5px 11px !important;border-right:1px solid #e6e9ed !important;
-    border-bottom:1px solid #e6e9ed !important}
+  .meta .fld,.meta-extra .fld{grid-column:auto !important;flex:1 1 30%;min-width:145px;
+    padding:4px 0 !important;border:0 !important}
   /* Campo largo leva o dobro: com todos iguais, "HANGAR - CRUZEIRO DO SUL"
      saia cortado no meio. */
   .meta .fld.w6,.meta-extra .fld.w6{flex:2.2 1 300px}
   .meta input,.meta-extra input{text-overflow:ellipsis}
-  .meta .lab,.meta-extra .lab{font-size:11px !important;letter-spacing:.12em;
-    color:#8a929c !important;font-weight:800 !important;margin-bottom:1px}
+  .meta .lab,.meta-extra .lab{font-size:7px !important;letter-spacing:.12em;
+    color:#6E747C !important;font-weight:400 !important;margin-bottom:1px}
   .meta input,.meta select,.meta-extra input,.meta-extra select{
-    font-size:12px !important;font-weight:700 !important;color:var(--ink) !important}
+    font-size:10px !important;font-weight:600 !important;color:#141414 !important}
 
   /* Faixa de secao clara, e nao escura: area escura grande borra em
      impressora comum, e o documento fica pesado de ler. */
-  .secttl{background:#e8ebef !important;color:var(--ink) !important;
-    padding:5px 12px !important;border-radius:0 !important;
-    font-size:9.5px !important;letter-spacing:.16em !important;margin:7px 0 3px !important;
-    -webkit-print-color-adjust:exact;print-color-adjust:exact;font-weight:600}
+  .secttl{background:none !important;color:#141414 !important;
+    padding:0 0 0 7px !important;border-radius:0 !important;border-left:3px solid #F24619 !important;
+    font-size:8px !important;letter-spacing:.14em !important;margin:16px 0 6px !important;
+    -webkit-print-color-adjust:exact;print-color-adjust:exact;font-weight:700}
   .secttl::before{display:none !important}
 
   /* UMA familia e UM tamanho para texto de tabela; a mono so nos numeros.
@@ -3235,9 +3235,16 @@ function nomeArquivoSeguro(s,limite){
    tabela ate a coluna TOTAL sair da folha. */
 .cell-print{display:none}
 @media print{
-  html body .meta,html body .meta-extra{border:0 !important;background:none !important;gap:0 18px !important;margin:2px 0 6px}
-  html body .meta .fld,html body .meta-extra .fld{border:0 !important;padding:3px 0 !important;flex:1 1 120px;min-width:110px}
-  html body .meta .lab,html body .meta-extra .lab{font-size:7.5px !important;letter-spacing:.14em;color:#6E747C !important;font-weight:700 !important}
+  /* miolo M1 (PADRAO_RM 5): faixa cinza, 3 colunas, rótulo pequeno em cima */
+  html body .meta,html body .meta-extra{display:grid !important;grid-template-columns:repeat(3,1fr) !important;
+    border:0 !important;background:#F2F4F7 !important;border-radius:4px !important;gap:0 18px !important;
+    padding:6px 12px !important;margin:10px 0 6px !important}
+  html body .meta .fld,html body .meta-extra .fld{border:0 !important;padding:4px 0 !important;
+    grid-column:auto !important;order:0 !important;min-width:0}
+  /* os campos extras (validade, vendedor...) continuam a MESMA faixa */
+  html body .meta:has(~.meta-extra:not(.bloco-vazio)){margin-bottom:0 !important;border-radius:4px 4px 0 0 !important;padding-bottom:0 !important}
+  html body .meta~.meta-extra{margin-top:0 !important;border-radius:0 0 4px 4px !important;padding-top:0 !important}
+  html body .meta .lab,html body .meta-extra .lab{font-size:7px !important;letter-spacing:.12em;color:#6E747C !important;font-weight:400 !important}
   html body .meta input,html body .meta select,html body .meta-extra input,html body .meta-extra select{font-size:10px !important;font-weight:600 !important}
   /* Uma escala só no papel: corpo 9,5 px; linha de apoio (grupo, espessura,
      observação) 8 px, peso normal, cinza. A observação era 11,5 px e
@@ -6699,7 +6706,7 @@ function gerarPDFMelhorCombinacao(id){
   html=rmPapelaria(html);
 
   if(window.rmDesktop&&typeof window.rmDesktop.salvarPDF==='function'){
-    (window.rmDesktop.abrirPDF || window.rmDesktop.salvarPDF)(html,nomeArquivo).then(function(r){if(r&&r.ok)toast('PDF da melhor combinação pronto ✓');else if(!r||!r.cancelado)abrirCotacaoPDFNoNavegador(html);}).catch(function(){abrirCotacaoPDFNoNavegador(html);});
+    (window.rmDesktop.abrirPDF || window.rmDesktop.salvarPDF)(window.rmPapelA ? window.rmPapelA(html, nomeArquivo) : html, nomeArquivo).then(function(r){if(r&&r.ok)toast('PDF da melhor combinação pronto ✓');else if(!r||!r.cancelado)abrirCotacaoPDFNoNavegador(html);}).catch(function(){abrirCotacaoPDFNoNavegador(html);});
     return;
   }
   if(window.parent&&window.parent!==window){
@@ -9720,7 +9727,7 @@ function cobImprimir(){
   if(av.length) h+='<div class="rel-sec">Avisos</div><ul>'+av.map(a=>'<li>'+a.txt+'</li>').join('')+'</ul>';
   h+='<table class="reltbl cob-pr"><thead><tr><th>Item</th><th class="r">Orçado</th><th class="r">Comprado</th><th>Fornecedor</th><th>Compra</th><th>Entrega</th><th>Situação</th><th>Conferido</th></tr></thead><tbody>';
   COB_GRUPOS.forEach(([g,rot])=>{ const ls=o.linhas.filter(l=>l.grupo===g); if(!ls.length) return;
-    h+='<tr class="g"><td colspan="8">'+rot+'</td></tr>';
+    h+='<tr class="g rmd-grupo"><td colspan="8">'+rot+'</td></tr>';
     ls.forEach(l=>{ const s=cobSit(l), en=l.entregas||[];
       const ent=en.map(x=>(x.desc?escapeAttr(x.desc)+' ':'')+(x.recebido?'recebido '+cobData(x.recebido):x.prev?'prev. '+cobData(x.prev):'')).filter(Boolean).join('<br>');
       h+='<tr'+(s==='fora'?' class="fora"':'')+'><td>'+escapeAttr(l.nome||'')+(l.det?'<br><small>'+escapeAttr(l.det)+'</small>':'')+'</td><td class="r">'+(Number(l.orcado)?brl(l.orcado):'—')+'</td><td class="r">'+(Number(l.comprado)?brl(l.comprado):'—')+'</td>'
@@ -9919,10 +9926,13 @@ function relatorioCSV(){
    @media print esconde o app e mostra só essa área). */
 function printRelArea(titulo,sub,inner){
   const area=document.getElementById('relPrintArea');
+  /* miolo M1 (PADRAO_RM 5) só no papel: os cartões viram a faixa cinza e os
+     títulos de seção levam o traço laranja; a tela do relatório não muda */
+  inner=String(inner).replace(/class="rel-cards"/g,'class="rel-cards rmd-kpis"').replace(/class="rel-sec"/g,'class="rel-sec rmd-sec"');
   /* o timbrado e o pe da papelaria, como nos outros impressos -- antes o
      relatorio saia so' com o titulo */
   area.innerHTML='<style>@media print{'+papelariaCSS()+'}</style>'+cabecalhoPDF(titulo)
-    +'<h1>'+escapeAttr(titulo)+'</h1><div class="sub">'+escapeAttr(sub)+'</div>'+inner+papelariaHTML(sub);
+    +'<h1>'+escapeAttr(titulo)+'</h1><div class="sub rmd-subtit">'+escapeAttr(sub)+'</div>'+inner+papelariaHTML(sub);
   document.body.classList.add('print-rel');
   // A limpeza não pode depender só do afterprint: no app instalado ele não
   // dispara de forma confiável quando a janela de impressão do Windows é
@@ -10340,7 +10350,7 @@ function applyImport(){
    publicacao, e ha uma prova automatica que falha se um subir sem o outro.
    Assim o numero na tela e' o mesmo do arquivo que o aparelho guardou, e
    dizer "estou na v15" passa a significar alguma coisa. */
-const APP_VER='v155';
+const APP_VER='v156';
 (function(){ try{ const p=document.getElementById('verPill'); if(p)p.textContent=APP_VER; }catch(e){} })();
 /* Versao nova assumiu com a pagina aberta: avisa, em vez de recarregar por
    conta propria e jogar fora um orcamento pela metade. */
@@ -11046,7 +11056,7 @@ function esqPDFMonta(L,fotos,reduzidas){
 function esqEntregaPDF(html,nome){
   html=rmPapelaria(html);
   if(window.rmDesktop&&typeof window.rmDesktop.salvarPDF==='function'){
-    (window.rmDesktop.abrirPDF || window.rmDesktop.salvarPDF)(html,nome).then(function(r){
+    (window.rmDesktop.abrirPDF || window.rmDesktop.salvarPDF)(window.rmPapelA ? window.rmPapelA(html, nome) : html, nome).then(function(r){
       if(r&&r.ok)toast('Arquivo salvo \u2713');
       else if(!r||!r.cancelado)abrirCotacaoPDFNoNavegador(html);
     }).catch(function(){abrirCotacaoPDFNoNavegador(html);});
@@ -14825,7 +14835,7 @@ initAuth();
     /* a) sistema é a janela principal do app instalado */
     if (window.rmDesktop && typeof window.rmDesktop.salvarPDF === 'function') {
       aviso('Gerando PDF…');
-      (window.rmDesktop.abrirPDF || window.rmDesktop.salvarPDF)(html, nome)
+      (window.rmDesktop.abrirPDF || window.rmDesktop.salvarPDF)(window.rmPapelA ? window.rmPapelA(html, nome) : html, nome)
         .then(function (r) {
           if (r && r.ok) aviso('PDF pronto ✓');
           else if (r && r.cancelado) aviso('Salvamento cancelado.');
@@ -15993,6 +16003,80 @@ function orcDocHTML(modo,valores,fora){
        - o fio do cabeçalho: laranja de 2 px e, logo abaixo, o grafite fino.
      Documento de medida exata (etiqueta, envelope, a folha do recibo em
      margem 0) e o que não tem timbrado ficam como estão. */
+  /* O MIOLO (modelo M1, PADRAO_RM 5): as peças de dentro do documento.
+     A tabela vale para todo documento com timbrado (cabeçalho cinza claro,
+     fio fino entre linhas, sem zebra, letra 9,5); o resto entra pela classe
+     que o documento usa:
+       .rmd-tit / .rmd-subtit  título (20 px; todo h1 do documento já é) e a linha cinza embaixo
+       .rmd-cabdoc  "rótulo · nome · data" numa linha só: o nome vira o título e a data a linha cinza
+       .rmd-dados  faixa cinza com os dados (rótulo pequeno em cima, <span>/<b>)
+       .rmd-sec    título de seção: maiúscula pequena com o traço laranja
+       .rmd-grupo  linha de grupo da tabela, em laranja
+       .rmd-sub    subtotal do grupo;  .rmd-tot  linha de total (tr ou div, fio preto)
+       .rmd-res    resumo à direita (<div><span>rótulo</span><b>valor</b></div>),
+                   com .rmd-res-total na caixa grafite do total
+       .rmd-cond   condições (lista);  .rmd-obs  observação
+       table.rmd-grade  grade (calendário, ficha de marcar): fio fino em todas as casas
+     Fica de fora: a ficha do montador (.tmf) e o que tiver .rmd-livre. */
+  var MIOLO = '@media print{html.rm-mi *{-webkit-print-color-adjust:exact;print-color-adjust:exact}'
+    + 'html.rm-mi table:not(.rmd-livre):not(.tmf table) th{background:#F2F4F7!important;color:#141414!important;font-size:7.5px!important;font-weight:700!important;letter-spacing:.08em!important;text-transform:uppercase!important;padding:5px 6px!important;border:0!important;border-bottom:.6px solid #c9cdd2!important}'
+    + 'html.rm-mi table:not(.rmd-livre):not(.tmf table) td{font-size:9.5px!important;padding:3.5px 6px!important;border-left:0!important;border-right:0!important;border-top:0!important;border-bottom:.5px solid #e3e5e8!important;background-color:transparent!important}'
+    + 'html.rm-mi table:not(.rmd-livre):not(.rmd-grade):not(.tmf table){border:0!important;border-collapse:collapse!important;border-radius:0!important}'
+    + 'html.rm-mi table:not(.rmd-livre) thead{display:table-header-group!important}'
+    + 'html.rm-mi table:not(.rmd-livre) tr{break-inside:avoid!important}'
+    + 'html.rm-mi :is(.head,.rm-head,.cab,.rm-cab,.timbre) :is(img,svg):not(.rmd-livre){height:36px!important;width:auto!important;max-width:none!important}'
+    + 'html.rm-mi .rm-sheet{border:0!important;border-radius:0!important;box-shadow:none!important;padding:0!important;background:none!important}'
+    + 'html.rm-mi table.rmd-grade:not(.rmd-livre) :is(th,td){border:.5px solid #d9dce0!important}'
+    + 'html.rm-mi :is(.rmd-tit,h1:not(.rmd-livre)){font-size:20px!important;font-weight:700!important;letter-spacing:-.01em!important;text-transform:none!important;color:#141414!important;margin:3px 0 4px!important}'
+    + 'html.rm-mi .rmd-cabdoc{display:block!important;margin:0!important;border:0!important}'
+    + 'html.rm-mi .rmd-cabdoc>span:first-child{display:none!important}'
+    + 'html.rm-mi .rmd-cabdoc>b{display:block!important;font-family:inherit!important;font-size:20px!important;font-weight:700!important;letter-spacing:-.01em!important;color:#141414!important;margin:3px 0 2px!important}'
+    + 'html.rm-mi .rmd-cabdoc>span:last-child{display:block!important;margin:0 0 12px!important;font-family:inherit!important;font-size:10px!important;letter-spacing:0!important;text-transform:none!important;color:#6E747C!important}'
+    + 'html.rm-mi .rmd-subtit{font-size:10px!important;color:#6E747C!important;margin:0 0 12px!important;text-transform:none!important;letter-spacing:0!important}'
+    + 'html.rm-mi .rmd-dados{display:grid!important;grid-template-columns:repeat(3,1fr)!important;gap:0!important;background:#F2F4F7!important;border:0!important;border-radius:4px!important;padding:6px 12px!important;margin:0 0 4px!important}'
+    + 'html.rm-mi .rmd-dados>div{padding:4px 0!important;border:0!important;background:none!important}'
+    + 'html.rm-mi .rmd-dados span{display:block!important;font-size:7px!important;font-weight:400!important;letter-spacing:.12em!important;text-transform:uppercase!important;color:#6E747C!important}'
+    + 'html.rm-mi .rmd-dados b{font-family:inherit!important;font-size:10px!important;font-weight:600!important;color:#141414!important}'
+    + 'html.rm-mi .rmd-sec{font-size:8px!important;font-weight:700!important;letter-spacing:.14em!important;text-transform:uppercase!important;color:#141414!important;margin:16px 0 6px!important;padding:0 0 0 7px!important;border:0!important;border-left:3px solid #F24619!important;background:none!important}'
+    + 'html.rm-mi tr.rmd-grupo td, html.rm-mi .rmd-grupo{font-size:9.5px!important;font-weight:700!important;color:#C1310B!important;text-transform:none!important;letter-spacing:0!important;padding:9px 6px 3.5px!important;border:0!important;border-bottom:.5px solid #d9dce0!important;background:none!important;border-radius:0!important}'
+    + 'html.rm-mi .rmd-grupo *{color:inherit!important;font-size:inherit!important}'
+    + 'html.rm-mi tr.rmd-sub td{font-weight:700!important;color:#4A515B!important;border-bottom:0!important;padding-bottom:6px!important}'
+    + 'html.rm-mi tr.rmd-tot td{font-weight:700!important;font-size:10px!important;color:#141414!important;border-top:1px solid #141414!important;border-bottom:0!important}'
+    + 'html.rm-mi div.rmd-tot{display:flex!important;justify-content:space-between!important;align-items:baseline!important;border:0!important;border-top:1px solid #141414!important;padding:6px 0 0!important;margin-top:10px!important;font-size:10px!important;font-weight:700!important;color:#141414!important}'
+    + 'html.rm-mi div.rmd-tot b{font-family:inherit!important;font-size:13px!important;color:#141414!important}'
+    + 'html.rm-mi .rmd-res{width:62mm!important;margin-left:auto!important;border-top:1px solid #141414!important}'
+    + 'html.rm-mi .rmd-res>div{display:flex!important;justify-content:space-between!important;padding:3.5px 0!important;border-bottom:.5px solid #e3e5e8!important;font-size:9.5px!important}'
+    + 'html.rm-mi .rmd-res span{font-size:7px!important;letter-spacing:.12em!important;text-transform:uppercase!important;color:#6E747C!important}'
+    + 'html.rm-mi .rmd-res>.rmd-res-total{background:#141414!important;color:#fff!important;padding:6px 8px!important;border:0!important;margin-top:4px!important;border-radius:3px!important}'
+    + 'html.rm-mi .rmd-res-total span{color:#c9cdd2!important}'
+    + 'html.rm-mi .rmd-res-total b{font-size:13px!important}'
+    + 'html.rm-mi :is(td,th):is(.money,.n,.r,.num,.valor,.t-num){text-align:right!important;font-variant-numeric:tabular-nums!important;white-space:nowrap}'
+    + 'html.rm-mi .rmd-cond{margin:0!important;padding-left:14px!important;font-size:9.5px!important}'
+    + 'html.rm-mi .rmd-cond li{margin:2px 0!important}'
+    + 'html.rm-mi .rmd-obs{font-size:8.5px!important;color:#4A515B!important}'
+    /* páginas que imprimem a PRÓPRIA TELA: os cartões de resumo viram a
+       faixa cinza (rótulo, valor, apoio) e o cartão em volta some. Só no
+       papel -- na tela eles continuam cartões. */
+    + 'html.rm-mi .rmd-kpis{display:grid!important;grid-template-columns:none!important;grid-auto-flow:column!important;grid-auto-columns:1fr!important;gap:0 14px!important;background:#F2F4F7!important;border:0!important;border-radius:4px!important;box-shadow:none!important;padding:6px 12px!important;margin:6px 0 10px!important}'
+    + 'html.rm-mi .rmd-kpis>*{background:none!important;border:0!important;border-radius:0!important;box-shadow:none!important;padding:4px 0!important;margin:0!important;min-height:0!important;min-width:0!important;color:#141414!important}'
+    + 'html.rm-mi .rmd-kpis>*::before,html.rm-mi .rmd-kpis>*::after{display:none!important}'
+    + 'html.rm-mi .rmd-kpis>* *{color:inherit!important;font-family:inherit!important;margin:0!important}'
+    + 'html.rm-mi .rmd-kpis>*>:first-child{font-size:7px!important;font-weight:400!important;letter-spacing:.12em!important;text-transform:uppercase!important;color:#6E747C!important;line-height:1.4!important}'
+    + 'html.rm-mi .rmd-kpis>*>:nth-child(2){font-size:11px!important;font-weight:700!important;letter-spacing:0!important;line-height:1.3!important}'
+    + 'html.rm-mi .rmd-kpis>*>:nth-child(n+3){font-size:7.5px!important;font-weight:400!important;color:#6E747C!important;letter-spacing:0!important;text-transform:none!important}'
+    + 'html.rm-mi .rmd-plano{background:none!important;border:0!important;border-radius:0!important;box-shadow:none!important;padding:0!important}'
+    + 'html.rm-mi .no-print{display:none!important}'
+    + 'html.rm-mi,html.rm-mi body{background:#fff!important}'
+    + '}';
+  /* As peças rmd-* também na TELA: a prévia do documento (o que o sistema
+     mostra antes de imprimir) sai igual ao papel. As regras gerais (toda
+     tabela, todo h1) ficam só no papel. */
+  var MIOLO_TELA = MIOLO.slice('@media print{'.length, -1).split('}').filter(function(r){
+      return /rmd-/.test(r) && !/table:not|:is\(\.head|rmd-kpis|rmd-plano/.test(r); })
+    .map(function(r){ return r.replace(/html\.rm-mi /g, '').replace(':is(.rmd-tit,h1:not(.rmd-livre))', '.rmd-tit'); }).join('}') + '}';
+  (function(){ function poe(){ if (document.getElementById('rm-miolo-tela') || !document.head) return;
+      var e = document.createElement('style'); e.id = 'rm-miolo-tela'; e.textContent = MIOLO_TELA; document.head.appendChild(e); }
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', poe); else poe(); })();
   var PE_FONE = '51 99789-7879', PE_INSTA = '@rm.estruturas', PE_SITE = 'www.rmestruturas.com.br';
   function papelA(raiz, viva, nome){
     if (!raiz || !raiz.querySelector || !raiz.querySelector('.tb2,.tb2-tipo') || raiz.querySelector('#rm-papel-a')) return false;
@@ -16014,8 +16098,10 @@ function orcDocHTML(modo,valores,fora){
     /* o pé antigo (fixo, dentro da página) sai: o novo mora na margem.
        A linha de nota dele ("atualizado em") vai para o fim do documento. */
     var nota = '';
-    [].slice.call(raiz.querySelectorAll('#rm-pe-imp,.pe,.sheetfoot')).forEach(function(e){
+    [].slice.call(raiz.querySelectorAll('#rm-pe-imp,.pe,.sheetfoot,.foot,.rodape')).forEach(function(e){
       if (e.id !== 'rm-pe-imp' && e.textContent.toLowerCase().indexOf(PE_SITE) < 0) return;
+      /* só o pé: um bloco com tabela, totais ou texto comprido não é rodapé */
+      if (e.id !== 'rm-pe-imp' && (e.querySelector('table,.totbox,.tot') || e.textContent.length > 400)) return;
       var n = e.querySelector('.nota'); if (n && e.id === 'rm-pe-imp') nota = limpa(n.textContent);
       if (e.parentNode) e.parentNode.removeChild(e); });
     var corpo = raiz.querySelector('body') || raiz;
@@ -16032,10 +16118,11 @@ function orcDocHTML(modo,valores,fora){
       + '@top-right{content:"RM Estruturas Pré-Fabricadas";' + al + 'color:#6E747C}}'
       + '@page:first{@top-left{content:none;border:0}@top-right{content:none;border:0}}'
       + '@media print{html body{padding-bottom:0!important}'
-      + '.head::after,.rm-cab::after,.cab::after{height:2px!important;background:#F24619!important;box-shadow:0 3.5px 0 -.5px #141414!important;'
+      + '.head::after,.rm-cab::after,.cab::after,.rm-head::after,.timbre::after{height:2px!important;background:#F24619!important;box-shadow:0 3.5px 0 -.5px #141414!important;'
       + '-webkit-print-color-adjust:exact;print-color-adjust:exact}.head::before{display:none!important}'
-      + '.rm-nota-fim{margin-top:6mm;font-size:7pt;color:#6E747C;text-align:center}}';
+      + '.rm-nota-fim{margin-top:6mm;font-size:7pt;color:#6E747C;text-align:center}}' + MIOLO;
     (raiz.querySelector('head') || raiz).appendChild(st);
+    if (raiz.classList) raiz.classList.add('rm-mi');
     return true;
   }
   function papelAHTML(html, nome){
