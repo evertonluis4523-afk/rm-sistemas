@@ -1565,7 +1565,17 @@ tr.ext-ano td{background:#f4f5f6;font-weight:700;border-top:1.5px solid var(--li
 .sec-tog:hover,.sec-tog:hover .tog-hint{color:var(--ink)}
 .sec-tog .cav{display:inline-block;width:11px;font-size:12px;font-weight:560}
 .sec-tog .tog-hint{font-size:11px;letter-spacing:.1em;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:2px 9px;white-space:nowrap;font-weight:600}
-.form-grid{display:grid;grid-template-columns:repeat(12,1fr);gap:11px}
+.form-grid{display:grid;grid-template-columns:repeat(12,1fr);gap:11px;align-items:start}
+/* rótulo de duas linhas empurrava a caixa para baixo da do vizinho: cada
+   campo divide a linha da grade em rótulo / caixa / dica (subgrid), e as
+   caixas de uma fileira ficam na mesma altura, com ou sem dica embaixo */
+@supports (grid-template-rows:subgrid){
+  .form-grid{row-gap:0}
+  .form-grid>*{grid-row:span 4;margin-bottom:11px}
+  .form-grid>.f:not(:has(>:nth-child(5))){display:grid;grid-template-rows:subgrid;row-gap:5px;align-content:start}
+  .form-grid>.f>.lab{align-self:end}
+  .form-grid>.f>:nth-child(2){align-self:start}
+}
 /* no celular, 12 colunas espremiam os campos até não caber a data: cada campo ocupa a linha inteira */
 @media (max-width:640px){.form-grid .f{grid-column:1/-1!important}.seg button{padding:8px 4px;font-size:13px}}
 .f{display:flex;flex-direction:column;gap:5px;min-width:0}
@@ -2542,7 +2552,6 @@ tr.det-achado{animation:det-achado 1.6s ease-out}
    No timbrado da RM, como a advertencia. O texto vem pronto;
    o que da validade de proprio punho -- data, nome, CPF, admissao e a
    assinatura -- fica em linhas para ele escrever. Uma assinatura so', no fim. */
-.pd-expl{color:var(--muted);font-size:12.5px;margin:0 0 12px;line-height:1.5}
 .pd-chk{display:flex;align-items:center;gap:8px;font-size:13.5px;min-height:38px;cursor:pointer}
 .pd-folha{font-size:11.5pt;color:#1d2127}
 .pd-folha .pd-par{margin:0 0 6mm;line-height:2.3}
@@ -3146,6 +3155,14 @@ html :where(input:not([type=checkbox]):not([type=radio]):not([type=range]):not([
 }
 html :where(input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=color]):not([type=file]):not([type=hidden]),select,textarea):focus{
   outline:none;border-color:var(--rm-marca);box-shadow:var(--rm-foco);
+}
+/* ALTURA DO CAMPO. Campo sem altura escrita ficava no tamanho do navegador
+   (21 px no Corte, 24 no Máquinas) ou no que o recuo desse (45 px no
+   Perfitec, 30 no Orçamento): numa mesma tela, caixas de alturas
+   diferentes. Força zero (:where) -- quem escreve a altura continua
+   mandando; célula de tabela fica de fora (linha de lista é baixinha). */
+html :where(input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=color]):not([type=file]):not([type=hidden]):not([type=image]):not([type=button]):not([type=submit]):not([type=reset]),select:not([multiple]):not([size])):where(:not(td *,th *)){
+  height:var(--rm-ctl);box-sizing:border-box;
 }
 html :where(input,select,textarea):disabled{opacity:.6;cursor:not-allowed}
 html :where(input,select,textarea)::placeholder{color:var(--rm-apagado);opacity:.8}
@@ -3854,8 +3871,8 @@ if(window.RM_CELULAR) document.body.classList.add('rm-campo');
     </div>
     <div class="lc-body">
       <div class="login-err" id="loginErr"></div>
-      <div class="f"><span class="lab">Usuário / E-mail</span>
-        <input id="li_user" type="text" autocomplete="username" placeholder="seu usuário" onkeydown="if(event.key==='Enter')doLogin()"></div>
+      <div class="f"><span class="lab">E-mail</span>
+        <input id="li_user" type="email" autocomplete="username" placeholder="voce@empresa.com" onkeydown="if(event.key==='Enter')doLogin()"></div>
       <div class="f"><span class="lab">Senha</span>
         <input id="li_pass" type="password" autocomplete="current-password" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()"></div>
       <button class="btn-act save submit" id="loginBtn" onclick="doLogin()">Entrar</button>
@@ -3987,7 +4004,7 @@ if(window.RM_CELULAR) document.body.classList.add('rm-campo');
             <div class="f span12"><span class="lab">Zoom da foto</span><input id="caZoom" type="range" min="1" max="3" step="0.01" value="1"></div>
             <div class="f span12"><span class="lab">Formato</span><select id="caFormato"><option value="social">Redes sociais (1080 × 1350)</option><option value="a4">Folha A4 — para imprimir</option></select></div>
           </div>
-          <p class="note" style="margin:10px 0 0">Arraste a foto na prévia para enquadrar; com vários no card, toque na foto de quem quer ajustar. Até 6 por card. A foto fica só neste aparelho: não vai para a nuvem nem é guardada.</p>
+          <p class="note" style="margin:10px 0 0">Arraste a foto na prévia para enquadrar. Até 6 por card.</p>
           <details class="card-aniv-textos">
             <summary>Textos do card</summary>
             <div class="form-grid" style="margin-top:10px">
@@ -4014,7 +4031,7 @@ if(window.RM_CELULAR) document.body.classList.add('rm-campo');
       <div class="pf-hero">
         <div>
           <h2>Fechamento do mês · contabilidade</h2>
-          <p>Junta o cartão RHID de quem tem carteira, o ponto de quem é PF e o plano de saúde da Unimed, e gera o pacote da contabilidade (PDF + Excel), com pré-visualização antes de salvar.</p>
+          <p>RHID, ponto e Unimed num pacote para a contabilidade.</p>
         </div>
         <div class="pf-actions">
           <button class="btn-act dim" id="pfPrintTodos">🖨️ Fichas em branco</button>
@@ -4057,7 +4074,7 @@ if(window.RM_CELULAR) document.body.classList.add('rm-campo');
             <div class="f span2" style="align-self:flex-end"><button class="btn-act save" id="pfCfgSalvar" style="width:100%">Salvar jornada</button></div>
           </div>
           <div class="section-lab" style="margin-top:14px">Feriados do mês <span class="ln"></span></div>
-          <p class="pf-fer-ajuda">Feriado não conta hora prevista e não vira falta ao fechar a competência. A lista já vem com os nacionais e o 20 de setembro; apague o que não se aplica e acrescente os municipais de Estrela.</p>
+          <p class="pf-fer-ajuda">Feriado não conta hora prevista nem vira falta.</p>
           <div id="pfFeriadosLista" class="pf-fer-lista"></div>
           <div class="form-grid" style="margin-top:8px">
             <div class="f span3"><span class="lab">Data</span><input type="date" id="pfFerData"></div>
@@ -4133,9 +4150,9 @@ if(window.RM_CELULAR) document.body.classList.add('rm-campo');
            em dia. -->
       <div hidden>
         <select id="salMes"></select>
-        <input id="salAno" type="number">
-        <input id="salDataAdiant" type="date">
-        <input id="salDataPagto" type="date">
+        <input id="salAno" type="number" aria-label="Ano">
+        <input id="salDataAdiant" type="date" aria-label="Data do adiantamento">
+        <input id="salDataPagto" type="date" aria-label="Data do pagamento">
         <span id="salFechStatus"></span>
       </div>
       <div class="ciclo-bar">
@@ -4260,7 +4277,7 @@ if(window.RM_CELULAR) document.body.classList.add('rm-campo');
     <div class="view" id="v-receber">
       <div class="addzone">
         <div class="section-lab">Novo valor a receber <span class="ln"></span></div>
-        <p class="rel-note">Um extra que o funcionário vai ter durante o mês (reembolso, prêmio, serviço avulso...). Ao gerar os recibos do adiantamento ou do pagamento, o sistema avisa e pergunta se ele entra.</p>
+        <p class="rel-note">Reembolso, prêmio ou serviço avulso do mês.</p>
         <div class="form-grid">
           <div class="f span6"><span class="lab">Funcionário</span><select id="recFunc"><option value="">— selecione —</option></select></div>
           <div class="f span3"><span class="lab">Valor (R$)</span><input id="recValor" class="mono" placeholder="0,00" inputmode="decimal"></div>
@@ -4359,9 +4376,7 @@ if(window.RM_CELULAR) document.body.classList.add('rm-campo');
           <tbody id="indicBody"></tbody>
         </table>
       </div>
-      <div class="rel-note">O contrato de experiência fecha em 90 dias contados da data de início. Passando desse
-        prazo com o indicado ainda na equipe, o bônus é devido a quem indicou — o sistema avisa, mas não lança nada
-        na folha: o pagamento continua sendo lançado à mão.</div>
+      <div class="rel-note">Bônus devido após 90 dias do indicado na equipe (lançado à mão).</div>
     </div>
 
     <div class="view" id="v-terc">
@@ -4460,7 +4475,7 @@ if(window.RM_CELULAR) document.body.classList.add('rm-campo');
     <!-- RECIBOS RESCISÃO -->
     <div class="view" id="v-resc">
       <div class="rs-cta">
-        <div><b>Quanto daria a rescisão?</b><span>Simule para qualquer funcionário e qualquer tipo de saída — verbas, descontos, guia do FGTS e o custo total para a empresa.</span></div>
+        <div><b>Quanto daria a rescisão?</b><span>Simule verbas, descontos e FGTS.</span></div>
         <button class="btn-act save" type="button" id="btnRescSim">Simular rescisão →</button>
       </div>
       <div class="addzone">
@@ -4505,7 +4520,7 @@ if(window.RM_CELULAR) document.body.classList.add('rm-campo');
         <div class="tbl-wrap"><table class="kit-tab"><thead><tr><th>Documento</th><th>Arquivo</th><th class="c">Empresa</th><th class="c">Funcionário</th></tr></thead><tbody id="kitBody"></tbody></table></div>
         <div id="kitNovos"></div>
         <div id="kitAvisos"></div>
-        <div class="kit-nota">As vias de cada documento seguem a lista da contabilidade e ficam guardadas como padrão. Os PDFs não ficam guardados no sistema: servem só para montar a impressão.</div>
+        <div class="kit-nota">Vias pela lista da contabilidade.</div>
         <div class="kit-pe"><span class="kit-resumo" id="kitResumo"></span><button class="btn-act dim" id="kitLimparBt">Limpar</button><button class="btn-act dim" id="kitSalvarBt">Salvar PDF</button><button class="btn-act save" id="kitGerarBt">Imprimir →</button></div>
       </div>
       <div class="filters"><div class="section-lab" style="margin:0;flex:1">Documentos já impressos <span class="ln"></span></div></div>
@@ -4561,7 +4576,7 @@ if(window.RM_CELULAR) document.body.classList.add('rm-campo');
             <div class="f span6"><span class="lab">Descontos referentes a (opcional, sai no recibo)</span><input id="exFDescTxt" autocomplete="off" placeholder="Ex: INSS"></div>
             <div class="f span6"><span class="lab">Observação (opcional, sai em todos os recibos)</span><input id="exFObs" autocomplete="off"></div>
           </div>
-          <div class="ct-dica">Férias individuais: marque uma pessoa. Férias coletivas: marque todas que saem no mesmo período — quem não for, fica desmarcado. O período aquisitivo de cada um vem da data da carteira e pode ser corrigido na linha.</div>
+          <div class="ct-dica">Coletivas: marque todos que saem no período.</div>
           <div class="tbl-wrap" style="margin-top:10px">
             <table class="list t-lanc">
               <thead><tr><th class="c" style="width:60px">Incluir</th><th style="min-width:190px">Funcionário</th><th style="min-width:280px">Período aquisitivo</th><th class="r" style="width:130px">Férias</th><th class="r" style="width:120px">1/3</th><th class="r" style="width:120px">Descontos</th><th class="r" style="width:120px">Líquido</th><th style="width:120px">Método</th></tr></thead>
@@ -4635,7 +4650,7 @@ if(window.RM_CELULAR) document.body.classList.add('rm-campo');
         <div class="section-lab">Movimentações individuais <span class="ln"></span>
           <span id="relMovLote" style="display:none;align-items:center;gap:8px;font-size:12px;color:var(--muted)">
             <b id="relMovLoteQtd">0</b> selecionado(s)
-            <select id="relMovLoteStatus" style="font-size:12px;padding:5px 7px">
+            <select id="relMovLoteStatus" style="padding:0 7px">
               <option value="pago">Marcar como Pago</option>
               <option value="pendente">Marcar como Pendente</option>
               <option value="cancelado">Marcar como Cancelado</option>
@@ -4710,7 +4725,7 @@ if(window.RM_CELULAR) document.body.classList.add('rm-campo');
 
       <!-- CUSTOS & ENCARGOS -->
       <div class="relpane" id="relp-custos">
-        <div class="rel-note">Estes valores vêm dos campos detalhados preenchidos na aba Salários (base, horas extras, benefícios, descontos) no momento em que os pagamentos foram gerados. Alguns campos (horas extras, faltas, plano, INSS, e-consignado) são informativos e nem sempre entram na conta do valor pago — use como referência de composição, não como conferência exata do líquido.</div>
+        <div class="rel-note">Composição dos salários; referência, não conferência do líquido.</div>
         <div class="cards c4">
           <div class="card"><div class="k"><span class="dotk b"></span>Salário base</div><div class="v" id="relCBase">R$ 0,00</div></div>
           <div class="card atv"><div class="k"><span class="dotk g"></span>Benefícios</div><div class="v" id="relCBenef">R$ 0,00</div><div class="s">banheiro + almoço + acréscimos</div></div>
@@ -4756,7 +4771,7 @@ if(window.RM_CELULAR) document.body.classList.add('rm-campo');
           <div class="f span6"><button class="btn-act dim" id="btnRelCSV" style="width:100%">⬇ Exportar ano (CSV)</button></div>
           <div class="f span6"><button class="btn-act save" id="btnRelAnualPDF" style="width:100%">📄 PDF anual consolidado</button></div>
         </div>
-        <div class="sheetfoot"><span>O CSV traz um item por linha (inclui a composição de custo quando disponível). O PDF traz o resumo do ano, os lançamentos por mês, por função e os reajustes, pronto para impressão.</span></div>
+        <div class="sheetfoot"><span>CSV: um item por linha. PDF: resumo do ano.</span></div>
       </div>
     </div>
 
@@ -4853,12 +4868,7 @@ if(window.RM_CELULAR) document.body.classList.add('rm-campo');
           </div>
         </div>
         <div class="sub" style="margin-top:8px;font-family:var(--sans)">
-          Escolher um funcionário traz nome, CPF, telefone, data de nascimento e data de
-          admissão do cadastro. O resto se digita na própria ficha. <b>A ficha entra na lista
-          abaixo assim que tiver nome</b> e dali em diante grava sozinha — dá para parar no
-          meio e voltar depois, e para corrigir dias depois. <b>Lançar no cadastro</b> cria o
-          funcionário na aba Funcionários (ou atualiza o que já existe), sem redigitar nada.
-        </div>
+          A ficha grava sozinha. <b>Lançar no cadastro</b> cria o funcionário.</div>
       </div>
       <div id="admLista" style="padding:0 30px 18px"></div>
     </div>
@@ -4919,7 +4929,7 @@ if(window.RM_CELULAR) document.body.classList.add('rm-campo');
     <div class="view" id="v-demis">
       <div class="addzone">
         <div class="section-lab">Pedido de demissão <span class="ln"></span></div>
-        <p class="pd-expl">O texto sai impresso. Data, nome, CPF e data de admissão ficam em branco para o funcionário escrever de próprio punho, e ele assina. A situação segue os modelos da contabilidade.</p>
+        
         <div class="form-grid">
           <div class="f span6 pd-dados" style="position:relative"><span class="lab">Nome do funcionário</span>
             <input id="pdNome" placeholder="nome do funcionário" autocomplete="off"><div class="sugg" id="pdSugg"></div></div>
@@ -4947,7 +4957,7 @@ if(window.RM_CELULAR) document.body.classList.add('rm-campo');
     <div class="view" id="v-emp">
       <div class="addzone">
         <div class="section-lab">Funções <span class="cfg-tot" id="funcoesTotal"></span><span class="ln"></span></div>
-        <p style="color:var(--muted);font-size:12.5px;margin:0 0 12px">Estas funções aparecem no cadastro do funcionário. O número ao lado diz quantos funcionários estão em cada uma — função sem ninguém aparece esmaecida.</p>
+        <p style="color:var(--muted);font-size:12.5px;margin:0 0 12px">O número é quantos funcionários estão na função.</p>
         <div class="cfg-add"><input id="cfgNovaFuncao" placeholder="Ex: Eletricista" aria-label="Nova função" onkeydown="if(event.key==='Enter')document.getElementById('btnAddFuncao').click()"><button class="btn-act save" id="btnAddFuncao">＋ Adicionar função</button></div>
         <div id="funcoesList" class="cfg-grade"></div>
         <div class="section-lab" style="margin-top:24px">Bancos <span class="cfg-tot" id="bancosTotal"></span><span class="ln"></span></div>
@@ -4956,7 +4966,7 @@ if(window.RM_CELULAR) document.body.classList.add('rm-campo');
         <div id="bancosList" class="cfg-grade"></div>
 
         <div class="section-lab" style="margin-top:24px">Benefícios <span class="ln"></span></div>
-        <p style="color:var(--muted);font-size:12.5px;margin:0 0 12px">Saem na aba Documentos › Entrevista e na folha de benefícios entregue ao candidato. Em <b>Valor</b>, digite o valor em reais (350,00) ou um texto (50%, incluso). Os marcados em <b>Assiduidade</b> entram na soma.</p>
+        <p style="color:var(--muted);font-size:12.5px;margin:0 0 12px">Valor em reais (350,00) ou texto (50%, incluso).</p>
         <div class="tbl-wrap"><table class="list ent-cfg"><thead><tr><th>Benefício</th><th>Detalhe</th><th>Valor</th><th>Rótulo</th><th class="c">Assiduidade</th><th></th></tr></thead><tbody id="benCfg"></tbody></table></div>
         <div class="addbtns" style="margin-top:10px"><button class="btn-act" id="benAdd">＋ Adicionar benefício</button></div>
         <div class="section-lab" style="margin-top:24px">Horário de trabalho <span class="ln"></span></div>
@@ -5008,7 +5018,7 @@ if(window.RM_CELULAR) document.body.classList.add('rm-campo');
     <div class="tbl-wrap"><table class="list"><thead><tr><th>Gozo</th><th>Período aquisitivo</th><th>Origem</th><th></th></tr></thead><tbody id="frProg"></tbody></table></div>
     <div class="section-lab" style="margin-top:16px">Histórico <span class="ln"></span></div>
     <div class="tbl-wrap"><table class="list"><thead><tr><th>Início</th><th>Tipo</th><th class="r">Gozados</th><th class="r">Vendidos</th><th class="r">Licença</th><th class="r">Faltas</th><th>Detalhe</th><th></th></tr></thead><tbody id="frHist"></tbody></table></div>
-    <p class="note" style="margin-top:8px">Recibos de férias emitidos no sistema entram aqui sozinhos, e a programação da mesma data sai da lista. Licença remunerada não desconta do saldo: é pagamento além do direito.</p>
+    <p class="note" style="margin-top:8px">Recibos de férias emitidos entram sozinhos.</p>
   </div>
   <div class="mfoot"><button class="btn-act dim" data-close>Fechar</button></div>
 </div></div>
@@ -5331,7 +5341,7 @@ if(window.RM_CELULAR) document.body.classList.add('rm-campo');
         <div class="f span4"><span class="lab">Dias de aviso</span><input id="rsDiasAviso" class="mono" inputmode="numeric"></div>
         <div class="f span4"><span class="lab">Vencidas (dias)</span><input id="rsDVenc" class="mono" inputmode="decimal"></div>
         <div class="f span4"><span class="lab">Em dobro (dias)</span><input id="rsDDobro" class="mono" inputmode="decimal"></div>
-        <div class="f span4 rs-proj"><span class="lab">Aviso: 13º / férias</span><div class="rs-par"><input id="rsA13p" class="mono" inputmode="numeric"><input id="rsAFerP" class="mono" inputmode="numeric"></div></div>
+        <div class="f span4 rs-proj"><span class="lab">Aviso: 13º / férias</span><div class="rs-par"><input id="rsA13p" class="mono" inputmode="numeric" aria-label="Aviso: 13º"><input id="rsAFerP" class="mono" inputmode="numeric" aria-label="Aviso: férias"></div></div>
         <div class="f span12"><div class="ct-dica" id="rsDicaAvos"></div></div>
       </div>
       <div class="section-lab rs-sec">Faltas <span class="ln"></span></div>
@@ -5388,7 +5398,7 @@ if(window.RM_CELULAR) document.body.classList.add('rm-campo');
       <div class="f span3"><span class="lab">Ano</span><input id="almImpAno" class="mono" type="number" min="2020" max="2099"></div>
       <div class="f span5" style="align-self:flex-end"><button class="btn-act dim" id="almImpBuscar" style="width:100%">🔎 Buscar almoços</button></div>
     </div>
-    <p style="color:var(--muted);font-size:12.5px;margin:0 0 12px">Traz o valor <b>A pagar</b> — os dias que a empresa deve reembolsar, sem os almoços que já forneceu direto. Pareado por nome; confira antes de aplicar e desmarque quem não deve mudar.</p>
+    <p style="color:var(--muted);font-size:12.5px;margin:0 0 12px">Traz o <b>A pagar</b>, pareado por nome; confira antes de aplicar.</p>
     <div id="almImportList"></div>
     <p id="almImportUnmatched" style="color:var(--muted);font-size:12px;margin-top:10px"></p>
   </div>
@@ -5411,7 +5421,7 @@ if(window.RM_CELULAR) document.body.classList.add('rm-campo');
 <div class="overlay" id="tercTextoModal"><div class="modal" style="max-width:620px">
   <div class="mhead"><h2 id="tercTextoTitulo">Texto do recibo</h2><button class="x" data-close>✕</button></div>
   <div class="mbody">
-    <p style="color:var(--muted);font-size:12.5px;margin:0 0 14px">Alguns clientes deste terceiro mandam um texto pronto que querem ver no recibo. Escreva aqui e ele substitui a frase padrão <b>em todos os próximos recibos deste terceiro</b> — não só no de hoje. Deixe em branco para voltar a usar a frase padrão.</p>
+    <p style="color:var(--muted);font-size:12.5px;margin:0 0 14px">Substitui a frase padrão nos próximos recibos deste terceiro.</p>
     <p style="color:var(--muted);font-size:11.5px;margin:0 0 8px">Frase padrão, pra comparar: <span id="tercTextoPadrao" style="font-style:italic"></span></p>
     <textarea id="tercTextoTxt" rows="5" style="width:100%;border:1.5px solid var(--line);border-radius:9px;padding:10px 12px;font-size:13.5px;font-family:inherit" placeholder="Cole aqui o texto que o cliente pediu..."></textarea>
   </div>
@@ -5422,7 +5432,7 @@ if(window.RM_CELULAR) document.body.classList.add('rm-campo');
 <div class="overlay" id="recTercEditModal"><div class="modal" style="max-width:720px">
   <div class="mhead"><h2 id="rteTitulo">Editar recibo</h2><button class="x" data-close>✕</button></div>
   <div class="mbody">
-    <p style="color:var(--muted);font-size:12.5px;margin:0 0 12px">Corrige o que sai no papel deste recibo. O número continua o mesmo, e o relatório e a 2ª via passam a mostrar o que ficar aqui. A mudança fica anotada na auditoria do lançamento.</p>
+    <p style="color:var(--muted);font-size:12.5px;margin:0 0 12px">O número continua o mesmo; a mudança fica na auditoria.</p>
     <div id="rteAviso" class="rte-aviso" hidden></div>
     <div class="form-grid">
       <div class="f span4"><span class="lab">Data do recibo</span><input id="rteData" type="date"></div>
@@ -6115,7 +6125,7 @@ function initAuth(){
     try{
       firebase.initializeApp(CONFIG.firebase);
       fb={auth:firebase.auth(),db:firebase.database()};
-      $('#loginMode').innerHTML='Sincronização <b>ativa</b> · entre com seu e-mail e senha';
+      $('#loginMode').innerHTML='';
       $('#li_user').type='email'; $('#li_user').placeholder='voce@empresa.com';
       fb.auth.onAuthStateChanged(u=>{ if(u){ onAuthed(u.email); } else { showLogin(true); } });
     }catch(e){ console.error(e); $('#loginMode').innerHTML='Erro ao iniciar Firebase.'; const er=$('#loginErr'); if(er){er.textContent='Não foi possível conectar ao Firebase. Atualize a página (e confira a internet).'; er.classList.add('on');} }
@@ -8822,7 +8832,7 @@ function adDica(){
 function adPrevia(){
   const el=$('#adPrev'); if(!el)return;
   const m=($('#adMotivo').value||'').trim();
-  if(!m){ el.textContent='Entra no meio da frase: “Tendo em vista que Vossa Senhoria … sendo consistente como Ato de indisciplina…”. Escreva sem maiúscula inicial e sem ponto final.'; el.style.color='var(--muted)'; return; }
+  if(!m){ el.textContent='Sem maiúscula inicial e sem ponto final.'; el.style.color='var(--muted)'; return; }
   const solto=m.replace(/[.;]$/,'');
   el.textContent='Vai sair: “…Vossa Senhoria '+solto+' sendo consistente como Ato de indisciplina…”';
   el.style.color='var(--muted)';
@@ -8857,7 +8867,7 @@ function advSelect(){
 function advPainel(){
   const p=$('#adModPainel');if(!p||p.hidden)return;
   const L=advModelos();
-  p.innerHTML='<div class="adv-mod-dica">Cada modelo é o motivo que entra no meio da frase: sem maiúscula no começo e sem ponto no fim. O restante da advertência (texto da CLT, CPF, data e assinaturas) é sempre o mesmo. As mudanças valem para todos que usam o sistema.</div>'+
+  p.innerHTML='<div class="adv-mod-dica">O motivo entra no meio da frase: sem maiúscula e sem ponto.</div>'+
     (L.length?L.map(m=>'<div class="adv-mod-item" data-mod="'+esc(m.id)+'">'+
       '<input data-campo="nome" value="'+esc(m.nome||'')+'" placeholder="Nome do modelo" aria-label="Nome do modelo">'+
       '<button type="button" class="btn ghost" data-mod-del title="Excluir este modelo">Excluir</button>'+
@@ -10937,8 +10947,7 @@ function renderFechPlanilha(){
     ? '<b>'+esc(pl.arquivo||'(sem nome)')+'</b>'+(pl.aba?' · aba '+esc(pl.aba):'')
       +' · '+(pl.linhas||[]).length+' linhas · importada em '+new Date(pl.em).toLocaleString('pt-BR')
       +(pl.por?' por '+esc(pl.por):'')+' · '+(Number(pl.aplicadas)||0)+' funcionário(s) aplicados'
-    : 'Nenhuma planilha arquivada nesta competência. A partir de agora, toda importação de Excel guarda '
-      +'a cópia do que foi recebido — com todas as colunas — aqui.';
+    : 'Nenhuma planilha arquivada nesta competência.';
 }
 function renderFechSection(tipo){
   const isAd=tipo==='adiantamento';
@@ -13954,6 +13963,9 @@ function abrirParaImprimir(doc){
   return true;
 }
 function imprimirRelatorio(doc){
+  /* no app (e dentro da Central) o relatório vai pela ponte: PDF vetorial e
+     o papel timbrado da casa, como os outros sistemas */
+  if(window.rmImprimirHTML && window.rmImprimirHTML(doc)) return;
   if(ehTelefone() && abrirParaImprimir(doc)) return;
   const antigo=document.getElementById('pdfPrintFrame');
   if(antigo&&antigo.parentNode)antigo.parentNode.removeChild(antigo);
@@ -14352,8 +14364,8 @@ function syncRepFuncAdiant(){
     el.disabled=!on; el.style.opacity=on?'':'.45'; });
   const h=$('#repFuncHint');
   if(h)h.textContent=on
-    ? 'Funcionários ativos/afastados com admissão, salário atual, a última alteração de salário e o adiantamento pago na competência escolhida (puxado dos recibos já gerados naquele mês). Sai em paisagem.'
-    : 'Funcionários ativos/afastados com admissão, salário atual e a última alteração de salário, sem o adiantamento. Sai em retrato.';
+    ? 'Com o adiantamento da competência. Sai em paisagem.'
+    : 'Sem o adiantamento. Sai em retrato.';
 }
 $('#repFuncComAdiant')&&($('#repFuncComAdiant').onchange=syncRepFuncAdiant);
 syncRepFuncAdiant();
@@ -14912,7 +14924,7 @@ function renderCliPagLinhas(){
     box.appendChild(el('div','cli-pag-row',
       '<input class="cli-pv" data-i="'+i+'" placeholder="0,00" inputmode="decimal" value="'+(p.valor>0?fmtBRL(p.valor):'')+'">'+
       '<input class="cli-pd" data-i="'+i+'" placeholder="Referente a (ex: primeira parcela)" value="'+esc(p.descricao||'')+'">'+
-      '<input type="date" class="cli-pdt" data-i="'+i+'" value="'+esc(p.data||'')+'">'+
+      '<input type="date" class="cli-pdt" aria-label="Data da parcela" data-i="'+i+'" value="'+esc(p.data||'')+'">'+
       '<select class="cli-pf" data-i="'+i+'"><option value=""'+(!p.forma?' selected':'')+'>Forma — não informar</option>'+
         '<option value="especie"'+(p.forma==='especie'?' selected':'')+'>Em espécie</option>'+
         '<option value="pix"'+(p.forma==='pix'?' selected':'')+'>Pix</option>'+
@@ -18526,7 +18538,7 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape'){if(fecharSemPerder(
    juntos a cada publicacao, e ha uma prova automatica que falha se um subir
    sem o outro. Assim o numero na tela e o mesmo do arquivo que o aparelho
    guardou, e dizer "estou na v81" passa a significar alguma coisa. */
-const APP_VER='v294';
+const APP_VER='v295';
 (function(){var p=document.getElementById('verPill'); if(p)p.textContent=APP_VER;})();
 
 if('serviceWorker' in navigator){
@@ -19169,7 +19181,7 @@ initAuth();
   window.rmSalvarPDF = function (nome) {
     nome = nome || nomeArquivo();
     var html;
-    try { html = documentoParaPDF(); } catch (e) { imprimirNoNavegador(); return; }
+    try { html = documentoParaPDF(); if (window.rmPapelA) html = window.rmPapelA(html, nome); } catch (e) { imprimirNoNavegador(); return; }
 
     /* a) sistema é a janela principal do app instalado */
     if (window.rmDesktop && typeof window.rmDesktop.salvarPDF === 'function') {
@@ -20480,16 +20492,12 @@ initAuth();
     + '</div>'
 
     + '<div class="epi-pane" id="epi-pane-entregar">'
-    +   '<div class="epi-nota in">Quem <b>trocou de função</b> ou ainda não teve ficha emitida para a função '
-    +     'atual. Numa troca o kit obrigatório costuma aumentar, e é a entrega dos itens novos — com data — '
-    +     'que sustenta a ficha depois.</div>'
+    +   '<div class="epi-nota in">Quem <b>trocou de função</b> ou ainda não tem ficha da função atual.</div>'
     +   '<div id="epiListaEntregar"></div>'
     + '</div>'
 
     + '<div class="epi-pane" id="epi-pane-lote">'
-    +   '<div class="epi-nota in">Marque quem vai receber e gere <b>tudo num documento só</b> — '
-    +     'uma prévia, um PDF, uma ida à impressora. Cada pessoa continua com as duas folhas dela, '
-    +     'e a data de cada ficha é a da assinatura da carteira daquele funcionário.</div>'
+    +   '<div class="epi-nota in">Marque quem vai receber: sai tudo num documento só.</div>'
     +   '<div class="epi-form">'
     +     '<div class="epi-f w6"><span class="epi-lab">O que as fichas vão listar</span>'
     +       '<select id="epiLoteModo">'
@@ -20508,9 +20516,7 @@ initAuth();
     + '</div>'
 
     + '<div class="epi-pane" id="epi-pane-vinculos">'
-    +   '<div class="epi-nota in">Liga o nome da função <b>como está escrito no cadastro</b> à ficha de '
-    +     'EPI correspondente. É só uma ligação: <b>nada é renomeado</b> e o cadastro dos funcionários '
-    +     'não é tocado. Para corrigir o nome de verdade, use <b>Empresa › Funções</b>.</div>'
+    +   '<div class="epi-nota in">Liga a função do cadastro à ficha de EPI (nada é renomeado).</div>'
     +   '<div class="epi-acts"><button class="epi-btn pri" id="epiAceitarTudo">Aceitar todas as sugestões</button></div>'
     +   '<div id="epiListaVinc"></div>'
     + '</div>'
@@ -21001,8 +21007,7 @@ initAuth();
     var host = q('#epiCaepiResumo'); if (!host) return;
     var s = selosDoCatalogo();
     if (!s) {
-      host.innerHTML = '<div class="epi-nota in">A coluna <b>Base oficial</b> compara cada CA com o arquivo '
-        + 'do CAEPI (MTE). Ninguém rodou a conferência ainda — ela é feita na <b>Central › Certificados</b>.</div>';
+      host.innerHTML = '<div class="epi-nota in">Conferência do CAEPI ainda não rodada (<b>Central › Certificados</b>).</div>';
       return;
     }
     var quando = fmtBR(String(s.em).slice(0, 10));
@@ -22669,7 +22674,7 @@ initAuth();
 
 
     +'<div class="epi-pane on" id="epi-pane-rapida">'
-    +'<div class="epi-nota in">Para a troca de balcão: escolhe quem é, toca no que está saindo — pode marcar mais de um, EPI ou uniforme —, o motivo, e o funcionário assina uma vez só aqui no aparelho. Data de hoje e responsável já vêm preenchidos.</div>'
+    +'<div class="epi-nota in">Troca de balcão: quem é, o que sai, o motivo e a assinatura.</div>'
     +'<div class="epi-passo">Quem está recebendo</div>'
     +'<div class="epi-form"><div class="epi-f w6"><span class="epi-lab">Funcionário</span><select id="epiRapFunc"></select></div>'
     +'<div class="epi-f w6"><span class="epi-lab">Últimos atendidos</span><div id="epiRapUltimos" class="epi-chips"></div></div></div>'
@@ -23248,6 +23253,41 @@ initAuth();
 #loginBtn svg{width:16px;height:16px;flex:none}
 /* 16px: o minimo para o iPhone nao ampliar a pagina ao tocar no campo */
 @media (pointer:coarse){#loginScreen input{font-size:16px!important}}
+/* ---------- O CARTÃO DE ENTRADA, UM SÓ ----------
+   Cada sistema nasceu com o seu: fundo claro em dois, só o símbolo no logo
+   em quatro, rótulo "E-MAIL", "E-mail" ou "USUÁRIO / E-MAIL", botão com e
+   sem ícone, frase de rodapé em quatro. O desenho mora aqui, preso ao
+   #loginScreen (ganha da classe do sistema em qualquer ordem). O sistema só
+   escreve a marcação comum: .lc-head (logo, .ttl empresa, .sub sistema) e
+   .lc-body (.login-err, .f com .lab ou label + campo, #loginBtn). */
+#loginScreen{background-color:#16171a;background-image:
+  radial-gradient(60% 50% at 80% 0%,rgba(140,29,24,.22),transparent 60%),
+  radial-gradient(50% 40% at 0% 100%,rgba(140,29,24,.14),transparent 55%)}
+#loginScreen::before{content:none}
+#loginScreen :is(.login-card,.login-box){position:relative;width:100%;max-width:380px;margin:0 auto;padding:0;box-sizing:border-box;
+  background:var(--rm-superficie,#fff);color:var(--rm-texto,#16171a);border:0;border-top:4px solid var(--rm-marca,#D53309);
+  border-radius:16px;overflow:hidden;box-shadow:0 30px 80px rgba(0,0,0,.5);text-align:left}
+#loginScreen .lc-head{position:relative;margin:0;padding:28px 30px 22px;text-align:center;background:none;border:0;border-bottom:1px solid var(--rm-linha,#E4E6EA)}
+#loginScreen .lc-head::after{content:"";position:absolute;left:0;right:0;bottom:-1px;height:4px;background:#F24619}
+#loginScreen .lc-head::before{content:"";position:absolute;left:0;right:0;bottom:-4.5px;height:1.5px;background:#141414;opacity:.85}
+#loginScreen .lc-head>img{display:block;height:56px;width:auto;max-width:100%;margin:0 auto 14px}
+#loginScreen .lc-head .ttl{font-size:10.5px;font-weight:700;letter-spacing:.19em;text-transform:uppercase;color:var(--rm-apagado,#5e6169);margin:0;line-height:1.3}
+#loginScreen .lc-head .sub{font-size:21px;font-weight:800;letter-spacing:-.015em;color:var(--rm-texto,#16171a);margin:7px 0 0;line-height:1.15;text-transform:none}
+#loginScreen .lc-body{padding:24px 30px 28px;margin:0}
+#loginScreen .lc-body :is(.f,.field){display:flex;flex-direction:column;gap:6px;margin:0 0 14px}
+#loginScreen .lc-body :is(.f,.field)>:is(.lab,label){font-size:11.5px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--rm-apagado,#5e6169);margin:0}
+#loginScreen .lc-body :is(.f,.field) input{width:100%;height:42px;box-sizing:border-box;margin:0;padding:0 12px;
+  border:1.5px solid var(--rm-linha-forte,#cfd3da);border-radius:var(--rm-raio,9px);background:var(--rm-superficie,#fff);color:var(--rm-texto,#16171a);font-size:15px;font-weight:600}
+#loginScreen .lc-body :is(.f,.field) input:focus{outline:0;border-color:var(--rm-marca,#D53309);box-shadow:0 0 0 3px rgba(242,70,24,.18)}
+#loginScreen #loginBtn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;height:44px;margin:8px 0 0;padding:0 16px;box-sizing:border-box;
+  border:0;border-radius:var(--rm-raio,9px);background:var(--rm-marca,#D53309);color:#fff;font-size:15px;font-weight:700;letter-spacing:0;text-transform:none;box-shadow:none;cursor:pointer}
+#loginScreen #loginBtn:hover{background:var(--rm-marca-escura,#9B2709)}
+#loginScreen #loginBtn:disabled{opacity:.7;cursor:default}
+#loginScreen .lc-body :is(.f,.field) input::placeholder{color:var(--rm-apagado,#5e6169);opacity:.75}
+#loginScreen .lc-body .rmp-lembrar{display:flex;margin:2px 0 6px;font-size:13.5px;font-weight:560;color:var(--rm-texto-2,#474e5c);text-transform:none;letter-spacing:normal}
+#loginScreen .login-mode{margin:12px 0 0;font-size:12.5px;color:var(--rm-apagado,#5e6169);text-align:center}
+#loginScreen .login-mode:empty{display:none}
+@media (max-width:420px){#loginScreen .lc-head{padding:24px 22px 20px}#loginScreen .lc-body{padding:22px 22px 24px}}
 </style>
 <script id="rmPortaBloco">
 (function(){
@@ -23267,6 +23307,10 @@ initAuth();
   var user = [].slice.call(card.querySelectorAll('input')).filter(function(i){ return i !== pass && i.type !== 'checkbox' && i.type !== 'hidden'; })[0];
   var btn = document.getElementById('loginBtn') || card.querySelector('button');
   if (!user || !btn) return;
+  /* o mesmo cartão em todos: o botão leva o ícone de entrada e o logo é a
+     assinatura inteira (símbolo, RM e Estruturas), nunca só o símbolo */
+  if (!btn.querySelector('svg')) btn.insertAdjacentHTML('afterbegin', '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4M10 17l5-5-5-5M15 12H3"/></svg>');
+  try { var lg = card.querySelector('.lc-head>img'); if (lg && typeof RM_ASSINATURA === 'string' && lg.getAttribute('src') !== RM_ASSINATURA) lg.src = RM_ASSINATURA; } catch(e){}
   var CHAVE = 'rm_login_lembrado';   // a mesma chave da Central (mesmo endereco na internet)
 
   function lembrado(){ try { var v = JSON.parse(localStorage.getItem(CHAVE) || 'null'); return (v && v.email) ? v : null; } catch(e){ return null; } }
@@ -23540,15 +23584,79 @@ initAuth();
       try { im.setAttribute('src', new URL(u, document.baseURI).href); } catch(e){}
     });
     try { var hd = clone.querySelector('head'); if (hd && !hd.querySelector('base')) { var bs = document.createElement('base'); bs.setAttribute('href', document.baseURI); hd.insertBefore(bs, hd.firstChild); } } catch(e){}
+    try { papelA(clone, document.documentElement, nomeProprio()); } catch(e){}
     return '<!DOCTYPE html>' + clone.outerHTML;
   }
+  /* PAPEL TIMBRADO (modelo A, PADRAO_RM 5). Todo documento com o timbrado
+     (.tb2) sai com o mesmo pé e o mesmo cabeçalho de continuação, montados
+     aqui na hora do PDF -- um lugar só para os quinze sistemas:
+       - rodapé em todas as páginas: telefone e Instagram | site | Página X de Y,
+         sobre um fio cinza (caixas de margem do @page, fora do texto);
+       - da página 2 em diante, no alto: o tipo e o título do documento em
+         laranja | RM Estruturas Pré-Fabricadas, sobre um fio cinza;
+       - o fio do cabeçalho: laranja de 2 px e, logo abaixo, o grafite fino.
+     Documento de medida exata (etiqueta, envelope, a folha do recibo em
+     margem 0) e o que não tem timbrado ficam como estão. */
+  var PE_FONE = '51 99789-7879', PE_INSTA = '@rm.estruturas', PE_SITE = 'www.rmestruturas.com.br';
+  function papelA(raiz, viva, nome){
+    if (!raiz || !raiz.querySelector || !raiz.querySelector('.tb2,.tb2-tipo') || raiz.querySelector('#rm-papel-a')) return false;
+    var css = [].map.call(raiz.querySelectorAll('style'), function(x){ return x.textContent || ''; }).join('\n');
+    var pags = css.match(/@page\s*\{[^}]*\}/g) || [], ult = pags.length ? pags[pags.length - 1] : '';
+    var mg = /margin(-bottom)?\s*:\s*([^;}]+)/.exec(ult), mb = mg ? mg[2].trim().split(/\s+/) : ['12mm'];
+    var baixo = mg && mg[1] ? mb[0] : (mb[2] || mb[0]);
+    if (/^0(px|mm)?$/.test(baixo)) return false;
+    var limpa = function(t){ return String(t || '').replace(/\s+/g, ' ').trim().replace(/["\\]/g, ''); };
+    /* o texto como se vê: um .tb2-tipo pode ter três nomes e mostrar um só
+       (o Orçamento: cliente, interno, fornecedor) */
+    var fonteTx = viva || raiz, ve = function(e){ return e ? (viva && e.innerText != null ? e.innerText : e.textContent) : ''; };
+    var tipo = limpa(ve(fonteTx.querySelector('.tb2-tipo'))), h1 = fonteTx.querySelector('h1');
+    var topo = (tipo.toUpperCase() + (h1 && limpa(ve(h1)) ? (tipo ? ' · ' : '') + limpa(ve(h1)) : '')).slice(0, 90);
+    /* o nome que o sistema dá ao arquivo ("Orçamento CLIENTE 12-11-2026")
+       é o nome do documento -- vale mais que o rótulo da folha */
+    nome = limpa(String(nome || '').replace(/\.pdf$/i, '').replace(/[_]+/g, ' '));
+    if (nome) topo = nome.slice(0, 90);
+    /* o pé antigo (fixo, dentro da página) sai: o novo mora na margem.
+       A linha de nota dele ("atualizado em") vai para o fim do documento. */
+    var nota = '';
+    [].slice.call(raiz.querySelectorAll('#rm-pe-imp,.pe,.sheetfoot')).forEach(function(e){
+      if (e.id !== 'rm-pe-imp' && e.textContent.toLowerCase().indexOf(PE_SITE) < 0) return;
+      var n = e.querySelector('.nota'); if (n && e.id === 'rm-pe-imp') nota = limpa(n.textContent);
+      if (e.parentNode) e.parentNode.removeChild(e); });
+    var corpo = raiz.querySelector('body') || raiz;
+    if (nota) { var nd = document.createElement('div'); nd.className = 'rm-nota-fim'; nd.textContent = nota; corpo.appendChild(nd); }
+    var fonte = 'font-family:Satoshi,Arial,sans-serif;font-size:7.5pt;color:#4A515B;';
+    var pe = fonte + 'border-top:.6pt solid #c9cdd2;vertical-align:top;padding-top:2.2mm;';
+    var al = fonte + 'border-bottom:.6pt solid #c9cdd2;vertical-align:bottom;padding-bottom:1.8mm;';
+    var st = document.createElement('style'); st.id = 'rm-papel-a';
+    st.textContent = '@page{margin-bottom:17mm;'
+      + '@bottom-left{content:"' + PE_FONE + ' · ' + PE_INSTA + '";' + pe + '}'
+      + '@bottom-center{content:"' + PE_SITE + '";' + pe + '}'
+      + '@bottom-right{content:"Página " counter(page) " de " counter(pages);' + pe + '}'
+      + '@top-left{content:"' + topo + '";' + al + 'font-weight:700;color:#C1310B;letter-spacing:.06em}'
+      + '@top-right{content:"RM Estruturas Pré-Fabricadas";' + al + 'color:#6E747C}}'
+      + '@page:first{@top-left{content:none;border:0}@top-right{content:none;border:0}}'
+      + '@media print{html body{padding-bottom:0!important}'
+      + '.head::after,.rm-cab::after,.cab::after{height:2px!important;background:#F24619!important;box-shadow:0 3.5px 0 -.5px #141414!important;'
+      + '-webkit-print-color-adjust:exact;print-color-adjust:exact}.head::before{display:none!important}'
+      + '.rm-nota-fim{margin-top:6mm;font-size:7pt;color:#6E747C;text-align:center}}';
+    (raiz.querySelector('head') || raiz).appendChild(st);
+    return true;
+  }
+  function papelAHTML(html, nome){
+    try {
+      var d = new DOMParser().parseFromString(String(html), 'text/html');
+      if (!papelA(d.documentElement, null, nome)) return html;
+      return '<!DOCTYPE html>' + d.documentElement.outerHTML;
+    } catch(e){ return html; }
+  }
+  window.rmPapelA = papelAHTML;
   var ocupado = false;
   /* Documento pronto (HTML inteiro, montado a parte): mesmo caminho do
      Imprimir. Devolve true se a ponte assumiu; false = o chamador segue com
      o jeito dele (janela nova + print no navegador). */
   window.rmImprimirHTML = function(html, nome){
     if (!ponte || ocupado) return false;
-    ocupado = true; nome = nome || nomeDoc();
+    ocupado = true; html = papelAHTML(html, nome); nome = nome || nomeDoc();
     if (ponte === 'app') {
       var gerar = window.rmDesktop.abrirPDF || window.rmDesktop.salvarPDF;
       gerar(html, nome).then(function(){ ocupado = false; }, function(){ ocupado = false; });

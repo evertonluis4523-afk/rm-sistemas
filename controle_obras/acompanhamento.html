@@ -170,6 +170,14 @@ html :where(input:not([type=checkbox]):not([type=radio]):not([type=range]):not([
 html :where(input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=color]):not([type=file]):not([type=hidden]),select,textarea):focus{
   outline:none;border-color:var(--rm-marca);box-shadow:var(--rm-foco);
 }
+/* ALTURA DO CAMPO. Campo sem altura escrita ficava no tamanho do navegador
+   (21 px no Corte, 24 no Máquinas) ou no que o recuo desse (45 px no
+   Perfitec, 30 no Orçamento): numa mesma tela, caixas de alturas
+   diferentes. Força zero (:where) -- quem escreve a altura continua
+   mandando; célula de tabela fica de fora (linha de lista é baixinha). */
+html :where(input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=color]):not([type=file]):not([type=hidden]):not([type=image]):not([type=button]):not([type=submit]):not([type=reset]),select:not([multiple]):not([size])):where(:not(td *,th *)){
+  height:var(--rm-ctl);box-sizing:border-box;
+}
 html :where(input,select,textarea):disabled{opacity:.6;cursor:not-allowed}
 html :where(input,select,textarea)::placeholder{color:var(--rm-apagado);opacity:.8}
 

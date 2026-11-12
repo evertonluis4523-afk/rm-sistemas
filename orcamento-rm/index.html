@@ -1287,7 +1287,7 @@ input,textarea,select{font-family:inherit;color:inherit}
 .appbar .rm-logo{height:26px;width:auto;display:block}
 .appbar .spacer{flex:1}
 .supwrap{display:flex;align-items:center;gap:7px;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:#aeb4bd;font-weight:560}
-.supwrap select{background:#2a2f37;color:#fff;border:1px solid #3a4049;border-radius:6px;padding:6px 9px;font-size:14px;letter-spacing:0;text-transform:none;font-weight:600}
+.supwrap select{background:#2a2f37;color:#fff;border:1px solid #3a4049;border-radius:var(--rm-raio,9px);padding:0 9px;height:var(--rm-ctl-p,32px);font-size:14px;letter-spacing:0;text-transform:none;font-weight:600}
 .btn{border:1px solid #3a4049;background:#2a2f37;color:#fff;border-radius:7px;padding:7px 12px;font-size:14px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:.12s}
 .btn:hover{background:#363c45;border-color:#4a515b}
 .btn.primary{background:var(--red);border-color:var(--red)}
@@ -1391,7 +1391,7 @@ body.pm-fornecedor .sheetfoot .ft-fornecedor{display:inline}
 @media screen and (max-width:720px){.addzone>.searchbox{padding:12px}}
 .searchbox .lab{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:700;margin-bottom:6px;display:flex;align-items:center;gap:8px}
 .searchbox .lab .hint{font-weight:560;letter-spacing:0;text-transform:none;color:#5F656E;font-size:12px}
-.search-in{display:flex;align-items:center;gap:8px;border:1.5px solid var(--line);border-radius:9px;padding:9px 12px;background:#fafbfc;transition:.12s}
+.search-in{display:flex;align-items:center;gap:8px;border:1.5px solid var(--line);border-radius:9px;padding:0 12px;height:var(--rm-ctl,38px);box-sizing:border-box;background:#fafbfc;transition:.12s}
 .search-in:focus-within{border-color:var(--red);background:#fff;box-shadow:0 0 0 3px var(--red-soft)}
 .search-in svg{width:16px;height:16px;color:var(--muted);flex:none}
 .search-in input{flex:1;border:0;outline:0;background:transparent;font-size:14px;font-family:var(--mono);font-weight:500}
@@ -1413,7 +1413,7 @@ html .search-in input:focus{box-shadow:none}
 .qadd-btn{align-self:flex-end;height:42px;white-space:nowrap;flex:none}
 .catsel-wrap{display:flex;flex-direction:column;gap:4px;flex:none}
 .catsel-wrap label{font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-weight:700;padding-left:2px}
-.catsel-wrap select{height:42px;width:184px;border:1.5px solid var(--line);border-radius:9px;padding:0 10px;font-weight:600;background:#fafbfc;font-size:14px}
+.catsel-wrap select{height:var(--rm-ctl,38px);width:184px;border:1.5px solid var(--line);border-radius:9px;padding:0 10px;font-weight:600;background:#fafbfc;font-size:14px}
 .catsel-wrap select:focus{outline:0;border-color:var(--red);background:#fff;box-shadow:0 0 0 3px var(--red-soft)}
 .addrow-actions{display:flex;gap:10px;flex-wrap:wrap;padding-top:2px}
 .chip.big{padding:11px 16px;font-size:14px;border-radius:10px;font-weight:505}
@@ -1620,7 +1620,7 @@ table.items tbody tr.dragover td{box-shadow:inset 0 2px 0 var(--red)}
 .totrow{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--line-2);font-size:14px}
 .totrow .k{color:var(--muted)}
 .totrow .v{font-family:var(--mono);font-weight:600}
-.totrow .pct{width:58px;text-align:right;border:1px solid var(--line);border-radius:6px;padding:4px 6px;font-family:var(--mono);font-weight:600;font-size:14px}
+.totrow .pct{width:58px;text-align:right;border:1px solid var(--line);border-radius:var(--rm-raio,9px);padding:0 6px;font-family:var(--mono);font-weight:600;font-size:14px}
 .totrow .pct:focus{outline:0;border-color:var(--red);box-shadow:0 0 0 2px var(--red-soft)}
 .grand{margin-top:6px;background:var(--ink);color:#fff;border-radius:10px;padding:13px 16px;display:flex;justify-content:space-between;align-items:center}
 .grand .k{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:#aeb4bd;font-weight:700}
@@ -1814,9 +1814,12 @@ table.items tbody tr.dragover td{box-shadow:inset 0 2px 0 var(--red)}
 .saved-sync span{color:inherit;opacity:.85}
 .saved-sync .btn-sm{margin-left:6px;padding:3px 10px;font-size:12px}
 .cat-forn-sec{float:right;font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:none;color:var(--muted)}
-.cat-forn-sec select,.cat-forn-l{font:inherit;font-size:11.5px;padding:1px 4px;border:1px solid var(--line);border-radius:6px;background:var(--surface,#fff);color:var(--ink)}
+.cat-forn-sec select,.cat-forn-l{font:inherit;font-size:13px;padding:0 6px;height:var(--rm-ctl-p,32px);border:1px solid var(--line);border-radius:var(--rm-raio,9px);background:var(--surface,#fff);color:var(--ink)}
 .dbtbl td.r,.dbtbl th.r{text-align:right}
-.din{border:1px solid var(--line);border-radius:6px;padding:5px 7px;font-size:14px;width:100%;background:#fff;font-weight:505}
+.din{border:1px solid var(--line);border-radius:var(--rm-raio,9px);padding:0 10px;height:var(--rm-ctl,38px);box-sizing:border-box;font-size:14px;width:100%;background:#fff;font-weight:505}
+/* campo dentro de tabela fica baixinho (linha de catálogo); texto longo cresce */
+td .din{height:30px;padding:3px 7px;border-radius:var(--rm-raio-p,7px)}
+textarea.din{height:auto;padding:8px 10px}
 .din:focus{outline:0;border-color:var(--red);box-shadow:0 0 0 2px var(--red-soft)}
 .din.mono{font-family:var(--mono);font-weight:600}
 .din.r{text-align:right}
@@ -1881,7 +1884,7 @@ table.items tbody tr.dragover td{box-shadow:inset 0 2px 0 var(--red)}
 .edit-telha-modal .mhead .x:hover{background:var(--red)}
 .edit-telha-modal .mbody{padding:20px 22px}
 .edit-telha-modal .mfoot{display:flex;gap:8px;align-items:center;padding:14px 22px;border-top:1px solid var(--line);background:#f7f8f9;justify-content:flex-end}
-.dbsearch{display:flex;align-items:center;gap:8px;border:1px solid var(--line);border-radius:8px;padding:7px 11px;margin-bottom:12px;background:#fafbfc}
+.dbsearch{display:flex;align-items:center;gap:8px;border:1px solid var(--line);border-radius:9px;padding:0 11px;height:var(--rm-ctl,38px);box-sizing:border-box;margin-bottom:12px;background:#fafbfc}
 .dbsearch input{border:0;outline:0;background:transparent;flex:1;font-size:14px;font-family:var(--mono);font-weight:505}
 .dbsearch svg{width:15px;height:15px;color:var(--muted)}
 .mfoot{display:flex;gap:8px;align-items:center;padding:14px 22px;border-top:1px solid var(--line);background:#f7f8f9;flex-wrap:wrap}
@@ -2170,7 +2173,7 @@ table.reltbl td.r,table.reltbl th.r{text-align:right;font-family:var(--mono)}
 
 /* ===== Ajustes: densidade compacta ===== */
 body.ui-compact td,body.ui-compact th{padding-top:5px;padding-bottom:5px}
-body.ui-compact .din{padding:5px 7px}
+body.ui-compact td .din{padding:3px 7px}
 body.ui-compact .sheet{font-size:13px;font-weight:505}
 /* ===== Ajustes: liga/desliga recursos ===== */
 body.off-chapas [data-tab="chapas"]{display:none!important}
@@ -2976,9 +2979,9 @@ function nomeArquivoSeguro(s,limite){
   text-transform:none;white-space:nowrap;cursor:default;user-select:all}
 @media print{.appbar .verpill{display:none!important}}
 .cp-panel{margin:20px 0;border:1px solid #dce3ed;border-radius:12px;padding:18px;background:#f7f9fc;color:#253249}.cp-panel summary{cursor:pointer;font-size:17px;font-weight:750}.cp-note{font-size:13px;line-height:1.6;color:#576577;margin:10px 0;font-weight:530}.cp-table{width:100%;border-collapse:collapse;font-size:13px;font-weight:530}.cp-table th,.cp-table td{padding:9px 6px;border-bottom:1px solid #dee5ef;text-align:left;vertical-align:top}.cp-table th{font-size:11px;text-transform:uppercase;color:#5d6878;font-weight:600}.cp-table select{max-width:230px;padding:7px;border:1px solid #ccd5e0;border-radius:6px;background:#fff}.cp-table small{display:block;margin-top:4px;color:#657185}.cp-good{color:#087443}.cp-bad{color:#b43d19}.cp-scroll{overflow:auto}.cp-dialog{width:min(720px,94vw);max-height:90vh;overflow:auto;border:1px solid #d2dbe8;border-radius:14px;padding:24px;color:#233046;box-shadow:0 20px 80px #0003}.cp-dialog::backdrop{background:#14233488}.cp-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:14px 0}.cp-grid label{font-size:13px;font-weight:600}.cp-grid input,.cp-grid select{width:100%;margin-top:6px;padding:10px;border:1px solid #ccd5e0;border-radius:6px;font:inherit}.cp-dialog button,.cp-panel button{padding:8px 12px;border:1px solid #cbd5e0;border-radius:6px;background:#fff;color:inherit;cursor:pointer}.cp-dialog .primary{background:#bc350e;color:#fff}.cp-tag{display:block;font-size:12px;margin:4px 0;color:#496182;font-weight:560}.cp-print-status{display:none}.sheet.supplier .cp-panel{display:none}.cp-report{display:none}.cp-total{padding:12px;background:#eaf0f7;border-radius:8px;margin-top:10px;font-size:14px;font-weight:505}.cp-warn{padding:10px;background:#fff1df;color:#8a4704;margin:10px 0;font-size:13px;font-weight:530}
-.cp-groups{display:grid;grid-template-columns:repeat(auto-fit,minmax(245px,1fr));gap:10px;margin:10px 0 18px}.cp-group{border:1px solid #dce3ed;border-radius:10px;background:#fff;padding:13px;min-width:0}.cp-group.isolated{border-color:#f0b39f;background:#fffaf8}.cp-group-title{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:9px}.cp-group-title b{font-size:14px}.cp-group-title span{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:#8b5a49;background:#fff0eb;border-radius:999px;padding:4px 7px;font-weight:750}.cp-group-fields{display:grid;grid-template-columns:1.15fr .85fr;gap:8px}.cp-group-fields.one{grid-template-columns:1fr}.cp-group label{font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:#697587;font-weight:700}.cp-group select,.cp-group input{width:100%;margin-top:5px;padding:8px;border:1px solid #ccd5e0;border-radius:6px;background:#fff;font:inherit;color:#253249}.cp-group-meta{margin-top:9px;font-size:12px;line-height:1.45;color:#657185}.cp-group-result{margin-top:7px;font-size:12px;font-weight:700}.cp-group-result.good{color:#087443}.cp-group-result.bad{color:#b43d19}
+.cp-groups{display:grid;grid-template-columns:repeat(auto-fit,minmax(245px,1fr));gap:10px;margin:10px 0 18px}.cp-group{border:1px solid #dce3ed;border-radius:10px;background:#fff;padding:13px;min-width:0}.cp-group.isolated{border-color:#f0b39f;background:#fffaf8}.cp-group-title{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:9px}.cp-group-title b{font-size:14px}.cp-group-title span{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:#8b5a49;background:#fff0eb;border-radius:999px;padding:4px 7px;font-weight:750}.cp-group-fields{display:grid;grid-template-columns:1.15fr .85fr;gap:8px}.cp-group-fields.one{grid-template-columns:1fr}.cp-group label{font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:#697587;font-weight:700}.cp-group select,.cp-group input{width:100%;margin-top:5px;padding:0 8px;border:1px solid #ccd5e0;border-radius:var(--rm-raio,9px);background:#fff;font:inherit;font-size:14px;color:#253249}.cp-group-meta{margin-top:9px;font-size:12px;line-height:1.45;color:#657185}.cp-group-result{margin-top:7px;font-size:12px;font-weight:700}.cp-group-result.good{color:#087443}.cp-group-result.bad{color:#b43d19}
 /* ===================== CHAVE NA MAO ===================== */
-.cnm-obra{display:grid;grid-template-columns:2fr 1.3fr .8fr;gap:12px}
+.cnm-obra{display:grid;grid-template-columns:2fr 1.3fr .8fr;gap:12px;align-items:end}
 .cnm-obra label{display:block}
 .cnm-k{display:block;font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--muted,#6b7280);margin-bottom:5px}
 .cnm-in{width:100%;box-sizing:border-box;border:1px solid var(--line,#e6e7ea);border-radius:9px;padding:9px 11px;font:inherit;font-size:14px;font-weight:600;background:#fff;color:var(--ink,#17181b)}
@@ -3120,7 +3123,8 @@ function nomeArquivoSeguro(s,limite){
 .esq-f{display:flex;flex-direction:column;gap:3px}
 .esq-f>span{font-size:11px;text-transform:uppercase;letter-spacing:.05em;font-weight:800;color:var(--muted,#6b7280)}
 .esq-f input,.esq-f select,.esq-f textarea{width:100%;font:inherit;font-size:14px;padding:6px 8px;
-  border:1px solid var(--line,#d9dbe0);border-radius:6px;background:#fff;font-weight:505}
+  border:1px solid var(--line,#d9dbe0);border-radius:var(--rm-raio,9px);background:#fff;font-weight:505}
+.esq-f :is(input,select){padding-top:0;padding-bottom:0}
 .esq-f textarea{resize:vertical;min-height:38px}
 .esq-campos .w1{grid-column:span 1}.esq-campos .w2{grid-column:span 2}.esq-campos .w3{grid-column:span 3}.esq-campos .w4{grid-column:span 4}
 .esq-campos .w5{grid-column:span 5}.esq-campos .w6{grid-column:span 6}.esq-campos .w12{grid-column:span 12}
@@ -3428,6 +3432,14 @@ html :where(input:not([type=checkbox]):not([type=radio]):not([type=range]):not([
 }
 html :where(input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=color]):not([type=file]):not([type=hidden]),select,textarea):focus{
   outline:none;border-color:var(--rm-marca);box-shadow:var(--rm-foco);
+}
+/* ALTURA DO CAMPO. Campo sem altura escrita ficava no tamanho do navegador
+   (21 px no Corte, 24 no Máquinas) ou no que o recuo desse (45 px no
+   Perfitec, 30 no Orçamento): numa mesma tela, caixas de alturas
+   diferentes. Força zero (:where) -- quem escreve a altura continua
+   mandando; célula de tabela fica de fora (linha de lista é baixinha). */
+html :where(input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=color]):not([type=file]):not([type=hidden]):not([type=image]):not([type=button]):not([type=submit]):not([type=reset]),select:not([multiple]):not([size])):where(:not(td *,th *)){
+  height:var(--rm-ctl);box-sizing:border-box;
 }
 html :where(input,select,textarea):disabled{opacity:.6;cursor:not-allowed}
 html :where(input,select,textarea)::placeholder{color:var(--rm-apagado);opacity:.8}
@@ -4251,7 +4263,7 @@ body[data-theme="escuro"] .cob-t input[type=date]{color-scheme:dark}
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4M10 17l5-5-5-5M15 12H3"/></svg>
         Entrar
       </button>
-      <div class="login-mode" id="loginMode">Acesso protegido por login · Firebase Authentication</div>
+      <div class="login-mode" id="loginMode"></div>
     </div>
   </div>
 </div>
@@ -4519,7 +4531,7 @@ body[data-theme="escuro"] .cob-t input[type=date]{color-scheme:dark}
     <!-- PREÇO POR KG (perfis): uma coluna por fornecedor -->
     <div class="panel" data-panel="forn">
       <div class="db-h"><h3>Preço por kg dos perfis</h3><span class="s" id="kgSub"></span><span class="sp"></span></div>
-      <p class="note">O total de cada perfil é peso × R$/kg da espessura. Cada fornecedor tem a sua coluna; o menor preço de cada espessura fica em verde. O orçamento usa o fornecedor escolhido nele.</p>
+      <p class="note">Total = peso × R$/kg da espessura; o menor de cada espessura em verde.</p>
       
       <div class="db-tw"><table class="dbtbl limpa"><thead id="fornHead"></thead><tbody id="fornBody"></tbody></table></div>
     </div>
@@ -4527,8 +4539,8 @@ body[data-theme="escuro"] .cob-t input[type=date]{color-scheme:dark}
     <!-- PERFIS -->
     <div class="panel" data-panel="perfis">
       <div class="db-h"><h3>Perfis</h3><span class="s"><span id="perfilCount">0</span> perfis · preço pela espessura, em Preço por kg</span></div>
-      <p class="note">O peso é calculado por <b>Larg. × espessura × comprimento × densidade</b> — a mesma fórmula da sua planilha. <b>Larg.</b> é a largura da bobina (slitter), em mm. Recalcula conforme o comprimento digitado.</p>
-      <p class="note"><b>Produção</b> diz onde a Perfitec faz o perfil, e o <b>Corte de Estruturas</b> lê daqui: o que sai da <b>perfiladeira</b> detalhado mantém o preço por quilo da barra; o que sai de <b>corte e dobra</b> paga o R$/kg de detalhamento. Perfil que não está neste cadastro é tratado como corte e dobra.</p>
+      <p class="note">Peso = Larg. (slitter) × espessura × comprimento × densidade.</p>
+      <p class="note"><b>Produção</b>: perfiladeira ou corte e dobra (lido pelo Corte de Estruturas).</p>
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
         <span style="font-size:12px;color:var(--muted);font-weight:600">Densidade do aço (kg/m³):</span>
         <input class="din mono sm" id="densInput" style="width:84px" value="8000" onchange="setDens(this.value)">
@@ -4606,7 +4618,7 @@ body[data-theme="escuro"] .cob-t input[type=date]{color-scheme:dark}
     <!-- CHAPAS / BOBINAS (R$/kg) -->
     <div class="panel" data-panel="chapas">
       <div class="db-h"><h3>Chapas e bobinas</h3><span class="s">R$ por kg</span></div>
-      <p class="note">Vendidas por kg — para orçar, use o botão <b>🧮 Calcular perfil</b>, escolha o material aqui cadastrado e informe as dimensões. Valores sem IPI (use o IPI 3,25% na calculadora).</p>
+      <p class="note">Por kg, sem IPI — orce pelo <b>🧮 Calcular perfil</b>.</p>
       <div class="db-bar"><span class="note" style="margin:0">Uma coluna por fornecedor; o menor preço de cada material fica em verde.</span></div>
       <div class="db-tw"><table class="dbtbl limpa"><thead id="chapasHead"></thead>
         <tbody id="chapasBody"></tbody></table></div>
@@ -4628,7 +4640,7 @@ body[data-theme="escuro"] .cob-t input[type=date]{color-scheme:dark}
         <div class="f" style="grid-column:span 4"><span class="lab">Próximo nº</span><input class="din mono r" id="e_solseq" placeholder="1"></div>
         <div class="f" style="grid-column:span 4;align-self:end"><span class="note">Próxima: <b id="e_solprev" class="mono">SOL-0001</b></span></div>
       </div>
-      <p class="note" style="margin-top:8px">O "Orçamento Nº" do documento do fornecedor é gerado sozinho (sequencial) ao entrar no modo fornecedor. Ajuste aqui para alinhar com seu controle. O prefixo é livre — quem já enviou documentos com um prefixo não deve trocá-lo, senão a numeração perde a sequência com o que o fornecedor recebeu.</p>
+      <p class="note" style="margin-top:8px">Numeração sequencial do documento ao fornecedor.</p>
     </div>
 
   </div>
@@ -4663,14 +4675,14 @@ body[data-theme="escuro"] .cob-t input[type=date]{color-scheme:dark}
     <button class="x" onclick="closeImport()">&times;</button>
   </div>
   <div class="mbody">
-    <p class="note">Cole os dados da tabela do fornecedor (uma linha por item). Funciona ao copiar direto do Excel (colunas separadas por TAB) ou CSV com ponto e vírgula. O app casa pela <b>descrição</b> e atualiza o preço (último número da linha). Para <b>Preços/kg</b> de fornecedor, cole <b>espessura e preço</b> — ex.: <span class="mono">2,65 ; 8,96</span> (uma por linha).</p>
+    <p class="note">Uma linha por item, do Excel ou CSV. Preços/kg: <span class="mono">2,65 ; 8,96</span>.</p>
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;flex-wrap:wrap">
       <span style="font-size:12px;color:var(--muted);font-weight:600">Atualizar:</span>
       <select id="importTarget" class="din" style="width:auto" onchange="importFornVisivel()"></select>
       <span id="importFornW" style="display:inline-flex;align-items:center;gap:8px"><span style="font-size:12px;color:var(--muted);font-weight:600">Preços de:</span>
       <select id="importForn" class="din" style="width:auto"></select></span>
     </div>
-    <textarea id="importText" placeholder="BARRA CHATA 1/2 X 3/16 (12,7 X 4,75);0,45;R$ 13,15&#10;CANTONEIRA 1 X 1/8 (25,4 X 3,17);1,2;R$ 38,20" style="width:100%;min-height:170px;border:1px solid var(--line);border-radius:9px;padding:11px;font-family:var(--mono);font-size:12px;background:#fafbfc"></textarea>
+    <textarea id="importText" placeholder="BARRA CHATA 1/2 X 3/16 (12,7 X 4,75);0,45;R$ 13,15&#10;CANTONEIRA 1 X 1/8 (25,4 X 3,17);1,2;R$ 38,20" style="width:100%;min-height:170px;border:1px solid var(--line);border-radius:9px;padding:11px;font-family:var(--mono);font-size:13px;background:#fafbfc"></textarea>
     <div id="importPreview"></div>
   </div>
   <div class="mfoot">
@@ -4728,7 +4740,7 @@ body[data-theme="escuro"] .cob-t input[type=date]{color-scheme:dark}
         <div class="calc-line"><span>Peso total</span><b id="calcPesoTot">0,00 kg</b></div>
         <div class="calc-line">
           <span>Material</span>
-          <select class="din" id="calcMat" style="flex:1;max-width:240px;height:34px;border:1.5px solid var(--line);border-radius:8px;padding:0 8px;font-size:12px;font-weight:600;background:#fafbfc" onchange="calcPickMat()"></select>
+          <select class="din" id="calcMat" style="flex:1;max-width:240px;border:1.5px solid var(--line);border-radius:var(--rm-raio,9px);padding:0 8px;font-size:14px;font-weight:600;background:#fafbfc" onchange="calcPickMat()"></select>
         </div>
         <div class="calc-line">
           <span>R$/kg</span>
@@ -4762,7 +4774,7 @@ body[data-theme="escuro"] .cob-t input[type=date]{color-scheme:dark}
     <button class="x" onclick="closeCatalogos()">&times;</button>
   </div>
   <div class="mbody">
-    <p class="note" style="margin:0 0 12px;line-height:1.5">Tabelas da Perfitec para consulta rápida (inclusive de itens fora do cadastro). Abrem no leitor de PDF do navegador — use <b>Ctrl+F</b> para localizar o item e ver o preço. Quando chegar uma tabela nova, suba o PDF na mesma pasta do app no GitHub e, se o nome mudar, ajuste o campo "Arquivo" aqui.</p>
+    <p class="note" style="margin:0 0 12px;line-height:1.5">Tabelas da Perfitec em PDF (<b>Ctrl+F</b> para achar o item).</p>
     <table class="dbtbl"><thead><tr><th class="l">Catálogo</th><th class="l">Arquivo (.pdf no GitHub)</th><th style="width:74px">Data</th><th style="width:120px"></th></tr></thead>
       <tbody id="catalogosBody"></tbody></table>
     <div class="row-form" style="margin-top:12px">
@@ -4788,7 +4800,7 @@ body[data-theme="escuro"] .cob-t input[type=date]{color-scheme:dark}
     <button class="x" onclick="closeBras()">&times;</button>
   </div>
   <div class="mbody">
-    <p class="note" style="margin:0 0 4px;line-height:1.5">Itens do catálogo da Brastelha (2025) com a largura útil <b>dela</b> — a TP-40 Brastelha tem 980 mm úteis; a da Perfitec, 1020. O item adicionado entra na lista de telhas com a compra marcada na Brastelha.</p>
+    <p class="note" style="margin:0 0 4px;line-height:1.5">Catálogo Brastelha 2025, com a largura útil dela.</p>
     <div class="row-form bras-grid" id="brasSel"></div>
     <div class="bras-ficha" id="brasFicha"></div>
     <div id="brasAcoes" style="display:none">
@@ -4808,7 +4820,7 @@ body[data-theme="escuro"] .cob-t input[type=date]{color-scheme:dark}
     <table class="dbtbl"><tbody id="brasPrecos"></tbody></table>
     <div class="reajuste-bar" style="margin-top:10px">
       <span>Reajuste de todos os preços da Brastelha:</span>
-      <input id="brasReaj" class="din mono r" style="width:64px" autocomplete="off"> %
+      <input id="brasReaj" class="din mono r" style="width:64px" autocomplete="off" aria-label="Reajuste (%)"> %
       <button class="btn-sm red" onclick="brasReajusta()">Aplicar</button>
     </div>
   </div>
@@ -4826,7 +4838,7 @@ body[data-theme="escuro"] .cob-t input[type=date]{color-scheme:dark}
  <div class="modal" style="max-width:720px">
   <div class="mhead"><h2>Recuperar o que sumiu do cadastro</h2><button class="x" onclick="recFechar()">&times;</button></div>
   <div class="mbody">
-    <p class="note" style="margin:0 0 10px">Escolha de onde recuperar. Só entra o que <b>não existe</b> no cadastro de agora — categorias, itens, fornecedores e preços. Nada é apagado nem alterado.</p>
+    <p class="note" style="margin:0 0 10px">Só entra o que não existe no cadastro de agora.</p>
     <div id="recFontes" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px"></div>
     <div id="recLista"></div>
   </div>
@@ -4887,7 +4899,7 @@ body[data-theme="escuro"] .cob-t input[type=date]{color-scheme:dark}
     <div class="ctrl-stats" id="ctrlStats"></div>
     <div class="ctrl-wrap"><table class="ctrltbl" id="ctrlTable"></table></div>
   </div>
-  <div class="mfoot"><span class="note">Digite os valores diretamente nos campos de cada fornecedor. O menor preço por obra fica destacado em verde. Use a barra horizontal para comparar todos os fornecedores. As alterações são salvas automaticamente.</span><span class="spacer"></span><button class="btn-sm red" onclick="closeControle()">Fechar</button></div>
+  <div class="mfoot"><span class="note">O menor preço por obra fica em verde.</span><span class="spacer"></span><button class="btn-sm red" onclick="closeControle()">Fechar</button></div>
  </div>
 </div>
 
@@ -4909,7 +4921,7 @@ body[data-theme="escuro"] .cob-t input[type=date]{color-scheme:dark}
     </div>
     <div id="relvBody"></div>
   </div>
-  <div class="mfoot"><span class="note">Alimentado pelos orçamentos salvos — marque o status (aberto/enviado/aprovado/perdido) na lista de salvos. Registrar a compra de uma obra em Cotações (histórico) já marca o orçamento dela como aprovado. A coluna Economia vem dessas compras.</span><span class="spacer"></span><button class="btn-sm red" onclick="closeRelatorio()">Fechar</button></div>
+  <div class="mfoot"><span class="note">Pelo status dos orçamentos salvos.</span><span class="spacer"></span><button class="btn-sm red" onclick="closeRelatorio()">Fechar</button></div>
  </div>
 </div>
 
@@ -4921,7 +4933,7 @@ body[data-theme="escuro"] .cob-t input[type=date]{color-scheme:dark}
   <div class="mhead"><h2 id="askTitle">Digite</h2><button class="x" onclick="askClose(null)">&times;</button></div>
   <div class="mbody">
     <div id="askMsg"></div>
-    <input id="askInput" autocomplete="off" onkeydown="if(event.key==='Enter'){event.preventDefault();askOk();} if(event.key==='Escape'){askClose(null);}">
+    <input id="askInput" aria-label="Resposta" autocomplete="off" onkeydown="if(event.key==='Enter'){event.preventDefault();askOk();} if(event.key==='Escape'){askClose(null);}">
   </div>
   <div class="mfoot">
     <button class="btn-sm red" onclick="askOk()">Confirmar</button>
@@ -4995,7 +5007,7 @@ body[data-theme="escuro"] .cob-t input[type=date]{color-scheme:dark}
 <div id="cnmHost" hidden>
   <div class="esq-topo">
     <div><h2 class="esq-h">Chave na mão</h2>
-      <p class="esq-sub">O que vai em cada serviço, item por item, e o valor de cada serviço — por m² ou o total. Serviços e itens são livres — acrescente quantos precisar.</p></div>
+      <p class="esq-sub">Itens e valor de cada serviço, por m² ou total.</p></div>
     <span style="flex:1"></span>
 
   </div>
@@ -8773,7 +8785,7 @@ function recArquivo(ev){
 }
 function recMostra(fonte){
   const lista=document.getElementById('recLista'),bt=document.getElementById('recAplicar'),res=document.getElementById('recResumo');
-  if(!fonte){REC_ITENS=[];lista.innerHTML='<p class="note">'+(REC_FONTES.length?'Escolha uma cópia acima.':'Este aparelho não tem cópia anterior guardada. Use ☁ Versões na nuvem, ou o arquivo de backup da Central (pasta de backups, arquivos rm-backup-…json).')+'</p>';bt.disabled=true;res.textContent='';return;}
+  if(!fonte){REC_ITENS=[];lista.innerHTML='<p class="note">'+(REC_FONTES.length?'Escolha uma cópia acima.':'Sem cópia neste aparelho. Use ☁ Versões na nuvem.')+'</p>';bt.disabled=true;res.textContent='';return;}
   REC_ITENS=recDiff(fonte.dados);
   if(!REC_ITENS.length){lista.innerHTML='<p class="note">Nada desta cópia está faltando no cadastro de agora.</p>';bt.disabled=true;res.textContent='';return;}
   lista.innerHTML=REC_ITENS.map((it,i)=>'<label style="display:flex;gap:8px;align-items:flex-start;padding:6px 2px;border-bottom:1px solid var(--line,#eee);cursor:pointer"><input type="checkbox" data-rec="'+i+'" checked style="margin-top:3px"><span>'+it.rot+'</span></label>').join('');
@@ -8887,7 +8899,7 @@ function renderAjustes(){
     '<div class="cfg-tog"><div><div class="t">Densidade</div><div class="s">Compacta mostra mais itens na tela.</div></div>'+seg('densidadeUI',[['normal','Normal'],['compacta','Compacta']])+'</div>'+
   '</div>'+
   '<div class="cfg-sec"><h3>Textos do impresso</h3>'+
-    '<div class="s" style="margin:0 0 8px;color:var(--muted);font-size:12px">Condições que saem no fim do impresso. Uma por linha; o que vem antes de “:” sai em negrito. Cada orçamento pode mudar o seu no botão Impresso.</div>'+
+    '<div class="s" style="margin:0 0 8px;color:var(--muted);font-size:12px">Uma por linha; antes de “:” sai em negrito.</div>'+
     '<div class="row-form"><div class="f" style="grid-column:1/-1"><div class="lab">Fornecedor (solicitação de cotação)</div><textarea class="din" rows="4" id="cfgCondForn" onchange="setCfgInput(\'condFornecedor\',this.value)">'+escapeAttr(orcDocCondPadrao('fornecedor'))+'</textarea></div>'+
     '<div class="f" style="grid-column:1/-1"><div class="lab">Cliente (orçamento)</div><textarea class="din" rows="4" id="cfgCondCli" onchange="setCfgInput(\'condCliente\',this.value)">'+escapeAttr(orcDocCondPadrao('cliente'))+'</textarea></div></div>'+
   '</div>'+
@@ -8943,8 +8955,7 @@ function usoSecaoAjustes(){
   const total=r.perfis+r.telhas+r.cat+r.frete;
   return '<div class="cfg-sec"><h3>Memória de uso</h3>'+
     '<div class="cfg-tog"><div><div class="t">Aprender com o meu uso</div>'+
-      '<div class="s">Conta quantas vezes você adiciona cada perfil, telha e item, e guarda o último frete de cada fornecedor. '+
-      'Com a busca vazia, a lista abre nos seus mais usados; com algo digitado, o uso só desempata \u2014 nunca passa na frente de quem casa melhor com o que você escreveu.</div></div>'+
+      '<div class="s">A busca vazia abre nos mais usados.</div></div>'+
       '<label class="cfg-sw"><input type="checkbox" '+(ligada?'checked':'')+' onchange="setCfg(\'memoriaUso\',this.checked)"><span class="k"></span></label></div>'+
     '<div class="s" style="margin-top:10px">'+
       pl(r.perfis,'perfil','perfis')+' \u00b7 '+pl(r.telhas,'telha','telhas')+' \u00b7 '+
@@ -9565,7 +9576,7 @@ function cobRender(){
   const host=document.getElementById('cobBody'); if(!host) return;
   const obras=cobObras().slice().sort((a,b)=>String(b.lancadaEm||'').localeCompare(String(a.lancadaEm||''))||cobQuando(b)-cobQuando(a));
   if(!obras.length){
-    host.innerHTML='<div class="cob-vazio"><b>Nenhuma obra lançada ainda.</b><span>Escolha o orçamento da obra fechada e clique em <b>+ Lançar obra</b> (ou use "Lançar no Compras da obra" no orçamento, na aba Salvos): as linhas do orçamento entram prontas. Obra antiga, que não tem orçamento aqui, entra em <b>Obra sem orçamento no sistema</b>.</span>'+cobLancaHTML()+'</div>';
+    host.innerHTML='<div class="cob-vazio"><b>Nenhuma obra lançada ainda.</b><span>Escolha o orçamento da obra fechada e clique em <b>+ Lançar obra</b>.</span>'+cobLancaHTML()+'</div>';
     cobBadge(); return;
   }
   if(!COB_SEL||!obras.some(o=>o.id===COB_SEL)) COB_SEL=obras[0].id;
@@ -9604,7 +9615,7 @@ function cobRender(){
     ls.forEach(l=>{ h+=cobLinhaHTML(l); });
     h+='<tr class="cob-add"><td></td><td colspan="8"><button type="button" class="cob-mais" onclick="cobNovaLinha(\''+g+'\')">+ '+(g==='srv'?'Serviço':'Item')+' em '+rot+'</button></td></tr>';
   });
-  h+='</tbody></table></div><p class="cob-nota">Desmarcado em "Na obra": o item fica riscado e sai das contas, mas continua na lista para lembrar que foi decidido. Entrega em partes: "Partes" abre uma entrega por carga. Pedido e nota ficam salvos neste aparelho.</p>';
+  h+='</tbody></table></div>';
   host.innerHTML='<div class="cob"><nav class="cob-lista" aria-label="Obras fechadas">'+lista+'</nav><div class="cob-det">'+h+'</div></div>';
   cobBadge();
 }
@@ -10329,7 +10340,7 @@ function applyImport(){
    publicacao, e ha uma prova automatica que falha se um subir sem o outro.
    Assim o numero na tela e' o mesmo do arquivo que o aparelho guardou, e
    dizer "estou na v15" passa a significar alguma coisa. */
-const APP_VER='v154';
+const APP_VER='v155';
 (function(){ try{ const p=document.getElementById('verPill'); if(p)p.textContent=APP_VER; }catch(e){} })();
 /* Versao nova assumiu com a pagina aberta: avisa, em vez de recarregar por
    conta propria e jogar fora um orcamento pela metade. */
@@ -10562,9 +10573,7 @@ function esqRender(){
   esqPadRender(); esqVistaMarca();
   const ad=document.getElementById('esqAdd'); if(ad&&!ad.firstChild) esqAddRender();
   if(!L.length){
-    host.innerHTML='<div class="esq-vazio"><b>Nenhuma esquadria neste orçamento.</b><br>'
-      +'No passo 2 acima: digite o <b>tipo</b>, a <b>medida</b> e a <b>quantidade</b> e tecle <b>Enter</b>.<br>'
-      +'No fim, <b>Pedir preço ao fornecedor</b> monta o PDF ou a mensagem para ele orçar.</div>';
+    host.innerHTML='<div class="esq-vazio"><b>Nenhuma esquadria neste orçamento.</b></div>';
     return;
   }
   /* Onde estava o cursor ANTES de redesenhar. Escolher o tipo redesenha a
@@ -12789,9 +12798,7 @@ function esqBancoRender(){
     +'<button class="btn-sm" onclick="esqBase()">Imprimir</button>'
     +'<button class="btn-sm" onclick="esqBancoFecha()">Fechar</button></div>';
   if(!H.length){
-    h+='<div class="esq-vazio"><b>A base ainda está vazia.</b><br>'
-      +'Ela se forma com o preço que você digita numa esquadria (ou lança pelo <b>Colar resposta</b>).<br>'
-      +'Para começar com o que já foi orçado, use <b>Trazer do que já orcei</b>.</div>';
+    h+='<div class="esq-vazio"><b>A base ainda está vazia.</b> Use <b>Trazer do que já orcei</b>.</div>';
     host.innerHTML=h; return;
   }
   /* ---- camada 2: as referencias ---- */
@@ -13122,7 +13129,7 @@ const CP_GROUP_DEF={
    banco de dados (Precos de...), e cada item tem a sua linha. */
 function cpGroupDef(chave){
  if(String(chave).indexOf('cat:')===0){const c=catById(chave.slice(4));
-  return {nome:c?c.nome:'Categoria',modo:'',unidade:'',ajuda:'Aplica o fornecedor a todos os itens desta categoria. O preço de cada item vem do banco de dados (Preços de…); a referência é '+(c?catFornBase(c):cpRefNome())+'.'};}
+  return {nome:c?c.nome:'Categoria',modo:'',unidade:'',ajuda:'Vale para todos os itens da categoria.'};}
  return CP_GROUP_DEF[chave]||CP_GROUP_DEF.avulsos;
 }
 function cpGroupRefNome(chave){
@@ -13434,7 +13441,7 @@ function cpRender(){
  let ps=document.getElementById('cpPrintStatus');if(!ps){ps=document.createElement('div');ps.id='cpPrintStatus';ps.className='cp-print-status';document.querySelector('.sheet').insertBefore(ps,document.querySelector('.sheetfoot'));}ps.textContent=pending?'TOTAL PARCIAL — '+pending+' item(ns) com preço pendente.':'';
  const summary=Object.entries(sums).map(([f,s])=>'<tr><td>'+escapeAttr(f)+'</td><td>'+s.count+' item(ns)</td><td>'+brl(s.total)+(s.pending?' · '+s.pending+' pendente(s)':'')+(freteDoFornecedor(f)>0?'<small>+ frete '+brl(freteDoFornecedor(f))+' = '+brl(s.total+freteDoFornecedor(f))+'</small>':'')+'</td><td>'+(s.matched?cpDelta({delta:s.delta,ref:s.ref,supplier:f,refNome:s.refNome}):'Sem comparação')+'<small>'+s.matched+'/'+s.count+' item(ns) comparável(is)</small></td></tr>').join('');
  const comparableBase=rows.length;
- host.innerHTML='<summary>Conferir fornecedores <span style="font-weight:465">· por grupo e por item · '+rows.length+' itens</span>'+(pending?' <span class="cp-pend">· '+pending+' pendente(s)</span>':'')+'</summary><p class="cp-note">Primeiro escolha o fornecedor do grupo. Para telhas, informe um único R$/m²; o sistema usa a área de cada medida. Se uma linha tiver condição diferente, use “Cotar / comparar” nela: a exceção individual sempre prevalece.</p>'+(groupsHTML?'<h4 style="margin:14px 0 4px">Cotação por grupo</h4><div class="cp-groups">'+groupsHTML+'</div>':'')+(pending?'<div class="cp-warn">Total parcial: '+pending+' item(ns) aguardam cotação. Não considere o total como compra fechada.</div>':'')+'<h4 style="margin:14px 0 4px">Exceções e conferência por item</h4><div class="cp-scroll"><table class="cp-table"><thead><tr><th>Item / nomenclatura</th><th>Fornecedor</th><th>Base de cobrança</th><th>Custo e referência</th></tr></thead><tbody>'+body+'</tbody></table></div>'+(!rows.length?'<p class="cp-note">Adicione perfis ou telhas acima para começar.</p>':'')+'<h4 style="margin:18px 0 4px">Resumo por fornecedor</h4><div class="cp-scroll"><table class="cp-table">'+summary+'</table></div><div class="cp-total">'+(comparable?cpDelta({delta,ref:refSum}):'Sem itens comparáveis')+' · '+comparable+'/'+comparableBase+' itens comparados</div><p class="cp-note">Comparação dos materiais antes de frete e desconto. Cumeeiras ficam isoladas das telhas térmicas. Itens de categoria usam o preço de cada fornecedor do banco de dados, sem o acréscimo de venda; avulsos usam o valor digitado na linha.</p>';
+ host.innerHTML='<summary>Conferir fornecedores <span style="font-weight:465">· por grupo e por item · '+rows.length+' itens</span>'+(pending?' <span class="cp-pend">· '+pending+' pendente(s)</span>':'')+'</summary><p class="cp-note">Fornecedor por grupo; a linha cotada à parte prevalece.</p>'+(groupsHTML?'<h4 style="margin:14px 0 4px">Cotação por grupo</h4><div class="cp-groups">'+groupsHTML+'</div>':'')+(pending?'<div class="cp-warn">Total parcial: '+pending+' item(ns) aguardam cotação. Não considere o total como compra fechada.</div>':'')+'<h4 style="margin:14px 0 4px">Exceções e conferência por item</h4><div class="cp-scroll"><table class="cp-table"><thead><tr><th>Item / nomenclatura</th><th>Fornecedor</th><th>Base de cobrança</th><th>Custo e referência</th></tr></thead><tbody>'+body+'</tbody></table></div>'+(!rows.length?'<p class="cp-note">Adicione perfis ou telhas acima para começar.</p>':'')+'<h4 style="margin:18px 0 4px">Resumo por fornecedor</h4><div class="cp-scroll"><table class="cp-table">'+summary+'</table></div><div class="cp-total">'+(comparable?cpDelta({delta,ref:refSum}):'Sem itens comparáveis')+' · '+comparable+'/'+comparableBase+' itens comparados</div><p class="cp-note">Materiais antes de frete e desconto.</p>';
  let report=document.getElementById('cpReport');if(!report){report=document.createElement('div');report.id='cpReport';report.className='cp-report';document.querySelector('.sheet').insertBefore(report,document.querySelector('.sheetfoot'));}
  report.innerHTML='<h3>Mapa interno de compras</h3><p>Custos de materiais antes de frete e desconto'+(pending?' · TOTAL PARCIAL: '+pending+' cotação(ões) pendente(s)':'')+'</p><table><thead><tr><th>Item / quantidade / comprimento</th><th>Fornecedor</th><th>Largura / peso</th><th>Custo</th><th>Referência</th><th>Comparação</th></tr></thead><tbody>'+rows.map(r=>{const c=cpCalc(r.l,r.p,r.k,null,r),ou=r.k==='c'||r.k==='a';return '<tr><td>'+escapeAttr(r.k==='p'?r.p.grupo+' '+r.p.dims+' #'+r.p.esp:cpRowLabel(r))+'<br>'+(ou?num(r.l.qtd,0)+' '+escapeAttr(r.k==='c'?(r.p.unidade||'un'):'un'):num(r.l.qtd,0)+' × '+num(r.l.comp||r.p.comp,0)+' mm')+'</td><td>'+escapeAttr(c.supplier||'—')+'</td><td>'+(r.k==='p'?(c.larg!=null?num(c.larg,2)+' mm':'—')+' / '+(c.pesoKnown?num(c.pesoTot,2)+' kg':'—'):ou?(c.preco?brl(c.preco)+'/un':'—'):num(c.metros,2)+' m')+'</td><td>'+(c.semPreco?'Pendente':brl(c.tot))+'</td><td>'+(c.ref==null?'Sem referência':brl(c.ref))+'</td><td>'+cpDelta(c)+(c.warning?'<br>'+escapeAttr(c.warning):'')+'</td></tr>';}).join('')+otherReport+'</tbody></table><p>'+(comparable?cpDelta({delta,ref:refSum}):'Sem comparação')+' · '+comparable+'/'+comparableBase+' itens comparáveis.</p>';
 }
@@ -13807,8 +13814,7 @@ function renderSavedSync(){
   const aqui=(S.orcamentosSalvos||[]).length;
   if(!FB.ready){
     el.className='saved-sync ruim';
-    el.innerHTML='<b>Este aparelho não está ligado à nuvem.</b> Os '+aqui+' orçamentos daqui não vão para os outros aparelhos. '
-      +'Entre com o login da empresa (o mesmo do celular) para sincronizar.';
+    el.innerHTML='<b>Este aparelho não está ligado à nuvem.</b> Entre com o login da empresa.';
     return;
   }
   const la=FB.nuvemConta==null?'…':FB.nuvemConta,falta=FB.faltamNaNuvem||0;
@@ -14535,7 +14541,11 @@ initAuth();
        busca da aba escolhida, de qualquer ponto da lista. Teste
        orcamento-layout-fase3. */
     liga('bar_add', function () { fechaImp(); try { if (window.orcAba) orcAba('orc'); } catch (e) { }
-      var z = $('addZone'); if (!z) return; z.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      var z = $('addZone'); if (!z) return;
+      /* rola até a barra de adicionar e confere no fim: com a página mudando de
+         altura no meio da rolagem ela parava 20 a 30 px além */
+      var vai = function (suave) { var y = window.scrollY + z.getBoundingClientRect().top - 8; window.scrollTo({ top: Math.max(0, y), behavior: suave ? 'smooth' : 'auto' }); };
+      vai(true); setTimeout(function () { if (Math.abs(z.getBoundingClientRect().top - 8) > 4) vai(false); }, 650);
       var a = 'perfil'; try { a = localStorage.getItem('orc_aba_add') || 'perfil'; } catch (e) { }
       var i = $({ perfil: 'searchPerfil', telha: 'searchTelha', outros: 'searchCat' }[a] || 'searchPerfil');
       setTimeout(function () { try { if (i) i.focus({ preventScroll: true }); } catch (e) { } }, 350); });
@@ -15098,7 +15108,7 @@ function orcDocHTML(modo,valores,fora){
 #orcDoc .od-cond ul{margin:0;padding-left:4mm;font-size:8pt;line-height:1.6}
 .orc-doc-val{display:flex;align-items:center;gap:6px;font-size:12px;margin:8px 0 2px}
 .orc-doc-pad{font-weight:400;text-transform:none;letter-spacing:0;color:var(--muted)}
-#orcDocCond{width:100%;font:inherit;font-size:12px;border:1px solid var(--line);border-radius:7px;padding:6px 8px;resize:vertical;background:var(--surface,#fff);color:inherit}
+#orcDocCond{width:100%;font:inherit;font-size:13px;border:1px solid var(--line);border-radius:var(--rm-raio,9px);padding:6px 8px;resize:vertical;background:var(--surface,#fff);color:inherit}
 </style>
 <script>
 /* ===== RELATO DE ERRO À CENTRAL — igual em todos os sistemas =====
@@ -15639,6 +15649,41 @@ function orcDocHTML(modo,valores,fora){
 #loginBtn svg{width:16px;height:16px;flex:none}
 /* 16px: o minimo para o iPhone nao ampliar a pagina ao tocar no campo */
 @media (pointer:coarse){#loginScreen input{font-size:16px!important}}
+/* ---------- O CARTÃO DE ENTRADA, UM SÓ ----------
+   Cada sistema nasceu com o seu: fundo claro em dois, só o símbolo no logo
+   em quatro, rótulo "E-MAIL", "E-mail" ou "USUÁRIO / E-MAIL", botão com e
+   sem ícone, frase de rodapé em quatro. O desenho mora aqui, preso ao
+   #loginScreen (ganha da classe do sistema em qualquer ordem). O sistema só
+   escreve a marcação comum: .lc-head (logo, .ttl empresa, .sub sistema) e
+   .lc-body (.login-err, .f com .lab ou label + campo, #loginBtn). */
+#loginScreen{background-color:#16171a;background-image:
+  radial-gradient(60% 50% at 80% 0%,rgba(140,29,24,.22),transparent 60%),
+  radial-gradient(50% 40% at 0% 100%,rgba(140,29,24,.14),transparent 55%)}
+#loginScreen::before{content:none}
+#loginScreen :is(.login-card,.login-box){position:relative;width:100%;max-width:380px;margin:0 auto;padding:0;box-sizing:border-box;
+  background:var(--rm-superficie,#fff);color:var(--rm-texto,#16171a);border:0;border-top:4px solid var(--rm-marca,#D53309);
+  border-radius:16px;overflow:hidden;box-shadow:0 30px 80px rgba(0,0,0,.5);text-align:left}
+#loginScreen .lc-head{position:relative;margin:0;padding:28px 30px 22px;text-align:center;background:none;border:0;border-bottom:1px solid var(--rm-linha,#E4E6EA)}
+#loginScreen .lc-head::after{content:"";position:absolute;left:0;right:0;bottom:-1px;height:4px;background:#F24619}
+#loginScreen .lc-head::before{content:"";position:absolute;left:0;right:0;bottom:-4.5px;height:1.5px;background:#141414;opacity:.85}
+#loginScreen .lc-head>img{display:block;height:56px;width:auto;max-width:100%;margin:0 auto 14px}
+#loginScreen .lc-head .ttl{font-size:10.5px;font-weight:700;letter-spacing:.19em;text-transform:uppercase;color:var(--rm-apagado,#5e6169);margin:0;line-height:1.3}
+#loginScreen .lc-head .sub{font-size:21px;font-weight:800;letter-spacing:-.015em;color:var(--rm-texto,#16171a);margin:7px 0 0;line-height:1.15;text-transform:none}
+#loginScreen .lc-body{padding:24px 30px 28px;margin:0}
+#loginScreen .lc-body :is(.f,.field){display:flex;flex-direction:column;gap:6px;margin:0 0 14px}
+#loginScreen .lc-body :is(.f,.field)>:is(.lab,label){font-size:11.5px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--rm-apagado,#5e6169);margin:0}
+#loginScreen .lc-body :is(.f,.field) input{width:100%;height:42px;box-sizing:border-box;margin:0;padding:0 12px;
+  border:1.5px solid var(--rm-linha-forte,#cfd3da);border-radius:var(--rm-raio,9px);background:var(--rm-superficie,#fff);color:var(--rm-texto,#16171a);font-size:15px;font-weight:600}
+#loginScreen .lc-body :is(.f,.field) input:focus{outline:0;border-color:var(--rm-marca,#D53309);box-shadow:0 0 0 3px rgba(242,70,24,.18)}
+#loginScreen #loginBtn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;height:44px;margin:8px 0 0;padding:0 16px;box-sizing:border-box;
+  border:0;border-radius:var(--rm-raio,9px);background:var(--rm-marca,#D53309);color:#fff;font-size:15px;font-weight:700;letter-spacing:0;text-transform:none;box-shadow:none;cursor:pointer}
+#loginScreen #loginBtn:hover{background:var(--rm-marca-escura,#9B2709)}
+#loginScreen #loginBtn:disabled{opacity:.7;cursor:default}
+#loginScreen .lc-body :is(.f,.field) input::placeholder{color:var(--rm-apagado,#5e6169);opacity:.75}
+#loginScreen .lc-body .rmp-lembrar{display:flex;margin:2px 0 6px;font-size:13.5px;font-weight:560;color:var(--rm-texto-2,#474e5c);text-transform:none;letter-spacing:normal}
+#loginScreen .login-mode{margin:12px 0 0;font-size:12.5px;color:var(--rm-apagado,#5e6169);text-align:center}
+#loginScreen .login-mode:empty{display:none}
+@media (max-width:420px){#loginScreen .lc-head{padding:24px 22px 20px}#loginScreen .lc-body{padding:22px 22px 24px}}
 </style>
 <script id="rmPortaBloco">
 (function(){
@@ -15658,6 +15703,10 @@ function orcDocHTML(modo,valores,fora){
   var user = [].slice.call(card.querySelectorAll('input')).filter(function(i){ return i !== pass && i.type !== 'checkbox' && i.type !== 'hidden'; })[0];
   var btn = document.getElementById('loginBtn') || card.querySelector('button');
   if (!user || !btn) return;
+  /* o mesmo cartão em todos: o botão leva o ícone de entrada e o logo é a
+     assinatura inteira (símbolo, RM e Estruturas), nunca só o símbolo */
+  if (!btn.querySelector('svg')) btn.insertAdjacentHTML('afterbegin', '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4M10 17l5-5-5-5M15 12H3"/></svg>');
+  try { var lg = card.querySelector('.lc-head>img'); if (lg && typeof RM_ASSINATURA === 'string' && lg.getAttribute('src') !== RM_ASSINATURA) lg.src = RM_ASSINATURA; } catch(e){}
   var CHAVE = 'rm_login_lembrado';   // a mesma chave da Central (mesmo endereco na internet)
 
   function lembrado(){ try { var v = JSON.parse(localStorage.getItem(CHAVE) || 'null'); return (v && v.email) ? v : null; } catch(e){ return null; } }
@@ -15931,15 +15980,79 @@ function orcDocHTML(modo,valores,fora){
       try { im.setAttribute('src', new URL(u, document.baseURI).href); } catch(e){}
     });
     try { var hd = clone.querySelector('head'); if (hd && !hd.querySelector('base')) { var bs = document.createElement('base'); bs.setAttribute('href', document.baseURI); hd.insertBefore(bs, hd.firstChild); } } catch(e){}
+    try { papelA(clone, document.documentElement, nomeProprio()); } catch(e){}
     return '<!DOCTYPE html>' + clone.outerHTML;
   }
+  /* PAPEL TIMBRADO (modelo A, PADRAO_RM 5). Todo documento com o timbrado
+     (.tb2) sai com o mesmo pé e o mesmo cabeçalho de continuação, montados
+     aqui na hora do PDF -- um lugar só para os quinze sistemas:
+       - rodapé em todas as páginas: telefone e Instagram | site | Página X de Y,
+         sobre um fio cinza (caixas de margem do @page, fora do texto);
+       - da página 2 em diante, no alto: o tipo e o título do documento em
+         laranja | RM Estruturas Pré-Fabricadas, sobre um fio cinza;
+       - o fio do cabeçalho: laranja de 2 px e, logo abaixo, o grafite fino.
+     Documento de medida exata (etiqueta, envelope, a folha do recibo em
+     margem 0) e o que não tem timbrado ficam como estão. */
+  var PE_FONE = '51 99789-7879', PE_INSTA = '@rm.estruturas', PE_SITE = 'www.rmestruturas.com.br';
+  function papelA(raiz, viva, nome){
+    if (!raiz || !raiz.querySelector || !raiz.querySelector('.tb2,.tb2-tipo') || raiz.querySelector('#rm-papel-a')) return false;
+    var css = [].map.call(raiz.querySelectorAll('style'), function(x){ return x.textContent || ''; }).join('\n');
+    var pags = css.match(/@page\s*\{[^}]*\}/g) || [], ult = pags.length ? pags[pags.length - 1] : '';
+    var mg = /margin(-bottom)?\s*:\s*([^;}]+)/.exec(ult), mb = mg ? mg[2].trim().split(/\s+/) : ['12mm'];
+    var baixo = mg && mg[1] ? mb[0] : (mb[2] || mb[0]);
+    if (/^0(px|mm)?$/.test(baixo)) return false;
+    var limpa = function(t){ return String(t || '').replace(/\s+/g, ' ').trim().replace(/["\\]/g, ''); };
+    /* o texto como se vê: um .tb2-tipo pode ter três nomes e mostrar um só
+       (o Orçamento: cliente, interno, fornecedor) */
+    var fonteTx = viva || raiz, ve = function(e){ return e ? (viva && e.innerText != null ? e.innerText : e.textContent) : ''; };
+    var tipo = limpa(ve(fonteTx.querySelector('.tb2-tipo'))), h1 = fonteTx.querySelector('h1');
+    var topo = (tipo.toUpperCase() + (h1 && limpa(ve(h1)) ? (tipo ? ' · ' : '') + limpa(ve(h1)) : '')).slice(0, 90);
+    /* o nome que o sistema dá ao arquivo ("Orçamento CLIENTE 12-11-2026")
+       é o nome do documento -- vale mais que o rótulo da folha */
+    nome = limpa(String(nome || '').replace(/\.pdf$/i, '').replace(/[_]+/g, ' '));
+    if (nome) topo = nome.slice(0, 90);
+    /* o pé antigo (fixo, dentro da página) sai: o novo mora na margem.
+       A linha de nota dele ("atualizado em") vai para o fim do documento. */
+    var nota = '';
+    [].slice.call(raiz.querySelectorAll('#rm-pe-imp,.pe,.sheetfoot')).forEach(function(e){
+      if (e.id !== 'rm-pe-imp' && e.textContent.toLowerCase().indexOf(PE_SITE) < 0) return;
+      var n = e.querySelector('.nota'); if (n && e.id === 'rm-pe-imp') nota = limpa(n.textContent);
+      if (e.parentNode) e.parentNode.removeChild(e); });
+    var corpo = raiz.querySelector('body') || raiz;
+    if (nota) { var nd = document.createElement('div'); nd.className = 'rm-nota-fim'; nd.textContent = nota; corpo.appendChild(nd); }
+    var fonte = 'font-family:Satoshi,Arial,sans-serif;font-size:7.5pt;color:#4A515B;';
+    var pe = fonte + 'border-top:.6pt solid #c9cdd2;vertical-align:top;padding-top:2.2mm;';
+    var al = fonte + 'border-bottom:.6pt solid #c9cdd2;vertical-align:bottom;padding-bottom:1.8mm;';
+    var st = document.createElement('style'); st.id = 'rm-papel-a';
+    st.textContent = '@page{margin-bottom:17mm;'
+      + '@bottom-left{content:"' + PE_FONE + ' · ' + PE_INSTA + '";' + pe + '}'
+      + '@bottom-center{content:"' + PE_SITE + '";' + pe + '}'
+      + '@bottom-right{content:"Página " counter(page) " de " counter(pages);' + pe + '}'
+      + '@top-left{content:"' + topo + '";' + al + 'font-weight:700;color:#C1310B;letter-spacing:.06em}'
+      + '@top-right{content:"RM Estruturas Pré-Fabricadas";' + al + 'color:#6E747C}}'
+      + '@page:first{@top-left{content:none;border:0}@top-right{content:none;border:0}}'
+      + '@media print{html body{padding-bottom:0!important}'
+      + '.head::after,.rm-cab::after,.cab::after{height:2px!important;background:#F24619!important;box-shadow:0 3.5px 0 -.5px #141414!important;'
+      + '-webkit-print-color-adjust:exact;print-color-adjust:exact}.head::before{display:none!important}'
+      + '.rm-nota-fim{margin-top:6mm;font-size:7pt;color:#6E747C;text-align:center}}';
+    (raiz.querySelector('head') || raiz).appendChild(st);
+    return true;
+  }
+  function papelAHTML(html, nome){
+    try {
+      var d = new DOMParser().parseFromString(String(html), 'text/html');
+      if (!papelA(d.documentElement, null, nome)) return html;
+      return '<!DOCTYPE html>' + d.documentElement.outerHTML;
+    } catch(e){ return html; }
+  }
+  window.rmPapelA = papelAHTML;
   var ocupado = false;
   /* Documento pronto (HTML inteiro, montado a parte): mesmo caminho do
      Imprimir. Devolve true se a ponte assumiu; false = o chamador segue com
      o jeito dele (janela nova + print no navegador). */
   window.rmImprimirHTML = function(html, nome){
     if (!ponte || ocupado) return false;
-    ocupado = true; nome = nome || nomeDoc();
+    ocupado = true; html = papelAHTML(html, nome); nome = nome || nomeDoc();
     if (ponte === 'app') {
       var gerar = window.rmDesktop.abrirPDF || window.rmDesktop.salvarPDF;
       gerar(html, nome).then(function(){ ocupado = false; }, function(){ ocupado = false; });

@@ -1441,14 +1441,17 @@ var RM_FONTE="@font-face{font-family:'Satoshi';src:url(data:font/woff2;base64,d0
     flex: 1;
     background: var(--card);
     border: 1px solid var(--divider);
-    border-radius: 6px;
-    padding: 8px 10px;
+    border-radius: var(--rm-raio, 9px);
+    height: var(--rm-ctl, 38px);
+    box-sizing: border-box;
+    padding: 0 10px;
     color: var(--text);
     font-family: var(--font);
-    font-size: 13px;
+    font-size: 14px;
     outline: none;
     transition: border-color 0.15s;font-weight:530}
 
+  textarea.form-input { height: auto; padding: 8px 10px; }
   .form-input:focus, .form-select:focus { border-color: var(--accent); }
   .form-input::placeholder { color: var(--text-muted); }
 
@@ -3102,6 +3105,14 @@ html :where(input:not([type=checkbox]):not([type=radio]):not([type=range]):not([
 html :where(input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=color]):not([type=file]):not([type=hidden]),select,textarea):focus{
   outline:none;border-color:var(--rm-marca);box-shadow:var(--rm-foco);
 }
+/* ALTURA DO CAMPO. Campo sem altura escrita ficava no tamanho do navegador
+   (21 px no Corte, 24 no Máquinas) ou no que o recuo desse (45 px no
+   Perfitec, 30 no Orçamento): numa mesma tela, caixas de alturas
+   diferentes. Força zero (:where) -- quem escreve a altura continua
+   mandando; célula de tabela fica de fora (linha de lista é baixinha). */
+html :where(input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=color]):not([type=file]):not([type=hidden]):not([type=image]):not([type=button]):not([type=submit]):not([type=reset]),select:not([multiple]):not([size])):where(:not(td *,th *)){
+  height:var(--rm-ctl);box-sizing:border-box;
+}
 html :where(input,select,textarea):disabled{opacity:.6;cursor:not-allowed}
 html :where(input,select,textarea)::placeholder{color:var(--rm-apagado);opacity:.8}
 
@@ -4396,7 +4407,7 @@ try { var _e = localStorage.getItem('rm_estilo_ultimo'); if (_e === 'viva' || _e
           <div class="tl-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4M12 7v5M9.5 9.5 12 12l2.5-2.5"/></svg></div>
           <div class="tl-txt">
             <div class="tl-nome">Instalar a RM Central</div>
-            <div class="tl-desc">Para quem vai usar a Central no computador: baixa o programa mais novo e mostra os passos. Cada pessoa entra com o próprio e-mail e vê só os sistemas dela.</div>
+            <div class="tl-desc">Baixa o programa da Central para o computador.</div>
             <div class="tl-url" id="tl-instalar-url"></div>
           </div>
           <div class="tl-acoes">
@@ -4588,7 +4599,7 @@ try { var _e = localStorage.getItem('rm_estilo_ultimo'); if (_e === 'viva' || _e
           <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:10px">
             <button class="btn-mini" type="button" id="papelwin-aplicar" style="background-color:var(--rm-marca);color:#fff" onclick="papelWinAplicar()">Aplicar como fundo da área de trabalho</button>
           </div>
-          <div id="protetor-nota" style="font-size:12px;color:var(--text-muted);margin-top:6px;line-height:1.45">Escolha o fundo e o tom: o programa desenha a imagem no tamanho da sua tela e coloca como plano de fundo do Windows. A cor da marca segue a escolhida em "Fundo da Central".</div>
+          <div id="protetor-nota" style="font-size:12px;color:var(--text-muted);margin-top:6px;line-height:1.45">Vira o plano de fundo do Windows, no tamanho da sua tela.</div>
           <div style="font-size:12px;color:var(--text-muted);margin-top:8px">Proteção de tela com a obra se montando: <button type="button" class="link-btn" onclick="protetorUsar()">usar no Windows</button> · <button type="button" class="link-btn" onclick="protetorVer()">ver agora</button></div>
         </div>
         <div class="settings-section" id="sec-programa" hidden>
@@ -4818,7 +4829,7 @@ try { var _e = localStorage.getItem('rm_estilo_ultimo'); if (_e === 'viva' || _e
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js" crossorigin="anonymous"></script>
 
 <script>/* versão publicada (PADRAO_RM.md §3): sobe a cada publicação, junto com o CACHE do sw.js */
-const APP_VER='v163';
+const APP_VER='v164';
 </script>
 <script>
   /* ===== LOGIN (Firebase Authentication) =====
@@ -6468,7 +6479,7 @@ const APP_VER='v163';
       + '<div class="dagua" aria-hidden="true">' + desenhoDaMarca('.topbar-mark') + '</div>'
       + '</body></html>';
     if (typeof window.rmSalvarPDF === 'function' && window.rmDesktop && window.rmDesktop.salvarPDF) {
-      (window.rmDesktop.abrirPDF || window.rmDesktop.salvarPDF)(html, 'Relatorio de melhorias ' + todayISO())
+      (window.rmDesktop.abrirPDF || window.rmDesktop.salvarPDF)(window.rmPapelA ? window.rmPapelA(html) : html, 'Relatorio de melhorias ' + todayISO())
         .catch(function () { abrirRelatorioEmAba(html); });
     } else { abrirRelatorioEmAba(html); }
   }
@@ -8727,7 +8738,10 @@ const APP_VER='v163';
     if (typeof msg.html !== 'string') return;
     responder({ rm: 'pdf:aceito' });
     const gerar = (msg.abrir && window.rmDesktop.abrirPDF) ? window.rmDesktop.abrirPDF : window.rmDesktop.salvarPDF;
-    gerar(msg.html, msg.nome)
+    /* o papel timbrado (modelo A) sai igual de qualquer sistema: quem já
+       mandou com ele passa direto; o documento montado à parte ganha aqui */
+    const html = typeof window.rmPapelA === 'function' ? window.rmPapelA(msg.html, msg.nome) : msg.html;
+    gerar(html, msg.nome)
       .then((r) => responder({ rm: 'pdf:fim', ok: !!(r && r.ok), cancelado: !!(r && r.cancelado), erro: r && r.erro }))
       .catch((e) => responder({ rm: 'pdf:fim', ok: false, erro: String((e && e.message) || e) }));
   });
@@ -11637,7 +11651,7 @@ const APP_VER='v163';
       '<button type="button" class="docs-bt" onclick="rmResConfig()">⚙ Valores de referência</button><button type="button" class="docs-bt pri" onclick="rmResImprimir()">Imprimir / PDF</button></div></div>' +
       '<div class="res-aviso" id="res-aviso"></div>' + conf + cards +
       '<div class="ri-linha2"><div class="ri-card"><div class="ri-h"><b>Horas economizadas por atividade</b><span>vezes × (antes − no sistema)</span></div><div class="ri-b">' + tabela +
-      '<div class="ri-nota">Cada linha conta sozinha do sistema ao lado. Documento do RH, cálculo de pré-moldado e etiquetas contam ao abrir para imprimir (um por documento e dia); imagens da obra, as adicionadas desta versão em diante. Os minutos são estimativas: ajuste em Valores de referência.</div></div></div>' +
+      '<div class="ri-nota">Minutos estimados: ajuste em Valores de referência.</div></div></div>' +
       '<div class="ri-col"><div class="ri-card"><div class="ri-h"><b>Horas economizadas por mês</b><span>últimos 6 meses</span></div><div class="ri-b">' + barras + '</div></div>' +
       '<div class="ri-card"><div class="ri-h"><b>Horas por sistema</b><span>' + esc(iv.rot) + '</span></div><div class="ri-b">' + sistemas + '</div></div></div></div></div>';
   }
@@ -11803,7 +11817,7 @@ const APP_VER='v163';
         return '<button class="seg-btn" data-esc="' + v + '" onclick="rmSetEscala(' + v + ')">' + Math.round(v * 100) + '%</button>';
       }).join('') + '</div>' +
       '<div style="font-size:11px;color:var(--text-muted);margin-top:8px;font-weight:500;line-height:1.45">' +
-      'Muda o tamanho de letras, ícones e cartões sem perder nitidez. Acima de 100% para monitores grandes ou 4K; abaixo, para caber mais conteúdo na tela.</div>';
+      'Tamanho de letras, ícones e cartões.</div>';
     pane.appendChild(sec);
     marcar(atual());
   }
@@ -11897,7 +11911,7 @@ const APP_VER='v163';
           + '<div class="estilo-mini em-' + o[0] + '">' + MINI[o[0]] + '</div><div class="theme-name">' + o[1] + '</div></div>';
       }).join('') + '</div>' +
       '<div style="font-size:11px;color:var(--text-muted);margin-top:8px;font-weight:500;line-height:1.45">' +
-      'Viva usa as cores das categorias; Carimbo é claro e técnico. Os dois trazem a busca na lateral, os Fixados e a situação de cada sistema no cartão. Vale para os temas claro e escuro.</div>';
+      'Viva: cores das categorias. Carimbo: claro e técnico.</div>';
     /* logo depois do Tema */
     var tema = document.getElementById('theme-grid');
     var secTema = tema ? tema.closest('.settings-section') : null;
@@ -12153,7 +12167,7 @@ const APP_VER='v163';
   window.rmSalvarPDF = function (nome) {
     nome = nome || nomeArquivo();
     var html;
-    try { html = documentoParaPDF(); } catch (e) { imprimirNoNavegador(); return; }
+    try { html = documentoParaPDF(); if (window.rmPapelA) html = window.rmPapelA(html, nome); } catch (e) { imprimirNoNavegador(); return; }
 
     /* a) sistema é a janela principal do app instalado */
     if (window.rmDesktop && typeof window.rmDesktop.salvarPDF === 'function') {
@@ -14962,15 +14976,79 @@ body{ height:100vh; height:100dvh; overscroll-behavior:none; }
       try { im.setAttribute('src', new URL(u, document.baseURI).href); } catch(e){}
     });
     try { var hd = clone.querySelector('head'); if (hd && !hd.querySelector('base')) { var bs = document.createElement('base'); bs.setAttribute('href', document.baseURI); hd.insertBefore(bs, hd.firstChild); } } catch(e){}
+    try { papelA(clone, document.documentElement, nomeProprio()); } catch(e){}
     return '<!DOCTYPE html>' + clone.outerHTML;
   }
+  /* PAPEL TIMBRADO (modelo A, PADRAO_RM 5). Todo documento com o timbrado
+     (.tb2) sai com o mesmo pé e o mesmo cabeçalho de continuação, montados
+     aqui na hora do PDF -- um lugar só para os quinze sistemas:
+       - rodapé em todas as páginas: telefone e Instagram | site | Página X de Y,
+         sobre um fio cinza (caixas de margem do @page, fora do texto);
+       - da página 2 em diante, no alto: o tipo e o título do documento em
+         laranja | RM Estruturas Pré-Fabricadas, sobre um fio cinza;
+       - o fio do cabeçalho: laranja de 2 px e, logo abaixo, o grafite fino.
+     Documento de medida exata (etiqueta, envelope, a folha do recibo em
+     margem 0) e o que não tem timbrado ficam como estão. */
+  var PE_FONE = '51 99789-7879', PE_INSTA = '@rm.estruturas', PE_SITE = 'www.rmestruturas.com.br';
+  function papelA(raiz, viva, nome){
+    if (!raiz || !raiz.querySelector || !raiz.querySelector('.tb2,.tb2-tipo') || raiz.querySelector('#rm-papel-a')) return false;
+    var css = [].map.call(raiz.querySelectorAll('style'), function(x){ return x.textContent || ''; }).join('\n');
+    var pags = css.match(/@page\s*\{[^}]*\}/g) || [], ult = pags.length ? pags[pags.length - 1] : '';
+    var mg = /margin(-bottom)?\s*:\s*([^;}]+)/.exec(ult), mb = mg ? mg[2].trim().split(/\s+/) : ['12mm'];
+    var baixo = mg && mg[1] ? mb[0] : (mb[2] || mb[0]);
+    if (/^0(px|mm)?$/.test(baixo)) return false;
+    var limpa = function(t){ return String(t || '').replace(/\s+/g, ' ').trim().replace(/["\\]/g, ''); };
+    /* o texto como se vê: um .tb2-tipo pode ter três nomes e mostrar um só
+       (o Orçamento: cliente, interno, fornecedor) */
+    var fonteTx = viva || raiz, ve = function(e){ return e ? (viva && e.innerText != null ? e.innerText : e.textContent) : ''; };
+    var tipo = limpa(ve(fonteTx.querySelector('.tb2-tipo'))), h1 = fonteTx.querySelector('h1');
+    var topo = (tipo.toUpperCase() + (h1 && limpa(ve(h1)) ? (tipo ? ' · ' : '') + limpa(ve(h1)) : '')).slice(0, 90);
+    /* o nome que o sistema dá ao arquivo ("Orçamento CLIENTE 12-11-2026")
+       é o nome do documento -- vale mais que o rótulo da folha */
+    nome = limpa(String(nome || '').replace(/\.pdf$/i, '').replace(/[_]+/g, ' '));
+    if (nome) topo = nome.slice(0, 90);
+    /* o pé antigo (fixo, dentro da página) sai: o novo mora na margem.
+       A linha de nota dele ("atualizado em") vai para o fim do documento. */
+    var nota = '';
+    [].slice.call(raiz.querySelectorAll('#rm-pe-imp,.pe,.sheetfoot')).forEach(function(e){
+      if (e.id !== 'rm-pe-imp' && e.textContent.toLowerCase().indexOf(PE_SITE) < 0) return;
+      var n = e.querySelector('.nota'); if (n && e.id === 'rm-pe-imp') nota = limpa(n.textContent);
+      if (e.parentNode) e.parentNode.removeChild(e); });
+    var corpo = raiz.querySelector('body') || raiz;
+    if (nota) { var nd = document.createElement('div'); nd.className = 'rm-nota-fim'; nd.textContent = nota; corpo.appendChild(nd); }
+    var fonte = 'font-family:Satoshi,Arial,sans-serif;font-size:7.5pt;color:#4A515B;';
+    var pe = fonte + 'border-top:.6pt solid #c9cdd2;vertical-align:top;padding-top:2.2mm;';
+    var al = fonte + 'border-bottom:.6pt solid #c9cdd2;vertical-align:bottom;padding-bottom:1.8mm;';
+    var st = document.createElement('style'); st.id = 'rm-papel-a';
+    st.textContent = '@page{margin-bottom:17mm;'
+      + '@bottom-left{content:"' + PE_FONE + ' · ' + PE_INSTA + '";' + pe + '}'
+      + '@bottom-center{content:"' + PE_SITE + '";' + pe + '}'
+      + '@bottom-right{content:"Página " counter(page) " de " counter(pages);' + pe + '}'
+      + '@top-left{content:"' + topo + '";' + al + 'font-weight:700;color:#C1310B;letter-spacing:.06em}'
+      + '@top-right{content:"RM Estruturas Pré-Fabricadas";' + al + 'color:#6E747C}}'
+      + '@page:first{@top-left{content:none;border:0}@top-right{content:none;border:0}}'
+      + '@media print{html body{padding-bottom:0!important}'
+      + '.head::after,.rm-cab::after,.cab::after{height:2px!important;background:#F24619!important;box-shadow:0 3.5px 0 -.5px #141414!important;'
+      + '-webkit-print-color-adjust:exact;print-color-adjust:exact}.head::before{display:none!important}'
+      + '.rm-nota-fim{margin-top:6mm;font-size:7pt;color:#6E747C;text-align:center}}';
+    (raiz.querySelector('head') || raiz).appendChild(st);
+    return true;
+  }
+  function papelAHTML(html, nome){
+    try {
+      var d = new DOMParser().parseFromString(String(html), 'text/html');
+      if (!papelA(d.documentElement, null, nome)) return html;
+      return '<!DOCTYPE html>' + d.documentElement.outerHTML;
+    } catch(e){ return html; }
+  }
+  window.rmPapelA = papelAHTML;
   var ocupado = false;
   /* Documento pronto (HTML inteiro, montado a parte): mesmo caminho do
      Imprimir. Devolve true se a ponte assumiu; false = o chamador segue com
      o jeito dele (janela nova + print no navegador). */
   window.rmImprimirHTML = function(html, nome){
     if (!ponte || ocupado) return false;
-    ocupado = true; nome = nome || nomeDoc();
+    ocupado = true; html = papelAHTML(html, nome); nome = nome || nomeDoc();
     if (ponte === 'app') {
       var gerar = window.rmDesktop.abrirPDF || window.rmDesktop.salvarPDF;
       gerar(html, nome).then(function(){ ocupado = false; }, function(){ ocupado = false; });
