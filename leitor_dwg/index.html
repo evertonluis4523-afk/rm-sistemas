@@ -15102,7 +15102,7 @@ function telhaFichaHTML(){
       g+='<line x1="'+c+'" y1="'+(m-8)+'" x2="'+c+'" y2="'+r1(Y(yBase))+'" stroke="#d53309" stroke-width="1.2" stroke-dasharray="6 4"/>'
         +'<text x="'+c+'" y="'+(m-12)+'" font-size="11" font-weight="700" fill="#d53309" text-anchor="middle">CUMEEIRA · comece aqui ← →</text>';}
     else if(!parte||parte===1){const t0=ts[0],xa=r1(X(t0.x0)),ya=r1(Y(Math.max(t0.yA,t0.yB))-8);
-      g+='<text x="'+xa+'" y="'+ya+'" font-size="11" font-weight="800" fill="#d53309">▶ COMECE AQUI · '+t0.cod+' →</text>';}
+      g+='<text x="'+xa+'" y="'+ya+'" font-size="11" font-weight="800" fill="#d53309">▶ COMECE AQUI · '+t0.cod+' · esquerda → direita</text>';}
     /* cotas para marcar na terça: onde começa cada telha, do canto esquerdo */
     const yc=r1(Y(yBase)+24);
     const ini=[...new Set(ts.map(t=>Math.round(t.x0)).concat([Math.round(x1)]))].sort((a,b)=>a-b);
@@ -15123,6 +15123,9 @@ function telhaFichaHTML(){
     return '<article class="tmf" data-parede="'+f.letra+'">'+topo('PAREDE '+f.letra+' · '+escapeHtml(String(f.nome).toUpperCase())+(parte?' ('+parte+'/'+partes+')':''),
         (parte?'<b>'+ts[0].cod+' a '+ts[ts.length-1].cod+'</b> · <b>'+ts.length+'</b> de '+f.ordem.length+' telhas · <span>trecho</span> <b>'+n0(x0-f.xIni)+' a '+n0(x1-f.xIni)+' mm</b>'
           :'<b>'+ts.length+'</b> telhas · <span>altura</span> <b>'+n0(yTop-yBase)+' mm</b> · <span>comprimento</span> <b>'+n0(x1-x0)+' mm</b>')
+          /* FACHADA: além da seta, a orientação escrita (vista de fora) --
+             Teste leitor-cobertura-folha-montagem */
+          +' · <span>montagem</span> <b>'+((!f.topoReto&&f.cume>x0&&f.cume<x1)?'do centro para os lados':'esquerda → direita')+'</b>'
           +' · <span>ordem</span> <b>'+(fi+1)+' de '+faces.length+'</b>'+vezes,'')
       +'<div class="tmf-corpo'+(longa?' longa':'')+'"><div><h5>Vista de fora</h5>'+svg+leg+'</div><div style="min-height:0;overflow:hidden"><h5>Telhas desta parede · na ordem</h5><div class="tmf-lst">'+lista+'</div></div></div>'
       +peTxt+'</article>';
@@ -27414,6 +27417,14 @@ html[data-theme="escuro"] .log-det>summary.err{color:var(--red)}.log-det>summary
 #tlov .tl-faces-dica{font-size:12px;color:var(--muted);margin:0 0 8px;font-weight:540}
 #tlov .tl-faces-dica b{color:var(--ink)}
 #tlov .tl-faces-l .cob-excluidas{border-radius:0;border:0;border-bottom:1px dashed var(--line)}
+/* Frente da obra: a planta pequena com os quatro lados para clicar (Teste leitor-cobertura-folha-montagem) */
+#tlov .cob-frente{display:flex;gap:16px;align-items:center;flex-wrap:wrap;padding:10px 12px;border-bottom:1px solid var(--line)}
+#tlov .cob-fr-t{display:flex;flex-direction:column;gap:3px;max-width:300px;font-size:12.5px}#tlov .cob-fr-t span{color:var(--muted);font-weight:500}
+#tlov .cob-fr-g{display:grid;grid-template-columns:auto 220px auto;grid-template-rows:auto 140px auto;align-items:center;justify-items:center;gap:4px}
+#tlov .cob-fr-g svg{grid-column:2;grid-row:2;width:220px;height:140px}
+#tlov .cob-fr-b{font:inherit;font-size:11px;padding:3px 8px;min-height:0;height:auto;border:1px dashed var(--line);border-radius:6px;background:var(--surface);color:var(--muted);cursor:pointer}
+#tlov .cob-fr-b.t{grid-column:2;grid-row:1}#tlov .cob-fr-b.l{grid-column:1;grid-row:2}#tlov .cob-fr-b.r{grid-column:3;grid-row:2}#tlov .cob-fr-b.b{grid-column:2;grid-row:3}
+#tlov .cob-fr-b.on{border:1px solid #d53309;color:#d53309;font-weight:800}#tlov .cob-fr-b.fundos{border-style:solid;color:var(--ink);font-weight:700}
 /* Resultado */
 #tlov .tl-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
 #tlov .tl-kpis>div{padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--surface)}
@@ -27479,7 +27490,7 @@ html[data-theme="escuro"] .log-det>summary.err{color:var(--red)}.log-det>summary
   ];
   const COB_PADRAO={modelo:'tp40-043',orcTelhaId:'',util:980,fabricante:'',cor:'',aguas:2,sentido:'ltr',
     leitura:'planta',plantaVersao:5,inclinacao:10,agrupamento:10,blocos:[],reaproveitar:false,
-    comprimento:0,projA:0,desnA:0,projB:0,desnB:0,beiral:150,cumeeira:50,ajusteObra:0,ajusteSinal:2,
+    comprimento:0,projA:0,desnA:0,projB:0,desnB:0,beiral:150,cumeeira:50,ajusteObra:0,ajusteSinal:2,frente:'',
     maxComp:0,traspasse:200,estruturas:1,confirmada:false,desenhoSig:'',fonte:'',obs:'',sketchupNome:'',
     termica:false,pingadeira:50,pecaBeiral:0,parafM2:3,verdadeira:false,reusarLargura:false};
 
@@ -28240,6 +28251,12 @@ html[data-theme="escuro"] .log-det>summary.err{color:var(--red)}.log-det>summary
           const v=(k===0||k===10)?Math.max(medeEm(u),medeEm(u+(k===0?.01:-.01))):medeEm(u);
           perfilProj.push(v);perfilPos.push(u-telhaIni);
         }
+        /* os cantos do contorno que caem DENTRO da telha: onde a ponta em
+           ângulo quebra (o desenho do corte na ficha usa a medida exata
+           deles; as 11 amostras ficam a ~98 mm uma da outra) */
+        const quebras=[];
+        ((setor&&setor.poly&&setor.poly.length)?setor.poly:bloco.poligono).forEach(q=>{const uq=cobDot(q,eixos.u);
+          if(uq>ini+1&&uq<fim-1){const v=Math.max(medeEm(uq),medeEm(uq-.01),medeEm(uq+.01));if(v>.5)quebras.push({pos:uq-ini,proj:v});}});
         const positivos=perfilProj.filter(v=>v>.5),menor=positivos.length?Math.min(...positivos):central.comprimento,
           maior=positivos.length?Math.max(...positivos):central.comprimento;
         const p0=cobPontoUV(eixos,meio,central.v0),p1=cobPontoUV(eixos,meio,central.v1);
@@ -28251,7 +28268,7 @@ html[data-theme="escuro"] .log-det>summary.err{color:var(--red)}.log-det>summary
           {const vs=bloco.poligono.map(q=>cobDot(q,eixos.v)),tol=Math.max(1,(Math.max(...vs)-Math.min(...vs))*.0001)+1;   /* a linha-base fica 1 margem acima do topo */
           tocaCumeeira=(central.foraCumeeira!==true&&Math.abs(central.v0-eixos.v0)<=tol)||bloco.arestasCompartilhadas.some(a=>cobDistSeg(p0,a.a,a.b)<12);}
         faixas.push({indice:i,segmento,ini,fim,largura:fim-ini,projecao:central.comprimento,
-          minProjecao:menor,maxProjecao:maior,diagonal:maior-menor>10,perfilProj,perfilPos,
+          minProjecao:menor,maxProjecao:maior,diagonal:maior-menor>10,perfilProj,perfilPos,quebras,
           tocaCumeeira,foraCumeeira:central.foraCumeeira,p0,p1,pPedido:{x:p1.x,y:p1.y},
           perdaRecorte:Math.max(0,(maior-menor)*(fim-ini)/2/1e6)});
       });
@@ -28420,7 +28437,7 @@ html[data-theme="escuro"] .log-det>summary.err{color:var(--red)}.log-det>summary
                que, sempre para cima, viravam 1 cm a mais na peça. Com 1 mm a
                tolerância cortava para BAIXO: 6.299,9999 virava 6.299 e a cota
                4.830,94 virava 4.830 -- telha mais curta que o desenho. */
-            final=Math.max(1,Math.ceil(geometrico+num(COB.beiral)-(f.tocaCumeeira?num(COB.cumeeira):0)+num(COB.ajusteObra)+num(b.ajuste)-.5));
+            final=Math.max(1,Math.ceil(geometrico+num(COB.beiral)-(f.tocaCumeeira?num(COB.cumeeira):0)+cobAjObra(b)+num(b.ajuste)-.5));
           const pedido=Math.ceil(final/incAgr)*incAgr;
           let div,pecas;
           if(T.termica){
@@ -28433,13 +28450,14 @@ html[data-theme="escuro"] .log-det>summary.err{color:var(--red)}.log-det>summary
             if(div.erro){erros.push(div.erro);return;}
             pecas=null;
           }
-          const perfilFinal=(f.perfilProj||[f.projecao]).map(v=>Math.max(0,v*fator+num(COB.beiral)-(f.tocaCumeeira?num(COB.cumeeira):0)+num(COB.ajusteObra)+num(b.ajuste)));
+          const perfilFinal=(f.perfilProj||[f.projecao]).map(v=>Math.max(0,v*fator+num(COB.beiral)-(f.tocaCumeeira?num(COB.cumeeira):0)+cobAjObra(b)+num(b.ajuste)));
           const ordem=fi+1;
           const x={...f,bloco:bi,setor:si,ordem,geometrico,final,pedido,partes:div.partes,medida:div.medida,pecas,
             telha:T.chave,telhaNome:T.nome,telhaId:T.telhaId,util,termica:T.termica,
             medida3d:!!s.medida3d,projecaoPlanta:s.medida3d?f.projecao/fatorIncl:f.projecao,
             sentido:cobSentidoFace(b),
             perfilFinal,minFinal:Math.min(...perfilFinal),maxFinal:Math.max(...perfilFinal),
+            quebrasFinal:(f.quebras||[]).map(q=>({pos:q.pos,L:Math.max(0,q.proj*fator+num(COB.beiral)-(f.tocaCumeeira?num(COB.cumeeira):0)+cobAjObra(b)+num(b.ajuste))})),
             codigo:(b.nome+'-'+s.id+'-'+String(ordem).padStart(2,'0')).replace(/\s+/g,'-')};
           rs.faixas.push(x);todas.push({...x,blocoNome:b.nome,setorNome:s.nome,inclinacao:s.inclinacao});
         });
@@ -28974,6 +28992,53 @@ html[data-theme="escuro"] .log-det>summary.err{color:var(--red)}.log-det>summary
      o nome que veio pronto (so' na primeira troca) e gravar o estado.
      Devolve true so' quando algo realmente mudou, para quem chamou saber se
      vale repintar. */
+  /* AJUSTE DA OBRA POR GRUPO. "Quando seleciono toda cobertura e coloco um
+     ajuste da obra de valor x, ele considera para todas as telhas, sendo que
+     na verdade é pra determinado grupo, isso precisa ser selecionável."
+     Cada grupo (face/água) tem a caixa "Ajuste da obra": desmarcada, o
+     ajuste de cima não entra nas telhas dele (o "Ajuste (mm)" próprio do
+     grupo continua valendo). Guardado pelo id do grupo em COB.ajusteFora;
+     obra salva antes não tem a lista e continua com o ajuste em todos.
+     Teste leitor-cobertura-ajuste-por-grupo. */
+  /* FRENTE DA OBRA. O arquivo não diz onde é a frente; quem diz é quem
+     orça, clicando no lado da frente na planta pequena da aba Telhas
+     (COB.frente: '-y' embaixo, '+y' em cima, '-x' à esquerda, '+x' à
+     direita, na planta vista de cima). Com ela, cada água diz para onde
+     anda a montagem: ao longo da frente-fundos, "fundos → frente" ou
+     "frente → fundos"; de lado, "esquerda → direita" de quem olha da
+     frente. Sem a frente escolhida, a folha fica só com a seta e o A → B.
+     Teste leitor-cobertura-folha-montagem. */
+  const COB_FRENTE={'-y':[0,-1],'+y':[0,1],'-x':[-1,0],'+x':[1,0]};
+  function cobDirMundo(b,sinal){
+    const sk=b&&b.sketchup;let d;
+    if(sk&&sk.eixo)d=[sk.eixo[0],sk.eixo[1]];else{const e=cobEixos(b);d=[e.u.x,e.u.y];}
+    const L=Math.hypot(d[0],d[1])||1;return [sinal*d[0]/L,sinal*d[1]/L];
+  }
+  function cobOrientacao(b,faixas){
+    const F=COB_FRENTE[COB.frente];if(!F||!b)return '';
+    let sinal=cobSentidoFace(b)==='rtl'?-1:1;
+    if(faixas&&faixas.length>1){const a=faixas[0],z=faixas[faixas.length-1],dd=(z.ini+z.fim)-(a.ini+a.fim);if(Math.abs(dd)>1)sinal=dd>0?1:-1;}
+    const d=cobDirMundo(b,sinal),c=d[0]*F[0]+d[1]*F[1];
+    if(Math.abs(c)>=.7)return c>0?'fundos → frente':'frente → fundos';
+    const R=[-F[1],F[0]];   /* olhando da frente para a obra (direção -F), a direita é (-Fy, Fx) */
+    return (d[0]*R[0]+d[1]*R[1])>0?'esquerda → direita (vista da frente)':'direita → esquerda (vista da frente)';
+  }
+  function cobFrenteHTML(){
+    const bl=(COB.blocos||[]).filter(b=>b.poligono&&b.poligono.length>2);if(!bl.length||COB.leitura==='corte')return '';
+    const contorno=b=>{const sk=b.sketchup;return sk&&Array.isArray(sk.worldOuter)&&sk.worldOuter.length>2?sk.worldOuter.map(p=>({x:+p[0],y:+p[1]})):b.poligono;};
+    const cs=bl.map(contorno),pts=cs.flat(),xs=pts.map(p=>p.x),ys=pts.map(p=>p.y);
+    const x0=Math.min(...xs),x1=Math.max(...xs),y0=Math.min(...ys),y1=Math.max(...ys),W=200,H=120,sc=Math.min(W/Math.max(1,x1-x0),H/Math.max(1,y1-y0));
+    const X=x=>10+(W-(x1-x0)*sc)/2+(x-x0)*sc,Y=y=>10+(H-(y1-y0)*sc)/2+(y1-y)*sc;
+    let g='';cs.forEach((c,i)=>{const cx=c.reduce((s,p)=>s+p.x,0)/c.length,cy=c.reduce((s,p)=>s+p.y,0)/c.length;
+      g+='<path d="M'+c.map(p=>X(p.x).toFixed(1)+' '+Y(p.y).toFixed(1)).join('L')+'Z" fill="#eef1f5" stroke="#141414" stroke-width="1"/>'
+        +'<text x="'+X(cx).toFixed(1)+'" y="'+(Y(cy)+3).toFixed(1)+'" font-size="9" font-weight="700" text-anchor="middle">'+h(bl[i].nome).slice(0,14)+'</text>';});
+    const opos={'-y':'+y','+y':'-y','-x':'+x','+x':'-x'}[COB.frente];
+    const bt=(k,cls)=>'<button type="button" class="cob-fr-b '+cls+(COB.frente===k?' on':'')+(opos===k?' fundos':'')+'" data-cob-frente="'+k+'" title="A frente da obra fica deste lado">'+(COB.frente===k?'FRENTE':opos===k?'fundos':'frente aqui?')+'</button>';
+    return '<div class="cob-frente"><div class="cob-fr-t"><b>Frente da obra</b><span>'+(COB.frente?'a folha diz o sentido da montagem: fundos → frente, frente → fundos ou esquerda → direita'
+      :'clique no lado da frente: a folha passa a dizer fundos → frente ou frente → fundos junto da seta')+'</span></div>'
+      +'<div class="cob-fr-g">'+bt('+y','t')+bt('-x','l')+'<svg viewBox="0 0 220 140" aria-label="Planta da cobertura vista de cima">'+g+'</svg>'+bt('+x','r')+bt('-y','b')+'</div></div>';
+  }
+  function cobAjObra(b){ const fora=Array.isArray(COB.ajusteFora)?COB.ajusteFora:[]; return b&&b.id!=null&&fora.includes(b.id)?0:num(COB.ajusteObra); }
   function cobRenomeiaBloco(idx,valorBruto){
     const b=COB.blocos[idx]; if(!b)return false;
     const novo=String(valorBruto||'').trim();
@@ -29008,8 +29073,10 @@ html[data-theme="escuro"] .log-det>summary.err{color:var(--red)}.log-det>summary
     /* ajuste fino desta face, somado ao Ajuste da obra (o projeto tinha 4 mm
        de diferença de uma água para a outra que a obra não tem) */
     const telhaFace=i=>'<label class="cob-f-tel">Telha <select data-cob-tel="'+i+'" aria-label="Telha desta face">'+cobOpcoesTelhaFace(COB.blocos[i].telha)+'</select></label>';
-    const ajuste=i=>'<label title="Somado às telhas desta face, além do Ajuste da obra: positivo acrescenta, negativo desconta">Ajuste (mm) <input data-cob-aj="'+i+'" type="number" step="1" value="'+Math.round(num(COB.blocos[i].ajuste))+'"></label>';
-    box.innerHTML='<div class="tl-faces-l">'+faixaExcl+(COB.blocos.length?COB.blocos.map((b,i)=>{
+    const ajObra=i=>{const b=COB.blocos[i],fora=Array.isArray(COB.ajusteFora)&&b&&COB.ajusteFora.includes(b.id);
+      return '<label class="cob-chk cob-f-ajo" title="Marcado: o Ajuste da obra ('+Math.round(num(COB.ajusteObra))+' mm) entra nas telhas deste grupo. Desmarcado: só o ajuste próprio dele."><input type="checkbox" data-cob-ajo="'+i+'"'+(fora?'':' checked')+'> Ajuste da obra</label>';};
+    const ajuste=i=>'<label title="Somado às telhas desta face, além do Ajuste da obra: positivo acrescenta, negativo desconta">Ajuste (mm) <input data-cob-aj="'+i+'" type="number" step="1" value="'+Math.round(num(COB.blocos[i].ajuste))+'"></label>'+ajObra(i);
+    box.innerHTML=cobFrenteHTML()+'<div class="tl-faces-l">'+faixaExcl+(COB.blocos.length?COB.blocos.map((b,i)=>{
       if(b.origem==='sketchup'){
         const area=b.area3d!=null?b.area3d:(Math.abs(cobArea(b.poligono))-(b.furos||[]).reduce((s,f)=>s+Math.abs(cobArea(f)),0))/1e6;
         const sentido=cobSentidoFace(b);
@@ -29057,6 +29124,15 @@ html[data-theme="escuro"] .log-det>summary.err{color:var(--red)}.log-det>summary
     }));
     box.querySelectorAll('[data-cob-aj]').forEach(s=>s.addEventListener('change',()=>{
       const b=COB.blocos[+s.dataset.cobAj];if(!b)return;b.ajuste=Math.round(num(s.value));marcaPendente();
+    }));
+    box.querySelectorAll('[data-cob-frente]').forEach(s=>s.addEventListener('click',()=>{
+      const k=s.dataset.cobFrente;COB.frente=COB.frente===k?'':k;salvaCob();pintaBlocos();
+    }));
+    box.querySelectorAll('[data-cob-ajo]').forEach(s=>s.addEventListener('change',()=>{
+      const b=COB.blocos[+s.dataset.cobAjo];if(!b)return;
+      const fora=new Set(Array.isArray(COB.ajusteFora)?COB.ajusteFora:[]);
+      if(s.checked)fora.delete(b.id);else fora.add(b.id);
+      COB.ajusteFora=[...fora];marcaPendente();
     }));
     box.querySelectorAll('[data-cob-uso]').forEach(s=>s.addEventListener('change',()=>{
       const b=COB.blocos[+s.dataset.cobUso];if(!b)return;b.uso=['A','B'].includes(s.value)?s.value:'ambos';marcaPendente();
@@ -30620,7 +30696,9 @@ html[data-theme="escuro"] .log-det>summary.err{color:var(--red)}.log-det>summary
         +n0(util-x.sobra)+' mm ficam nela e os <b>'+n0(x.sobra)+' mm</b> que sobram são a <b>'+escapeHtml(x.destinoCurto)+'</b>.</div>').join('');
     const pe0='<div class="tmf-pe"><span>Águas: '+aguas.map(a=>'<b>'+escapeHtml(a.pref)+'</b> '+escapeHtml(a.nome)).join(' · ')+'</span><span>✂ = cortar na obra (ponta em ângulo ou largura) · Medidas em mm</span></div>';
     const acCob=cobFichaAcessorios(r,cum);
-    const sep=tmfSeparacao({pilhas,cortes:[],pe:pe0,extra:[{h:12+acCob.length*6,html:tmfAcessHTML(acCob)}],
+    /* altura da tabela de acessórios medida no papel: título, cabeçalho e
+       ~7,5 mm por linha (com 6 mm ela invadia o rodapé da folha 2) */
+    const sep=tmfSeparacao({pilhas,cortes:[],pe:pe0,extra:[{h:16+acCob.filter(x=>x.qtd>0).length*7.5,html:tmfAcessHTML(acCob)}],
       topo:suf=>topo('SEPARAÇÃO NA OBRA'+suf,'<span>Telha:</span> <b>'+escapeHtml(rot)+'</b> · <span>largura útil</span> <b>'+n0(util)+' mm</b> · <b>'+totalQtd+'</b> chapas'+(cum&&cum.pecas?' · <b>'+cum.pecas+'</b> cumeeira(s)':'')+vezes,
         'Escreva o código com pincel na ponta de cada telha e monte a pilha de cada água na ordem: a primeira a subir fica por cima.')});
     { const extra=(reuso?'<div style="display:grid;gap:1.5mm">'+reuso+'</div>':''),L=sep.length-1,i=sep[L].lastIndexOf('</div><div class="tmf-pe">');
@@ -30638,7 +30716,7 @@ html[data-theme="escuro"] .log-det>summary.err{color:var(--red)}.log-det>summary
       const b=a.bloco,ex=cobEixos(b),poly=(a.st.poly&&a.st.poly.length>2?a.st.poly:b.poligono)||[];
       const cen=cobCentro(poly);
       /* cumeeira em cima: se ela fica "embaixo" no eixo v, gira 180° (sem espelhar) */
-      const k=cobDot(cen,ex.v)>ex.v0?-1:1;
+      let k=cobDot(cen,ex.v)>ex.v0?-1:1;
       /* No SketchUp a face planificada tem x = eixo comum às águas (o sinal
          foi acertado pelo eixo global) e y descendo a água: visto de fora,
          a direita é normal × descida. Onde o eixo ficou ao contrário, o
@@ -30646,10 +30724,19 @@ html[data-theme="escuro"] .log-det>summary.err{color:var(--red)}.log-det>summary
       let kU=k;
       const sk=b.sketchup;
       if(sk&&sk.normal&&sk.direcao&&sk.eixo)kU=cobVDot(sk.eixo,cobVCross(sk.normal,sk.direcao))>=0?1:-1;
-      const U=p=>kU*cobDot(p,ex.u),Vv=p=>k*cobDot(p,ex.v);   /* Vv cresce para a cumeeira */
+      /* A CUMEEIRA SEMPRE EM CIMA: ela é a linha que divide o telhado e as
+         duas águas. A seta de montagem anda para o lado que for, e junto dela
+         vai a orientação da obra (fundos → frente, frente → fundos ou
+         esquerda → direita vista da frente), da "Frente da obra" escolhida
+         na tela -- "sentido de montagem com direção diferente nas abas,
+         mesmo todas sendo do fundo para frente". O caminho que girava a
+         folha (inv) fica desligado. Teste leitor-cobertura-folha-montagem. */
+      const inv=false;
+      a.inv=inv;a.kU=kU;
+      const U=p=>kU*cobDot(p,ex.u),Vv=p=>k*cobDot(p,ex.v);   /* Vv cresce para a cumeeira (ou para o beiral, na folha girada) */
       const pts=poly.concat(a.faixas.flatMap(f=>[f.p0,f.p1]));
       const us=pts.map(U),vs=pts.map(Vv),u0=Math.min(...us),u1=Math.max(...us),v0=Math.min(...vs),v1=Math.max(...vs);
-      const W=1000,m=40,TOP=42,BOT=96,nF=a.faixas.length,longa=nF>40||(u1-u0)/Math.max(1,v1-v0)>2.2;
+      const W=1000,m=40,TOP=inv?112:42,BOT=inv?44:96,nF=a.faixas.length,longa=nF>40||(u1-u0)/Math.max(1,v1-v0)>2.2;
       const s=Math.min((W-2*m)/Math.max(1,u1-u0),(longa?230:400)/Math.max(1,v1-v0)),H=Math.round((v1-v0)*s+TOP+BOT);
       const ox=(W-(u1-u0)*s)/2,X=p=>ox+(U(p)-u0)*s,Y=p=>TOP+(v1-Vv(p))*s,r1=v=>Math.round(v*10)/10;
       const XU=u=>ox+(kU*u-u0)*s;
@@ -30666,34 +30753,108 @@ html[data-theme="escuro"] .log-det>summary.err{color:var(--red)}.log-det>summary
       g+='<path d="M'+poly.map(p=>r1(X(p))+' '+r1(Y(p))).join('L')+'Z" fill="none" stroke="#141414" stroke-width="2"/>';
       /* código no pé (beiral) e comprimento no meio de cada telha */
       a.faixas.forEach(f=>{const xa=XU(f.ini),xb=XU(f.fim),cx=r1((xa+xb)/2),w=Math.abs(xb-xa);
-        const pb=Vv(f.p0)<Vv(f.p1)?f.p0:f.p1,pc=pb===f.p0?f.p1:f.p0,yb=Y(pb),yc=Y(pc),cy=r1((yb+yc)/2);
+        const pb=((Vv(f.p0)<Vv(f.p1))!==inv)?f.p0:f.p1,pc=pb===f.p0?f.p1:f.p0,yb=Y(pb),yc=Y(pc),cy=r1((yb+yc)/2);
         const cod=cobCodigo(f),txt=n0(f.pedido)+(f.partes>1?' ('+f.partes+'×)':'')+(estreita(f)?' · larg. '+n0(f.largura):'');
         const fs=r1(Math.max(7,Math.min(13,w*.5)));
         g+='<text x="'+cx+'" y="'+cy+'" font-size="'+fs+'" font-weight="800" fill="'+(naObra(f)?'#d53309':'#141414')+'" text-anchor="middle" dominant-baseline="middle" transform="rotate(-90 '+cx+' '+cy+')">'+txt+'</text>';
-        if(w>=26)g+='<text x="'+cx+'" y="'+r1(yb-7)+'" font-size="'+r1(Math.max(7.5,Math.min(12,w*.16)))+'" font-weight="800" text-anchor="middle">'+escapeHtml(cod)+'</text>';
-        else g+='<text x="'+cx+'" y="'+r1(yBot+12)+'" font-size="'+r1(Math.max(6.5,Math.min(9,w*.5)))+'" font-weight="700" text-anchor="middle">'+escapeHtml(cod.slice(cod.lastIndexOf('-')+1))+'</text>';});
+        if(w>=26)g+='<text x="'+cx+'" y="'+r1(inv?yb+15:yb-7)+'" font-size="'+r1(Math.max(7.5,Math.min(12,w*.16)))+'" font-weight="800" text-anchor="middle">'+escapeHtml(cod)+'</text>';
+        else g+='<text x="'+cx+'" y="'+r1(inv?yTop-9:yBot+12)+'" font-size="'+r1(Math.max(6.5,Math.min(9,w*.5)))+'" font-weight="700" text-anchor="middle">'+escapeHtml(cod.slice(cod.lastIndexOf('-')+1))+'</text>';});
+      const estreitas=nF&&a.faixas.some(f=>Math.abs(XU(f.fim)-XU(f.ini))<26);
       /* cumeeira em cima, beiral embaixo */
-      if(ORD.cum(b))g+='<line data-cume="1" x1="'+r1(ox-12)+'" x2="'+r1(ox+(u1-u0)*s+12)+'" y1="'+r1(yTop-6)+'" y2="'+r1(yTop-6)+'" stroke="#d53309" stroke-width="2.5"/>'
-        +'<text x="'+r1(W/2)+'" y="'+r1(yTop-12)+'" font-size="12" font-weight="800" fill="#d53309" text-anchor="middle">CUMEEIRA'+(fol>0?' · folga '+n0(fol)+' mm':'')+'</text>';
-      else g+='<text x="'+r1(W/2)+'" y="'+r1(yTop-12)+'" font-size="11" font-weight="700" fill="#555" text-anchor="middle">TOPO (fim da telha)</text>';
-      g+='<text x="'+r1(W/2)+'" y="'+r1(yBot+(nF&&a.faixas.some(f=>Math.abs(XU(f.fim)-XU(f.ini))<26)?24:16))+'" font-size="10.5" font-weight="700" text-anchor="middle">BEIRAL'+(beiral>0?' · '+n0(beiral)+' mm para fora':'')+'</text>';
+      /* cumeeira (ou topo) do lado oposto ao beiral */
+      const yCum=inv?yBot+6:yTop-6,yCumT=inv?yBot+20:yTop-12;
+      if(ORD.cum(b))g+='<line data-cume="1" x1="'+r1(ox-12)+'" x2="'+r1(ox+(u1-u0)*s+12)+'" y1="'+r1(yCum)+'" y2="'+r1(yCum)+'" stroke="#d53309" stroke-width="2.5"/>'
+        +'<text x="'+r1(W/2)+'" y="'+r1(yCumT)+'" font-size="12" font-weight="800" fill="#d53309" text-anchor="middle">CUMEEIRA'+(fol>0?' · folga '+n0(fol)+' mm':'')+'</text>';
+      else g+='<text x="'+r1(W/2)+'" y="'+r1(yCumT)+'" font-size="11" font-weight="700" fill="#555" text-anchor="middle">TOPO (fim da telha)</text>';
+      g+='<text data-beiral="1" x="'+r1(W/2)+'" y="'+r1(inv?yTop-(estreitas?20:12):yBot+(estreitas?24:16))+'" font-size="10.5" font-weight="700" text-anchor="middle">BEIRAL'+(beiral>0?' · '+n0(beiral)+' mm para fora':'')+'</text>';
       /* sentido: da primeira para a última telha */
       const f0=a.faixas[0],fz=a.faixas[a.faixas.length-1],dir=(XU(fz.ini)+XU(fz.fim))>=(XU(f0.ini)+XU(f0.fim))?1:-1;
       const xs0=dir>0?Math.min(XU(f0.ini),XU(f0.fim)):Math.max(XU(f0.ini),XU(f0.fim));
-      const ya=r1(yTop+16);
+      const ya=r1(inv?yBot-10:yTop+16);
       if(a.faixas.length>1)g+='<path d="M'+r1(xs0+dir*8)+','+ya+' h'+(dir*150)+' m0,0 l'+(-dir*9)+',-6 m'+(dir*9)+',6 l'+(-dir*9)+',6" stroke="#d53309" stroke-width="2.6" fill="none"/>'
-        +'<text x="'+r1(xs0+dir*12)+'" y="'+r1(ya-7)+'" font-size="10" font-weight="800" fill="#d53309" text-anchor="'+(dir>0?'start':'end')+'">SENTIDO DE MONTAGEM</text>';
+        +'<text x="'+r1(xs0+dir*12)+'" y="'+r1(ya-7)+'" font-size="10" font-weight="800" fill="#d53309" text-anchor="'+(dir>0?'start':'end')+'">SENTIDO DE MONTAGEM'+(cobOrientacao(b,a.faixas)?' · '+cobOrientacao(b,a.faixas).toUpperCase():'')+'</text>';
       /* cotas para marcar no beiral: onde começa cada telha */
-      const yc=r1(yBot+40);
+      /* a régua do beiral fica do lado do beiral: embaixo, ou em cima na folha girada */
+      const yc=r1(inv?yTop-58:yBot+40);
       const bordas=[...new Set(a.faixas.flatMap(f=>[f.ini,f.fim]).map(v=>Math.round(v)))].sort((p,q)=>dir*(XU(p)-XU(q)));
       const uS=bordas[0];const marcas=[];
       bordas.forEach(u=>{if(marcas.length&&Math.abs(XU(u)-XU(marcas[marcas.length-1]))<22){if(u===bordas[bordas.length-1])marcas[marcas.length-1]=u;return;}marcas.push(u);});
       g+='<line x1="'+r1(Math.min(XU(bordas[0]),XU(bordas[bordas.length-1])))+'" x2="'+r1(Math.max(XU(bordas[0]),XU(bordas[bordas.length-1])))+'" y1="'+yc+'" y2="'+yc+'" stroke="#141414" stroke-width=".8"/>'
-        +'<text x="'+r1(XU(uS))+'" y="'+r1(yc-6)+'" font-size="8.5" font-weight="800" fill="#d53309" text-anchor="'+(dir>0?'start':'end')+'">MARCAR NO BEIRAL · da borda '+(cobSentidoFace(b)==='rtl'?'B':'A')+'</text>';
-      marcas.forEach(u=>{const px=r1(XU(u));g+='<line x1="'+px+'" x2="'+px+'" y1="'+r1(yc-3.5)+'" y2="'+r1(yc+3.5)+'" stroke="#141414" stroke-width=".8"/>'
-        +'<text x="'+px+'" y="'+r1(yc+13)+'" font-size="8.5" font-weight="700" text-anchor="end" transform="rotate(-35 '+px+' '+r1(yc+13)+')">'+n0(Math.abs(u-uS))+'</text>';});
-      g+='<text x="'+r1(XU(uS))+'" y="'+r1(yc+44)+'" font-size="11" font-weight="800" fill="#d53309" text-anchor="'+(dir>0?'start':'end')+'">↑ COMECE AQUI · '+escapeHtml(cobCodigo(f0))+'</text>';
+        +'<text x="'+r1(XU(uS)+dir*8)+'" y="'+r1(inv?yc+13:yc-6)+'" font-size="8.5" font-weight="800" fill="#d53309" text-anchor="'+(dir>0?'start':'end')+'">MARCAR NO BEIRAL · da borda '+(cobSentidoFace(b)==='rtl'?'B':'A')+'</text>';
+      marcas.forEach(u=>{const px=r1(XU(u)),ty=r1(inv?yc-6:yc+13);g+='<line x1="'+px+'" x2="'+px+'" y1="'+r1(yc-3.5)+'" y2="'+r1(yc+3.5)+'" stroke="#141414" stroke-width=".8"/>'
+        +'<text x="'+px+'" y="'+ty+'" font-size="8.5" font-weight="700" text-anchor="'+(inv?'start':'end')+'" transform="rotate(-35 '+px+' '+ty+')">'+n0(Math.abs(u-uS))+'</text>';});
+      /* COMECE AQUI: a seta sai do texto e encosta na quina da primeira telha,
+         no beiral, na borda onde ela começa (antes o "↑" era um caractere do
+         começo do texto e, com o texto alinhado pelo fim, apontava para o
+         meio da régua). */
+      { const px=r1(XU(uS)),yQ=r1(inv?yTop-2:yBot+2),yT=r1(inv?yc-40:yc+46),yS=r1(inv?yT+4:yT-12);
+        g+='<path data-comece="1" d="M'+px+','+yS+' L'+px+','+yQ+' M'+r1(px-5)+','+r1(inv?yQ-8:yQ+8)+' L'+px+','+yQ+' L'+r1(px+5)+','+r1(inv?yQ-8:yQ+8)+'" stroke="#d53309" stroke-width="2" fill="none"/>'
+          +'<text x="'+r1(px+dir*7)+'" y="'+yT+'" font-size="11" font-weight="800" fill="#d53309" text-anchor="'+(dir>0?'start':'end')+'">COMECE AQUI · '+escapeHtml(cobCodigo(f0))+'</text>'; }
       return {svg:'<svg viewBox="0 0 '+W+' '+H+'"'+(longa?' style="max-height:62mm"':'')+'>'+g+'</svg>',longa};
+    };
+    /* CORTES EM ÂNGULO, AMPLIADOS. "Sistema fala na primeira página para
+       cortar em ângulo, mas sem o recorte que precisa fazer de fato de nada
+       serve, melhor colocar uma ampliação da imagem da telha que precisa ser
+       cortada em ângulo e qual ângulo cortar." Uma folha por água que tem
+       ponta em ângulo: cada telha desenhada em escala (a ponta), vista como
+       no desenho da água (esquerda e direita iguais), com a medida a marcar
+       em cada borda a partir do pé, a linha do corte, a parte que sai e o
+       ângulo do corte em relação à borda do pé. Ponta com quebra (o canto
+       do telhado cai no meio da telha) leva o ponto da quebra e os dois
+       ângulos. Teste leitor-cobertura-folha-montagem. */
+    const cartaoCorte=(a,f)=>{
+      const W=Math.max(1,num(f.largura)),P=(f.perfilFinal&&f.perfilFinal.length>1?f.perfilFinal:[f.final,f.final]).map(Number);
+      const vira=(a.kU||1)<0;                          /* esquerda/direita como no desenho da água */
+      const ped=num(f.pedido)||Math.max(...P);
+      let pts=[[0,P[0]],[W,P[P.length-1]]].concat((f.quebrasFinal||[]).map(q=>[q.pos,q.L]));
+      if(vira)pts=pts.map(q=>[W-q[0],q[1]]);
+      pts.sort((p,q)=>p[0]-q[0]);
+      /* tira o ponto que está na reta dos vizinhos (canto que não muda nada) */
+      const ang2=(p,q)=>Math.atan2(q[1]-p[1],Math.max(1e-6,q[0]-p[0]))*180/Math.PI;
+      for(let i=1;i<pts.length-1;){if(Math.abs(ang2(pts[i-1],pts[i])-ang2(pts[i],pts[i+1]))<.3||pts[i][0]-pts[i-1][0]<1)pts.splice(i,1);else i++;}
+      const segs=[];for(let i=0;i<pts.length-1;i++)segs.push([pts[i][0],pts[i][1],pts[i+1][0],pts[i+1][1]]);
+      const angs=segs.map(sg=>Math.abs(ang2([sg[0],sg[1]],[sg[2],sg[3]])));
+      const L0=pts[0][1],L1=pts[pts.length-1][1],meio=pts.slice(1,-1);
+      /* desenho: a ponta em escala, com margem para as medidas; o pé cortado */
+      const lo=Math.min(...pts.map(q=>q[1])),y0=Math.max(0,lo-W*.3),alt=Math.max(1,ped-y0),sc=Math.min(105/W,120/alt);
+      const SW=Math.round(W*sc+120),ox=60,top=24,X=x=>ox+x*sc,Y=L=>top+(ped-L)*sc,ybase=Y(y0),SH=Math.round(ybase+40),r1=v=>Math.round(v*10)/10;
+      let g='<rect x="'+r1(X(0))+'" y="'+r1(Y(ped))+'" width="'+r1(W*sc)+'" height="'+r1(ybase-Y(ped))+'" fill="#eef1f5" stroke="#141414" stroke-width="1"/>';
+      /* a parte que sai: entre a linha do corte e a ponta comprada */
+      g+='<path d="M'+r1(X(0))+','+r1(Y(ped))+' L'+pts.map(q=>r1(X(q[0]))+','+r1(Y(q[1]))).join(' L')+' L'+r1(X(W))+','+r1(Y(ped))+' Z" fill="#fde5d6" stroke="none"/>'
+        +'<path d="M'+pts.map(q=>r1(X(q[0]))+','+r1(Y(q[1]))).join(' L')+'" stroke="#d53309" stroke-width="2.2" fill="none" stroke-dasharray="5 3"/>';
+      g+='<text x="'+r1(X(W/2))+'" y="'+r1(Y(ped)-6)+'" font-size="8.5" font-weight="700" fill="#555" text-anchor="middle">comprada '+n0(ped)+'</text>';
+      if(y0>0){const zz='M'+r1(X(0)-3)+','+r1(ybase)+' l'+r1(W*sc/4)+',-5 l'+r1(W*sc/4)+',5 l'+r1(W*sc/4)+',-5 l'+r1(W*sc/4+6)+',5';
+        g+='<path d="'+zz+'" stroke="#fff" stroke-width="5" fill="none"/><path d="'+zz+'" stroke="#141414" stroke-width=".8" fill="none"/>';}
+      /* medidas a marcar: as das bordas por fora; a do canto para dentro */
+      g+='<text x="'+r1(X(0)-5)+'" y="'+r1(Y(L0)+3.5)+'" font-size="10" font-weight="800" text-anchor="end">'+n0(L0)+'</text>'
+        +'<text x="'+r1(X(W)+5)+'" y="'+r1(Y(L1)+3.5)+'" font-size="10" font-weight="800">'+n0(L1)+'</text>';
+      pts.forEach(q=>{g+='<circle cx="'+r1(X(q[0]))+'" cy="'+r1(Y(q[1]))+'" r="2.6" fill="#d53309"/>';});
+      meio.forEach(q=>{const dx=q[0]<W/2?1:-1,yy=Y(q[1])-Y(ped)<14?Y(q[1])+15:Y(q[1])-7;
+        g+='<text x="'+r1(X(q[0])+dx*5)+'" y="'+r1(yy)+'" font-size="8.5" font-weight="800" fill="#d53309" text-anchor="'+(dx>0?'start':'end')+'">'+n0(q[1])+' a '+n0(q[0])+'</text>';});
+      /* o ângulo com a borda do pé, na ponta mais baixa de cada trecho inclinado */
+      segs.forEach((sg,i)=>{if(angs[i]<.5||(segs.length>1&&sg[2]-sg[0]<W*.15))return;const baixo=sg[1]<=sg[3]?[sg[0],sg[1]]:[sg[2],sg[3]],dirx=baixo[0]===sg[0]?1:-1,rr=15,px=X(baixo[0]),py=Y(baixo[1]),
+        t=angs[i]*Math.PI/180,ex=px+dirx*rr*Math.cos(t),ey=py-rr*Math.sin(t);
+        g+='<line x1="'+r1(px)+'" y1="'+r1(py)+'" x2="'+r1(px+dirx*(rr+5))+'" y2="'+r1(py)+'" stroke="#888" stroke-width=".7"/>'
+          +'<path d="M'+r1(px+dirx*rr)+','+r1(py)+' A'+rr+','+rr+' 0 0 '+(dirx>0?0:1)+' '+r1(ex)+','+r1(ey)+'" stroke="#d53309" stroke-width="1" fill="none"/>'
+          +'<text x="'+r1(px+dirx*(rr+7))+'" y="'+r1(py-4)+'" font-size="9.5" font-weight="800" fill="#d53309" text-anchor="'+(dirx>0?'start':'end')+'">'+dec(angs[i],1)+'°</text>';});
+      g+='<text x="'+r1(X(W/2))+'" y="'+r1(ybase+13)+'" font-size="8.5" font-weight="700" text-anchor="middle">pé · largura '+n0(W)+'</text>'
+        +'<text x="'+r1(X(0))+'" y="'+r1(ybase+26)+'" font-size="8" fill="#555">esq.</text><text x="'+r1(X(W))+'" y="'+r1(ybase+26)+'" font-size="8" fill="#555" text-anchor="end">dir.</text>';
+      const inc=angs.filter(v=>v>=.5);
+      let txt;
+      if(segs.length===1)txt='Marque <b>'+n0(L0)+'</b> na borda esquerda e <b>'+n0(L1)+'</b> na direita (do pé) e corte reto entre as marcas: <b>'+dec(angs[0],1)+'°</b> com a borda do pé.';
+      else if(segs.length===2&&inc.length===1){const ri=angs[0]<.5?0:1,q=meio[0],lado=ri===0?'direita':'esquerda',Lb=ri===0?L1:L0,dist=ri===0?W-q[0]:q[0];
+        txt='Corte só o canto: marque <b>'+n0(Lb)+'</b> na borda '+lado+' e <b>'+n0(q[1])+'</b> a '+n0(dist)+' mm dela; corte reto entre as marcas (<b>'+dec(inc[0],1)+'°</b>). O resto da ponta fica reto, em '+n0(q[1])+'.';}
+      else txt='Marque <b>'+n0(L0)+'</b> na borda esquerda, '+meio.map(q=>'<b>'+n0(q[1])+'</b> a '+n0(q[0])+' mm dela').join(', ')+' e <b>'+n0(L1)+'</b> na direita; corte as retas entre as marcas ('+inc.map(v=>dec(v,1)+'°').join(' e ')+').';
+      return '<div class="cob-corte-a" data-corte-ang="'+escapeAttr(cobCodigo(f))+'" data-angulos="'+inc.map(v=>v.toFixed(1)).join(',')+'"><div class="cca-t"><b>'+escapeHtml(cobCodigo(f))+'</b><span>'+inc.map(v=>dec(v,1)+'°').join(' + ')+'</span></div>'
+        +'<svg viewBox="0 0 '+SW+' '+SH+'">'+g+'</svg><div class="cca-x">'+txt+'</div></div>';
+    };
+    /* 8 por folha (2 linhas de 4); mais que isso, folha seguinte */
+    const folhaCortes=(a)=>{
+      const fs=a.faixas.filter(f=>f.diagonal);if(!fs.length)return [];
+      const out=[];for(let i=0;i<fs.length;i+=8)out.push(fs.slice(i,i+8));
+      return out.map((grupo,gi)=>'<article class="tmf" data-cortes="'+escapeAttr(a.pref)+'">'+topo('ÁGUA '+escapeHtml(a.pref)+' · CORTES EM ÂNGULO'+(out.length>1?' ('+(gi+1)+'/'+out.length+')':''),
+          '<b>'+fs.length+'</b> telha'+(fs.length>1?'s':'')+' com ponta em ângulo · medidas a partir do pé (beiral) · esquerda e direita como no desenho da água','')
+        +'<div class="cob-cortes-g">'+grupo.map(f=>cartaoCorte(a,f)).join('')+'</div>'+peTxt+'</article>');
     };
     let pag=1+sep.length;
     const folhas=aguas.map((a,ai)=>{
@@ -30711,28 +30872,34 @@ html[data-theme="escuro"] .log-det>summary.err{color:var(--red)}.log-det>summary
       const fix=paraf?'<div style="margin-top:2.5mm"><h5>Fixação desta água</h5><table class="tmf-fix"><tbody><tr><td>Parafusos nas telhas (≈ '+String(num(COB.parafM2)).replace('.',',')+' por m²)</td><td><b>'+paraf+'</b></td></tr>'
         +(ORD.cum(a.bloco)&&cum&&cum.pecas?'<tr><td>Cumeeiras da obra (com a água vizinha)</td><td><b>'+cum.pecas+'</b></td></tr>':'')+'</tbody></table></div>':'';
       const art='<article class="tmf" data-agua="'+escapeAttr(a.pref)+'">'+topo('ÁGUA '+escapeHtml(a.pref)+' · '+escapeHtml(String(a.nome).toUpperCase()),
-          '<b>'+nF+'</b> telhas · <span>montagem</span> <b>'+(sentido==='rtl'?'B → A':'A → B')+'</b>'+(num(a.st.inclinacao||a.bloco.inclinacao)?' · <span>inclinação</span> <b>'+dec(num(a.st.inclinacao||a.bloco.inclinacao),1)+'%</b>':'')+' · <span>ordem</span> <b>'+(ai+1)+' de '+aguas.length+'</b>'+vezes,'')
-        +'<div class="tmf-corpo'+(longa?' longa':(nF>12?' larga':''))+'"><div><h5>Vista de cima · cumeeira em cima, beiral embaixo</h5>'+svg
+          '<b>'+nF+'</b> telhas · <span>montagem</span> <b>'+(sentido==='rtl'?'B → A':'A → B')+'</b>'+(cobOrientacao(a.bloco,a.faixas)?' · <b>'+cobOrientacao(a.bloco,a.faixas)+'</b>':'')+(num(a.st.inclinacao||a.bloco.inclinacao)?' · <span>inclinação</span> <b>'+dec(num(a.st.inclinacao||a.bloco.inclinacao),1)+'%</b>':'')+' · <span>ordem</span> <b>'+(ai+1)+' de '+aguas.length+'</b>'+vezes,'')
+        +'<div class="tmf-corpo'+(longa?' longa':(nF>12?' larga':''))+'"><div><h5>Vista de cima · '+(ORD.cum(a.bloco)?'cumeeira':'topo')+' em cima, beiral embaixo'+(cobOrientacao(a.bloco,a.faixas)?' · montagem '+cobOrientacao(a.bloco,a.faixas):'')+'</h5>'+svg
           +'<div class="tmf-leg"><span><i style="background:#fde5d6"></i>cortar na obra (ponta em ângulo ou largura)</span><span>código no pé de cada telha · número grande = comprimento</span></div></div>'
         +'<div style="min-height:0;overflow:hidden"><h5>Telhas desta água · na ordem</h5><div class="tmf-lst'+(longa?'':(nF>12?' dupla':''))+(nF>30?' mini':'')+'"'+(longa?' style="columns:'+nCol+'"':'')+'>'+lista+'</div>'+(longa?'':fix)+'</div></div>'
         +peTxt+'</article>';
       a.folha=pag+1;pag++;
-      return art;});
+      const fc=folhaCortes(a);if(fc.length){a.folhaCortes=pag+1;pag+=fc.length;}
+      return art+fc.join('');});
     /* ---- resumo ---- */
     const nCortes=aguas.reduce((s,a)=>s+a.cortes,0);
     const img3d=cob3DImagem(r);
     const dets=svgDetalheCumeeira(r,cum)+svgDetalhePingadeira(totais);
     const resumo=tmfResumo({img:img3d,alt:'Cobertura em 3D com o sentido de montagem',col:'Água',
-      linhas:aguas.map((a,i)=>({n:i+1,nome:a.pref+' · '+a.nome,sub:'montagem '+(cobSentidoFace(a.bloco)==='rtl'?'B → A':'A → B')+(ORD.cum(a.bloco)?'':' · uma água'),telhas:a.faixas.length*e,chapas:a.chapas,cortes:a.cortes,folha:String(a.folha)})),
+      linhas:aguas.map((a,i)=>({n:i+1,nome:a.pref+' · '+a.nome,sub:'montagem '+(cobSentidoFace(a.bloco)==='rtl'?'B → A':'A → B')+(cobOrientacao(a.bloco,a.faixas)?' · '+cobOrientacao(a.bloco,a.faixas):'')+(ORD.cum(a.bloco)?'':' · uma água'),telhas:a.faixas.length*e,chapas:a.chapas,cortes:a.cortes,folha:String(a.folha)})),
       topo:topo('COBERTURA · MONTAGEM EM 3D E RESUMO','<b>'+aguas.reduce((s,a)=>s+a.faixas.length,0)*e+'</b> telhas · <b>'+totalQtd+'</b> chapas · <b>'+aguas.length+'</b> água(s) · '+escapeHtml(rot)+' · útil <b>'+n0(util)+'</b> mm'+vezes,''),
       chk:['Telhas separadas por água e contadas: <b>'+totalQtd+' chapas</b>'+(cum&&cum.pecas?' e <b>'+cum.pecas+' cumeeiras</b>':'')+' (folha 2).','Terças no prumo e alinhadas.',
         'Marcar no beiral o início de cada telha (cotas embaixo do desenho de cada água).']
-        .concat(nCortes?['Cortar no chão as <b>'+nCortes+' telha'+(nCortes>1?'s':'')+' ✂</b> (ponta em ângulo ou largura), conforme a folha de cada água.']:[])
+        .concat(nCortes?['Cortar no chão as <b>'+nCortes+' telha'+(nCortes>1?'s':'')+' ✂</b> (ponta em ângulo ou largura), conforme a folha de cada água'
+          +(aguas.some(a=>a.folhaCortes)?'; o desenho e o ângulo de cada ponta em ângulo estão na folha '+aguas.filter(a=>a.folhaCortes).map(a=>a.folhaCortes).join(', ')+'.':'.')]:[])
         .concat(fol>0?['Folga na cumeeira: a telha para <b>'+n0(fol)+' mm</b> antes do eixo.']:[])
         .concat(['Transpasse da onda: a telha nova por cima, contra o vento.']),
       leg:(dets?'<div class="tmf-dets" style="display:flex;gap:3mm">'+dets+'</div>':''),
       pe:pe0});
-    return tmfCss()+'<style>.tmf .cob-fab-det{flex:1 1 0;border:.2mm solid #d6dade;border-radius:2mm;padding:1.5mm 2.5mm;font-size:8.5pt}.tmf .cob-fab-det svg{max-height:26mm}</style>'+resumo+sep.join('')+folhas.join('');
+    return tmfCss()+'<style>.tmf .cob-fab-det{flex:1 1 0;border:.2mm solid #d6dade;border-radius:2mm;padding:1.5mm 2.5mm;font-size:8.5pt}.tmf .cob-fab-det svg{max-height:26mm}'
+      +'.tmf .cob-cortes-g{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:3mm;align-content:start;min-height:0}'
+      +'.tmf .cob-corte-a{border:.2mm solid #d6dade;border-radius:2mm;padding:1.5mm 2mm;break-inside:avoid;display:flex;flex-direction:column;gap:1mm}'
+      +'.tmf .cob-corte-a svg{width:100%;max-height:44mm}.tmf .cca-t{display:flex;justify-content:space-between;font-size:10.5pt}.tmf .cca-t span{color:#d53309;font-weight:800}'
+      +'.tmf .cca-x{font-size:7.5pt;line-height:1.3;color:#333}</style>'+resumo+sep.join('')+folhas.join('');
   }
   /* parafusos, fechamento de onda e rufo: material da empresa, só na ficha */
   function cobFichaAcessorios(r,cum){
@@ -31553,7 +31720,7 @@ if('serviceWorker' in navigator && location.protocol.startsWith('http')){
 }
 </script>
 <script>/* versão publicada (PADRAO_RM.md §3): sobe a cada publicação, junto com o CACHE do sw.js */
-const APP_VER='v294';
+const APP_VER='v295';
 </script>
 <script id="rmVersaoBloco">
 /* ===== SELO DE VERSÃO — igual em todos os sistemas (PADRAO_RM.md §3) =====
