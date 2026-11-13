@@ -9,7 +9,7 @@ module RM_Estruturas
     )
     ext.description = 'Scripts de exportação para o sistema de controle de aplicação de PU.' \
                       ' RM Estruturas Pré-Fabricadas.'
-    ext.version     = '1.3.9'   # o mesmo VERSAO de RM_ExportarLinhasPU.rb (teste pu-plugin-sketchup)
+    ext.version     = '1.4.0'   # o mesmo VERSAO de RM_ExportarLinhasPU.rb (teste pu-plugin-sketchup)
     ext.copyright   = 'RM Estruturas Pré-Fabricadas'
     ext.creator     = 'RM Estruturas'
     Sketchup.register_extension(ext, true)

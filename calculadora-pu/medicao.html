@@ -2059,6 +2059,7 @@ else comeca();
   padding:5px 10px;border-radius:7px;cursor:pointer;font-weight:600;}
 #viewer3d .v3bar button:hover{background:rgba(255,255,255,.10);}
 #viewer3d .v3bar button.on{background:#e9ecef;color:#16171a;border-color:#e9ecef;}
+#viewer3d .v3bar .v3cam{display:flex;gap:4px;align-items:center;padding-left:6px;border-left:1px solid rgba(255,255,255,.16)}
 #viewer3d .v3sepb{width:1px;height:18px;background:rgba(255,255,255,.18);margin:0 2px;}
 #viewer3d .v3leg{position:absolute;left:12px;bottom:12px;display:flex;flex-wrap:wrap;gap:4px 14px;z-index:2;
   background:rgba(22,23,26,.72);padding:7px 10px;border-radius:10px;font-size:13px;color:#cfd4da;font-weight:600;}
@@ -2226,6 +2227,7 @@ else comeca();
         <button data-v3v="sketchup" id="v3vSk" style="display:none" title="A mesma vista que estava no SketchUp ao exportar"><span class="lg">Vista do </span>SketchUp</button>
         <span class="v3sepb"></span>
         <button id="v3PecasBtn" class="on" style="display:none" title="As peças lidas: concreto, translúcidas, sólidas ou ocultas">Peças<span class="lg" id="v3PecasModo">: concreto</span></button>
+        <span id="v3Camadas" class="v3cam" style="display:none" title="Peças do SketchUp além do concreto (só a vista)"></span>
         <button id="v3AplicaBtn" style="display:none" title="Simula a aplicação: as linhas de PU vão sendo passadas, de baixo para cima">▶ Aplicar PU</button>
         <button id="v3MedBtn" title="Escreve os metros de cada linha no próprio 3D">Medidas</button>
         <button id="v3TrenaBtn" title="Trena: clique em dois pontos para medir. Encaixa no canto (verde) e na aresta (magenta) das peças. Esc limpa.">Trena</button>
@@ -2268,7 +2270,7 @@ else comeca();
         <div class="ic">📏</div>
         <p>Carregue o arquivo <b>*_linhasPU.json</b><br>gerado pelo plugin do SketchUp.</p>
         <p><button type="button" class="v3b v3carrega" onclick="$('v3file').click()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 9l5-5 5 5"/><path d="M12 4v12"/></svg>Carregar arquivo</button></p>
-        <p><a class="v3plugin" href="sketchup/RM_Estruturas_PU.rbz?v=1.3.9" download="RM_Estruturas_PU.rbz">⬇ Plugin do SketchUp (.rbz)</a><br>
+        <p><a class="v3plugin" href="sketchup/RM_Estruturas_PU.rbz?v=1.4.0" download="RM_Estruturas_PU.rbz">⬇ Plugin do SketchUp (.rbz)</a><br>
           <span class="v3plugin-dica">SketchUp → Extensões → Gerenciador de extensões → Instalar extensão</span></p>
       </div>
       <div id="v3d-list"></div>
@@ -2633,15 +2635,120 @@ function v3PecasAplica(){
       o.castShadow=sol; o.receiveShadow=sol; });
     /* no concreto a aresta é o fio fino da junta, não o contorno de desenho */
     if(v3MatAresta){ v3MatAresta.linewidth=conc?1:1.6; v3MatAresta.opacity=conc?.45:.95; }
+    const real=!!(v3Forma&&conc&&!v3ExplK);
+    v3PecasGrp.children.forEach(o=>{ if(o.userData.coberta!==undefined) o.visible=!(real&&o.userData.coberta); });
+    if(v3Forma){ v3Forma.visible=real; V3CAM.forEach(c=>{ v3Forma.userData.cam[c].visible=c==='concreto'||!!v3FormaOn[c]; });
+      document.querySelectorAll('#v3Camadas [data-cam]').forEach(b=>b.classList.toggle('on',real&&!!v3FormaOn[b.dataset.cam])); }
     if(ren) ren.shadowMap.needsUpdate=true;
   }
   const t=document.getElementById('v3PecasModo'); if(t) t.textContent=': '+V3MODOS_TXT[v3PecasModo];
   const b=document.getElementById('v3PecasBtn'); if(b) b.classList.toggle('on',v3PecasModo!=='ocultas');
 }
+/* FORMA REAL (plugin 1.4): "cada pilar, viga, tem detalhes como friso,
+   console... trazer componentes como telhas, janelas e ter opção de
+   ocultar". O arquivo traz, além das caixas (o cálculo), a forma de cada
+   peça do SketchUp (json.visual). No modo concreto ela entra no lugar da
+   caixa que ela cobre; caixa sem forma (laje achada pelo plugin) continua.
+   Camadas: o concreto fica sempre; metálica, esquadrias, telhas e outros
+   ligam e desligam (a escolha fica neste aparelho). Só a vista: linhas,
+   metros e preço não mudam. Explodir volta às caixas.
+   A forma pode ter alguns MB: fica guardada NESTE computador (IndexedDB),
+   não na obra da nuvem; em outro aparelho, carregue o arquivo de novo. */
+const V3CAM=['concreto','metalica','esquadrias','cobertura','outros'],
+  V3CAM_TXT={concreto:'Concreto',metalica:'Metálica',esquadrias:'Esquadrias',cobertura:'Telhas',outros:'Outros'};
+let v3Forma=null, v3FormaOn={metalica:true,esquadrias:true,cobertura:false,outros:false};
+try{const s=JSON.parse(localStorage.getItem('rm_pu_camadas')||'null'); if(s&&typeof s==='object') V3CAM.forEach(c=>{ if(c in s) v3FormaOn[c]=!!s[c]; });}catch(e){}
+const V3SU=new THREE.Matrix4().set(1,0,0,0, 0,0,1,0, 0,-1,0,0, 0,0,0,1);   /* (x,y,z) -> (x,z,-y), como v3() */
+function v3FormaGeo(p){
+  const v=p.v||[], ix=p.i||[], n=ix.length, pos=new Float32Array(n*3), uv=new Float32Array(n*2);
+  const A=new THREE.Vector3(),B=new THREE.Vector3(),C=new THREE.Vector3(),N=new THREE.Vector3();
+  for(let t=0;t+2<n;t+=3){
+    const q=[ix[t],ix[t+1],ix[t+2]].map(i=>[v[i*3]||0,v[i*3+1]||0,v[i*3+2]||0]);
+    A.fromArray(q[0]);B.fromArray(q[1]);C.fromArray(q[2]);N.subVectors(B,A).cross(C.clone().sub(A));
+    const ax=Math.abs(N.x),ay=Math.abs(N.y),az=Math.abs(N.z), e=ax>=ay&&ax>=az?[1,2]:ay>=az?[0,2]:[0,1];
+    q.forEach((pt,j)=>{ pos.set(pt,(t+j)*3); uv[(t+j)*2]=pt[e[0]]/2.4; uv[(t+j)*2+1]=pt[e[1]]/2.4; });
+  }
+  const g=new THREE.BufferGeometry(); g.setAttribute('position',new THREE.BufferAttribute(pos,3)); g.setAttribute('uv',new THREE.BufferAttribute(uv,2));
+  g.computeVertexNormals(); g.computeBoundingBox(); return g;
+}
+const V3COR_CAM={metalica:0x5f656c,esquadrias:0x9aa6b2,cobertura:0x868b90,outros:0xc4c7cb};
+function v3FormaMat(cache,cam,k,md){
+  const vidro=cam==='esquadrias'&&md&&(md.a<1||/vidro|glass|transl/i.test(md.n||''));
+  const chave=cam+'|'+(cam==='concreto'?k:(md?md.n:''))+'|'+(vidro?1:0);
+  if(cache[chave]) return cache[chave];
+  let m;
+  if(cam==='concreto'){ m=v3MatConcreto(k||'Placa',new THREE.Vector3(2.4,2.4,2.4),Object.keys(cache).length); }
+  else{
+    const cor=md&&/^#[0-9a-f]{6}$/i.test(md.c||'')?new THREE.Color(md.c):new THREE.Color(V3COR_CAM[cam]);
+    m=new THREE.MeshStandardMaterial({color:cor,roughness:cam==='metalica'?.45:cam==='cobertura'?.55:.8,metalness:cam==='metalica'?.55:cam==='cobertura'?.4:0,envMapIntensity:1});
+    if(vidro){ m.transparent=true; m.opacity=.35; m.depthWrite=false; m.roughness=.1; m.metalness=.1; }
+  }
+  m.side=THREE.DoubleSide; m.polygonOffset=true; m.polygonOffsetFactor=1; m.polygonOffsetUnits=1;
+  return (cache[chave]=m);
+}
+function v3FormaMonta(vis){
+  if(!vis||!Array.isArray(vis.defs)||!Array.isArray(vis.inst)||!v3MatAresta) return null;
+  const raiz=new THREE.Group(); raiz.name='forma-real'; raiz.userData.cam={}; raiz.userData.n={};
+  V3CAM.forEach(c=>{ const g=new THREE.Group(); g.name='cam-'+c; raiz.add(g); raiz.userData.cam[c]=g; raiz.userData.n[c]=0; });
+  const geos=vis.defs.map(d=>(Array.isArray(d&&d.p)?d.p:[]).filter(p=>p&&Array.isArray(p.v)&&Array.isArray(p.i)&&p.i.length>=3).map(p=>{
+    const geo=v3FormaGeo(p); return {m:p.m,geo,ar:new LineSegmentsGeometry().fromEdgesGeometry(new THREE.EdgesGeometry(geo,25))}; }));
+  const mats=Array.isArray(vis.mats)?vis.mats:[], cache={};
+  vis.inst.forEach(it=>{
+    const partes=geos[it&&it.d]; if(!partes||!partes.length) return;
+    const M=new THREE.Matrix4(); if(Array.isArray(it.t)&&it.t.length===16) M.fromArray(it.t.map(Number));
+    const W=V3SU.clone().multiply(M), contou={};
+    partes.forEach(p=>{
+      const mi=p.m!=null?p.m:it.m, md=mi!=null?mats[mi]:null;
+      const cam=V3CAM.includes(it.g)?it.g:(md&&V3CAM.includes(md.g)?md.g:'outros');
+      const me=new THREE.Mesh(p.geo,v3FormaMat(cache,cam,it.k,md)); me.matrixAutoUpdate=false; me.matrix.copy(W); me.userData.cam=cam; me.castShadow=!me.material.transparent; me.receiveShadow=true;
+      const ar=new LineSegments2(p.ar,v3MatAresta); ar.matrixAutoUpdate=false; ar.matrix.copy(W);
+      raiz.userData.cam[cam].add(me,ar); if(!contou[cam]){ contou[cam]=1; raiz.userData.n[cam]++; }
+    });
+  });
+  return raiz;
+}
+/* a caixa que a forma de concreto cobre sai no modo concreto */
+function v3FormaCobre(){
+  if(!v3Forma||!v3PecasGrp) return;
+  const cx=v3Forma.userData.cam.concreto.children.filter(o=>o.isMesh).map(o=>o.geometry.boundingBox.clone().applyMatrix4(o.matrix).expandByScalar(.05));
+  const ch=v3PecasGrp.children;
+  for(let i=0;i<ch.length;i++){ const o=ch[i]; if(!o.isMesh||o.isLineSegments2) continue;
+    const c=o.position, cob=cx.some(b=>b.containsPoint(c));
+    o.userData.coberta=cob; if(ch[i+1]&&ch[i+1].isLineSegments2) ch[i+1].userData.coberta=cob; }
+}
+function v3FormaBotoes(){
+  const w=document.getElementById('v3Camadas'); if(!w) return;
+  if(!v3Forma){ w.style.display='none'; w.innerHTML=''; return; }
+  const n=v3Forma.userData.n;
+  w.innerHTML=V3CAM.filter(c=>c!=='concreto'&&n[c]>0).map(c=>'<button type="button" data-cam="'+c+'" title="Mostrar ou ocultar: '+V3CAM_TXT[c].toLowerCase()+' (só a vista)">'+V3CAM_TXT[c]+'</button>').join('');
+  w.style.display=w.innerHTML?'':'none';
+  w.querySelectorAll('[data-cam]').forEach(b=>{ b.classList.toggle('on',!!v3FormaOn[b.dataset.cam]); b.addEventListener('click',()=>{
+    const c=b.dataset.cam; v3FormaOn[c]=!v3FormaOn[c]; try{localStorage.setItem('rm_pu_camadas',JSON.stringify(v3FormaOn));}catch(e){}
+    if(v3PecasModo!=='concreto') v3PecasModo='concreto';
+    v3PecasAplica(); }); });
+}
+function v3PoeForma(vis){
+  if(!v3Cena||!v3PecasGrp) return false;
+  const f=v3FormaMonta(vis); if(!f) return false;
+  if(v3Forma&&v3Forma.parent) v3Forma.parent.remove(v3Forma);
+  v3Forma=f; v3Cena.add(f); v3FormaCobre(); v3FormaBotoes(); v3SemTom(f); v3PecasAplica(); return true;
+}
+const V3FORMA_DB={
+  abre:()=>new Promise((ok,er)=>{ try{ const r=indexedDB.open('rm_pu_forma',1); r.onupgradeneeded=()=>r.result.createObjectStore('f'); r.onsuccess=()=>ok(r.result); r.onerror=()=>er(r.error); }catch(e){ er(e); } }),
+  faz:async(modo,fn)=>{ try{ const db=await V3FORMA_DB.abre(); return await new Promise(ok=>{ const q=fn(db.transaction('f',modo).objectStore('f')); q.onsuccess=()=>ok(q.result==null?null:q.result); q.onerror=()=>ok(null); }); }catch(e){ return null; } },
+  grava:d=>V3FORMA_DB.faz('readwrite',st=>st.put(d,'atual')),
+  le:()=>V3FORMA_DB.faz('readonly',st=>st.get('atual')),
+  apaga:()=>V3FORMA_DB.faz('readwrite',st=>st.delete('atual'))
+};
+const v3FormaChave=()=>v3Arquivo+'|'+(v3PecasDados?v3PecasDados.length:0);
 document.getElementById('v3MedBtn').addEventListener('click',e=>{ v3Medidas=!v3Medidas; e.currentTarget.classList.toggle('on',v3Medidas); });
 
 window.__v3Teste={cena:()=>({...v3HudInfo}),
   aplica:()=>v3Apl?{on:true,visiveis:v3Apl.itens.filter(it=>it.o.tubo.visible).length,total:v3Apl.itens.length,bico:v3Apl.bico.visible}:{on:false,visiveis:objs.filter(o=>o.tubo.visible&&o.tubo.scale.y===1).length,total:objs.length},
+  forma:()=>v3Forma?{visivel:v3Forma.visible,n:{...v3Forma.userData.n},cam:Object.fromEntries(V3CAM.map(c=>[c,v3Forma.userData.cam[c].visible])),
+    caixasOcultas:v3PecasGrp?v3PecasGrp.children.filter(o=>o.isMesh&&!o.isLineSegments2&&!o.visible).length:0,
+    caixas:v3PecasGrp?v3PecasGrp.children.filter(o=>o.isMesh&&!o.isLineSegments2).length:0,
+    botoes:[...document.querySelectorAll('#v3Camadas [data-cam]')].map(b=>b.dataset.cam+(b.classList.contains('on')?'*':''))}:null,
   concreto:()=>!!(v3PecasGrp&&v3PecasGrp.children.some(o=>o.isMesh&&!o.isLineSegments2&&o.material.bumpMap&&o.material.metalness===0&&!o.material.transparent)),
   dados:()=>linhasData.map(l=>({id:l.id,nome:l.nome,tipo:l.tipo,ml:l.ml,app:l.app,junta:v3TipoJunta(l)})),
   trena:()=>({on:v3Trena.on,medidas:v3Trena.lista.map(m=>v3TrenaMm(m.a,m.b)),hov:v3Trena.hov&&v3Trena.hov.tipo,aberta:!!v3Trena.a}),
@@ -2683,6 +2790,7 @@ function v3MontaPartes(){
 function v3Explode(k){
   v3ExplK=k; if(!v3Caixa) return; const cen=v3Caixa.getCenter(new THREE.Vector3());
   v3Partes.forEach(p=>{ const d=p.c.clone().sub(cen).multiplyScalar(k*1.2); p.itens.forEach(it=>it.o.position.copy(it.p).add(d)); });
+  if(v3Forma) v3PecasAplica();
   if(ren) ren.shadowMap.needsUpdate=true;
 }
 {const ex=document.getElementById('v3Expl');if(ex)ex.addEventListener('input',()=>{v3AplicaPara();v3Explode(+ex.value/100);});}
@@ -2853,7 +2961,7 @@ window.v3LoadJSON=function(json,fname,opc){
   v3AplicaPara();
   if(!ready) initSc();
   if(v3Cena){ sc.remove(v3Cena); v3Cena.traverse(o=>{ if(o.geometry) o.geometry.dispose(); }); }
-  v3Cena=new THREE.Group(); sc.add(v3Cena); v3PecasGrp=null;
+  v3Cena=new THREE.Group(); sc.add(v3Cena); v3PecasGrp=null; v3Forma=null;
   objs=[]; linhasData=[];
   const ls=v3RecortaPlacas(json.linhas||[],json.pecas,json.versao);
   if(!ls.length){ document.getElementById('v3Nome').textContent='Nenhum arquivo carregado'; return; }
@@ -2933,6 +3041,13 @@ window.v3LoadJSON=function(json,fname,opc){
   v3SemTom(v3Cena); v3Ilumina(); v3MontaPartes();
   document.getElementById('v3vSk').style.display=v3Cam?'':'none';
   const pb=document.getElementById('v3PecasBtn'); pb.style.display=v3PecasGrp?'':'none'; v3PecasAplica();
+  /* forma real: veio no arquivo (guarda neste computador) ou, ao reabrir a
+     obra, a guardada aqui do mesmo arquivo */
+  v3FormaBotoes();
+  if(json.visual){ if(v3PoeForma(json.visual)&&!(opc&&opc.restaura)) V3FORMA_DB.grava({chave:v3FormaChave(),visual:json.visual}); }
+  else if(opc&&opc.restaura){ const cena=v3Cena, ch=v3FormaChave();
+    V3FORMA_DB.le().then(d=>{ if(d&&d.chave===ch&&d.visual&&v3Cena===cena) v3PoeForma(d.visual); }); }
+  else V3FORMA_DB.apaga();
   document.getElementById('v3AplicaBtn').style.display=objs.length?'':'none';
   v3Vista(v3Vis==='sketchup'&&!v3Cam?'iso':v3Vis);
   document.getElementById('v3Nome').textContent=json.obra||String(fname||'').replace(/_linhasPU\.json$/i,'');
@@ -3368,7 +3483,7 @@ window.v3FecharArquivo=function(){
   if(linhasData.length&&!confirm('Fechar o arquivo do 3D?\n\nAs linhas e as marcações dele saem desta obra. O que já foi enviado para a medição continua.')) return;
   if(v3Trena.on) v3TrenaLiga(false);
   if(v3Cena){ sc.remove(v3Cena); v3Cena.traverse(o=>{ if(o.geometry) o.geometry.dispose(); }); v3Cena=null; }
-  objs=[]; linhasData=[]; v3PecasGrp=null; v3PecasDados=null; v3Caixa=null; v3GradeArgs=null; v3Grade=null; v3Partes=[]; v3Arquivo=''; v3Obra='';
+  objs=[]; linhasData=[]; v3PecasGrp=null; v3Forma=null; v3FormaBotoes(); V3FORMA_DB.apaga(); v3PecasDados=null; v3Caixa=null; v3GradeArgs=null; v3Grade=null; v3Partes=[]; v3Arquivo=''; v3Obra='';
   actId=-1;
   if(window.v3Esquecer) window.v3Esquecer();
   document.getElementById('v3Nome').textContent='Nenhum arquivo carregado';

@@ -12,13 +12,16 @@
 #  O arquivo leva, além das linhas:
 #    pecas  -- a caixa de cada peça lida (o 3D mostra o que foi lido)
 #    camera -- a vista atual do SketchUp (o 3D abre igual)
+#    visual -- a forma real de cada peça (só a vista: friso, consolo,
+#              telhas, tesouras, esquadrias), em visual_pu.rb
 # ============================================================
 require 'json'
 load File.join(File.dirname(__FILE__), 'deteccao_pu.rb')
+load File.join(File.dirname(__FILE__), 'visual_pu.rb')
 
 module RM_LinhasPU
 
-  VERSAO = '1.3.9'
+  VERSAO = '1.4.0'
 
   INCHES_TO_M  = 0.0254
   ADJACENCIA_M = 0.50
@@ -394,6 +397,24 @@ module RM_LinhasPU
     nil
   end
 
+  # resumo da forma real na mensagem: quantas peças de cada grupo foram
+  def self.texto_visual(visual)
+    return "Forma real: não lida (o 3D mostra as caixas).\n\n" unless visual
+    nomes = { 'concreto' => 'concreto', 'metalica' => 'metálica', 'esquadrias' => 'esquadrias', 'cobertura' => 'cobertura', 'outros' => 'outros' }
+    cnt = Hash.new(0)
+    visual[:inst].each do |i|
+      g = i[:g]
+      unless g   # sem nome: o grupo vem do material (telhado, vidro)
+        pt = (visual[:defs][i[:d]] || {})[:p].to_a.first
+        mi = pt && !pt[:m].nil? ? pt[:m] : i[:m]
+        g = mi.nil? ? nil : (visual[:mats][mi] || {})[:g]
+      end
+      cnt[g || 'outros'] += 1
+    end
+    txt = nomes.map { |g, n| cnt[g] > 0 ? "#{cnt[g]} #{n}" : nil }.compact.join(', ')
+    "Forma real: #{txt}#{visual[:parcial] ? ' (obra grande: parte de outros ficou de fora)' : ''}.\n\n"
+  end
+
   # ── Ponto de entrada ───────────────────────────────────────
   def self.exportar
     model   = Sketchup.active_model
@@ -424,9 +445,13 @@ module RM_LinhasPU
     # invertida ou acento no nome de uma peça quebravam o arquivo.
     dados = { obra: nome_obra, versao: VERSAO, gerado: Time.now.strftime('%Y-%m-%d %H:%M'),
               unidade: 'm', camera: camera(model), linhas: linhas, pecas: pecas }
+    # a forma real é só a vista: se falhar, o arquivo sai como antes
+    visual = begin; RM_VisualPU.coletar(model); rescue StandardError, NoMethodError; nil; end
+    dados[:visual] = visual if visual
 
     begin
-      File.write(caminho, JSON.pretty_generate(dados), encoding: 'UTF-8')
+      # com a forma real o arquivo vai compacto (milhares de números)
+      File.write(caminho, visual ? JSON.generate(dados) : JSON.pretty_generate(dados), encoding: 'UTF-8')
     rescue => e
       UI.messagebox("Erro ao salvar:\n#{e.message}"); return
     end
@@ -444,6 +469,7 @@ module RM_LinhasPU
       "ML total (1 lado): #{sprintf('%.2f', ml1)} m\n" \
       "ML total (ext+int): #{sprintf('%.2f', ml1*2)} m\n" \
       "\n" \
+      "#{texto_visual(visual)}" \
       "No Controle de PU: Viewer 3D → Carregar *_linhasPU.json."
     )
   end
