@@ -29036,19 +29036,22 @@ html[data-theme="escuro"] .log-det>summary.err{color:var(--red)}.log-det>summary
      frente. Sem a frente escolhida, a folha fica só com a seta e o A → B.
      Teste leitor-cobertura-folha-montagem. */
   const COB_FRENTE={'-y':[0,-1],'+y':[0,1],'-x':[-1,0],'+x':[1,0]};
-  function cobDirMundo(b,sinal){
-    const sk=b&&b.sketchup;let d;
-    if(sk&&sk.eixo)d=[sk.eixo[0],sk.eixo[1]];else{const e=cobEixos(b);d=[e.u.x,e.u.y];}
-    const L=Math.hypot(d[0],d[1])||1;return [sinal*d[0]/L,sinal*d[1]/L];
+  /* vetor (x,y) da face planificada -> direção na planta do 3D (x,y do
+     mundo). No SketchUp a face planificada é origem + eixo·x + direção·y. */
+  function cobMundoUV(b,w){
+    const sk=b&&b.sketchup;let d=[w.x,w.y];
+    if(sk&&sk.eixo&&sk.direcao)d=[sk.eixo[0]*w.x+sk.direcao[0]*w.y,sk.eixo[1]*w.x+sk.direcao[1]*w.y];
+    const L=Math.hypot(d[0],d[1])||1;return [d[0]/L,d[1]/L];
   }
+  function cobDirMundo(b,sinal){const d=cobMundoUV(b,cobEixos(b).u);return [sinal*d[0],sinal*d[1]];}
   function cobOrientacao(b,faixas){
     const F=COB_FRENTE[COB.frente];if(!F||!b)return '';
     let sinal=cobSentidoFace(b)==='rtl'?-1:1;
     if(faixas&&faixas.length>1){const a=faixas[0],z=faixas[faixas.length-1],dd=(z.ini+z.fim)-(a.ini+a.fim);if(Math.abs(dd)>1)sinal=dd>0?1:-1;}
     const d=cobDirMundo(b,sinal),c=d[0]*F[0]+d[1]*F[1];
-    if(Math.abs(c)>=.7)return c>0?'fundos → frente':'frente → fundos';
-    const R=[-F[1],F[0]];   /* olhando da frente para a obra (direção -F), a direita é (-Fy, Fx) */
-    return (d[0]*R[0]+d[1]*R[1])>0?'esquerda → direita (vista da frente)':'direita → esquerda (vista da frente)';
+    /* água que corre de lado: só a seta ("tira esse esquerda e direita e
+       deixa apenas a seta direcionando por onde começar") */
+    return Math.abs(c)>=.7?(c>0?'fundos → frente':'frente → fundos'):'';
   }
   function cobFrenteHTML(){
     const bl=(COB.blocos||[]).filter(b=>b.poligono&&b.poligono.length>2);if(!bl.length||COB.leitura==='corte')return '';
@@ -29061,7 +29064,7 @@ html[data-theme="escuro"] .log-det>summary.err{color:var(--red)}.log-det>summary
         +'<text x="'+X(cx).toFixed(1)+'" y="'+(Y(cy)+3).toFixed(1)+'" font-size="9" font-weight="700" text-anchor="middle">'+h(bl[i].nome).slice(0,14)+'</text>';});
     const opos={'-y':'+y','+y':'-y','-x':'+x','+x':'-x'}[COB.frente];
     const bt=(k,cls)=>'<button type="button" class="cob-fr-b '+cls+(COB.frente===k?' on':'')+(opos===k?' fundos':'')+'" data-cob-frente="'+k+'" title="A frente da obra fica deste lado">'+(COB.frente===k?'FRENTE':opos===k?'fundos':'frente aqui?')+'</button>';
-    return '<div class="cob-frente"><div class="cob-fr-t"><b>Frente da obra</b><span>'+(COB.frente?'a folha diz o sentido da montagem: fundos → frente, frente → fundos ou esquerda → direita'
+    return '<div class="cob-frente"><div class="cob-fr-t"><b>Frente da obra</b><span>'+(COB.frente?'cada água sai na folha como está no 3D; a seta diz por onde começar e, na água que corre para a frente, fundos → frente'
       :'clique no lado da frente: a folha passa a dizer fundos → frente ou frente → fundos junto da seta')+'</span></div>'
       +'<div class="cob-fr-g">'+bt('+y','t')+bt('-x','l')+'<svg viewBox="0 0 220 140" aria-label="Planta da cobertura vista de cima">'+g+'</svg>'+bt('+x','r')+bt('-y','b')+'</div></div>';
   }
@@ -30744,30 +30747,23 @@ html[data-theme="escuro"] .log-det>summary.err{color:var(--red)}.log-det>summary
       const cen=cobCentro(poly);
       /* cumeeira em cima: se ela fica "embaixo" no eixo v, gira 180° (sem espelhar) */
       let k=cobDot(cen,ex.v)>ex.v0?-1:1;
-      /* No SketchUp a face planificada tem x = eixo comum às águas (o sinal
-         foi acertado pelo eixo global) e y descendo a água: visto de fora,
-         a direita é normal × descida. Onde o eixo ficou ao contrário, o
-         desenho vira -- senão uma das águas sairia espelhada em relação ao 3D. */
-      let kU=k;
-      const sk=b.sketchup;
-      if(sk&&sk.normal&&sk.direcao&&sk.eixo)kU=cobVDot(sk.eixo,cobVCross(sk.normal,sk.direcao))>=0?1:-1;
-      /* AS ÁGUAS NA MESMA POSIÇÃO NA FOLHA. "O que espero em 2 águas na
-         impressão: ambas águas na mesma posição na folha, seta apontando
-         para a direção que defini (fundos → frente); a próxima aba é igual,
-         mesma posição -- nem que a linha da cumeeira aponte para a linha
-         inferior." Todas as águas são desenhadas como vistas do mesmo lugar:
-         com a "Frente da obra" escolhida, a frente fica à DIREITA do papel
-         (água que corre de lado: a direita de quem olha da frente); sem ela,
-         a montagem anda para a direita. A água que olhando "de fora" saía ao
-         contrário gira 180° (sem espelhar) e a cumeeira dela fica embaixo.
-         A orientação escrita vai junto da seta. Teste leitor-cobertura-folha-montagem. */
-      let quer;
-      { const dU=cobDirMundo(b,1),F=COB_FRENTE[COB.frente];
-        if(F){const c=dU[0]*F[0]+dU[1]*F[1];
-          if(Math.abs(c)>=.7)quer=c>0?1:-1;else{const R=[-F[1],F[0]];quer=(dU[0]*R[0]+dU[1]*R[1])>0?1:-1;}}
-        else{const fA=a.faixas[0],fZ=a.faixas[a.faixas.length-1],dd=(fZ.ini+fZ.fim)-(fA.ini+fA.fim);
-          quer=a.faixas.length>1&&Math.abs(dd)>1?(dd>0?1:-1):(cobSentidoFace(b)==='rtl'?-1:1);} }
-      const inv=kU!==quer;
+      /* COMO NO 3D. "Sistema precisa respeitar o 3D para o PDF" -- a folha
+         não gira a água só para a seta apontar para um lado. A água é vista
+         de cima, sem espelhar (direita do papel × cima do papel = vertical
+         para fora), e das duas posições possíveis (beiral embaixo ou em
+         cima) fica a que põe a FRENTE da obra (escolhida na planta pequena;
+         sem ela, o lado de baixo da planta) no mesmo lugar em todas as
+         águas: água que corre para a frente -> frente à direita (as duas
+         águas de uma cumeeira na mesma posição, uma com a cumeeira embaixo);
+         água que corre de lado -> frente embaixo, como quem olha da frente.
+         A seta aponta para onde a montagem anda de verdade nessa vista e
+         diz fundos → frente / frente → fundos; de lado, só a seta.
+         Teste leitor-cobertura-folha-montagem. */
+      const Wu=cobMundoUV(b,ex.u),Wv=cobMundoUV(b,ex.v),cz=Wu[0]*Wv[1]-Wu[1]*Wv[0];
+      let kU=k*cz>=0?1:-1;
+      let inv;
+      { const F=COB_FRENTE[COB.frente]||[0,-1],dr=kU*(Wu[0]*F[0]+Wu[1]*F[1]),up=k*(Wv[0]*F[0]+Wv[1]*F[1]);
+        inv=Math.abs(Wu[0]*F[0]+Wu[1]*F[1])>=.7?dr<0:up>0; }
       if(inv){kU=-kU;k=-k;}
       a.inv=inv;a.kU=kU;
       const U=p=>kU*cobDot(p,ex.u),Vv=p=>k*cobDot(p,ex.v);   /* Vv cresce para a cumeeira (ou para o beiral, na folha girada) */
@@ -30789,14 +30785,24 @@ html[data-theme="escuro"] .log-det>summary.err{color:var(--red)}.log-det>summary
       (b.furos||[]).forEach(fu=>{g+='<path d="M'+fu.map(p=>r1(X(p))+' '+r1(Y(p))).join('L')+'Z" fill="#fff" stroke="#141414" stroke-width="1.2" stroke-dasharray="6 4"/>';});
       g+='<path d="M'+poly.map(p=>r1(X(p))+' '+r1(Y(p))).join('L')+'Z" fill="none" stroke="#141414" stroke-width="2"/>';
       /* código no pé (beiral) e comprimento no meio de cada telha */
+      /* código e comprimento sem um passar por cima do outro: na telha curta
+         o comprimento encolhe para caber entre o código e a ponta e, se nem
+         assim cabe, o código vai para a linha de fora, junto do beiral */
+      let codFora=false;
       a.faixas.forEach(f=>{const xa=XU(f.ini),xb=XU(f.fim),cx=r1((xa+xb)/2),w=Math.abs(xb-xa);
-        const pb=((Vv(f.p0)<Vv(f.p1))!==inv)?f.p0:f.p1,pc=pb===f.p0?f.p1:f.p0,yb=Y(pb),yc=Y(pc),cy=r1((yb+yc)/2);
+        const pb=((Vv(f.p0)<Vv(f.p1))!==inv)?f.p0:f.p1,pc=pb===f.p0?f.p1:f.p0,yb=Y(pb),yc=Y(pc),hh=Math.abs(yb-yc);
         const cod=cobCodigo(f),txt=n0(f.pedido)+(f.partes>1?' ('+f.partes+'×)':'')+(estreita(f)?' · larg. '+n0(f.largura):'');
-        const fs=r1(Math.max(7,Math.min(13,w*.5)));
-        g+='<text x="'+cx+'" y="'+cy+'" font-size="'+fs+'" font-weight="800" fill="'+(naObra(f)?'#d53309':'#141414')+'" text-anchor="middle" dominant-baseline="middle" transform="rotate(-90 '+cx+' '+cy+')">'+txt+'</text>';
-        if(w>=26)g+='<text x="'+cx+'" y="'+r1(inv?yb+15:yb-7)+'" font-size="'+r1(Math.max(7.5,Math.min(12,w*.16)))+'" font-weight="800" text-anchor="middle">'+escapeHtml(cod)+'</text>';
-        else g+='<text x="'+cx+'" y="'+r1(inv?yTop-9:yBot+12)+'" font-size="'+r1(Math.max(6.5,Math.min(9,w*.5)))+'" font-weight="700" text-anchor="middle">'+escapeHtml(cod.slice(cod.lastIndexOf('-')+1))+'</text>';});
-      const estreitas=nF&&a.faixas.some(f=>Math.abs(XU(f.fim)-XU(f.ini))<26);
+        const fs0=Math.max(7,Math.min(13,w*.5)),larg=txt.length*.62;
+        const dentro=w>=26&&hh>=Math.min(fs0,9)*larg+26;
+        const vao=dentro?hh-24:hh-6,cabe=dentro||vao>=7*larg;
+        /* nem a 7 pt cabe na telha: o texto sai do beiral e cresce para o lado
+           do topo (ali a folha está vazia), longe do código */
+        const fs=r1(cabe?Math.max(7,Math.min(fs0,vao/Math.max(1,larg))):Math.min(9,Math.max(7,fs0)));
+        const cy=r1(!cabe?(inv?yb+3:yb-3):dentro?(inv?(yb+22+yc)/2:(yc+yb-22)/2):(yb+yc)/2);
+        g+='<text x="'+cx+'" y="'+cy+'" font-size="'+fs+'" font-weight="800" fill="'+(naObra(f)?'#d53309':'#141414')+'" text-anchor="'+(cabe?'middle':inv?'end':'start')+'" dominant-baseline="middle" transform="rotate(-90 '+cx+' '+cy+')">'+txt+'</text>';
+        if(dentro)g+='<text x="'+cx+'" y="'+r1(inv?yb+15:yb-7)+'" font-size="'+r1(Math.max(7.5,Math.min(12,w*.16)))+'" font-weight="800" text-anchor="middle">'+escapeHtml(cod)+'</text>';
+        else{codFora=true;g+='<text data-cod-fora="1" x="'+cx+'" y="'+r1(inv?yTop-9:yBot+12)+'" font-size="'+r1(Math.max(6.5,Math.min(9,w*.5)))+'" font-weight="700" text-anchor="middle">'+escapeHtml(w>=40?cod:cod.slice(cod.lastIndexOf('-')+1))+'</text>';}});
+      const estreitas=codFora;
       /* cumeeira em cima, beiral embaixo */
       /* cumeeira (ou topo) do lado oposto ao beiral */
       const yCum=inv?yBot+6:yTop-6,yCumT=inv?yBot+20:yTop-12;
@@ -31777,7 +31783,7 @@ if('serviceWorker' in navigator && location.protocol.startsWith('http')){
 }
 </script>
 <script>/* versão publicada (PADRAO_RM.md §3): sobe a cada publicação, junto com o CACHE do sw.js */
-const APP_VER='v296';
+const APP_VER='v297';
 </script>
 <script id="rmVersaoBloco">
 /* ===== SELO DE VERSÃO — igual em todos os sistemas (PADRAO_RM.md §3) =====
