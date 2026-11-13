@@ -12,7 +12,7 @@
      ASSETS (ex.: o jsPDF da Telha, guardado para funcionar sem internet).
    Medido: com este arquivo a versão publicada aparece na próxima abertura;
    com o anterior, e sem service worker nenhum, voltava a versão velha. */
-const CACHE = 'rm-central-v168';
+const CACHE = 'rm-central-v169';
 const ASSETS = ['./', './index.html', './manifest.json', './icon-192.png', './icon-512.png',
   /* o Firebase também: sem ele a Central nem montava a tela sem internet */
   'https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js',

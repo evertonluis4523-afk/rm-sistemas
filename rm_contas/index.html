@@ -1565,6 +1565,8 @@ table.list td{padding:11px 14px;border-bottom:1px solid var(--line-2);vertical-a
 table.list tr:hover td{background:#fafbfc}
 /* seleção para o relatório (Teste contas-relatorio-selecionadas) */
 table.list .sel{width:34px;padding-right:0}
+/* a caixa fica dentro de um rótulo de 28 px: o toque pega a área toda */
+table.list .sel label{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;margin:-6px 0;cursor:pointer}
 table.list .sel input{width:16px;height:16px;margin:0;cursor:pointer;accent-color:var(--rm-marca,#D53309)}
 table.list tr.sel-on td{background:var(--rm-realce,#fff4ef)}
 /* faixa logo abaixo dos filtros, na mesma margem deles */
@@ -2983,7 +2985,7 @@ body:not([data-theme="escuro"]){
       <div class="tbl-wrap">
         <table class="list">
           <thead><tr>
-            <th class="c sel"><input type="checkbox" id="selTodas" title="Selecionar todas as contas da lista" aria-label="Selecionar todas as contas da lista" onchange="selTodas(this.checked)"></th>
+            <th class="c sel"><label><input type="checkbox" id="selTodas" title="Selecionar todas as contas da lista" aria-label="Selecionar todas as contas da lista" onchange="selTodas(this.checked)"></label></th>
             <th>Fornecedor</th><th>Categoria</th><th>Serviço</th><th>Vencimento</th>
             <th>Forma</th><th class="r">Valor</th><th>Status</th><th></th>
           </tr></thead>
@@ -3755,7 +3757,7 @@ function render(){
     const sub=[c.documento, c.obs].filter(Boolean).join(' · ');
     const clip=clipHtml(c);
     return `<tr${SEL_CONTAS.has(c.id)?' class="sel-on"':''}>
-      <td class="c sel"><input type="checkbox" class="sel-conta" data-id="${c.id}"${SEL_CONTAS.has(c.id)?' checked':''} aria-label="Selecionar esta conta" onchange="selConta('${c.id}',this.checked)"></td>
+      <td class="c sel"><label><input type="checkbox" class="sel-conta" data-id="${c.id}"${SEL_CONTAS.has(c.id)?' checked':''} aria-label="Selecionar esta conta" onchange="selConta('${c.id}',this.checked)"></label></td>
       <td>${rmRegistro(rmNomePt(c.fornecedor)||'—',(sub||clip)?`${esc(sub)}${sub&&clip?' ':''}${clip}`:'')}</td>
       <td>${esc(c.categoria||'—')}</td>
       <td class="mono" style="font-size:12px;color:var(--muted)">${fmtDate(c.dataServico)}</td>
@@ -5229,7 +5231,7 @@ document.addEventListener('visibilitychange',()=>{ if(!document.hidden) checkDue
 })();
 </script>
 <script>/* versão publicada (PADRAO_RM.md §3): sobe a cada publicação, junto com o CACHE do sw.js */
-const APP_VER='v80';
+const APP_VER='v81';
 </script>
 <script id="rmVersaoBloco">
 /* ===== SELO DE VERSÃO — igual em todos os sistemas (PADRAO_RM.md §3) =====
@@ -5490,6 +5492,111 @@ const APP_VER='v80';
     } catch(e){ return html; }
   }
   window.rmPapelA = papelAHTML;
+  /* AJUSTE AO PAPEL (PADRAO_RM 5). Documento de UMA folha que ocupa pouco
+     dela (menos de 60% da altura útil -- o relatório de 3 contas) sai com a
+     letra maior: o miolo inteiro cresce pelo mesmo fator (1,3; senão 1,2 ou
+     1,1), as proporções da escala de letra ficam, e o fator escolhido é o
+     maior que ainda deixa tudo numa folha (até 90% dela) e sem passar da
+     largura. O timbrado (marca, empresa, tipo), o rodapé e a marca d'água
+     ficam do tamanho de sempre. Documento de mais de uma folha não muda.
+     Fora: o que não tem o papel A (recibo, envelope, etiqueta em margem 0),
+     a folha do montador (.tmf), a ficha de marcar (table.rmd-grade), o que
+     tiver .rm-papel-fixo e o que o sistema listar em window.rmPapelFixo
+     (seletor, ou true para todos os documentos dele).
+     A medida é feita numa cópia oculta do documento, na largura da folha e
+     com as regras de impressão valendo -- o gerador de PDF do programa roda
+     sem javascript, então o fator já vai escrito no HTML (zoom no papel). */
+  var AJ_FATORES = [1.3, 1.2, 1.1], AJ_POUCO = .6, AJ_CHEIO = .9;
+  var AJ_FORA = '.tmf,table.rmd-grade,.rm-papel-fixo';
+  var AJ_CAB = '.head,.rm-head,.cab,.rm-cab,.timbre,.tb2-tipo,#rm-dagua-imp,#rm-pe-imp';
+  function ajFora(raiz){
+    var f = window.rmPapelFixo; if (f === true) return true;
+    try { return !!raiz.querySelector(AJ_FORA + (typeof f === 'string' && f ? ',' + f : '')); } catch(e){ return true; }
+  }
+  function ajCss(f){
+    var c = ':is(' + AJ_CAB + ')';
+    return '@media print{html.rm-aj body{zoom:' + f + '!important}html.rm-aj body ' + c + ':not(' + c + ' *){zoom:' + (Math.round(1e4 / f) / 1e4) + '!important}}';
+  }
+  function ajPx(v){
+    var m = /^(-?[\d.]+)(mm|cm|in|pt|px)?$/.exec(String(v || '').trim()); if (!m) return null;
+    var k = { mm: 96 / 25.4, cm: 960 / 25.4, in: 96, pt: 96 / 72, px: 1 }[m[2] || 'px']; return +m[1] * k;
+  }
+  /* a folha pelo @page sem nome (o último vale): tamanho e margens */
+  function ajFolha(css){
+    var A4 = [210 * 96 / 25.4, 297 * 96 / 25.4], W = A4[0], H = A4[1], mg = [45.35, 45.35, 45.35, 45.35];
+    (css.match(/@page\s*\{[^}]*\}/g) || []).forEach(function(r){
+      var sz = /size\s*:\s*([^;}]+)/.exec(r);
+      if (sz) { var t = sz[1].trim().toLowerCase(), pa = t.replace(/a4|portrait|landscape/g, '').trim().split(/\s+/).map(ajPx).filter(function(x){ return x; });
+        if (pa.length >= 2) { W = pa[0]; H = pa[1]; } else { W = A4[0]; H = A4[1]; }
+        if (/landscape/.test(t) && W < H) { var x = W; W = H; H = x; } }
+      var m = /(?:^|[{;\s])margin\s*:\s*([^;}]+)/.exec(r);
+      if (m) { var v = m[1].trim().split(/\s+/).map(ajPx); if (v.every(function(x){ return x != null; })) mg = [v[0], v[1] != null ? v[1] : v[0], v[2] != null ? v[2] : v[0], v[3] != null ? v[3] : (v[1] != null ? v[1] : v[0])]; }
+      ['top', 'right', 'bottom', 'left'].forEach(function(l, i){ var q = new RegExp('margin-' + l + '\\s*:\\s*([^;}]+)').exec(r); if (q && ajPx(q[1]) != null) mg[i] = ajPx(q[1]); });
+    });
+    return { w: W - mg[1] - mg[3], h: H - mg[0] - mg[2] };
+  }
+  /* na cópia oculta as regras do papel valem e as da tela não */
+  function ajMidia(t){
+    return String(t || '').split(',').map(function(q){ q = q.trim();
+      if (/\bprint\b/.test(q)) return /^not\b/.test(q) ? 'not all' : q.replace(/\bprint\b/, 'all');
+      if (/\bscreen\b/.test(q)) return /^not\b/.test(q) ? 'all' : 'not all';
+      return q; }).join(', ');
+  }
+  function ajTrocaMidia(doc){
+    function regras(lista){ for (var i = 0; i < lista.length; i++) { var r = lista[i];
+      if (r.media && r.type === 4) { var t = r.media.mediaText, n = ajMidia(t); if (n !== t) try { r.media.mediaText = n; } catch(e){} }
+      try { if (r.cssRules) regras(r.cssRules); } catch(e){} } }
+    [].forEach.call(doc.styleSheets, function(sh){ try { regras(sh.cssRules); } catch(e){} });
+    [].forEach.call(doc.querySelectorAll('style[media],link[media]'), function(e){ e.media = ajMidia(e.media); });
+  }
+  /* devolve (Promise) o fator escolhido para o HTML, ou 0 */
+  function ajFator(html){
+    return new Promise(function(fim){
+      var d; try { d = new DOMParser().parseFromString(String(html), 'text/html'); } catch(e){ fim(0); return; }
+      if (!d.getElementById('rm-papel-a') || d.getElementById('rm-ajuste') || ajFora(d)) { fim(0); return; }
+      var folha = ajFolha([].map.call(d.querySelectorAll('style'), function(x){ return x.textContent || ''; }).join('\n'));
+      if (!(folha.w > 100 && folha.h > 100)) { fim(0); return; }
+      var fr = document.createElement('iframe'), pronto = false;
+      function acaba(f){ if (pronto) return; pronto = true; try { fr.remove(); } catch(e){} fim(f || 0); }
+      setTimeout(function(){ acaba(0); }, 4000);
+      fr.setAttribute('sandbox', 'allow-same-origin'); fr.setAttribute('aria-hidden', 'true'); fr.tabIndex = -1;
+      fr.style.cssText = 'position:fixed;left:-30000px;top:0;width:' + Math.floor(folha.w) + 'px;height:40px;border:0;opacity:0;pointer-events:none';
+      fr.onload = function(){
+        var doc; try { doc = fr.contentDocument; } catch(e){ acaba(0); return; }
+        if (!doc || !doc.documentElement) { acaba(0); return; }
+        try { ajTrocaMidia(doc); } catch(e){ acaba(0); return; }
+        var mede = function(){ var e = doc.documentElement; return { h: e.scrollHeight, w: e.scrollWidth }; };
+        mede();
+        var fontes = doc.fonts && doc.fonts.ready ? doc.fonts.ready : Promise.resolve();
+        Promise.race([fontes, new Promise(function(z){ setTimeout(z, 1200); })]).then(function(){
+          try {
+            var m0 = mede(); if (m0.h > AJ_POUCO * folha.h) { acaba(0); return; }
+            doc.documentElement.classList.add('rm-aj');
+            var st = doc.createElement('style'); (doc.head || doc.documentElement).appendChild(st);
+            for (var i = 0; i < AJ_FATORES.length; i++) {
+              st.textContent = ajCss(AJ_FATORES[i]).replace(/^@media print\{|\}$/g, '');
+              var m = mede();
+              if (m.h <= AJ_CHEIO * folha.h && m.w <= Math.max(m0.w, folha.w) + 1) { acaba(AJ_FATORES[i]); return; }
+            }
+          } catch(e){}
+          acaba(0);
+        });
+      };
+      fr.srcdoc = String(html);
+      (document.body || document.documentElement).appendChild(fr);
+    });
+  }
+  /* o HTML com o fator escrito (Promise) */
+  function ajustePapel(html){
+    return ajFator(html).then(function(f){
+      if (!f) return html;
+      try { var d = new DOMParser().parseFromString(String(html), 'text/html');
+        var st = d.createElement('style'); st.id = 'rm-ajuste'; st.textContent = ajCss(f); (d.head || d.documentElement).appendChild(st);
+        d.documentElement.classList.add('rm-aj'); d.documentElement.setAttribute('data-rm-ajuste', String(f));
+        return '<!DOCTYPE html>' + d.documentElement.outerHTML; } catch(e){ return html; }
+    }, function(){ return html; });
+  }
+  window.rmAjustePapel = ajustePapel;
   var ocupado = false;
   /* Documento pronto (HTML inteiro, montado a parte): mesmo caminho do
      Imprimir. Devolve true se a ponte assumiu; false = o chamador segue com
@@ -5497,10 +5604,11 @@ const APP_VER='v80';
   window.rmImprimirHTML = function(html, nome){
     if (!ponte || ocupado) return false;
     ocupado = true; html = papelAHTML(html, nome); nome = nome || nomeDoc();
+    ajustePapel(html).then(function(html){
     if (ponte === 'app') {
       var gerar = window.rmDesktop.abrirPDF || window.rmDesktop.salvarPDF;
       gerar(html, nome).then(function(){ ocupado = false; }, function(){ ocupado = false; });
-      return true;
+      return;
     }
     var aceito = false;
     function ouvir(ev){ var m = ev.data; if (!m || typeof m !== 'object') return;
@@ -5509,6 +5617,7 @@ const APP_VER='v80';
     window.addEventListener('message', ouvir);
     try { window.parent.postMessage({ rm: 'pdf', html: html, nome: nome, abrir: true }, '*'); } catch(e){}
     setTimeout(function(){ if (!aceito) { window.removeEventListener('message', ouvir); ocupado = false; } }, 800);
+    });
     return true;
   };
   /* DESENHO EM ALTA NA HORA DE IMPRIMIR. Texto, tabela e logo ja' saem em
@@ -5540,7 +5649,7 @@ const APP_VER='v80';
   window.rmEmAlta = emAlta;
   window.print = function(){
     if (ocupado) return printNativo();
-    if (!ponte) { emAlta(printNativo); return; }
+    if (!ponte) { ajusteNaTela(function(){ emAlta(printNativo); }); return; }
     ocupado = true;
     emAlta(function(){ imprimeNaPonte(); });
   };
@@ -5550,6 +5659,25 @@ const APP_VER='v80';
     catch(e){ ocupado = false; return printNativo(); }
     try { window.dispatchEvent(new Event('afterprint')); } catch(e){}
     var nome = nomeDoc();
+    ajustePapel(html).then(function(h){ entregaNaPonte(h, nome); });
+  }
+  /* No navegador (sem ponte) o papel é a própria página: mede uma cópia
+     dela e, se couber o ajuste, ele vale só durante a impressão. */
+  function ajusteNaTela(imprime){
+    var html; ocupado = true;
+    try { window.dispatchEvent(new Event('beforeprint')); html = congelar(); } catch(e){}
+    try { window.dispatchEvent(new Event('afterprint')); } catch(e){}
+    if (!html) { ocupado = false; imprime(); return; }
+    ajFator(html).then(function(f){
+      var st = null, raiz = document.documentElement, fim = function(){ window.removeEventListener('afterprint', fim);
+        if (st && st.parentNode) st.parentNode.removeChild(st); raiz.classList.remove('rm-aj'); };
+      if (f) { st = document.createElement('style'); st.id = 'rm-ajuste'; st.textContent = ajCss(f); document.head.appendChild(st);
+        raiz.classList.add('rm-aj'); window.addEventListener('afterprint', fim); }
+      ocupado = false;
+      try { imprime(); } finally { if (f) setTimeout(fim, 1000); }
+    }, function(){ ocupado = false; imprime(); });
+  }
+  function entregaNaPonte(html, nome){
     if (ponte === 'app') {
       var gerar = window.rmDesktop.abrirPDF || window.rmDesktop.salvarPDF;
       gerar(html, nome).then(function(r){ ocupado = false; if (!(r && (r.ok || r.cancelado))) printNativo(); })
