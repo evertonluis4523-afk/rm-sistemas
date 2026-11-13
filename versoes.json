@@ -20,7 +20,7 @@
   "versao": "v54"
  },
  "central_rm": {
-  "commit": "d1235a1",
+  "commit": "c256ef0",
   "versao": "v168"
  },
  "controle_cheques": {
@@ -52,7 +52,7 @@
   "versao": "v299"
  },
  "rm_contas": {
-  "commit": "5d095cf",
-  "versao": "v79"
+  "commit": "be08302",
+  "versao": "v80"
  }
 }
