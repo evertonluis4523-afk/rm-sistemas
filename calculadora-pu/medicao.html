@@ -2064,6 +2064,21 @@ else comeca();
 #viewer3d .v3leg{position:absolute;left:12px;bottom:12px;display:flex;flex-wrap:wrap;gap:4px 14px;z-index:2;
   background:rgba(22,23,26,.72);padding:7px 10px;border-radius:10px;font-size:13px;color:#cfd4da;font-weight:600;}
 #viewer3d .v3leg div{display:flex;align-items:center;gap:6px;}
+#viewer3d .v3peca{position:absolute;left:12px;bottom:58px;z-index:3;background:rgba(22,23,26,.9);color:#e9ecef;border:1px solid rgba(255,255,255,.14);
+  padding:8px 10px;border-radius:10px;font-size:13px;display:flex;flex-wrap:wrap;gap:8px;align-items:center;max-width:calc(100% - 24px)}
+#viewer3d .v3peca b{color:#fff}
+#viewer3d .v3peca .sub{color:#aab1b9;font-variant-numeric:tabular-nums}
+#viewer3d .v3peca button{border:1px solid rgba(255,255,255,.18);background:transparent;color:#e9ecef;font:inherit;font-size:13px;border-radius:7px;padding:4px 9px;cursor:pointer;display:inline-flex;gap:6px;align-items:center}
+#viewer3d .v3peca button:hover{background:rgba(255,255,255,.1)}
+#viewer3d .v3peca button svg{width:15px;height:15px}
+#viewer3d .v3peca label{display:inline-flex;gap:6px;align-items:center;cursor:pointer}
+#viewer3d .v3peca input{accent-color:#f58236;width:16px;height:16px}
+#viewer3d .v3nova{bottom:auto;top:110px}
+#viewer3d .v3peca button.on{background:#e9ecef;color:#16171a;border-color:#e9ecef}
+#viewer3d .v3peca button.ok{background:#F24619;border-color:#F24619;color:#fff}
+.v3man{color:#f58236;font-weight:700}
+.v3apaga{border:0;background:transparent;color:inherit;opacity:.6;cursor:pointer;font-size:14px;padding:2px 6px;border-radius:6px}
+.v3apaga:hover{opacity:1;background:rgba(242,70,25,.15);color:#F24619}
 #viewer3d .v3apl{position:absolute;left:12px;bottom:58px;z-index:3;background:rgba(22,23,26,.8);color:#fff;
   padding:7px 14px;border-radius:10px;font-size:13px;font-weight:600;display:flex;gap:10px;align-items:center;white-space:nowrap;pointer-events:none}
 #viewer3d .v3apl b{color:#F24619;font-variant-numeric:tabular-nums}
@@ -2230,6 +2245,7 @@ else comeca();
         <span id="v3Camadas" class="v3cam" style="display:none" title="Peças do SketchUp além do concreto (só a vista)"></span>
         <button id="v3AplicaBtn" style="display:none" title="Simula a aplicação: as linhas de PU vão sendo passadas, de baixo para cima">▶ Aplicar PU</button>
         <button id="v3MedBtn" title="Escreve os metros de cada linha no próprio 3D">Medidas</button>
+        <button id="v3NovaBtn" title="Desenhar uma linha de PU a mais: clique no início e no fim (encaixa no canto e na aresta das peças). Esc sai.">+ Linha<span class="lg"> de PU</span></button>
         <button id="v3TrenaBtn" title="Trena: clique em dois pontos para medir. Encaixa no canto (verde) e na aresta (magenta) das peças. Esc limpa.">Trena</button>
         <button type="button" data-fundo3d title="Trocar o fundo do 3D: escuro, claro ou blueprint">Fundo: Escuro</button>
         <select id="v3Luz" aria-label="Iluminação" title="Iluminação do 3D (a mesma escolha do Leitor DWG)"><option value="dia">Luz do dia</option><option value="estudio">Luz de estúdio</option></select>
@@ -2242,8 +2258,10 @@ else comeca();
         <div><i style="background:#4CD98A"></i>Viga</div><div><i style="background:#B66BFF"></i>PU inferior da laje</div><div><i style="background:#FFB020"></i>Repetida</div>
         <div><i style="background:#69717B"></i>Fora do preço</div><div><i class="fina"></i>Só interno</div>
       </div>
-      <div id="v3nav">Arrastar gira · roda do mouse aproxima · botão direito move · clique na linha seleciona</div>
+      <div id="v3nav">Arrastar gira · roda do mouse aproxima · botão direito move · clique na linha ou na peça seleciona</div>
       <div id="v3tip"></div>
+      <div id="v3PecaPainel" class="v3peca" style="display:none"></div>
+      <div id="v3NovaPainel" class="v3peca v3nova" style="display:none"></div>
       <canvas id="v3hud"></canvas>
     </div>
     <div id="v3d-panel">
@@ -2545,7 +2563,12 @@ function initSc(){
   wrap.appendChild(ren.domElement);
   ctrl=new OrbitControls(cam,ren.domElement);
   ctrl.target.set(...HOME.t); ctrl.enableDamping=true; ctrl.dampingFactor=.07;
-  ctrl.minDistance=.5; ctrl.maxDistance=4000; ctrl.update();
+  /* "ao usar a trena permitir rotacionar o 3D e aproximar, hoje ela limita":
+     o zoom ia sempre para o centro da obra e parava a 50 cm dele -- não dava
+     para chegar perto de um canto longe do meio. Agora aproxima para onde
+     está o cursor (como no SketchUp) e chega a 5 cm da peça. Teste
+     pu-3d-trena-gira-aproxima. */
+  ctrl.zoomToCursor=true; ctrl.minDistance=.05; ctrl.maxDistance=4000; ctrl.update();
   const ajusta=()=>{
     if(!wrap) return;
     const W=wrap.clientWidth,H=wrap.clientHeight; if(!W||!H) return;
@@ -2636,7 +2659,9 @@ function v3PecasAplica(){
     /* no concreto a aresta é o fio fino da junta, não o contorno de desenho */
     if(v3MatAresta){ v3MatAresta.linewidth=conc?1:1.6; v3MatAresta.opacity=conc?.45:.95; }
     const real=!!(v3Forma&&conc&&!v3ExplK);
-    v3PecasGrp.children.forEach(o=>{ if(o.userData.coberta!==undefined) o.visible=!(real&&o.userData.coberta); });
+    v3PecasGrp.children.forEach(o=>{ if(o.userData.peca===undefined&&o.userData.coberta===undefined) return;
+      o.visible=!(real&&o.userData.coberta)&&!v3Ocultas.has(o.userData.peca); });
+    if(v3Forma) v3Forma.userData.cam.concreto.children.forEach(o=>{ o.visible=!(o.userData.peca!==undefined&&v3Ocultas.has(o.userData.peca)); });
     if(v3Forma){ v3Forma.visible=real; V3CAM.forEach(c=>{ v3Forma.userData.cam[c].visible=c==='concreto'||!!v3FormaOn[c]; });
       document.querySelectorAll('#v3Camadas [data-cam]').forEach(b=>b.classList.toggle('on',real&&!!v3FormaOn[b.dataset.cam])); }
     if(ren) ren.shadowMap.needsUpdate=true;
@@ -2710,11 +2735,15 @@ function v3FormaMonta(vis){
 /* a caixa que a forma de concreto cobre sai no modo concreto */
 function v3FormaCobre(){
   if(!v3Forma||!v3PecasGrp) return;
-  const cx=v3Forma.userData.cam.concreto.children.filter(o=>o.isMesh).map(o=>o.geometry.boundingBox.clone().applyMatrix4(o.matrix).expandByScalar(.05));
+  const fc=v3Forma.userData.cam.concreto.children, ms=fc.filter(o=>o.isMesh), cx=ms.map(o=>o.geometry.boundingBox.clone().applyMatrix4(o.matrix).expandByScalar(.05));
   const ch=v3PecasGrp.children;
   for(let i=0;i<ch.length;i++){ const o=ch[i]; if(!o.isMesh||o.isLineSegments2) continue;
     const c=o.position, cob=cx.some(b=>b.containsPoint(c));
     o.userData.coberta=cob; if(ch[i+1]&&ch[i+1].isLineSegments2) ch[i+1].userData.coberta=cob; }
+  /* a forma leva o número da peça que ela cobre (ocultar e selecionar) */
+  for(let i=0;i<fc.length;i++){ const o=fc[i]; if(!o.isMesh) continue; const b=cx[ms.indexOf(o)];
+    const cx2=ch.find(x=>x.isMesh&&!x.isLineSegments2&&b.containsPoint(x.position));
+    if(cx2){ o.userData.peca=cx2.userData.peca; if(fc[i+1]&&fc[i+1].isLineSegments2) fc[i+1].userData.peca=cx2.userData.peca; } }
 }
 function v3FormaBotoes(){
   const w=document.getElementById('v3Camadas'); if(!w) return;
@@ -2744,6 +2773,9 @@ const v3FormaChave=()=>v3Arquivo+'|'+(v3PecasDados?v3PecasDados.length:0);
 document.getElementById('v3MedBtn').addEventListener('click',e=>{ v3Medidas=!v3Medidas; e.currentTarget.classList.toggle('on',v3Medidas); });
 
 window.__v3Teste={cena:()=>({...v3HudInfo}),
+  peca:()=>({sel:v3PecaAt,ocultas:[...v3Ocultas].sort((a,b)=>a-b),painel:(document.getElementById('v3PecaPainel')||{}).textContent||'',linhas:v3PecaAt>=0?v3LinhasDaPeca(v3PecaAt).map(l=>l.id):[],
+    visiveis:v3PecasGrp?v3PecasGrp.children.filter(o=>o.isMesh&&!o.isLineSegments2&&o.visible).map(o=>o.userData.peca):[]}),
+  zoom:()=>cam&&ctrl?{dist:cam.position.distanceTo(ctrl.target),min:ctrl.minDistance,cursor:!!ctrl.zoomToCursor,alvo:ctrl.target.toArray()}:null,
   aplica:()=>v3Apl?{on:true,visiveis:v3Apl.itens.filter(it=>it.o.tubo.visible).length,total:v3Apl.itens.length,bico:v3Apl.bico.visible}:{on:false,visiveis:objs.filter(o=>o.tubo.visible&&o.tubo.scale.y===1).length,total:objs.length},
   forma:()=>v3Forma?{visivel:v3Forma.visible,n:{...v3Forma.userData.n},cam:Object.fromEntries(V3CAM.map(c=>[c,v3Forma.userData.cam[c].visible])),
     caixasOcultas:v3PecasGrp?v3PecasGrp.children.filter(o=>o.isMesh&&!o.isLineSegments2&&!o.visible).length:0,
@@ -2859,8 +2891,8 @@ function v3Salva(){
   clearTimeout(v3SalvaT);
   v3SalvaT=setTimeout(()=>{ if(!window.v3Guardar||!linhasData.length) return;
     window.v3Guardar({obra:v3Obra, arquivo:v3Arquivo, em:new Date().toISOString(),
-      linhas:linhasData.map(l=>({id:l.id,nome:l.nome,tipo:l.tipo,junta:v3TipoJunta(l),ml:l.ml,pt1:l.pt1,pt2:l.pt2,app:l.app||'ext_int',incluir:!!l.incluir})),
-      pecas:v3PecasDados||null, camera:v3Cam||null});
+      linhas:linhasData.map(l=>Object.assign({id:l.id,nome:l.nome,tipo:l.tipo,junta:v3TipoJunta(l),ml:l.ml,pt1:l.pt1,pt2:l.pt2,app:l.app||'ext_int',incluir:!!l.incluir},l.manual?{manual:true}:{})),
+      pecas:v3PecasDados||null, camera:v3Cam||null, ocultas:[...v3Ocultas]});
   },300);
 }
 /* LINHA REPETIDA: duas linhas do mesmo tipo, paralelas, a menos de 5 cm
@@ -2937,7 +2969,7 @@ function v3RecortaPlacas(ls,pecas,versao){
   let nid=Math.max(0,...ls.map(l=>+l.id||0));
   const out=[];
   ls.forEach(l=>{
-    if(l.tipo!=='Placa'||!Array.isArray(l.pt1)||!Array.isArray(l.pt2)){ out.push(l); return; }
+    if(l.manual||l.tipo!=='Placa'||!Array.isArray(l.pt1)||!Array.isArray(l.pt2)){ out.push(l); return; }
     const z=l.pt1[2], ax=Math.abs(l.pt2[0]-l.pt1[0])>=Math.abs(l.pt2[1]-l.pt1[1])?0:1, ox=1-ax;
     const mx=(l.pt1[0]+l.pt2[0])/2, my=(l.pt1[1]+l.pt2[1])/2;
     const p=pls.find(q=>Math.abs(q.min[2]-z)<.01&&mx>=q.min[0]-.01&&mx<=q.max[0]+.01&&my>=q.min[1]-.01&&my<=q.max[1]+.01);
@@ -2961,7 +2993,8 @@ window.v3LoadJSON=function(json,fname,opc){
   v3AplicaPara();
   if(!ready) initSc();
   if(v3Cena){ sc.remove(v3Cena); v3Cena.traverse(o=>{ if(o.geometry) o.geometry.dispose(); }); }
-  v3Cena=new THREE.Group(); sc.add(v3Cena); v3PecasGrp=null; v3Forma=null;
+  v3Cena=new THREE.Group(); sc.add(v3Cena); v3PecasGrp=null; v3Forma=null; v3PecaAt=-1; v3SelCaixa=null;
+  v3Ocultas=new Set(opc&&opc.restaura&&Array.isArray(json.ocultas)?json.ocultas.filter(Number.isInteger):[]);
   objs=[]; linhasData=[];
   const ls=v3RecortaPlacas(json.linhas||[],json.pecas,json.versao);
   if(!ls.length){ document.getElementById('v3Nome').textContent='Nenhum arquivo carregado'; return; }
@@ -3007,14 +3040,14 @@ window.v3LoadJSON=function(json,fname,opc){
     /* ARESTA PROFISSIONAL: traço grafite de 1,6 px, cheio, como o contorno
        do SketchUp -- antes era cinza de 1 px a 55%, sumia no translúcido */
     const ma=new LineMaterial({color:0x1d232a,linewidth:1.6,transparent:true,opacity:.95}); ma.toneMapped=false; v3MatAresta=ma; v3ArestaRes();
-    v3PecasDados.forEach(p=>{ if(!p.min||!p.max) return;
+    v3PecasDados.forEach((p,pi)=>{ if(!p.min||!p.max) return;
       const a=v3(p.min), b=v3(p.max), box=new THREE.Box3().setFromPoints([a,b]);
       const sz=box.getSize(new THREE.Vector3()), c=box.getCenter(new THREE.Vector3());
       const geo=new THREE.BoxGeometry(Math.max(sz.x,.01),Math.max(sz.y,.01),Math.max(sz.z,.01));
       let mat=mt(p.tipo);
       if(p.tipo==='Placa'){ mat=mat.clone(); mat.map=nerv.clone(); mat.map.needsUpdate=true; mat.map.repeat.set(1,Math.max(1,Math.round(sz.y/.2))); }
-      const m=new THREE.Mesh(geo,mat); m.position.copy(c); m.userData.matCor=mat; m.userData.matConc=v3MatConcreto(p.tipo,sz,v3PecasGrp.children.length); v3PecasGrp.add(m);
-      const ar=new LineSegments2(new LineSegmentsGeometry().fromEdgesGeometry(new THREE.EdgesGeometry(geo)),ma); ar.position.copy(c); v3PecasGrp.add(ar);
+      const m=new THREE.Mesh(geo,mat); m.position.copy(c); m.userData.peca=pi; m.userData.matCor=mat; m.userData.matConc=v3MatConcreto(p.tipo,sz,v3PecasGrp.children.length); v3PecasGrp.add(m);
+      const ar=new LineSegments2(new LineSegmentsGeometry().fromEdgesGeometry(new THREE.EdgesGeometry(geo)),ma); ar.position.copy(c); ar.userData.peca=pi; v3PecasGrp.add(ar);
     });
     v3Cena.add(v3PecasGrp); v3PecasAplica();
   }
@@ -3023,8 +3056,14 @@ window.v3LoadJSON=function(json,fname,opc){
 
   /* linha de PU = tubo (a linha de 1 pixel quase não aparecia) + um cilindro
      invisível mais grosso para o clique pegar com folga */
-  const raio=Math.min(Math.max(diag/650,.02),.14), cima=new THREE.Vector3(0,1,0);
-  linhasData.forEach(l=>{
+  v3Raio=Math.min(Math.max(diag/650,.02),.14);
+  linhasData.forEach(v3CriaObj);
+  v3SemTom(v3Cena); v3Ilumina(); v3MontaPartes();
+  v3PosLinhas(json,fname,opc);
+};
+let v3Raio=.05;
+function v3CriaObj(l){
+    const raio=v3Raio, cima=new THREE.Vector3(0,1,0);
     const p1=v3(l.pt1),p2=v3(l.pt2);
     const visual=v3DeslocamentoVisual(l,raio); p1.y-=visual; p2.y-=visual;
     const line=new THREE.Line(new THREE.BufferGeometry().setFromPoints([p1,p2]),new THREE.LineBasicMaterial({color:v3Cor(l)}));
@@ -3037,13 +3076,13 @@ window.v3LoadJSON=function(json,fname,opc){
     const sph=new THREE.Mesh(new THREE.CylinderGeometry(raio*4,raio*4,len,6),new THREE.MeshBasicMaterial({visible:false}));
     sph.position.copy(mid); sph.quaternion.copy(q); sph.userData={id:l.id}; v3Cena.add(sph);
     objs.push({id:l.id,line,tubo,sph,len});
-  });
-  v3SemTom(v3Cena); v3Ilumina(); v3MontaPartes();
+}
+function v3PosLinhas(json,fname,opc){
   document.getElementById('v3vSk').style.display=v3Cam?'':'none';
   const pb=document.getElementById('v3PecasBtn'); pb.style.display=v3PecasGrp?'':'none'; v3PecasAplica();
   /* forma real: veio no arquivo (guarda neste computador) ou, ao reabrir a
      obra, a guardada aqui do mesmo arquivo */
-  v3FormaBotoes();
+  v3FormaBotoes(); v3PecaPainel();
   if(json.visual){ if(v3PoeForma(json.visual)&&!(opc&&opc.restaura)) V3FORMA_DB.grava({chave:v3FormaChave(),visual:json.visual}); }
   else if(opc&&opc.restaura){ const cena=v3Cena, ch=v3FormaChave();
     V3FORMA_DB.le().then(d=>{ if(d&&d.chave===ch&&d.visual&&v3Cena===cena) v3PoeForma(d.visual); }); }
@@ -3145,13 +3184,14 @@ function v3Linha(l,comTipo){
   r.innerHTML=`<input type="checkbox" class="v3ecb" ${l.incluir?'checked':''} aria-label="No preço">
     <span class="v3cor" style="background:${v3CorCSS(l)}"></span>
     <div class="v3ei"><div class="v3en" title="${escapeHtml(l.nome)}">${escapeHtml(l.nome)}</div>
-      <div class="v3em">${comTipo?l.tipo+' · ':''}${v3m(l.ml)}</div>${v3Avisos(l)}</div>
-    ${v3LadoHTML(v3LadoDe(l),v3TipoJunta(l)==='laje_inferior')}`;
+      <div class="v3em">${comTipo?l.tipo+' · ':''}${v3m(l.ml)}${l.manual?' · <span class="v3man">manual</span>':''}</div>${v3Avisos(l)}</div>
+    ${v3LadoHTML(v3LadoDe(l),v3TipoJunta(l)==='laje_inferior')}${l.manual?'<button type="button" class="v3apaga" title="Apagar esta linha manual" aria-label="Apagar linha manual">✕</button>':''}`;
+  const del=r.querySelector('.v3apaga'); if(del) del.addEventListener('click',e=>{ e.stopPropagation(); v3ApagaLinha(l.id); });
   const cb=r.querySelector('.v3ecb');
   cb.addEventListener('click',e=>e.stopPropagation());
   cb.addEventListener('change',e=>{e.stopPropagation();v3Inc(l.id,e.target.checked);});
   v3LigaLado(r,[l]);
-  r.addEventListener('click',e=>{ if(e.target===cb||e.target.closest('.v3lado')) return; v3Sel(l.id,true); });
+  r.addEventListener('click',e=>{ if(e.target===cb||e.target.closest('.v3lado')||e.target.closest('.v3apaga')) return; v3Sel(l.id,true); });
   return r;
 }
 /* contador por tipo, no lugar dos botões soltos: mostra quantas linhas de
@@ -3238,7 +3278,7 @@ window.v3ToggleBoxSel=function(){
   if(ctrl){ ctrl.enableRotate=!v3BoxMode; ctrl.enablePan=!v3BoxMode; }
   document.getElementById('v3nav').textContent=v3BoxMode
     ?'Arraste um retângulo: as linhas de dentro trocam de marcado · Shift marca todas · Esc cancela'
-    :'Arrastar gira · roda do mouse aproxima · botão direito move · clique na linha seleciona';
+    :'Arrastar gira · roda do mouse aproxima · botão direito move · clique na linha ou na peça seleciona';
 };
 
 document.addEventListener('keydown',e=>{
@@ -3305,6 +3345,77 @@ window.v3DesmarcaRepetidas=function(){
   v3Render(); v3Calc(); v3Salva();
 };
 
+/* PEÇA SELECIONADA: "ser possível selecionar um objeto e ocultar, seja
+   placa, pilar ou qualquer outro objeto, ter um olho ao lado de ocultar e
+   tirar do cálculo". Clique numa peça (fora das linhas): o painel mostra a
+   peça, as linhas de PU dela e os metros, o olho (oculta só da vista: dá
+   para ver o que está atrás) e "No cálculo" (as linhas dela saem ou voltam
+   ao preço). As ocultas ficam guardadas na obra; "Mostrar todas" volta.
+   As linhas da peça são as de mesmo nome com o meio dentro da caixa dela:
+   o nome se repete entre cópias (PLACA 02#4 eram 13 placas na mesma obra).
+   Teste pu-3d-ocultar-peca. */
+let v3PecaAt=-1, v3Ocultas=new Set(), v3SelCaixa=null;
+const V3OLHO='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>',
+  V3OLHO_OFF='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17.9 17.9A10.4 10.4 0 0 1 12 19c-6.4 0-10-7-10-7a18 18 0 0 1 5.1-5.9M9.9 5.2A9 9 0 0 1 12 5c6.4 0 10 7 10 7a18 18 0 0 1-2.2 3.2M3 3l18 18"/></svg>';
+function v3LinhasDaPeca(i){
+  /* cada linha fica com UMA peça: entre as de mesmo nome que a contêm, a
+     linha deitada é a base da peça de cima (junta entre duas placas iguais
+     empilhadas) e a de pé fica com a mais perto */
+  if(!v3PecasDados) return [];
+  if(!v3LinhasDaPeca.dono||v3LinhasDaPeca.dono.dados!==linhasData){
+    const cx=v3PecasDados.map(p=>p&&p.min&&p.max?{nome:String(p.nome||'').toUpperCase().trim(),b:new THREE.Box3().setFromPoints([v3(p.min),v3(p.max)])}:null), dono=new Map();
+    linhasData.forEach(l=>{ const nome=String(l.nome||'').toUpperCase().replace(/\s*[··]\s*face\s+\w+$/i,'').trim();
+      const a=v3(l.pt1), b=v3(l.pt2), mid=new THREE.Vector3().addVectors(a,b).multiplyScalar(.5), deitada=Math.abs(a.y-b.y)<.01;
+      let melhor=-1, nota=Infinity;
+      cx.forEach((c,k)=>{ if(!c||c.nome!==nome||!c.b.clone().expandByScalar(.06).containsPoint(mid)) return;
+        const n=deitada?Math.abs(mid.y-c.b.min.y):c.b.getCenter(new THREE.Vector3()).distanceTo(mid); if(n<nota){ nota=n; melhor=k; } });
+      if(melhor>=0) dono.set(l.id,melhor); });
+    v3LinhasDaPeca.dono={dados:linhasData,mapa:dono};
+  }
+  const m=v3LinhasDaPeca.dono.mapa; return linhasData.filter(l=>m.get(l.id)===i);
+}
+function v3PecaNoRaio(){
+  const vis=o=>{ for(;o;o=o.parent) if(!o.visible) return false; return true; };
+  const alvo=[];
+  if(v3PecasGrp) v3PecasGrp.children.forEach(o=>{ if(o.isMesh&&!o.isLineSegments2&&o.userData.peca!==undefined&&vis(o)) alvo.push(o); });
+  if(v3Forma) v3Forma.userData.cam.concreto.children.forEach(o=>{ if(o.isMesh&&o.userData.peca!==undefined&&vis(o)) alvo.push(o); });
+  if(!alvo.length) return -1;
+  const h=ray.intersectObjects(alvo,false); return h.length?h[0].object.userData.peca:-1;
+}
+function v3PecaSel(i){
+  v3PecaAt=i==null?-1:i;
+  if(v3SelCaixa){ if(v3SelCaixa.parent) v3SelCaixa.parent.remove(v3SelCaixa); v3SelCaixa.geometry.dispose(); v3SelCaixa=null; }
+  const p=v3PecaAt>=0&&v3PecasDados&&v3PecasDados[v3PecaAt];
+  if(p&&v3Cena){
+    const bx=new THREE.Box3().setFromPoints([v3(p.min),v3(p.max)]), sz=bx.getSize(new THREE.Vector3()), c=bx.getCenter(new THREE.Vector3());
+    const mat=new LineMaterial({color:0xF24619,linewidth:3,depthTest:false,transparent:true}); mat.toneMapped=false;
+    if(wrap) mat.resolution.set(Math.max(1,wrap.clientWidth),Math.max(1,wrap.clientHeight));
+    v3SelCaixa=new LineSegments2(new LineSegmentsGeometry().fromEdgesGeometry(new THREE.EdgesGeometry(new THREE.BoxGeometry(sz.x+.02,sz.y+.02,sz.z+.02))),mat);
+    v3SelCaixa.position.copy(c); v3SelCaixa.renderOrder=10; v3Cena.add(v3SelCaixa);
+  }
+  v3PecaPainel();
+}
+function v3PecaPainel(){
+  const w=document.getElementById('v3PecaPainel'); if(!w) return;
+  const p=v3PecaAt>=0&&v3PecasDados?v3PecasDados[v3PecaAt]:null, h=[];
+  if(p){
+    const ls=v3LinhasDaPeca(v3PecaAt), dentro=ls.filter(l=>l.incluir).length, oc=v3Ocultas.has(v3PecaAt);
+    const ml=ls.reduce((s2,l)=>s2+(Number(l.ml)||0),0);
+    h.push('<b>'+escapeHtml(p.nome||'Peça')+'</b><span class="sub">'+escapeHtml(p.tipo||'')+' · '+(ls.length?ls.length+(ls.length>1?' linhas':' linha')+' de PU · '+v3m(ml):'sem linha de PU')+'</span>');
+    h.push('<button type="button" data-a="olho" title="'+(oc?'Mostrar a peça':'Ocultar a peça (só da vista)')+'">'+(oc?V3OLHO_OFF+'Mostrar':V3OLHO+'Ocultar')+'</button>');
+    h.push('<label title="As linhas de PU desta peça entram ou saem do preço"><input type="checkbox" data-a="calc"'+(ls.length?'':' disabled')+(ls.length&&dentro===ls.length?' checked':'')+'>No cálculo</label>');
+    h.push('<button type="button" data-a="fecha" title="Fechar" aria-label="Fechar">✕</button>');
+  }
+  if(v3Ocultas.size) h.push('<button type="button" data-a="todas" title="Volta a mostrar as peças ocultas">'+V3OLHO+'Mostrar todas ('+v3Ocultas.size+(v3Ocultas.size>1?' ocultas':' oculta')+')</button>');
+  w.innerHTML=h.join(''); w.style.display=h.length?'':'none';
+  const ck=w.querySelector('[data-a=calc]');
+  if(ck&&p){ const ls=v3LinhasDaPeca(v3PecaAt), n=ls.filter(l=>l.incluir).length; ck.indeterminate=n>0&&n<ls.length;
+    ck.addEventListener('change',()=>{ ls.forEach(l=>{ l.incluir=ck.checked; const o=objs.find(x=>x.id===l.id); if(o) v3Pinta(o,l); }); v3Render(); v3Calc(); v3Salva(); v3PecaPainel(); }); }
+  const bt=a=>w.querySelector('[data-a='+a+']');
+  if(bt('olho')) bt('olho').addEventListener('click',()=>{ if(v3Ocultas.has(v3PecaAt)) v3Ocultas.delete(v3PecaAt); else v3Ocultas.add(v3PecaAt); v3PecasAplica(); v3Salva(); v3PecaPainel(); });
+  if(bt('fecha')) bt('fecha').addEventListener('click',()=>v3PecaSel(-1));
+  if(bt('todas')) bt('todas').addEventListener('click',()=>{ v3Ocultas.clear(); v3PecasAplica(); v3Salva(); v3PecaPainel(); });
+}
 function v3Sel(id,foco){
   actId=actId===id?-1:id;
   objs.forEach(o=>v3Pinta(o));
@@ -3361,13 +3472,46 @@ const ray=new THREE.Raycaster(),mouse=new THREE.Vector2();
    ligar a trena desfaz a vista explodida. Nada disso muda preço. */
 const v3Trena={on:false,a:null,hov:null,lista:[],down:null};
 function v3TrenaLiga(on){
-  v3Trena.on=!!on; v3Trena.a=null; v3Trena.hov=null; if(!on) v3Trena.lista=[];
-  const b=document.getElementById('v3TrenaBtn'); if(b) b.classList.toggle('on',v3Trena.on);
+  v3Trena.on=!!on; v3Trena.a=null; v3Trena.hov=null; if(!on){ v3Trena.lista=[]; v3Trena.nova=false; v3NovaForm(null); }
+  const b=document.getElementById('v3TrenaBtn'); if(b) b.classList.toggle('on',v3Trena.on&&!v3Trena.nova);
+  const bn=document.getElementById('v3NovaBtn'); if(bn) bn.classList.toggle('on',v3Trena.on&&!!v3Trena.nova);
   if(ren) ren.domElement.style.cursor=v3Trena.on?'crosshair':'';
   if(v3Trena.on&&v3ExplK){ v3Explode(0); const sl=document.getElementById('v3Expl'); if(sl) sl.value=0; }
   if(tip) tip.style.display='none';
 }
-document.getElementById('v3TrenaBtn').addEventListener('click',()=>v3TrenaLiga(!v3Trena.on));
+document.getElementById('v3TrenaBtn').addEventListener('click',()=>{ const ia=!(v3Trena.on&&!v3Trena.nova); v3Trena.nova=false; v3TrenaLiga(ia); });
+/* LINHA DE PU MANUAL: "depois de importado no viewer, é possível adicionar
+   manualmente uma linha de PU?" Com os mesmos encaixes da trena (canto e
+   aresta das peças): clique no início e no fim, escolha o tipo e ela entra
+   na lista e no preço como as outras, marcada "manual" e com o ✕ para
+   apagar. Vai junto no salvamento da obra. Teste pu-3d-linha-manual. */
+document.getElementById('v3NovaBtn').addEventListener('click',()=>{ const ia=!(v3Trena.on&&v3Trena.nova); v3Trena.nova=ia; v3TrenaLiga(ia); });
+function v3NovaForm(a,b){
+  const w=document.getElementById('v3NovaPainel'); if(!w) return;
+  if(!a){ w.style.display='none'; w.innerHTML=''; v3Trena.pend=null; return; }
+  v3Trena.pend={a,b}; const ml=Math.round(a.distanceTo(b)*100)/100;
+  w.innerHTML='<b>Nova linha de PU</b><span class="sub">'+v3m(ml)+'</span>'
+    +['Placa','Pilar','Viga'].map((t,i)=>'<button type="button" data-t="'+t+'"'+(i?'':' class="on"')+'>'+t+'</button>').join('')
+    +'<button type="button" data-a="add" class="ok">Adicionar</button><button type="button" data-a="cancela">Cancelar</button>';
+  w.style.display='';
+  w.querySelectorAll('[data-t]').forEach(x=>x.addEventListener('click',()=>w.querySelectorAll('[data-t]').forEach(y=>y.classList.toggle('on',y===x))));
+  w.querySelector('[data-a=cancela]').addEventListener('click',()=>v3NovaForm(null));
+  w.querySelector('[data-a=add]').addEventListener('click',()=>{ const t=(w.querySelector('[data-t].on')||{}).dataset; v3NovaLinha(a,b,(t&&t.t)||'Placa'); v3NovaForm(null); });
+}
+function v3NovaLinha(a,b,tipo){
+  const su=v=>[Math.round(v.x*1e4)/1e4,Math.round(-v.z*1e4)/1e4,Math.round(v.y*1e4)/1e4];   /* volta ao SketchUp */
+  const id=Math.max(0,...linhasData.map(l=>+l.id||0))+1, n=linhasData.filter(l=>l.manual).length+1;
+  const l={id,nome:'MANUAL '+n,tipo,ml:Math.round(a.distanceTo(b)*100)/100,pt1:su(a),pt2:su(b),app:'ext_int',incluir:true,manual:true};
+  if(!(l.ml>0)) return null;
+  linhasData.push(l); v3CriaObj(l); const o=objs[objs.length-1]; v3SemTom(o.tubo); v3Pinta(o,l); v3MontaPartes();
+  v3Render(); v3Calc(); v3Salva(); return l;
+}
+function v3ApagaLinha(id){
+  const i=linhasData.findIndex(l=>l.id===id&&l.manual); if(i<0) return;
+  linhasData.splice(i,1); const k=objs.findIndex(o=>o.id===id);
+  if(k>=0){ const o=objs[k]; [o.line,o.tubo,o.sph].forEach(x=>{ if(x.parent) x.parent.remove(x); x.geometry.dispose(); }); objs.splice(k,1); }
+  if(actId===id) actId=-1; v3MontaPartes(); v3Render(); v3Calc(); v3Salva();
+}
 document.addEventListener('keydown',e=>{
   if(e.key!=='Escape'||!v3Trena.on) return;
   e.stopImmediatePropagation();
@@ -3410,6 +3554,7 @@ function v3TrenaClique(ev){
   if(v3Trena.down&&Math.hypot(ev.clientX-v3Trena.down[0],ev.clientY-v3Trena.down[1])>4) return;   /* foi arrasto (girar) */
   const h=v3TrenaPonto(ev.clientX,ev.clientY); if(!h) return; v3Trena.hov=h;
   if(!v3Trena.a){ v3Trena.a=h.p.clone(); return; }
+  if(v3Trena.nova){ v3NovaForm(v3Trena.a,h.p.clone()); v3Trena.a=null; return; }
   v3Trena.lista.push({a:v3Trena.a,b:h.p.clone()}); v3Trena.a=null;
 }
 /* desenho no HUD: as medidas, a que está sendo puxada e o encaixe */
@@ -3458,7 +3603,8 @@ function onClk(ev){
   mouse.y=-((ev.clientY-rect.top)/rect.height)*2+1;
   ray.setFromCamera(mouse,cam);
   const hits=ray.intersectObjects(objs.filter(o=>o.sph.visible).map(o=>o.sph));
-  if(hits.length) v3Sel(hits[0].object.userData.id);
+  if(hits.length){ v3Sel(hits[0].object.userData.id); return; }
+  const pk=v3PecaNoRaio(); v3PecaSel(pk);
 }
 
 // Exportar para o orçamento atual (atualiza elementos do sistema PU)
@@ -3483,7 +3629,7 @@ window.v3FecharArquivo=function(){
   if(linhasData.length&&!confirm('Fechar o arquivo do 3D?\n\nAs linhas e as marcações dele saem desta obra. O que já foi enviado para a medição continua.')) return;
   if(v3Trena.on) v3TrenaLiga(false);
   if(v3Cena){ sc.remove(v3Cena); v3Cena.traverse(o=>{ if(o.geometry) o.geometry.dispose(); }); v3Cena=null; }
-  objs=[]; linhasData=[]; v3PecasGrp=null; v3Forma=null; v3FormaBotoes(); V3FORMA_DB.apaga(); v3PecasDados=null; v3Caixa=null; v3GradeArgs=null; v3Grade=null; v3Partes=[]; v3Arquivo=''; v3Obra='';
+  objs=[]; linhasData=[]; v3PecasGrp=null; v3Forma=null; v3PecaAt=-1; v3Ocultas=new Set(); v3PecaPainel(); v3FormaBotoes(); V3FORMA_DB.apaga(); v3PecasDados=null; v3Caixa=null; v3GradeArgs=null; v3Grade=null; v3Partes=[]; v3Arquivo=''; v3Obra='';
   actId=-1;
   if(window.v3Esquecer) window.v3Esquecer();
   document.getElementById('v3Nome').textContent='Nenhum arquivo carregado';
@@ -3680,7 +3826,7 @@ async function fbRemove(path){
     document.getElementById('viewer3d').classList.add('active');
     /* a obra já tem linhas guardadas: abre o 3D como ficou da última vez */
     if(linhas3d && Array.isArray(linhas3d.linhas) && linhas3d.linhas.length && window.v3LoadJSON){
-      window.v3LoadJSON({obra:linhas3d.obra||'',linhas:linhas3d.linhas,pecas:linhas3d.pecas||null,camera:linhas3d.camera||null}, linhas3d.arquivo||'', {restaura:true});
+      window.v3LoadJSON({obra:linhas3d.obra||'',linhas:linhas3d.linhas,pecas:linhas3d.pecas||null,camera:linhas3d.camera||null,ocultas:linhas3d.ocultas||[]}, linhas3d.arquivo||'', {restaura:true});
       return;
     }
     document.getElementById('v3d-list').style.display='none';
