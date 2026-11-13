@@ -15011,8 +15011,32 @@ function tmfSeparacao(o){
       +'<div class="tmf-cortes">'+cs.slice(i,i+8).map(c=>'<div class="tmf-corte" data-corte="'+escapeAttr(c.nome)+'"><b>'+escapeHtml(c.nome)+'</b><br>chapa '+Math.round(c.mm).toLocaleString('pt-BR')+tmfCorteSVG(c.mm,c.util,c.partes)+'largura em mm · tracejado = sobra</div>').join('')+'</div>'});
   }
   (o.extra||[]).filter(x=>x&&x.html).forEach(x=>blocos.push(x));
-  const CAP=128,pags=[[]];let h=0;
-  blocos.forEach(b=>{if(h+b.h>CAP&&pags[pags.length-1].length){pags.push([]);h=0;}pags[pags.length-1].push(b.html);h+=b.h+3;});
+  /* PAGINAÇÃO MEDIDA. A altura de cada pilha era estimada pelo tamanho do
+     texto e, numa obra de 31 + 31 + 23 telhas, a tabela de acessórios caía
+     por cima do rodapé da folha 2 ("linhas sobrescritas"). Agora cada bloco
+     é medido de verdade numa folha escondida, com o CSS da ficha, e a folha
+     só recebe o que cabe; sem como medir, fica a estimativa de antes.
+     Teste leitor-cobertura-folha-montagem. */
+  let CAP=128,GAP=3,alturas=blocos.map(b=>b.h);
+  try{
+    if(typeof document!=='undefined'&&document.body){
+      const box=document.createElement('div');box.id='printArea';box.setAttribute('aria-hidden','true');
+      box.style.cssText='position:absolute;left:-20000px;top:0;visibility:hidden;pointer-events:none';
+      box.innerHTML=tmfCss()+'<article class="tmf tmf-separa">'+o.topo(' (1/2)')+'<div class="tmf-sepc"></div>'+o.pe+'</article>';
+      document.body.appendChild(box);
+      const sepc=box.querySelector('.tmf-sepc'),cap=sepc.clientHeight;
+      if(cap>60){const gap=parseFloat(getComputedStyle(sepc).rowGap)||0;
+        /* a altura do PRÓPRIO bloco como ele fica na folha: do topo do
+           primeiro elemento ao fim do último (um bloco pode ser título +
+           desenhos, com o vão da grade entre eles) */
+        alturas=blocos.map(b=>{sepc.innerHTML=b.html;const k=[...sepc.children];if(!k.length)return 0;
+          return k[k.length-1].getBoundingClientRect().bottom-k[0].getBoundingClientRect().top;});
+        if(alturas.every(v=>v>0)){CAP=cap;GAP=gap;}else alturas=blocos.map(b=>b.h);}
+      box.remove();
+    }
+  }catch(e){alturas=blocos.map(b=>b.h);CAP=128;GAP=3;}
+  const pags=[[]];let h=0;
+  blocos.forEach((b,i)=>{const hb=alturas[i];if(h+hb>CAP+8&&pags[pags.length-1].length){pags.push([]);h=0;}pags[pags.length-1].push(b.html);h+=hb+GAP;});
   return pags.map((p,i)=>'<article class="tmf tmf-separa">'+o.topo(pags.length>1?' ('+(i+1)+'/'+pags.length+')':'')
     +'<div class="tmf-sepc">'+p.join('')+'</div>'+o.pe+'</article>');
 }
@@ -28254,6 +28278,8 @@ html[data-theme="escuro"] .log-det>summary.err{color:var(--red)}.log-det>summary
         /* os cantos do contorno que caem DENTRO da telha: onde a ponta em
            ângulo quebra (o desenho do corte na ficha usa a medida exata
            deles; as 11 amostras ficam a ~98 mm uma da outra) */
+        /* perfil fino (41 pontos, ~25 mm) só para o desenho do corte */
+        const perfilFino=[];for(let k=0;k<=40;k++){const u=ini+(fim-ini)*k/40;perfilFino.push((k===0||k===40)?Math.max(medeEm(u),medeEm(u+(k===0?.01:-.01))):medeEm(u));}
         const quebras=[];
         ((setor&&setor.poly&&setor.poly.length)?setor.poly:bloco.poligono).forEach(q=>{const uq=cobDot(q,eixos.u);
           if(uq>ini+1&&uq<fim-1){const v=Math.max(medeEm(uq),medeEm(uq-.01),medeEm(uq+.01));if(v>.5)quebras.push({pos:uq-ini,proj:v});}});
@@ -28268,7 +28294,7 @@ html[data-theme="escuro"] .log-det>summary.err{color:var(--red)}.log-det>summary
           {const vs=bloco.poligono.map(q=>cobDot(q,eixos.v)),tol=Math.max(1,(Math.max(...vs)-Math.min(...vs))*.0001)+1;   /* a linha-base fica 1 margem acima do topo */
           tocaCumeeira=(central.foraCumeeira!==true&&Math.abs(central.v0-eixos.v0)<=tol)||bloco.arestasCompartilhadas.some(a=>cobDistSeg(p0,a.a,a.b)<12);}
         faixas.push({indice:i,segmento,ini,fim,largura:fim-ini,projecao:central.comprimento,
-          minProjecao:menor,maxProjecao:maior,diagonal:maior-menor>10,perfilProj,perfilPos,quebras,
+          minProjecao:menor,maxProjecao:maior,diagonal:maior-menor>10,perfilProj,perfilPos,quebras,perfilFino,
           tocaCumeeira,foraCumeeira:central.foraCumeeira,p0,p1,pPedido:{x:p1.x,y:p1.y},
           perdaRecorte:Math.max(0,(maior-menor)*(fim-ini)/2/1e6)});
       });
@@ -28458,6 +28484,7 @@ html[data-theme="escuro"] .log-det>summary.err{color:var(--red)}.log-det>summary
             sentido:cobSentidoFace(b),
             perfilFinal,minFinal:Math.min(...perfilFinal),maxFinal:Math.max(...perfilFinal),
             quebrasFinal:(f.quebras||[]).map(q=>({pos:q.pos,L:Math.max(0,q.proj*fator+num(COB.beiral)-(f.tocaCumeeira?num(COB.cumeeira):0)+cobAjObra(b)+num(b.ajuste))})),
+            perfilFinoFinal:(f.perfilFino||[]).map(v=>Math.max(0,v*fator+num(COB.beiral)-(f.tocaCumeeira?num(COB.cumeeira):0)+cobAjObra(b)+num(b.ajuste))),
             codigo:(b.nome+'-'+s.id+'-'+String(ordem).padStart(2,'0')).replace(/\s+/g,'-')};
           rs.faixas.push(x);todas.push({...x,blocoNome:b.nome,setorNome:s.nome,inclinacao:s.inclinacao});
         });
@@ -30724,19 +30751,29 @@ html[data-theme="escuro"] .log-det>summary.err{color:var(--red)}.log-det>summary
       let kU=k;
       const sk=b.sketchup;
       if(sk&&sk.normal&&sk.direcao&&sk.eixo)kU=cobVDot(sk.eixo,cobVCross(sk.normal,sk.direcao))>=0?1:-1;
-      /* A CUMEEIRA SEMPRE EM CIMA: ela é a linha que divide o telhado e as
-         duas águas. A seta de montagem anda para o lado que for, e junto dela
-         vai a orientação da obra (fundos → frente, frente → fundos ou
-         esquerda → direita vista da frente), da "Frente da obra" escolhida
-         na tela -- "sentido de montagem com direção diferente nas abas,
-         mesmo todas sendo do fundo para frente". O caminho que girava a
-         folha (inv) fica desligado. Teste leitor-cobertura-folha-montagem. */
-      const inv=false;
+      /* AS ÁGUAS NA MESMA POSIÇÃO NA FOLHA. "O que espero em 2 águas na
+         impressão: ambas águas na mesma posição na folha, seta apontando
+         para a direção que defini (fundos → frente); a próxima aba é igual,
+         mesma posição -- nem que a linha da cumeeira aponte para a linha
+         inferior." Todas as águas são desenhadas como vistas do mesmo lugar:
+         com a "Frente da obra" escolhida, a frente fica à DIREITA do papel
+         (água que corre de lado: a direita de quem olha da frente); sem ela,
+         a montagem anda para a direita. A água que olhando "de fora" saía ao
+         contrário gira 180° (sem espelhar) e a cumeeira dela fica embaixo.
+         A orientação escrita vai junto da seta. Teste leitor-cobertura-folha-montagem. */
+      let quer;
+      { const dU=cobDirMundo(b,1),F=COB_FRENTE[COB.frente];
+        if(F){const c=dU[0]*F[0]+dU[1]*F[1];
+          if(Math.abs(c)>=.7)quer=c>0?1:-1;else{const R=[-F[1],F[0]];quer=(dU[0]*R[0]+dU[1]*R[1])>0?1:-1;}}
+        else{const fA=a.faixas[0],fZ=a.faixas[a.faixas.length-1],dd=(fZ.ini+fZ.fim)-(fA.ini+fA.fim);
+          quer=a.faixas.length>1&&Math.abs(dd)>1?(dd>0?1:-1):(cobSentidoFace(b)==='rtl'?-1:1);} }
+      const inv=kU!==quer;
+      if(inv){kU=-kU;k=-k;}
       a.inv=inv;a.kU=kU;
       const U=p=>kU*cobDot(p,ex.u),Vv=p=>k*cobDot(p,ex.v);   /* Vv cresce para a cumeeira (ou para o beiral, na folha girada) */
       const pts=poly.concat(a.faixas.flatMap(f=>[f.p0,f.p1]));
       const us=pts.map(U),vs=pts.map(Vv),u0=Math.min(...us),u1=Math.max(...us),v0=Math.min(...vs),v1=Math.max(...vs);
-      const W=1000,m=40,TOP=inv?112:42,BOT=inv?44:96,nF=a.faixas.length,longa=nF>40||(u1-u0)/Math.max(1,v1-v0)>2.2;
+      const W=1000,m=40,TOP=inv?112:68,BOT=inv?72:96,nF=a.faixas.length,longa=nF>40||(u1-u0)/Math.max(1,v1-v0)>2.2;
       const s=Math.min((W-2*m)/Math.max(1,u1-u0),(longa?230:400)/Math.max(1,v1-v0)),H=Math.round((v1-v0)*s+TOP+BOT);
       const ox=(W-(u1-u0)*s)/2,X=p=>ox+(U(p)-u0)*s,Y=p=>TOP+(v1-Vv(p))*s,r1=v=>Math.round(v*10)/10;
       const XU=u=>ox+(kU*u-u0)*s;
@@ -30770,9 +30807,11 @@ html[data-theme="escuro"] .log-det>summary.err{color:var(--red)}.log-det>summary
       /* sentido: da primeira para a última telha */
       const f0=a.faixas[0],fz=a.faixas[a.faixas.length-1],dir=(XU(fz.ini)+XU(fz.fim))>=(XU(f0.ini)+XU(f0.fim))?1:-1;
       const xs0=dir>0?Math.min(XU(f0.ini),XU(f0.fim)):Math.max(XU(f0.ini),XU(f0.fim));
-      const ya=r1(inv?yBot-10:yTop+16);
-      if(a.faixas.length>1)g+='<path d="M'+r1(xs0+dir*8)+','+ya+' h'+(dir*150)+' m0,0 l'+(-dir*9)+',-6 m'+(dir*9)+',6 l'+(-dir*9)+',6" stroke="#d53309" stroke-width="2.6" fill="none"/>'
-        +'<text x="'+r1(xs0+dir*12)+'" y="'+r1(ya-7)+'" font-size="10" font-weight="800" fill="#d53309" text-anchor="'+(dir>0?'start':'end')+'">SENTIDO DE MONTAGEM'+(cobOrientacao(b,a.faixas)?' · '+cobOrientacao(b,a.faixas).toUpperCase():'')+'</text>';
+      /* a seta e o texto FORA do desenho, do lado da cumeeira, para não
+         passarem por cima das linhas das telhas ("linhas sobrescritas") */
+      const ya=r1(inv?yBot+40:yTop-30);
+      if(a.faixas.length>1)g+='<path data-sentido="1" d="M'+r1(xs0+dir*2)+','+ya+' h'+(dir*170)+' m0,0 l'+(-dir*9)+',-6 m'+(dir*9)+',6 l'+(-dir*9)+',6" stroke="#d53309" stroke-width="2.6" fill="none"/>'
+        +'<text x="'+r1(xs0+dir*2)+'" y="'+r1(ya-7)+'" font-size="10" font-weight="800" fill="#d53309" text-anchor="'+(dir>0?'start':'end')+'" stroke="#fff" stroke-width="3" paint-order="stroke">SENTIDO DE MONTAGEM'+(cobOrientacao(b,a.faixas)?' · '+cobOrientacao(b,a.faixas).toUpperCase():'')+'</text>';
       /* cotas para marcar no beiral: onde começa cada telha */
       /* a régua do beiral fica do lado do beiral: embaixo, ou em cima na folha girada */
       const yc=r1(inv?yTop-58:yBot+40);
@@ -30806,10 +30845,27 @@ html[data-theme="escuro"] .log-det>summary.err{color:var(--red)}.log-det>summary
       const W=Math.max(1,num(f.largura)),P=(f.perfilFinal&&f.perfilFinal.length>1?f.perfilFinal:[f.final,f.final]).map(Number);
       const vira=(a.kU||1)<0;                          /* esquerda/direita como no desenho da água */
       const ped=num(f.pedido)||Math.max(...P);
-      let pts=[[0,P[0]],[W,P[P.length-1]]].concat((f.quebrasFinal||[]).map(q=>[q.pos,q.L]));
-      if(vira)pts=pts.map(q=>[W-q[0],q[1]]);
+      /* A FORMA DA PONTA vem do perfil fino (41 medidas na largura), reduzido
+         aos cantos de verdade (Douglas-Peucker, 6 mm). Canto exato do
+         contorno só substitui o do perfil quando bate com ele: um vértice do
+         contorno medido "de lado" dava 27 mm no meio da C2-17 e o desenho
+         saía em V -- "de onde ele tirou esse recorte?". */
+      const Fn=(f.perfilFinoFinal&&f.perfilFinoFinal.length>2?f.perfilFinoFinal:P).map(Number);
+      let fino=Fn.map((v,i)=>[W*i/(Fn.length-1),v]);
+      /* medida isolada que foge das duas vizinhas (pico ou buraco de uma
+         amostra só) é leitura degenerada do contorno, não canto: um canto de
+         verdade fica a no máximo ~20 mm da média das vizinhas nesta malha */
+      for(let i=1;i<fino.length-1;i++){const m=(fino[i-1][1]+fino[i+1][1])/2;if(Math.abs(fino[i][1]-m)>40&&Math.abs(fino[i-1][1]-fino[i+1][1])<60)fino[i]=[fino[i][0],m];}
+      const rdp=(L,tol)=>{if(L.length<3)return L;const a=L[0],z=L[L.length-1];let im=-1,dm=0;
+        for(let i=1;i<L.length-1;i++){const t=(L[i][0]-a[0])/Math.max(1e-6,z[0]-a[0]),d=Math.abs(L[i][1]-(a[1]+(z[1]-a[1])*t));if(d>dm){dm=d;im=i;}}
+        return dm>tol?rdp(L.slice(0,im+1),tol).slice(0,-1).concat(rdp(L.slice(im),tol)):[a,z];};
+      let pts=rdp(fino,6);
+      const naLinha=x=>{for(let i=0;i<fino.length-1;i++)if(x>=fino[i][0]-1e-6&&x<=fino[i+1][0]+1e-6){const t=(x-fino[i][0])/Math.max(1e-6,fino[i+1][0]-fino[i][0]);return fino[i][1]+(fino[i+1][1]-fino[i][1])*t;}return null;};
+      (f.quebrasFinal||[]).forEach(q=>{const x=q.pos,L=q.L,ref=naLinha(x);if(ref==null||Math.abs(L-ref)>15)return;
+        let j=-1,dj=1e9;pts.forEach((p,i)=>{if(i>0&&i<pts.length-1&&Math.abs(p[0]-x)<dj){dj=Math.abs(p[0]-x);j=i;}});
+        if(j>0&&dj<=W/40+1)pts[j]=[x,L];});
+      if(vira)pts=pts.map(q=>[W-q[0],q[1]]).reverse();
       pts.sort((p,q)=>p[0]-q[0]);
-      /* tira o ponto que está na reta dos vizinhos (canto que não muda nada) */
       const ang2=(p,q)=>Math.atan2(q[1]-p[1],Math.max(1e-6,q[0]-p[0]))*180/Math.PI;
       for(let i=1;i<pts.length-1;){if(Math.abs(ang2(pts[i-1],pts[i])-ang2(pts[i],pts[i+1]))<.3||pts[i][0]-pts[i-1][0]<1)pts.splice(i,1);else i++;}
       const segs=[];for(let i=0;i<pts.length-1;i++)segs.push([pts[i][0],pts[i][1],pts[i+1][0],pts[i+1][1]]);
@@ -30829,10 +30885,11 @@ html[data-theme="escuro"] .log-det>summary.err{color:var(--red)}.log-det>summary
       g+='<text x="'+r1(X(0)-5)+'" y="'+r1(Y(L0)+3.5)+'" font-size="10" font-weight="800" text-anchor="end">'+n0(L0)+'</text>'
         +'<text x="'+r1(X(W)+5)+'" y="'+r1(Y(L1)+3.5)+'" font-size="10" font-weight="800">'+n0(L1)+'</text>';
       pts.forEach(q=>{g+='<circle cx="'+r1(X(q[0]))+'" cy="'+r1(Y(q[1]))+'" r="2.6" fill="#d53309"/>';});
-      meio.forEach(q=>{const dx=q[0]<W/2?1:-1,yy=Y(q[1])-Y(ped)<14?Y(q[1])+15:Y(q[1])-7;
+      /* a medida do canto vai por BAIXO da linha: em cima fica o arco do ângulo */
+      meio.forEach(q=>{const dx=q[0]<W/2?1:-1,yy=Y(q[1])+15;
         g+='<text x="'+r1(X(q[0])+dx*5)+'" y="'+r1(yy)+'" font-size="8.5" font-weight="800" fill="#d53309" text-anchor="'+(dx>0?'start':'end')+'">'+n0(q[1])+' a '+n0(q[0])+'</text>';});
       /* o ângulo com a borda do pé, na ponta mais baixa de cada trecho inclinado */
-      segs.forEach((sg,i)=>{if(angs[i]<.5||(segs.length>1&&sg[2]-sg[0]<W*.15))return;const baixo=sg[1]<=sg[3]?[sg[0],sg[1]]:[sg[2],sg[3]],dirx=baixo[0]===sg[0]?1:-1,rr=15,px=X(baixo[0]),py=Y(baixo[1]),
+      segs.forEach((sg,i)=>{if(angs[i]<.5||(segs.length>1&&sg[2]-sg[0]<W*.25))return;const baixo=sg[1]<=sg[3]?[sg[0],sg[1]]:[sg[2],sg[3]],dirx=baixo[0]===sg[0]?1:-1,rr=15,px=X(baixo[0]),py=Y(baixo[1]),
         t=angs[i]*Math.PI/180,ex=px+dirx*rr*Math.cos(t),ey=py-rr*Math.sin(t);
         g+='<line x1="'+r1(px)+'" y1="'+r1(py)+'" x2="'+r1(px+dirx*(rr+5))+'" y2="'+r1(py)+'" stroke="#888" stroke-width=".7"/>'
           +'<path d="M'+r1(px+dirx*rr)+','+r1(py)+' A'+rr+','+rr+' 0 0 '+(dirx>0?0:1)+' '+r1(ex)+','+r1(ey)+'" stroke="#d53309" stroke-width="1" fill="none"/>'
@@ -30873,7 +30930,7 @@ html[data-theme="escuro"] .log-det>summary.err{color:var(--red)}.log-det>summary
         +(ORD.cum(a.bloco)&&cum&&cum.pecas?'<tr><td>Cumeeiras da obra (com a água vizinha)</td><td><b>'+cum.pecas+'</b></td></tr>':'')+'</tbody></table></div>':'';
       const art='<article class="tmf" data-agua="'+escapeAttr(a.pref)+'">'+topo('ÁGUA '+escapeHtml(a.pref)+' · '+escapeHtml(String(a.nome).toUpperCase()),
           '<b>'+nF+'</b> telhas · <span>montagem</span> <b>'+(sentido==='rtl'?'B → A':'A → B')+'</b>'+(cobOrientacao(a.bloco,a.faixas)?' · <b>'+cobOrientacao(a.bloco,a.faixas)+'</b>':'')+(num(a.st.inclinacao||a.bloco.inclinacao)?' · <span>inclinação</span> <b>'+dec(num(a.st.inclinacao||a.bloco.inclinacao),1)+'%</b>':'')+' · <span>ordem</span> <b>'+(ai+1)+' de '+aguas.length+'</b>'+vezes,'')
-        +'<div class="tmf-corpo'+(longa?' longa':(nF>12?' larga':''))+'"><div><h5>Vista de cima · '+(ORD.cum(a.bloco)?'cumeeira':'topo')+' em cima, beiral embaixo'+(cobOrientacao(a.bloco,a.faixas)?' · montagem '+cobOrientacao(a.bloco,a.faixas):'')+'</h5>'+svg
+        +'<div class="tmf-corpo'+(longa?' longa':(nF>12?' larga':''))+'"><div><h5>Vista de cima · '+(a.inv?'beiral em cima, '+(ORD.cum(a.bloco)?'cumeeira':'topo')+' embaixo':(ORD.cum(a.bloco)?'cumeeira':'topo')+' em cima, beiral embaixo')+(cobOrientacao(a.bloco,a.faixas)?' · montagem '+cobOrientacao(a.bloco,a.faixas):'')+'</h5>'+svg
           +'<div class="tmf-leg"><span><i style="background:#fde5d6"></i>cortar na obra (ponta em ângulo ou largura)</span><span>código no pé de cada telha · número grande = comprimento</span></div></div>'
         +'<div style="min-height:0;overflow:hidden"><h5>Telhas desta água · na ordem</h5><div class="tmf-lst'+(longa?'':(nF>12?' dupla':''))+(nF>30?' mini':'')+'"'+(longa?' style="columns:'+nCol+'"':'')+'>'+lista+'</div>'+(longa?'':fix)+'</div></div>'
         +peTxt+'</article>';
@@ -31720,7 +31777,7 @@ if('serviceWorker' in navigator && location.protocol.startsWith('http')){
 }
 </script>
 <script>/* versão publicada (PADRAO_RM.md §3): sobe a cada publicação, junto com o CACHE do sw.js */
-const APP_VER='v295';
+const APP_VER='v296';
 </script>
 <script id="rmVersaoBloco">
 /* ===== SELO DE VERSÃO — igual em todos os sistemas (PADRAO_RM.md §3) =====
