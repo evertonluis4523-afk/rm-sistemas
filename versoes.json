@@ -16,11 +16,11 @@
   "versao": "v133"
  },
  "calculo_pre_moldados": {
-  "commit": "c474ab8",
-  "versao": "v60"
+  "commit": "440af38",
+  "versao": "v61"
  },
  "central_rm": {
-  "commit": "b4a8a15",
+  "commit": "8325cec",
   "versao": "v171"
  },
  "controle_cheques": {
