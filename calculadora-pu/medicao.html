@@ -2716,7 +2716,7 @@ function v3FormaMonta(vis){
   const raiz=new THREE.Group(); raiz.name='forma-real'; raiz.userData.cam={}; raiz.userData.n={};
   V3CAM.forEach(c=>{ const g=new THREE.Group(); g.name='cam-'+c; raiz.add(g); raiz.userData.cam[c]=g; raiz.userData.n[c]=0; });
   const geos=vis.defs.map(d=>(Array.isArray(d&&d.p)?d.p:[]).filter(p=>p&&Array.isArray(p.v)&&Array.isArray(p.i)&&p.i.length>=3).map(p=>{
-    const geo=v3FormaGeo(p); return {m:p.m,geo,ar:new LineSegmentsGeometry().fromEdgesGeometry(new THREE.EdgesGeometry(geo,25))}; }));
+    const geo=v3FormaGeo(p), eg=new THREE.EdgesGeometry(geo,25); geo.userData.arestas=eg.attributes.position.array; return {m:p.m,geo,ar:new LineSegmentsGeometry().fromEdgesGeometry(eg)}; }));
   const mats=Array.isArray(vis.mats)?vis.mats:[], cache={};
   vis.inst.forEach(it=>{
     const partes=geos[it&&it.d]; if(!partes||!partes.length) return;
@@ -2735,13 +2735,13 @@ function v3FormaMonta(vis){
 /* a caixa que a forma de concreto cobre sai no modo concreto */
 function v3FormaCobre(){
   if(!v3Forma||!v3PecasGrp) return;
-  const fc=v3Forma.userData.cam.concreto.children, ms=fc.filter(o=>o.isMesh), cx=ms.map(o=>o.geometry.boundingBox.clone().applyMatrix4(o.matrix).expandByScalar(.05));
+  const fc=v3Forma.userData.cam.concreto.children, ms=fc.filter(o=>o.isMesh&&!o.isLineSegments2), cx=ms.map(o=>o.geometry.boundingBox.clone().applyMatrix4(o.matrix).expandByScalar(.05));
   const ch=v3PecasGrp.children;
   for(let i=0;i<ch.length;i++){ const o=ch[i]; if(!o.isMesh||o.isLineSegments2) continue;
     const c=o.position, cob=cx.some(b=>b.containsPoint(c));
     o.userData.coberta=cob; if(ch[i+1]&&ch[i+1].isLineSegments2) ch[i+1].userData.coberta=cob; }
   /* a forma leva o número da peça que ela cobre (ocultar e selecionar) */
-  for(let i=0;i<fc.length;i++){ const o=fc[i]; if(!o.isMesh) continue; const b=cx[ms.indexOf(o)];
+  for(let i=0;i<fc.length;i++){ const o=fc[i]; if(!o.isMesh||o.isLineSegments2) continue; const b=cx[ms.indexOf(o)];
     const cx2=ch.find(x=>x.isMesh&&!x.isLineSegments2&&b.containsPoint(x.position));
     if(cx2){ o.userData.peca=cx2.userData.peca; if(fc[i+1]&&fc[i+1].isLineSegments2) fc[i+1].userData.peca=cx2.userData.peca; } }
 }
@@ -2775,6 +2775,7 @@ document.getElementById('v3MedBtn').addEventListener('click',e=>{ v3Medidas=!v3M
 window.__v3Teste={cena:()=>({...v3HudInfo}),
   peca:()=>({sel:v3PecaAt,ocultas:[...v3Ocultas].sort((a,b)=>a-b),painel:(document.getElementById('v3PecaPainel')||{}).textContent||'',linhas:v3PecaAt>=0?v3LinhasDaPeca(v3PecaAt).map(l=>l.id):[],
     visiveis:v3PecasGrp?v3PecasGrp.children.filter(o=>o.isMesh&&!o.isLineSegments2&&o.visible).map(o=>o.userData.peca):[]}),
+  vao:()=>({...v3VaoInfo,linhas:linhasData.filter(l=>l.vao).map(l=>({id:l.id,nome:l.nome,ml:l.ml,pt1:l.pt1,pt2:l.pt2}))}),
   zoom:()=>cam&&ctrl?{dist:cam.position.distanceTo(ctrl.target),min:ctrl.minDistance,cursor:!!ctrl.zoomToCursor,alvo:ctrl.target.toArray()}:null,
   aplica:()=>v3Apl?{on:true,visiveis:v3Apl.itens.filter(it=>it.o.tubo.visible).length,total:v3Apl.itens.length,bico:v3Apl.bico.visible}:{on:false,visiveis:objs.filter(o=>o.tubo.visible&&o.tubo.scale.y===1).length,total:objs.length},
   forma:()=>v3Forma?{visivel:v3Forma.visible,n:{...v3Forma.userData.n},cam:Object.fromEntries(V3CAM.map(c=>[c,v3Forma.userData.cam[c].visible])),
@@ -2891,7 +2892,7 @@ function v3Salva(){
   clearTimeout(v3SalvaT);
   v3SalvaT=setTimeout(()=>{ if(!window.v3Guardar||!linhasData.length) return;
     window.v3Guardar({obra:v3Obra, arquivo:v3Arquivo, em:new Date().toISOString(),
-      linhas:linhasData.map(l=>Object.assign({id:l.id,nome:l.nome,tipo:l.tipo,junta:v3TipoJunta(l),ml:l.ml,pt1:l.pt1,pt2:l.pt2,app:l.app||'ext_int',incluir:!!l.incluir},l.manual?{manual:true}:{})),
+      linhas:linhasData.map(l=>Object.assign({id:l.id,nome:l.nome,tipo:l.tipo,junta:v3TipoJunta(l),ml:l.ml,pt1:l.pt1,pt2:l.pt2,app:l.app||'ext_int',incluir:!!l.incluir},l.manual?{manual:true}:{},l.vao?{vao:true}:{})),
       pecas:v3PecasDados||null, camera:v3Cam||null, ocultas:[...v3Ocultas]});
   },300);
 }
@@ -2993,7 +2994,7 @@ window.v3LoadJSON=function(json,fname,opc){
   v3AplicaPara();
   if(!ready) initSc();
   if(v3Cena){ sc.remove(v3Cena); v3Cena.traverse(o=>{ if(o.geometry) o.geometry.dispose(); }); }
-  v3Cena=new THREE.Group(); sc.add(v3Cena); v3PecasGrp=null; v3Forma=null; v3PecaAt=-1; v3SelCaixa=null;
+  v3Cena=new THREE.Group(); sc.add(v3Cena); v3PecasGrp=null; v3Forma=null; v3VaoInfo={n:0,ml:0}; v3PecaAt=-1; v3SelCaixa=null;
   v3Ocultas=new Set(opc&&opc.restaura&&Array.isArray(json.ocultas)?json.ocultas.filter(Number.isInteger):[]);
   objs=[]; linhasData=[];
   const ls=v3RecortaPlacas(json.linhas||[],json.pecas,json.versao);
@@ -3061,7 +3062,49 @@ window.v3LoadJSON=function(json,fname,opc){
   v3SemTom(v3Cena); v3Ilumina(); v3MontaPartes();
   v3PosLinhas(json,fname,opc);
 };
-let v3Raio=.05;
+let v3Raio=.05, v3VaoInfo={n:0,ml:0};
+
+/* VÃO DE JANELA: "está lendo linha onde tem janela, nesse vão não vai PU,
+   então acaba cobrando mais PU em área que não vai". O plugin gera a junta
+   pela CAIXA da placa, que não conhece o recorte. Com a forma real no
+   arquivo, cada junta de base de placa é conferida a cada 10 cm: precisa ter
+   concreto logo acima (a placa) e logo abaixo (a de baixo; se embaixo nunca
+   há nada, a placa está no chão e vale só o de cima). Onde não tem, é vão:
+   a linha é cortada ali e os metros caem junto. Só na primeira leitura do
+   arquivo; o resultado vai salvo na obra. Teste pu-3d-vao-janela. */
+function v3CortaVaos(){
+  if(!v3Forma) return {n:0,ml:0};
+  const conc=[]; v3Forma.updateMatrixWorld(true);
+  v3Forma.userData.cam.concreto.children.forEach(o=>{ if(o.isMesh&&!o.isLineSegments2){ o.geometry.computeBoundingBox(); conc.push({o,b:o.geometry.boundingBox.clone().applyMatrix4(o.matrixWorld)}); } });
+  if(!conc.length) return {n:0,ml:0};
+  const rc=new THREE.Raycaster(), cima=new THREE.Vector3(0,1,0), PASSO=.1, out=[]; let nid=Math.max(0,...linhasData.map(l=>+l.id||0)), cortes=0, tirado=0;
+  linhasData.forEach(l=>{
+    if(v3TipoJunta(l)!=='placa_base'||l.manual){ out.push(l); return; }
+    const a=v3(l.pt1), b=v3(l.pt2), dir=b.clone().sub(a), L=dir.length(); if(L<.2||Math.abs(dir.y)>.01){ out.push(l); return; }
+    dir.normalize(); const n=new THREE.Vector3().crossVectors(dir,cima).normalize();
+    const zona=new THREE.Box3().setFromPoints([a,b]).expandByScalar(.7), perto=conc.filter(c=>c.b.intersectsBox(zona)).map(c=>c.o);
+    const tem=(p,dy)=>{ rc.set(p.clone().addScaledVector(cima,dy).addScaledVector(n,.6),n.clone().negate()); rc.far=1.2; return rc.intersectObjects(perto,false).length>0; };
+    const N=Math.max(2,Math.round(L/PASSO)), am=[];
+    for(let i=0;i<=N;i++){ const p=a.clone().addScaledVector(dir,L*i/N); am.push({t:i/N,cima:tem(p,.03),baixo:tem(p,-.03)}); }
+    const comBaixo=am.some(x=>x.baixo), ok=am.map(x=>x.cima&&(x.baixo||!comBaixo));
+    if(ok.every(Boolean)){ out.push(l); return; }
+    /* trechos com concreto; vão menor que 10 cm não corta */
+    const tr=[]; let ini=null;
+    ok.forEach((v,i)=>{ if(v&&ini===null) ini=i; if((!v||i===ok.length-1)&&ini!==null){ tr.push([am[ini].t,am[v?i:i-1].t]); ini=null; } });
+    const pecas=tr.filter(([t0,t1])=>(t1-t0)*L>=.05);
+    if(!pecas.length){ cortes++; tirado+=l.ml; return; }
+    const su=v=>[Math.round(v.x*1e4)/1e4,Math.round(-v.z*1e4)/1e4,Math.round(v.y*1e4)/1e4];
+    let soma=0;
+    pecas.forEach(([t0,t1],k)=>{ const p1=a.clone().addScaledVector(dir,L*t0), p2=a.clone().addScaledVector(dir,L*t1), ml=Math.round(p1.distanceTo(p2)*100)/100; soma+=ml;
+      out.push(Object.assign({},l,{id:k?++nid:l.id,pt1:su(p1),pt2:su(p2),ml,vao:true})); });
+    if(l.ml-soma>.05){ cortes++; tirado+=l.ml-soma; }
+  });
+  if(!cortes) return {n:0,ml:0};
+  /* refaz os tubos das linhas */
+  objs.forEach(o=>[o.line,o.tubo,o.sph].forEach(x=>{ if(x.parent) x.parent.remove(x); x.geometry.dispose(); }));
+  objs=[]; linhasData=out; linhasData.forEach(v3CriaObj); v3SemTom(v3Cena); objs.forEach(o=>v3Pinta(o)); v3MontaPartes(); v3Render(); v3Calc();
+  return {n:cortes,ml:Math.round(tirado*100)/100};
+}
 function v3CriaObj(l){
     const raio=v3Raio, cima=new THREE.Vector3(0,1,0);
     const p1=v3(l.pt1),p2=v3(l.pt2);
@@ -3083,13 +3126,14 @@ function v3PosLinhas(json,fname,opc){
   /* forma real: veio no arquivo (guarda neste computador) ou, ao reabrir a
      obra, a guardada aqui do mesmo arquivo */
   v3FormaBotoes(); v3PecaPainel();
-  if(json.visual){ if(v3PoeForma(json.visual)&&!(opc&&opc.restaura)) V3FORMA_DB.grava({chave:v3FormaChave(),visual:json.visual}); }
+  if(json.visual){ if(v3PoeForma(json.visual)&&!(opc&&opc.restaura)){ V3FORMA_DB.grava({chave:v3FormaChave(),visual:json.visual});
+    v3VaoInfo=v3CortaVaos(); } }
   else if(opc&&opc.restaura){ const cena=v3Cena, ch=v3FormaChave();
     V3FORMA_DB.le().then(d=>{ if(d&&d.chave===ch&&d.visual&&v3Cena===cena) v3PoeForma(d.visual); }); }
   else V3FORMA_DB.apaga();
   document.getElementById('v3AplicaBtn').style.display=objs.length?'':'none';
   v3Vista(v3Vis==='sketchup'&&!v3Cam?'iso':v3Vis);
-  document.getElementById('v3Nome').textContent=json.obra||String(fname||'').replace(/_linhasPU\.json$/i,'');
+  document.getElementById('v3Nome').textContent=(json.obra||String(fname||'').replace(/_linhasPU\.json$/i,''))+(v3VaoInfo.n?' · PU tirado de '+v3VaoInfo.n+' vão(s) de janela: −'+v3m(v3VaoInfo.ml):'');
   document.getElementById('v3empty').style.display='none';
   document.getElementById('v3d-list').style.display='';
   document.getElementById('v3d-sel').style.display='';
@@ -3184,7 +3228,7 @@ function v3Linha(l,comTipo){
   r.innerHTML=`<input type="checkbox" class="v3ecb" ${l.incluir?'checked':''} aria-label="No preço">
     <span class="v3cor" style="background:${v3CorCSS(l)}"></span>
     <div class="v3ei"><div class="v3en" title="${escapeHtml(l.nome)}">${escapeHtml(l.nome)}</div>
-      <div class="v3em">${comTipo?l.tipo+' · ':''}${v3m(l.ml)}${l.manual?' · <span class="v3man">manual</span>':''}</div>${v3Avisos(l)}</div>
+      <div class="v3em">${comTipo?l.tipo+' · ':''}${v3m(l.ml)}${l.manual?' · <span class="v3man">manual</span>':''}${l.vao?' · <span class="v3man">sem o vão</span>':''}</div>${v3Avisos(l)}</div>
     ${v3LadoHTML(v3LadoDe(l),v3TipoJunta(l)==='laje_inferior')}${l.manual?'<button type="button" class="v3apaga" title="Apagar esta linha manual" aria-label="Apagar linha manual">✕</button>':''}`;
   const del=r.querySelector('.v3apaga'); if(del) del.addEventListener('click',e=>{ e.stopPropagation(); v3ApagaLinha(l.id); });
   const cb=r.querySelector('.v3ecb');
@@ -3378,7 +3422,7 @@ function v3PecaNoRaio(){
   const vis=o=>{ for(;o;o=o.parent) if(!o.visible) return false; return true; };
   const alvo=[];
   if(v3PecasGrp) v3PecasGrp.children.forEach(o=>{ if(o.isMesh&&!o.isLineSegments2&&o.userData.peca!==undefined&&vis(o)) alvo.push(o); });
-  if(v3Forma) v3Forma.userData.cam.concreto.children.forEach(o=>{ if(o.isMesh&&o.userData.peca!==undefined&&vis(o)) alvo.push(o); });
+  if(v3Forma) v3Forma.userData.cam.concreto.children.forEach(o=>{ if(o.isMesh&&!o.isLineSegments2&&o.userData.peca!==undefined&&vis(o)) alvo.push(o); });
   if(!alvo.length) return -1;
   const h=ray.intersectObjects(alvo,false); return h.length?h[0].object.userData.peca:-1;
 }
@@ -3522,14 +3566,24 @@ function v3TrenaPonto(cx,cy){
   if(!wrap||!cam) return null;
   const rect=wrap.getBoundingClientRect(), mx=cx-rect.left, my=cy-rect.top;
   mouse.x=mx/rect.width*2-1; mouse.y=-(my/rect.height)*2+1; ray.setFromCamera(mouse,cam);
-  const pecas=v3PecasGrp&&v3PecasGrp.visible?v3PecasGrp.children.filter(o=>o.isMesh&&!o.isLineSegments2):[];
-  const hits=ray.intersectObjects(pecas.concat(v3Piso?[v3Piso]:[]),false), dHit=hits.length?hits[0].distance:Infinity;
+  /* "ao tentar usar a trena para medir uma aba de telhado ela desconsidera a
+     medida e transpassa": só o que está VISÍVEL conta -- as caixas que a
+     forma real cobre ficam de fora, e entram telhas, metálica, esquadrias e
+     o concreto real. Na forma real o encaixe usa os cantos e as arestas da
+     peça sob o cursor. Teste pu-3d-trena-forma-real. */
+  const vis=o=>{ for(;o;o=o.parent) if(!o.visible) return false; return true; };
+  const pecas=v3PecasGrp?v3PecasGrp.children.filter(o=>o.isMesh&&!o.isLineSegments2&&vis(o)):[];
+  const formas=[]; if(v3Forma&&vis(v3Forma)) v3Forma.traverse(o=>{ if(o.isMesh&&!o.isLineSegments2&&vis(o)) formas.push(o); });
+  const hits=ray.intersectObjects(pecas.concat(formas,v3Piso?[v3Piso]:[]),false), dHit=hits.length?hits[0].distance:Infinity;
   const tela=p=>{const q=p.clone().project(cam);return {x:(q.x+1)/2*rect.width,y:(1-q.y)/2*rect.height,z:q.z};};
   const pts=[], segs=[];
   pecas.forEach(o=>{ o.geometry.computeBoundingBox(); const b=o.geometry.boundingBox.clone().translate(o.position);
     const c=[0,1,2,3,4,5,6,7].map(i=>new THREE.Vector3(i&1?b.max.x:b.min.x,i&2?b.max.y:b.min.y,i&4?b.max.z:b.min.z));
     pts.push(...c); for(let i=0;i<8;i++) [1,2,4].forEach(k=>{ if(!(i&k)) segs.push([c[i],c[i|k]]); }); });
-  if(!pecas.length) objs.forEach(o=>{ if(!o.tubo.visible) return; const l=linhasData.find(d=>d.id===o.id); if(!l) return;
+  /* forma real: cantos e arestas da peça sob o cursor (as arestas do desenho, não a diagonal dos triângulos) */
+  if(hits.length&&formas.includes(hits[0].object)){ const o=hits[0].object, ar=o.geometry.userData.arestas||[], M=o.matrixWorld;
+    for(let i=0;i+5<ar.length;i+=6){ const a=new THREE.Vector3(ar[i],ar[i+1],ar[i+2]).applyMatrix4(M), b=new THREE.Vector3(ar[i+3],ar[i+4],ar[i+5]).applyMatrix4(M); pts.push(a,b); segs.push([a,b]); } }
+  if(!pecas.length&&!formas.length) objs.forEach(o=>{ if(!o.tubo.visible) return; const l=linhasData.find(d=>d.id===o.id); if(!l) return;
     const a=v3(l.pt1), b=v3(l.pt2); pts.push(a,b); segs.push([a,b]); });
   /* não encaixa no que está atrás da superfície sob o cursor */
   const frente=p=>cam.position.distanceTo(p)<=dHit+Math.max(.05,dHit*.01);
