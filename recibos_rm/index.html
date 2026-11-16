@@ -1398,6 +1398,28 @@ input,textarea,select{font-family:inherit;color:inherit}
 .rel-legend span{display:inline-flex;align-items:center;gap:5px}
 .rel-legend i{width:9px;height:9px;border-radius:2px;display:inline-block}
 .rel-bar-stack{width:100%;max-width:28px;display:flex;flex-direction:column-reverse;border-radius:4px 4px 0 0;overflow:hidden;min-height:2px}
+/* Dados dos funcionários (Relatório): escolher quem e quais dados vão para o
+   PDF -- pedido de banco, seguradora, atualização de cadastro. */
+.dfu-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);gap:16px;align-items:start}
+@media(max-width:860px){.dfu-grid{grid-template-columns:minmax(0,1fr)}}
+.dfu-box{border:1px solid var(--line);border-radius:10px;background:var(--surface);padding:14px 16px;min-width:0}
+.dfu-tit{font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--ink);display:flex;align-items:center;gap:8px;margin:0 0 10px}
+.dfu-tit .dfu-qtd{margin-left:auto;font-size:12px;font-weight:600;letter-spacing:0;text-transform:none;color:var(--muted)}
+.dfu-barra{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:0 0 10px}
+.dfu-barra input,.dfu-barra select{flex:1 1 150px;min-width:0}
+.dfu-barra .btn-act{padding:7px 12px;font-size:12px}
+.dfu-lista{max-height:380px;overflow:auto;border:1px solid var(--line);border-radius:8px}
+.dfu-lista label,.dfu-campos label{display:flex;align-items:center;gap:9px;padding:8px 10px;cursor:pointer;font-size:13px;min-height:40px}
+.dfu-lista label+label{border-top:1px solid var(--line)}
+.dfu-lista small{margin-left:auto;color:var(--muted);font-size:11.5px;text-align:right}
+.dfu-lista input,.dfu-campos input{width:17px;height:17px;flex:none;accent-color:var(--red)}
+.dfu-lista .vazio{padding:14px;color:var(--muted);font-size:13px}
+.dfu-campos{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px 14px;margin:0 0 12px}
+@media(max-width:520px){.dfu-campos{grid-template-columns:minmax(0,1fr)}}
+.dfu-grupo{grid-column:1/-1;font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin:8px 0 0;padding-bottom:4px;border-bottom:1px solid var(--line)}
+.dfu-campos label{padding:5px 2px;min-height:34px}
+.dfu-campos label.fixo{opacity:.7;cursor:default}
+.dfu-dica{font-size:12px;color:var(--muted);margin:6px 0 0;line-height:1.5}
 .rel-note{font-size:13px;color:var(--muted);background:#fafbfc;border:1px solid var(--line-2);border-radius:9px;padding:10px 14px;margin:0 0 14px;line-height:1.5;font-weight:530}
 
 /* Aniversariantes */
@@ -4680,6 +4702,7 @@ if(window.RM_CELULAR) document.body.classList.add('rm-campo');
         <button class="vtab" data-rv="terceiros">Terceiros</button>
         <button class="vtab" data-rv="funcao">Por Função</button>
         <button class="vtab" data-rv="reaj">Reajustes</button>
+        <button class="vtab" data-rv="dados">Dados dos funcionários</button>
         <button class="vtab" data-rv="export">Exportar</button>
       </div>
       <div class="addzone">
@@ -4819,6 +4842,44 @@ if(window.RM_CELULAR) document.body.classList.add('rm-campo');
             <thead><tr><th>Data</th><th>Funcionário</th><th class="r">Salário anterior</th><th class="r">Salário novo</th><th class="r">Variação</th></tr></thead>
             <tbody id="relReajBody"></tbody>
           </table>
+        </div>
+      </div>
+
+      <!-- DADOS DOS FUNCIONÁRIOS: pedido de banco, seguradora, atualização de
+           cadastro. Escolhe quem (alguns ou todos) e quais dados saem no PDF. -->
+      <div class="relpane" id="relp-dados">
+        <div class="section-lab">Dados dos funcionários <span class="ln"></span></div>
+        <div class="dfu-grid">
+          <div class="dfu-box">
+            <div class="dfu-tit">1 · Funcionários <span class="dfu-qtd" id="dfuQtd"></span></div>
+            <div class="dfu-barra">
+              <input id="dfuBusca" autocomplete="off" placeholder="buscar nome" aria-label="Buscar funcionário">
+              <select id="dfuSit" aria-label="Quem aparece na lista">
+                <option value="casa">Ativos e afastados</option>
+                <option value="ativo">Só ativos</option>
+                <option value="todos">Todos, com em teste e desligados</option>
+              </select>
+            </div>
+            <div class="dfu-barra">
+              <button type="button" class="btn-act dim" id="dfuTodos">Marcar todos da lista</button>
+              <button type="button" class="btn-act dim" id="dfuNenhum">Desmarcar todos</button>
+            </div>
+            <div class="dfu-lista" id="dfuLista"></div>
+          </div>
+          <div class="dfu-box">
+            <div class="dfu-tit">2 · Dados que aparecem no relatório</div>
+            <div class="dfu-campos" id="dfuCampos"></div>
+            <div class="form-grid">
+              <div class="f span12"><span class="lab">Para quem / finalidade (sai no título)</span><input id="dfuFinal" autocomplete="off" placeholder="Ex.: Atualização cadastral — Banco do Brasil"></div>
+              <div class="f span12"><span class="lab">Formato</span><select id="dfuFormato">
+                <option value="auto">Automático</option>
+                <option value="tabela">Tabela (uma linha por funcionário)</option>
+                <option value="ficha">Ficha (um quadro por funcionário)</option>
+              </select></div>
+              <div class="f span12"><button type="button" class="btn-act save" id="dfuPDF" style="width:100%;justify-content:center">Gerar PDF</button></div>
+            </div>
+            <div class="dfu-dica">Endereço, e-mail, estado civil, pais, escolaridade e naturalidade vêm da Ficha de admissão. Dado em branco sai como "—".</div>
+          </div>
         </div>
       </div>
 
@@ -18608,7 +18669,7 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape'){if(fecharSemPerder(
    juntos a cada publicacao, e ha uma prova automatica que falha se um subir
    sem o outro. Assim o numero na tela e o mesmo do arquivo que o aparelho
    guardou, e dizer "estou na v81" passa a significar alguma coisa. */
-const APP_VER='v301';
+const APP_VER='v302';
 (function(){var p=document.getElementById('verPill'); if(p)p.textContent=APP_VER;})();
 
 if('serviceWorker' in navigator){
@@ -19152,6 +19213,139 @@ function pdfMovTabela(list,terceiros){
 }
 function exportRelMovPDF(){const list=movimentosFiltrados();if(!list.length){toast('Nenhuma movimentação para exportar','err');return;}const ano=$('#relAno').value,css=relPdfCSS('#D53309','#1d2127','#585758'),prev=list.filter(m=>m.status!=='cancelado').reduce((s,m)=>s+(Number(m.valorPrevisto)||0),0),pg=list.reduce((s,m)=>s+valorMovPago(m),0);let html='<div class="wrap">'+relPdfHead(state.cfg)+'<div class="title rmd-tit">Conferência de pagamentos · '+esc(ano)+'</div><div class="subttl rmd-subtit">Previsto R$ '+fmtBRL(prev)+' · pago/registrado R$ '+fmtBRL(pg)+' · '+list.length+' lançamentos · emitido em '+new Date().toLocaleString('pt-BR')+'</div>'+pdfMovTabela(list,false)+'<div class="foot">RM Estruturas Pré-Fabricadas · controle individual de pagamentos</div></div>';gerarPDF(css,html,'Conferencia_pagamentos_'+ano,'landscape');}
 function exportRelTercPDF(){const list=movimentosFiltrados().filter(m=>m.tipo==='terceiros');if(!list.length){toast('Nenhum pagamento de terceiro para exportar','err');return;}const ano=$('#relAno').value,css=relPdfCSS('#D53309','#1d2127','#585758'),prev=list.filter(m=>m.status!=='cancelado').reduce((s,m)=>s+(Number(m.valorPrevisto)||0),0),pg=list.reduce((s,m)=>s+valorMovPago(m),0);let html='<div class="wrap">'+relPdfHead(state.cfg)+'<div class="title rmd-tit">Relatório de pagamentos de terceiros · '+esc(ano)+'</div><div class="subttl rmd-subtit">Previsto R$ '+fmtBRL(prev)+' · pago/registrado R$ '+fmtBRL(pg)+' · '+list.length+' lançamentos · emitido em '+new Date().toLocaleString('pt-BR')+'</div>'+pdfMovTabela(list,true)+'<div class="foot">RM Estruturas Pré-Fabricadas · pagamentos organizados por terceiro, obra e referência</div></div>';gerarPDF(css,html,'Pagamentos_terceiros_'+ano,'landscape');}
+
+/* ==== DADOS DOS FUNCIONÁRIOS (Relatório) ====
+   "Um campo na aba relatórios onde consiga selecionar alguns ou todos os
+   funcionários e com opção de selecionar quais dados deles quero que
+   apareça no relatório. Vai ser útil para pedidos de bancos, seguros etc."
+   Os dados vêm do cadastro e, o que o cadastro não tem (endereço, e-mail,
+   pais...), da Ficha de admissão da pessoa. A escolha dos dados fica
+   lembrada neste computador. Teste recibos-dados-funcionarios. */
+const DFU_CAMPOS=[
+  ['Identificação',[
+    ['cpf','CPF / documento',e=>e.doc?((e.docTipo&&e.docTipo!=='CPF'?e.docTipo+' ':'')+e.doc):''],
+    ['nasc','Data de nascimento',(e,f)=>e.nascimento?fmtDate(e.nascimento):(f.nasc||'')],
+    ['natural','Naturalidade',(e,f)=>[f.cidNasc,f.paisNasc&&!/^brasil$/i.test(String(f.paisNasc).trim())?f.paisNasc:''].filter(Boolean).join(' · ')],
+    ['civil','Estado civil',(e,f)=>f.civil],
+    ['mae','Nome da mãe',(e,f)=>f.mae],
+    ['pai','Nome do pai',(e,f)=>f.pai],
+    ['escol','Escolaridade',(e,f)=>f.escol]]],
+  ['Contato',[
+    ['fone','Telefone',(e,f)=>e.telefone||f.fone],
+    ['email','E-mail',(e,f)=>f.email],
+    ['end','Endereço completo',(e,f)=>{const r=[f.end,f.num].filter(Boolean).join(', ')+(f.compl?' — '+f.compl:'');
+      return [r,f.bairro,f.cidade,f.cep?'CEP '+f.cep:''].filter(x=>String(x||'').trim()).join(' · ');}]]],
+  ['Trabalho',[
+    ['funcao','Função',e=>funcaoPadrao(e.funcao)||e.funcao],
+    ['adm','Data de admissão',(e,f)=>e.dtInicio?fmtDate(e.dtInicio):(f.dtAdm||'')],
+    ['cart','Assinatura da carteira',e=>e.dtCarteira?fmtDate(e.dtCarteira):''],
+    ['reg','Registro',e=>e.registro],
+    ['sit','Situação',e=>dfuSituacao(e)],
+    ['saida','Data de saída',e=>e.dtDesligamento?fmtDate(e.dtDesligamento):'']]],
+  ['Pagamento',[
+    ['banco','Banco onde recebe',e=>e.banco],
+    ['metodo','Forma de pagamento',e=>e.metodo==='pf'?'Espécie (PF)':'Banco'],
+    ['sal','Salário fixo',e=>Number(e.salario)>0?'R$ '+fmtBRL(Number(e.salario)):''],
+    ['salc','Salário na carteira',e=>Number(e.salarioCarteira)>0?'R$ '+fmtBRL(Number(e.salarioCarteira)):'']]]
+];
+const DFU_PADRAO=['cpf','nasc','funcao','adm'];
+const dfuSel=new Set();
+function dfuSituacao(e){
+  return e.status==='afast'?afastRot(e)+(e.afastDesde?' desde '+fmtDate(e.afastDesde):'')
+    :e.status==='teste'?'Em teste':e.status==='desligado'?'Desligado':e.status==='demissao'?'Pedido de demissão':'Ativo';
+}
+function dfuCamposEscolhidos(){
+  return [...document.querySelectorAll('#dfuCampos input[data-dfu]')].filter(x=>x.checked).map(x=>x.dataset.dfu);
+}
+function dfuLembrados(){
+  try{const v=JSON.parse(localStorage.getItem('rm_rec_dados_campos')||'null');if(Array.isArray(v))return v;}catch(e){}
+  return DFU_PADRAO;
+}
+function dfuNaLista(){
+  const sit=($('#dfuSit')||{}).value||'casa', q=normName(($('#dfuBusca')||{}).value||'');
+  return sortByNome((state.employees||[]).filter(e=>{
+    if(e.status==='excluido')return false;
+    if(sit==='ativo'&&e.status!=='ativo')return false;
+    if(sit==='casa'&&(isOculto(e)||emTeste(e)))return false;
+    return !q||normName(e.nome).includes(q);
+  }));
+}
+function dfuRenderCampos(){
+  const box=$('#dfuCampos');if(!box||box.dataset.pronto)return;
+  const lem=dfuLembrados();
+  box.innerHTML='<label class="fixo"><input type="checkbox" checked disabled>Nome completo (sempre)</label>'
+    +DFU_CAMPOS.map(([g,cs])=>'<div class="dfu-grupo">'+esc(g)+'</div>'
+      +cs.map(([k,rot])=>'<label><input type="checkbox" data-dfu="'+k+'"'+(lem.includes(k)?' checked':'')+'>'+esc(rot)+'</label>').join('')).join('');
+  box.dataset.pronto='1';
+  box.onchange=()=>{try{localStorage.setItem('rm_rec_dados_campos',JSON.stringify(dfuCamposEscolhidos()));}catch(e){}};
+}
+function dfuRenderLista(){
+  const box=$('#dfuLista');if(!box)return;
+  const vivos=new Set((state.employees||[]).map(e=>e.id));
+  [...dfuSel].forEach(id=>{if(!vivos.has(id))dfuSel.delete(id);});
+  const lista=dfuNaLista();
+  box.innerHTML=lista.length?lista.map(e=>'<label><input type="checkbox" data-dfue="'+esc(e.id)+'"'+(dfuSel.has(e.id)?' checked':'')+'>'
+    +'<span>'+esc(titlePt(e.nome))+'</span><small>'+esc([funcaoPadrao(e.funcao)||e.funcao||'',e.status!=='ativo'?dfuSituacao(e):''].filter(Boolean).join(' · '))+'</small></label>').join('')
+    :'<div class="vazio">Nenhum funcionário nesta lista.</div>';
+  dfuQtdTxt();
+}
+function dfuQtdTxt(){const q=$('#dfuQtd');if(q)q.textContent=dfuSel.size?dfuSel.size+' marcado'+(dfuSel.size===1?'':'s'):'nenhum marcado';}
+function dfuRender(){dfuRenderCampos();dfuRenderLista();}
+/* a ficha de admissão mais recente de cada funcionário (os dados que o
+   cadastro não guarda: endereço, e-mail, pais...) */
+function dfuFichas(){
+  const m={};
+  try{Object.values(admTodas()||{}).forEach(f=>{if(!f||!f.campos)return;const e=admAchaEmp(f);if(!e)return;
+    const a=m[e.id];if(!a||String(f.atualizadaEm||f.criadaEm||'')>String(a.atualizadaEm||a.criadaEm||''))m[e.id]=f;});}catch(err){}
+  return m;
+}
+function dfuRelatorioHTML(){
+  const ks=dfuCamposEscolhidos();
+  const campos=[];DFU_CAMPOS.forEach(([g,cs])=>cs.forEach(c=>{if(ks.includes(c[0]))campos.push(c);}));
+  const emps=sortByNome((state.employees||[]).filter(e=>dfuSel.has(e.id)&&e.status!=='excluido'));
+  if(!emps.length)return {erro:'Marque pelo menos um funcionário.'};
+  const fichas=dfuFichas();
+  const val=(c,e)=>{let v='';try{v=c[2](e,(fichas[e.id]||{}).campos||{});}catch(err){}v=String(v==null?'':v).trim();return v;};
+  let fmt=($('#dfuFormato')||{}).value||'auto';
+  if(fmt==='auto')fmt=campos.length<=6?'tabela':'ficha';
+  const fin=(($('#dfuFinal')||{}).value||'').trim();
+  const css=relPdfCSS('#D53309','#1d2127','#585758')
+    +'.dfu-f{display:grid;grid-template-columns:1fr 1fr;gap:10px}'
+    +'.dfu-c{border:1px solid #e1e4e8;border-radius:6px;padding:9px 12px;page-break-inside:avoid;break-inside:avoid}'
+    +'.dfu-c h3{margin:0 0 6px;font-size:12px;color:#141414;text-transform:uppercase;letter-spacing:.05em;border-bottom:1.5px solid #F24619;padding-bottom:4px}'
+    +'.dfu-c div{display:flex;gap:8px;font-size:10.5px;padding:2.5px 0;border-bottom:1px solid #f0f1f3}.dfu-c div:last-child{border-bottom:0}'
+    +'.dfu-c b{flex:0 0 38%;color:#6c7480;font-weight:600}.dfu-c span{flex:1;min-width:0;overflow-wrap:anywhere}';
+  let html='<div class="wrap">'+relPdfHead(state.cfg)
+    +'<div class="title rmd-tit">Dados cadastrais dos funcionários</div>'
+    +'<div class="subttl rmd-subtit">'+(fin?esc(fin)+' · ':'')+emps.length+' funcionário'+(emps.length===1?'':'s')
+    +' · emitido em '+new Date().toLocaleDateString('pt-BR')+'</div>';
+  if(fmt==='tabela'){
+    html+='<table><thead><tr><th>Nome</th>'+campos.map(c=>'<th>'+esc(c[1])+'</th>').join('')+'</tr></thead><tbody>'
+      +emps.map(e=>'<tr><td>'+esc(titlePt(e.nome))+'</td>'+campos.map(c=>{const v=val(c,e);return '<td'+(c[0]==='sal'||c[0]==='salc'?' class="money"':'')+'>'+(v?esc(v):'—')+'</td>';}).join('')+'</tr>').join('')
+      +'</tbody></table>';
+  } else {
+    html+='<div class="dfu-f">'+emps.map(e=>'<div class="dfu-c"><h3>'+esc(titlePt(e.nome))+'</h3>'
+      +campos.map(c=>{const v=val(c,e);return '<div><b>'+esc(c[1])+'</b><span>'+(v?esc(v):'—')+'</span></div>';}).join('')+'</div>').join('')+'</div>';
+  }
+  html+='<div class="foot">RM Estruturas Pré-Fabricadas · Dados cadastrais</div></div>';
+  return {css,html,fmt,orient:fmt==='tabela'&&campos.length>4?'landscape':'portrait',nome:'Dados_funcionarios_'+rmDiaISO()};
+}
+function exportDadosFuncPDF(){
+  const r=dfuRelatorioHTML();if(r.erro){toast(r.erro,'err');return;}
+  gerarPDF(r.css,r.html,r.nome.replace(/[^a-z0-9_-]/gi,'_'),r.orient);
+}
+(function iniciarDadosFunc(){
+  const bt=document.querySelector('#relSubTabs .vtab[data-rv="dados"]');if(!bt)return;
+  /* os filtros de cima (ano, mês, busca) são da conferência: aqui não valem */
+  document.querySelectorAll('#relSubTabs .vtab').forEach(x=>x.addEventListener('click',()=>{
+    const z=document.querySelector('#v-rel > .addzone');if(z)z.style.display=x.dataset.rv==='dados'?'none':'';
+    if(x.dataset.rv==='dados')dfuRender();}));
+  $('#dfuBusca').oninput=dfuRenderLista;$('#dfuSit').onchange=dfuRenderLista;
+  $('#dfuLista').onchange=ev=>{const c=ev.target.closest('input[data-dfue]');if(!c)return;if(c.checked)dfuSel.add(c.dataset.dfue);else dfuSel.delete(c.dataset.dfue);dfuQtdTxt();};
+  $('#dfuTodos').onclick=()=>{dfuNaLista().forEach(e=>dfuSel.add(e.id));dfuRenderLista();};
+  $('#dfuNenhum').onclick=()=>{dfuSel.clear();dfuRenderLista();};
+  $('#dfuPDF').onclick=exportDadosFuncPDF;
+})();
 
 (function iniciarControlePagamentos(){
   const ms=$('#relMesF');if(ms&&ms.options.length===1)MESES.forEach((m,i)=>{const o=el('option');o.value=i;o.textContent=m.charAt(0).toUpperCase()+m.slice(1);ms.appendChild(o);});
