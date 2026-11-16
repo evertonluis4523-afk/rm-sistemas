@@ -4530,7 +4530,13 @@ function tbHTML(b) {
   const cg = '<colgroup>' + b.cols.map(c => '<col' + (c.w ? ' style="width:' + c.w + '%"' : '') + '>').join('') + '</colgroup>';
   const th = b.semCab ? '' : '<thead><tr>' + b.cols.map(c => '<th' + (c.dir ? ' class="q"' : '') + '>' + esc(c.t) + '</th>').join('') + '</tr></thead>';
   const tr = l => '<tr>' + l.map((c, i) => '<td class="' + (b.cols[i].dir ? 'q' : '') + (b.cols[i].rot ? ' rot' : '') + '">' + celHTML(c) + '</td>').join('') + '</tr>';
-  let h = '<table class="ft ' + (b.cls || '') + '">' + cg + th + '<tbody>' + b.linhas.map(tr).join('');
+  /* rmd-livre: "problema no tamanho da fonte na hora de imprimir -- nos itens
+     saiu com a fonte menor". O miolo do papel (bloco comum) prendia toda
+     tabela em 9,5 px; o texto do contrato e da proposta cresce com a letra
+     escolhida (até 1,33×), e a tabela de itens ficava bem menor. As tabelas
+     daqui têm o desenho delas e acompanham a letra (var --fe): ficam fora do
+     miolo, como o padrão prevê. Teste propostas-fonte-tabela-papel. */
+  let h = '<table class="ft rmd-livre ' + (b.cls || '') + '">' + cg + th + '<tbody>' + b.linhas.map(tr).join('');
   if (b.total) h += '<tr class="grand">' + b.total.map((c, i) => '<td class="' + (b.cols[i].dir ? 'q' : '') + '">' + esc(c) + (i === 0 && b.totalSub ? '<span class="ext">' + esc(b.totalSub) + '</span>' : '') + '</td>').join('') + '</tr>';
   if (b.depois) {
     h += '<tr class="sep"><td colspan="' + b.cols.length + '">' + esc(b.depois.rot) + '</td></tr>' + b.depois.linhas.map(tr).join('');
@@ -7044,7 +7050,7 @@ if ('serviceWorker' in navigator) {
 })();
 </script>
 <script>/* versão publicada (PADRAO_RM.md §3): sobe a cada publicação, junto com o CACHE do sw.js */
-const APP_VER='v58';
+const APP_VER='v59';
 </script>
 <script id="rmVersaoBloco">
 /* ===== SELO DE VERSÃO — igual em todos os sistemas (PADRAO_RM.md §3) =====

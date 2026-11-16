@@ -20,7 +20,7 @@
   "versao": "v70"
  },
  "central_rm": {
-  "commit": "b8f3ddb",
+  "commit": "c41989b",
   "versao": "v171"
  },
  "controle_cheques": {
@@ -44,8 +44,8 @@
   "versao": "v165"
  },
  "propostas_rm": {
-  "commit": "01df76f",
-  "versao": "v58"
+  "commit": "6b59e8e",
+  "versao": "v59"
  },
  "recibos_rm": {
   "commit": "dc1e38c",
