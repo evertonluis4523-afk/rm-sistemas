@@ -1406,7 +1406,7 @@ input,textarea,select{font-family:inherit;color:inherit}
 .dfu-tit{font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--ink);display:flex;align-items:center;gap:8px;margin:0 0 10px}
 .dfu-tit .dfu-qtd{margin-left:auto;font-size:12px;font-weight:600;letter-spacing:0;text-transform:none;color:var(--muted)}
 .dfu-barra{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:0 0 10px}
-.dfu-barra input,.dfu-barra select{flex:1 1 150px;min-width:0}
+.dfu-barra .f{flex:1 1 150px}
 .dfu-barra .btn-act{padding:7px 12px;font-size:12px}
 .dfu-lista{max-height:380px;overflow:auto;border:1px solid var(--line);border-radius:8px}
 .dfu-lista label,.dfu-campos label{display:flex;align-items:center;gap:9px;padding:8px 10px;cursor:pointer;font-size:13px;min-height:40px}
@@ -4853,12 +4853,12 @@ if(window.RM_CELULAR) document.body.classList.add('rm-campo');
           <div class="dfu-box">
             <div class="dfu-tit">1 · Funcionários <span class="dfu-qtd" id="dfuQtd"></span></div>
             <div class="dfu-barra">
-              <input id="dfuBusca" autocomplete="off" placeholder="buscar nome" aria-label="Buscar funcionário">
-              <select id="dfuSit" aria-label="Quem aparece na lista">
+              <div class="f"><input id="dfuBusca" autocomplete="off" placeholder="buscar nome" aria-label="Buscar funcionário"></div>
+              <div class="f"><select id="dfuSit" aria-label="Quem aparece na lista">
                 <option value="casa">Ativos e afastados</option>
                 <option value="ativo">Só ativos</option>
                 <option value="todos">Todos, com em teste e desligados</option>
-              </select>
+              </select></div>
             </div>
             <div class="dfu-barra">
               <button type="button" class="btn-act dim" id="dfuTodos">Marcar todos da lista</button>
@@ -18669,7 +18669,7 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape'){if(fecharSemPerder(
    juntos a cada publicacao, e ha uma prova automatica que falha se um subir
    sem o outro. Assim o numero na tela e o mesmo do arquivo que o aparelho
    guardou, e dizer "estou na v81" passa a significar alguma coisa. */
-const APP_VER='v302';
+const APP_VER='v303';
 (function(){var p=document.getElementById('verPill'); if(p)p.textContent=APP_VER;})();
 
 if('serviceWorker' in navigator){
