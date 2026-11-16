@@ -3187,7 +3187,7 @@ const DB_NODE = "maquinas_rm";
    visivel, nenhum de nos dois tinha como saber se o aparelho estava rodando o
    que foi publicado ou uma copia velha do cache do app instalado. Diagnostico
    por adivinhacao custa mais caro que um rodape. */
-const APP_VER='v48';
+const APP_VER='v49';
 const STORE_KEY = "rm_maquinas_v1";
 
 const CORES = [
@@ -8221,5 +8221,51 @@ if ('serviceWorker' in navigator) {
   };
 })();
 </script>
+<script id="rmVoltaCentral">
+/* ===== VOLTA PARA A CENTRAL (celular, tela inteira) =====
+   "Algumas telas ficam fora do que é possível clicar pelo celular, a
+   seleção ia para a esquerda, a geração de PDF também não funciona pelo
+   celular." Dentro da Central o sistema roda num quadro (iframe): no iPhone
+   o quadro estica para a largura do conteúdo (a tela escorrega para o lado)
+   e o imprimir de dentro de quadro não funciona. No celular a Central abre o
+   sistema na tela inteira (?rmvolta=1) e este botão leva de volta. Igual em
+   todos os sistemas (bloco comum). Teste central-celular-tela-inteira. */
+(function(){
+  if (window.__rmVolta) return; window.__rmVolta = 1;
+  var marca = 'rm_volta_central';
+  try {
+    if (/[?&]rmvolta=1\b/.test(location.search)) sessionStorage.setItem(marca, '1');
+    if (window.top !== window || sessionStorage.getItem(marca) !== '1') return;
+  } catch (e) { return; }
+  function central(){ return location.origin + '/' + (location.pathname.indexOf('/central_rm/') >= 0 ? '' : 'central_rm/'); }
+  function poe(){
+    if (document.getElementById('rmVolta')) return;
+    var st = document.createElement('style');
+    /* pequeno, no canto: some ao digitar e ao rolar para baixo (não cobre campo) */
+    st.textContent = '#rmVolta{position:fixed;left:max(10px,env(safe-area-inset-left));bottom:calc(12px + env(safe-area-inset-bottom));z-index:2147483000;'
+      + 'display:inline-flex;align-items:center;justify-content:center;width:44px;height:44px;border-radius:50%;border:1px solid rgba(255,255,255,.18);'
+      + 'background:rgba(20,23,26,.82);color:#fff;box-shadow:0 4px 14px rgba(0,0,0,.28);text-decoration:none;transition:transform .2s,opacity .2s}'
+      + '#rmVolta svg{width:22px;height:22px}#rmVolta.oculto{transform:translateY(80px);opacity:0;pointer-events:none}@media print{#rmVolta{display:none!important}}';
+    document.head.appendChild(st);
+    var a = document.createElement('a'); a.id = 'rmVolta'; a.href = central(); a.setAttribute('aria-label', 'Voltar para a Central');
+    a.title = 'Voltar para a Central';
+    a.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>';
+    var y0 = 0, campo = false, mostra = function(){ a.classList.toggle('oculto', campo || (scrollY > y0 + 2 && scrollY > 80)); };
+    addEventListener('scroll', function(){ mostra(); y0 = scrollY; }, { passive: true });
+    /* só quando a pessoa toca no campo para digitar (o foco automático da tela de login não conta) */
+    var toque = 0; document.addEventListener('pointerdown', function(){ toque = Date.now(); }, true);
+    document.addEventListener('focusin', function(ev){ campo = Date.now() - toque < 1500 && (/^(INPUT|TEXTAREA|SELECT)$/.test(ev.target.tagName) || ev.target.isContentEditable); mostra(); });
+    document.addEventListener('focusout', function(){ campo = false; setTimeout(mostra, 60); });
+    a.addEventListener('click', function(ev){
+      /* volta pelo histórico quando veio da Central: ela reabre como estava */
+      try { if (document.referrer && document.referrer.indexOf('/central_rm/') >= 0 && history.length > 1) { ev.preventDefault(); history.back(); } } catch (e) {}
+    });
+    document.body.appendChild(a);
+  }
+  if (document.body) poe(); else document.addEventListener('DOMContentLoaded', poe);
+})();
+</script>
+
+
 </body>
 </html>
