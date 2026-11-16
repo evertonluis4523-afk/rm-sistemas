@@ -2863,6 +2863,7 @@ body:not(.com-doc) .docs-card,body:not(.com-doc) .ed-grid{display:none}
 .l-met{grid-template-columns:150px 1fr 28px}
 .l-pag .un{color:var(--muted);font-weight:700}
 .l-val{grid-template-columns:1fr 120px 28px}
+.l-socio{grid-template-columns:minmax(0,1fr) 150px 110px 28px;margin-bottom:6px}
 .l-ops{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:4px 16px;margin:-1px 0 6px 2px}
 .l-pag{grid-template-columns:62px 14px 1fr 130px 28px}
 .l-parc{grid-template-columns:1fr 1fr 110px 130px 28px}
@@ -3080,7 +3081,8 @@ body:not(.com-doc) .docs-card,body:not(.com-doc) .ed-grid{display:none}
   .g2,.g3,.g4{grid-template-columns:1fr}
   .l-pre{grid-template-columns:1fr 64px 58px 28px}
   .l-met{grid-template-columns:1fr 28px}.l-met input:nth-of-type(2){grid-column:1/2}
-  .l-val{grid-template-columns:1fr 100px 28px}.l-val .chk{grid-column:span 1}
+  .l-val{grid-template-columns:1fr 100px 28px}
+.l-socio{grid-template-columns:minmax(0,1fr) minmax(0,1fr) 28px}.l-socio input[data-p$='.papel']{grid-column:1/3}.l-val .chk{grid-column:span 1}
   .l-comp{grid-template-columns:18px 1fr 28px}.l-comp2{margin-left:0}
   .folha{padding:6mm 5mm}
   .folha .f-head{flex-direction:column;align-items:flex-start}
@@ -3351,7 +3353,7 @@ body:not(.com-doc) .docs-card,body:not(.com-doc) .ed-grid{display:none}
 <datalist id="dlPre"></datalist>
 <datalist id="dlMet"></datalist>
 <datalist id="dlCnm"></datalist>
-<datalist id="dlCivil"><option value="solteiro"><option value="casado"><option value="divorciado"><option value="viúvo"><option value="em união estável"><option value="solteira"><option value="casada"><option value="divorciada"><option value="viúva"></datalist>
+<datalist id="dlPapel"><option value="Sócio"><option value="Sócia"><option value="Cônjuge"><option value="Procurador"><option value="Procuradora"><option value="Fiador"></datalist><datalist id="dlCivil"><option value="solteiro"><option value="casado"><option value="divorciado"><option value="viúvo"><option value="em união estável"><option value="solteira"><option value="casada"><option value="divorciada"><option value="viúva"></datalist>
 <datalist id="dlComp"></datalist>
 <datalist id="dlEtapa"></datalist>
 <datalist id="dlExtra"></datalist>
@@ -3746,7 +3748,7 @@ function novoDoc(tipo) {
   return {
     id: uid(), numero: proximoNumero(hoje.slice(0, 4)), status: 'negociacao', tipo: tipo === 'chave' ? 'chave' : 'padrao', titulo: '',
     criado: Date.now(), alterado: Date.now(),
-    cliente: { nome: '', doc: '', endereco: '', cidade: '', cep: '', rep: '', repDoc: '', nacionalidade: '', profissao: '', estadoCivil: '', rg: '' },
+    cliente: { nome: '', doc: '', endereco: '', cidade: '', cep: '', rep: '', repDoc: '', nacionalidade: '', profissao: '', estadoCivil: '', rg: '', socios: [] },
     obra: { endereco: '', cidade: '' },
     data: hoje, validade: 30, tratamento: 'Prezado Senhor',
     descricao: '',
@@ -3785,6 +3787,8 @@ function normalizar(d) {
   d = d || {};
   const o = Object.assign({}, b, d);
   o.cliente = Object.assign({}, b.cliente, d.cliente || {});
+  /* sócios e outras pessoas que assinam: o Firebase devolve lista como objeto */
+  o.cliente.socios = (Array.isArray(o.cliente.socios) ? o.cliente.socios : Object.values(o.cliente.socios || {})).filter(Boolean).map(x => ({ nome: String(x.nome || ''), doc: String(x.doc || ''), papel: String(x.papel || '') }));
   o.obra = Object.assign({}, b.obra, d.obra || {});
   o.textos = Object.assign({}, b.textos, d.textos || {});
   const lista = v => Array.isArray(v) ? v.filter(x => x != null) : (v && typeof v === 'object' ? Object.keys(v).sort((a, c) => a - c).map(k => v[k]).filter(x => x != null) : []);
@@ -4441,15 +4445,23 @@ function fichaImagens(d) {
     + '',
     { extra: n ? n + ' ' + (n === 1 ? 'imagem' : 'imagens') + ' · ' + pags + ' ' + (pags === 1 ? 'página' : 'páginas') : 'nenhuma imagem' });
 }
+/* "CPF334.613.920-49" -> "CPF 334.613.920-49"; só números ganham CPF/CNPJ pela quantidade de dígitos */
+function docPessoa(x) {
+  const t = String(x || '').trim(); if (!t) return '';
+  if (/^(cpf|cnpj|rg)/i.test(t)) return t.replace(/^(cpf|cnpj|rg)\s*[:nº°.]*\s*/i, (m, a) => a.toUpperCase() + ' ');
+  return (t.replace(/\D/g, '').length > 11 ? 'CNPJ ' : 'CPF ') + t;
+}
+function sociosDe(cl) { return (cl.socios || []).filter(x => String(x.nome || '').trim()).map(x => ({ nome: x.nome.trim(), doc: docPessoa(x.doc), papel: String(x.papel || '').trim() || 'Sócio' })); }
 function blocosContrato(d) {
   const c = d.contrato, v = vars(d), t = c.textos, bl = [], cl = d.cliente;
   const tot = totalContrato(d);
   bl.push({ t: 'cab', tipo: 'Contrato', titulo: t.titulo, sub: 'Referente à proposta nº ' + numeroRev(d) });
   const repRM = (config.rep || '').trim() ? 'Representada por ' + config.rep.trim() + ((config.repDoc || '').trim() ? ' · ' + config.repDoc.trim() : '') : '';
-  const repCl = cl.rep.trim() ? 'Representada por ' + cl.rep.trim() + (cl.repDoc.trim() ? ' · ' + cl.repDoc.trim() : '') : '';
+  const repCl = cl.rep.trim() ? 'Representada por ' + cl.rep.trim() + (cl.repDoc.trim() ? ' · ' + docPessoa(cl.repDoc) : '') : '';
+  const socs = sociosDe(cl);
   bl.push({ t: 'partes', a: { rot: 'Contratada', nome: EMPRESA.razao + ' (RM Estruturas)', linhas: ['CNPJ ' + EMPRESA.cnpj, EMPRESA.enderecoContrato, repRM].filter(Boolean) },
     b: { rot: 'Contratante', nome: cl.nome || '—', linhas: [[cl.nacionalidade, cl.profissao, cl.estadoCivil].map(x => String(x || '').trim()).filter(Boolean).join(', '),
-      [String(cl.rg || '').trim() ? 'RG ' + cl.rg.trim() : '', cl.doc ? (cl.doc.replace(/\D/g, '').length > 11 ? 'CNPJ ' : 'CPF ') + cl.doc : ''].filter(Boolean).join(' · '), [cl.endereco, cl.cidade].filter(s => s.trim()).join(', '), cl.cep ? 'CEP ' + cl.cep : '', repCl].filter(Boolean) } });
+      [String(cl.rg || '').trim() ? 'RG ' + cl.rg.trim() : '', cl.doc ? (cl.doc.replace(/\D/g, '').length > 11 ? 'CNPJ ' : 'CPF ') + cl.doc : ''].filter(Boolean).join(' · '), [cl.endereco, cl.cidade].filter(s => s.trim()).join(', '), cl.cep ? 'CEP ' + cl.cep : '', repCl].concat(socs.map(x => x.papel + ': ' + x.nome + (x.doc ? ' · ' + x.doc : ''))).filter(Boolean) } });
   bl.push(...textoBlocos(t.preambulo, v));
   bl.push({ t: 'h2', n: 1, txt: 'Do objeto' });
   bl.push({ t: 'p', runs: [{ t: '1.1. ', b: true }, { t: [troca(t.objeto, v), troca(d.descricao, v)].filter(s => s.trim()).join(' ') }] });
@@ -4491,8 +4503,10 @@ function blocosContrato(d) {
   bl.push(...textoBlocos(t.gerais, v));
   bl.push({ t: 'local', txt: EMPRESA.sede + ', ' + dataExtenso(c.data) + '.' });
   bl.push({ t: 'ass', quem: [
-    { nome: 'Contratante: ' + (cl.nome || '—'), linhas: [cl.doc ? (cl.doc.replace(/\D/g, '').length > 11 ? 'CNPJ ' : 'CPF ') + cl.doc : '', cl.rep ? cl.rep + (cl.repDoc ? ' · ' + cl.repDoc : '') : ''].filter(Boolean) },
-    { nome: 'Contratada: ' + EMPRESA.razao, linhas: ['CNPJ ' + EMPRESA.cnpj, config.rep ? config.rep + (config.repDoc ? ' · ' + config.repDoc : '') : ''].filter(Boolean) }] });
+    { nome: 'Contratante: ' + (cl.nome || '—'), linhas: [cl.doc ? (cl.doc.replace(/\D/g, '').length > 11 ? 'CNPJ ' : 'CPF ') + cl.doc : '', cl.rep ? cl.rep + (cl.repDoc ? ' · ' + docPessoa(cl.repDoc) : '') : ''].filter(Boolean) },
+    { nome: 'Contratada: ' + EMPRESA.razao, linhas: ['CNPJ ' + EMPRESA.cnpj, config.rep ? config.rep + (config.repDoc ? ' · ' + docPessoa(config.repDoc) : '') : ''].filter(Boolean) }]
+    /* cada sócio assina na sua linha, abaixo das duas partes */
+    .concat(socs.map(x => ({ nome: x.nome, linhas: [x.doc, x.papel + ' · Contratante'].filter(Boolean) }))) });
   return bl;
 }
 
@@ -4792,6 +4806,16 @@ function fichaHTML(d) {
     + '<div class="g2">' + campo('CEP', inp('cliente.cep', cl.cep, { mode: 'numeric' })) + '</div>'
     + '<div class="g2">' + campo('Endereço', inp('cliente.endereco', cl.endereco)) + campo('Cidade/UF', inp('cliente.cidade', cl.cidade, { ph: 'ex.: Santa Cruz do Sul/RS' })) + '</div>'
     + '<div class="g2">' + campo('Representante', inp('cliente.rep', cl.rep)) + campo('CPF do representante', inp('cliente.repDoc', cl.repDoc)) + '</div>'
+    /* SÓCIOS: "em alguns casos existem não só o proprietário, mas também
+       alguns sócios: opção de adicionar novas pessoas, com o CPF". Cada uma
+       sai nas partes e ganha a sua linha de assinatura no contrato (tela,
+       PDF e Word). Teste propostas-socios-contratante. */
+    + campo('Sócios e outras pessoas que assinam pelo contratante', '<div class="socios">' + (cl.socios || []).map((x, i) => '<div class="linha l-socio">'
+      + inp('cliente.socios.' + i + '.nome', x.nome, { ph: 'Nome completo', rot: 'Nome da pessoa' })
+      + inp('cliente.socios.' + i + '.doc', x.doc, { ph: 'CPF', mode: 'numeric', rot: 'CPF da pessoa' })
+      + inp('cliente.socios.' + i + '.papel', x.papel, { ph: 'Sócio', lista: 'dlPapel', rot: 'Papel da pessoa' })
+      + bt('socioDel', '✕', { i, rot: 'Tirar esta pessoa', cls: 'icon-btn del' }) + '</div>').join('')
+      + bt('socioAdd', '＋ Adicionar pessoa', { cls: 'btn btn-ghost btn-sm' }) + '</div>')
     + campo('Tratamento na proposta', '<select data-p="tratamento">' + ['Prezado Senhor', 'Prezada Senhora', 'Prezados Senhores', ''].map(t => '<option value="' + t + '"' + (d.tratamento === t ? ' selected' : '') + '>' + (t || '(sem saudação)') + '</option>').join('') + '</select>'));
   h += secao('Obra e proposta', '<div class="g2">' + campo('Tipo', '<select data-p="tipo" data-re="1">' + Object.keys(TIPOS).map(k => '<option value="' + k + '"' + (d.tipo === k ? ' selected' : '') + '>' + TIPOS[k] + '</option>').join('') + '</select>')
     + campo('Título no papel', inp('titulo', d.titulo, { ph: TITULO_TIPO[d.tipo] || TITULO_TIPO.padrao, rot: 'Título no papel' })) + '</div>'
@@ -5173,6 +5197,8 @@ $('ficha').addEventListener('click', e => {
     parcDel: () => d.contrato && d.contrato.pag.itens.splice(i, 1),
     valDel: () => d.valores.splice(i, 1),
     extraAdd: () => d.extras.push({ nome: '', valor: 0, somar: true }),
+    socioAdd: () => { d.cliente.socios = d.cliente.socios || []; d.cliente.socios.push({ nome: '', doc: '', papel: '' }); },
+    socioDel: () => d.cliente.socios.splice(i, 1),
     extraDel: () => d.extras.splice(i, 1)
   };
   if (a === 'imgCota') { abrirCota(d, i); return; }
@@ -7008,7 +7034,7 @@ if ('serviceWorker' in navigator) {
 })();
 </script>
 <script>/* versão publicada (PADRAO_RM.md §3): sobe a cada publicação, junto com o CACHE do sw.js */
-const APP_VER='v56';
+const APP_VER='v57';
 </script>
 <script id="rmVersaoBloco">
 /* ===== SELO DE VERSÃO — igual em todos os sistemas (PADRAO_RM.md §3) =====
