@@ -2180,6 +2180,8 @@ table.list.fv-tab th,table.list.fv-tab td{padding-left:7px;padding-right:7px}tab
    proprios, porque um cliente pode pagar parte de um jeito e o resto de
    outro. */
 .cli-pag-row{display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap}
+.cli-pag-row .cli-pq{flex:0 0 190px;font:inherit;padding:8px 10px;border:1px solid var(--line);border-radius:8px}
+.cli-pag-row .cli-pt{flex:1 1 200px;min-width:160px;font:inherit;padding:8px 10px;border:1.5px solid var(--red);border-radius:8px}
 .cli-pag-row .cli-pv{flex:0 0 118px;text-align:right;font:inherit;padding:8px 10px;border:1px solid var(--line);border-radius:8px}
 .cli-pag-row .cli-pd{flex:1 1 220px;min-width:160px;font:inherit;padding:8px 10px;border:1px solid var(--line);border-radius:8px}
 .cli-pag-row .cli-pdt{flex:0 0 156px;font:inherit;padding:7px 8px;border:1px solid var(--line);border-radius:8px}
@@ -5781,7 +5783,7 @@ const SEED=[];
 let state={cfg:{...DEFAULT_CFG},employees:[],terceiros:[],clientes:[],indicacoes:[],rescisoes:[],epiMovimentos:{},planilhas:{},fichasAdm:{},entrevistas:{},historico:{},movimentos:{},assiduidade:{},bancoHoras:{},fechamentos:{},pfPontos:{},rhid:{},unimed:{},contabil:{},ciclos:{},gen:{tipo:"pagamento",excluded:{}}};
 let RCTX={tipo:"pagamento",mesIdx:0,ano:"",dataISO:"",cidade:""};
 function cliToMap(){const m={};state.clientes.forEach((c,i)=>{m[c.id]={nome:c.nome,docTipo:c.docTipo,doc:c.doc||"",valor:Number(c.valor)||0,descricao:c.descricao||"",data:c.data||"",cidade:c.cidade||"",formaPagamento:c.formaPagamento||"",
-  pagamentos:Array.isArray(c.pagamentos)?c.pagamentos.map(p=>({valor:Number(p.valor)||0,descricao:p.descricao||"",data:p.data||"",forma:p.forma||""})):[],
+  pagamentos:Array.isArray(c.pagamentos)?c.pagamentos.map(p=>({valor:Number(p.valor)||0,descricao:p.descricao||"",data:p.data||"",forma:p.forma||"",terceiro:String(p.terceiro||"").trim()})):[],
   textoPersonalizado:c.textoPersonalizado||"",numero:c.numero||(i+1),ts:c.ts||0};});return m;}
 function mapToCli(m){return Object.keys(m||{}).map(id=>Object.assign({id},m[id])).sort((a,b)=>(b.ts||0)-(a.ts||0));}
 /* Rescisao: o recibo de quem sai. Guarda o vinculo com o cadastro (empId)
@@ -14974,7 +14976,27 @@ function cliTotal(c){return cliPagamentos(c).reduce((s,p)=>s+(Number(p.valor)||0
    de sempre, sem mudar nada de quem já tem recibo assim. Dois ou mais:
    cada um vira uma cláusula com sua própria data e forma, porque cada um
    pode ter sido recebido de um jeito diferente. */
+/* PAGO DIRETO A TERCEIRO: "o cliente fez parte do pagamento da prestação
+   diretamente para um terceiro (Stabil) e a outra parte para a RM". O
+   pagamento pode ser marcado "pago direto a terceiro" com o nome dele: a
+   RM declara o que recebeu e dá quitação do que foi pago ao terceiro, por
+   conta e ordem dela, com o total da parcela. Sem terceiro, o recibo é o
+   de sempre. Teste recibos-cliente-pago-terceiro. */
+const cliTerc=p=>String(p&&p.terceiro||'').trim();
+function cliTotalRM(c){return cliPagamentos(c).filter(p=>!cliTerc(p)).reduce((s,p)=>s+(Number(p.valor)||0),0);}
+function cliClausula(p,comData){return 'R$'+fmtBRL(p.valor)+(comData&&p.data?' em '+fmtDate(p.data):'')+(CLI_FORMA_PAREN[p.forma]?' ('+CLI_FORMA_PAREN[p.forma]+')':'')+' referente a '+esc((p.descricao||'pagamento').trim());}
+function cliJunta(l){if(l.length<2)return l.join('');const u=l[l.length-1];return l.slice(0,-1).join('; ')+'; e '+u;}
+function cliFraseTerceiroHTML(pags){
+  const rm=pags.filter(p=>!cliTerc(p)),tc=pags.filter(p=>cliTerc(p)),vd=pags.length>1;
+  const total=pags.reduce((s,p)=>s+(Number(p.valor)||0),0);
+  const porTerc={};tc.forEach(p=>{(porTerc[cliTerc(p)]=porTerc[cliTerc(p)]||[]).push(p);});
+  const quit=Object.keys(porTerc).map(n=>(porTerc[n].length>1?'dos valores de ':'do valor de ')+cliJunta(porTerc[n].map(p=>cliClausula(p,vd)))+', pago'+(porTerc[n].length>1?'s':'')+' pelo cliente diretamente a '+esc(n));
+  const fim=', por conta e ordem desta empresa'+(pags.length>1?', totalizando R$'+fmtBRL(total):'')+'.';
+  if(!rm.length)return '<strong>'+cliJunta(quit)+fim+'</strong>';
+  return '<strong>'+(rm.length>1?'os valores de ':'o valor de ')+cliJunta(rm.map(p=>cliClausula(p,vd)))+'; e dá quitação '+cliJunta(quit)+fim+'</strong>';
+}
 function cliFraseValoresHTML(pags){
+  if(pags.some(p=>cliTerc(p)))return cliFraseTerceiroHTML(pags);
   if(pags.length===1){
     const p=pags[0];
     return 'o valor de <strong>R$'+fmtBRL(p.valor)+' referente a '+esc((p.descricao||'pagamento').trim())+'.</strong>';
@@ -14994,13 +15016,13 @@ function reciboClienteHTML(c,n){const cfg=state.cfg;
   /* A observação da forma de pagamento só existe separada quando há UM
      pagamento -- com vários, a forma de cada um já está dentro da própria
      cláusula, e repetir aqui seria confundir qual forma é de qual valor. */
-  const forma=pags.length===1?(CLI_FORMA_TXT[pags[0].forma]||''):'';
+  const forma=pags.length===1&&!cliTerc(pags[0])?(CLI_FORMA_TXT[pags[0].forma]||''):'';
   /* Cliente com texto próprio: o parágrafo principal é o dele, do jeito que
      mandou. O resto do papel (cabeçalho, observação da forma de pagamento,
      data, assinatura) continua igual. */
   const corpo=c.textoPersonalizado
     ? '<p class="corpo">'+esc(c.textoPersonalizado).replace(/\n/g,'<br>')+'</p>'
-    : '<p class="corpo">&nbsp;&nbsp;&nbsp;&nbsp;<strong>'+esc(cfg.razao)+'</strong>, inscrita sob o CNPJ '+esc(cfg.cnpj)+', estabelecida na '+esc(cfg.endereco)+', cidade de '+esc(cfg.cidade)+', recebeu de <strong>'+esc(titlePt(c.nome))+' '+doc+'</strong> '+cliFraseValoresHTML(pags)+'</p>';
+    : '<p class="corpo">&nbsp;&nbsp;&nbsp;&nbsp;<strong>'+esc(cfg.razao)+'</strong>, inscrita sob o CNPJ '+esc(cfg.cnpj)+', estabelecida na '+esc(cfg.endereco)+', cidade de '+esc(cfg.cidade)+', '+(pags.some(p=>cliTerc(p))&&!pags.some(p=>!cliTerc(p))?'dá quitação a':'recebeu de')+' <strong>'+esc(titlePt(c.nome))+' '+doc+'</strong> '+cliFraseValoresHTML(pags)+'</p>';
   return '<div class="recibo"><div class="wm"><img src="'+LOGO_MARCA_DAGUA+'" alt=""></div><div class="num">Nº '+String(n).padStart(3,'0')+'</div>'+
     '<div class="top"><img src="'+LOGO+'"></div>'+
     '<div class="titulo">RECIBO</div>'+
@@ -15021,8 +15043,8 @@ function renderCli(){
   if($('#cliPagLinhas')&&!$('#cliPagLinhas').children.length)renderCliPagLinhas();
   const q=buscaTxt($('#cliSearch').value),b=$('#cliBody');b.innerHTML='';
   const list=state.clientes.filter(c=>!q||buscaTxt(c.nome).includes(q)||buscaTxt(c.doc).includes(q)||cliPagamentos(c).some(p=>buscaTxt(p.descricao).includes(q)));
-  let tot=0;state.clientes.forEach(c=>tot+=cliTotal(c));
-  $('#cliQtd').textContent=state.clientes.length;$('#cliTot').textContent='R$ '+fmtBRL(tot);
+  let tot=0,terc=0;state.clientes.forEach(c=>{tot+=cliTotalRM(c);terc+=cliTotal(c)-cliTotalRM(c);});
+  $('#cliQtd').textContent=state.clientes.length;$('#cliTot').textContent='R$ '+fmtBRL(tot)+(terc>0?' · pago direto a terceiros: R$ '+fmtBRL(terc):'');
   if(!list.length){b.innerHTML='<tr><td colspan="6"><div class="empty"><b>Nenhum recibo emitido</b>Preencha os campos acima e gere o primeiro.</div></td></tr>';return;}
   list.forEach(c=>{const tr=el('tr');const dt=c.data?c.data.split('-').reverse().join('/'):'—';
     const pags=cliPagamentos(c);
@@ -15031,11 +15053,11 @@ function renderCli(){
        é o que muda a "Referente a" de um recibo simples pra um combinado. */
     const referCel=pags.length===1
       ? (pags[0].descricao?esc(pags[0].descricao):'<span class="sub">—</span>')+(CLI_FORMA_LABEL[pags[0].forma]?'<div class="sub">'+esc(CLI_FORMA_LABEL[pags[0].forma])+' · sai no recibo</div>':'')
-      : pags.map(p=>'<div class="sub">R$'+fmtBRL(p.valor)+(p.data?' · '+fmtDate(p.data):'')+(CLI_FORMA_LABEL[p.forma]?' · '+esc(CLI_FORMA_LABEL[p.forma]):'')+' · '+esc(p.descricao||'—')+'</div>').join('');
+      : pags.map(p=>'<div class="sub">R$'+fmtBRL(p.valor)+(p.data?' · '+fmtDate(p.data):'')+(CLI_FORMA_LABEL[p.forma]?' · '+esc(CLI_FORMA_LABEL[p.forma]):'')+' · '+esc(p.descricao||'—')+(cliTerc(p)?' · <b>pago direto a '+esc(cliTerc(p))+'</b>':'')+'</div>').join('');
     tr.innerHTML='<td class="idx">'+String(c.numero||'').padStart(3,'0')+'</td>'+
       '<td><div class="forn">'+esc(titlePt(c.nome))+'</div><div class="sub'+(c.doc?'':' miss')+'">'+(c.doc?esc(c.docTipo)+' '+esc(c.doc):'sem documento')+'</div></td>'+
       '<td data-label="Referente a">'+referCel+'</td>'+
-      '<td class="r val" data-label="Valor">R$ '+fmtBRL(cliTotal(c))+'</td>'+
+      '<td class="r val" data-label="Valor">R$ '+fmtBRL(cliTotal(c))+(cliTotalRM(c)<cliTotal(c)?'<div class="sub">R$ '+fmtBRL(cliTotalRM(c))+' à RM</div>':'')+'</td>'+
       '<td class="c sub" data-label="Data">'+dt+'</td>'+
       '<td class="r" data-label="Ações"><div class="rowact"><button class="ia" data-cpr="'+c.id+'" title="Reimprimir">'+ri('imprimir')+'</button><button class="ia" data-ced="'+c.id+'" title="Editar">✎</button><button class="ia del" data-cde="'+c.id+'" title="Excluir">✕</button></div></td>';
     b.appendChild(tr);});
@@ -15047,7 +15069,9 @@ let editCliId=null;
 /* A LISTA DE TRABALHO dos pagamentos deste recibo, enquanto o formulário
    está aberto -- igual ao folhaTmp da folha extra. So' vira state.clientes
    quando "Gerar recibo" e' clicado. */
-let cliPagTmp=[{valor:0,descricao:'',data:'',forma:''}];
+let cliPagTmp=[{valor:0,descricao:'',data:'',forma:'',terceiro:''}];
+/* nomes de terceiros já usados nos recibos e os do cadastro de terceiros */
+function cliTercNomes(){const v={};(state.clientes||[]).forEach(c=>cliPagamentos(c).forEach(p=>{if(cliTerc(p))v[cliTerc(p)]=1;}));(state.terceiros||[]).forEach(t=>{const n=String(t.nome||t.empresa||'').trim();if(n)v[n]=1;});return Object.keys(v).sort((a,b)=>a.localeCompare(b,'pt-BR'));}
 function renderCliPagLinhas(){
   const box=$('#cliPagLinhas'); if(!box)return;
   box.innerHTML='';
@@ -15060,24 +15084,29 @@ function renderCliPagLinhas(){
         '<option value="especie"'+(p.forma==='especie'?' selected':'')+'>Em espécie</option>'+
         '<option value="pix"'+(p.forma==='pix'?' selected':'')+'>Pix</option>'+
         '<option value="cheque"'+(p.forma==='cheque'?' selected':'')+'>Cheques</option></select>'+
+      '<select class="cli-pq" data-i="'+i+'" aria-label="Para quem foi pago"><option value="rm"'+(p.paraTerc?'':' selected')+'>Pago à RM</option><option value="terc"'+(p.paraTerc?' selected':'')+'>Pago direto a terceiro</option></select>'+
+      '<input class="cli-pt" data-i="'+i+'" list="dlCliTerc" placeholder="Nome do terceiro (ex.: Stabil)" value="'+esc(p.terceiro||'')+'"'+(p.paraTerc?'':' hidden')+'>'+
       (cliPagTmp.length>1?'<button type="button" class="ia del" data-pdel="'+i+'" title="remover este pagamento">✕</button>':'')));
   });
   box.querySelectorAll('.cli-pv').forEach(inp=>inp.onchange=()=>{const i=+inp.dataset.i,v=parseValor(inp.value);cliPagTmp[i].valor=v;inp.value=v>0?fmtBRL(v):'';atualizarCliPagTotal();});
   box.querySelectorAll('.cli-pd').forEach(inp=>inp.oninput=()=>{cliPagTmp[+inp.dataset.i].descricao=inp.value;});
   box.querySelectorAll('.cli-pdt').forEach(inp=>inp.onchange=()=>{cliPagTmp[+inp.dataset.i].data=inp.value;});
   box.querySelectorAll('.cli-pf').forEach(sel=>sel.onchange=()=>{cliPagTmp[+sel.dataset.i].forma=sel.value;});
+  box.querySelectorAll('.cli-pq').forEach(sel=>sel.onchange=()=>{const p=cliPagTmp[+sel.dataset.i];p.paraTerc=sel.value==='terc';const t=box.querySelector('.cli-pt[data-i="'+sel.dataset.i+'"]');if(t){t.hidden=!p.paraTerc;if(p.paraTerc)t.focus();}atualizarCliPagTotal();});
+  box.querySelectorAll('.cli-pt').forEach(inp=>inp.oninput=()=>{cliPagTmp[+inp.dataset.i].terceiro=inp.value;atualizarCliPagTotal();});
+  {let dl=document.getElementById('dlCliTerc');if(!dl){dl=document.createElement('datalist');dl.id='dlCliTerc';document.body.appendChild(dl);}dl.innerHTML=cliTercNomes().map(n=>'<option value="'+esc(n)+'">').join('');}
   box.querySelectorAll('[data-pdel]').forEach(bt=>bt.onclick=()=>{cliPagTmp.splice(+bt.dataset.pdel,1);renderCliPagLinhas();});
   atualizarCliPagTotal();
 }
 function atualizarCliPagTotal(){
   const p=$('#cliPagTotal'); if(!p)return;
   if(cliPagTmp.length<2){p.textContent='';return;}
-  const tot=cliPagTmp.reduce((s,x)=>s+(Number(x.valor)||0),0);
-  p.textContent='Total dos '+cliPagTmp.length+' pagamentos: R$ '+fmtBRL(tot);
+  const tot=cliPagTmp.reduce((s,x)=>s+(Number(x.valor)||0),0),tc=cliPagTmp.filter(x=>x.paraTerc).reduce((s,x)=>s+(Number(x.valor)||0),0);
+  p.textContent='Total dos '+cliPagTmp.length+' pagamentos: R$ '+fmtBRL(tot)+(tc>0?' · R$ '+fmtBRL(tot-tc)+' à RM e R$ '+fmtBRL(tc)+' direto a terceiro':'');
 }
-$('#cliPagAdd').onclick=()=>{cliPagTmp.push({valor:0,descricao:'',data:$('#cliData').value||rmDiaISO(),forma:''});renderCliPagLinhas();};
+$('#cliPagAdd').onclick=()=>{const ant=cliPagTmp[cliPagTmp.length-1]||{};cliPagTmp.push({valor:0,descricao:ant.descricao||'',data:$('#cliData').value||rmDiaISO(),forma:'',terceiro:''});renderCliPagLinhas();};
 function readCliForm(){
-  const pagamentos=cliPagTmp.map(p=>({valor:Number(p.valor)||0,descricao:(p.descricao||'').trim(),data:p.data||'',forma:p.forma||''})).filter(p=>p.valor>0);
+  const pagamentos=cliPagTmp.map(p=>Object.assign({valor:Number(p.valor)||0,descricao:(p.descricao||'').trim(),data:p.data||'',forma:p.forma||''},p.paraTerc&&String(p.terceiro||'').trim()?{terceiro:String(p.terceiro).trim()}:{})).filter(p=>p.valor>0);
   return{nome:$('#cliNome').value.trim(),docTipo:$('#cliDocTipo').value,doc:$('#cliDoc').value.trim(),
     data:$('#cliData').value,cidade:$('#cliCidade').value.trim(),textoPersonalizado:$('#cliTextoOn').checked?$('#cliTexto').value.trim():'',
     pagamentos:pagamentos,
@@ -15089,13 +15118,13 @@ function readCliForm(){
 }
 function fillCliForm(c){$('#cliNome').value=c?c.nome:'';$('#cliDocTipo').value=c?c.docTipo:'CPF';$('#cliDoc').value=c?c.doc:'';
   $('#cliData').value=c&&c.data?c.data:rmDiaISO();$('#cliCidade').value=c?(c.cidade||state.cfg.cidadeEmissao):state.cfg.cidadeEmissao;
-  cliPagTmp=c?cliPagamentos(c).map(p=>({valor:Number(p.valor)||0,descricao:p.descricao||'',data:p.data||'',forma:p.forma||''}))
-    :[{valor:0,descricao:'',data:$('#cliData').value,forma:''}];
+  cliPagTmp=c?cliPagamentos(c).map(p=>({valor:Number(p.valor)||0,descricao:p.descricao||'',data:p.data||'',forma:p.forma||'',terceiro:cliTerc(p),paraTerc:!!cliTerc(p)}))
+    :[{valor:0,descricao:'',data:$('#cliData').value,forma:'',terceiro:''}];
   renderCliPagLinhas();
   $('#cliTextoOn').checked=!!(c&&c.textoPersonalizado);$('#cliTexto').value=c?(c.textoPersonalizado||''):'';$('#cliTexto').style.display=$('#cliTextoOn').checked?'':'none';
   $('#cliNomeDica').textContent='';}
 function editCli(id){editCliId=id;const c=state.clientes.find(x=>x.id===id);fillCliForm(c);$('#btnCliGerar').textContent='Salvar e reimprimir →';window.scrollTo({top:0,behavior:'smooth'});}
-$('#btnCliGerar').onclick=()=>{const d=readCliForm();if(!d.nome){toast('Informe o cliente','err');return;}if(!d.pagamentos.length){toast('Informe ao menos um pagamento com valor','err');return;}
+$('#btnCliGerar').onclick=()=>{if(cliPagTmp.some(p=>p.paraTerc&&(Number(p.valor)||0)>0&&!String(p.terceiro||'').trim())){toast('Informe o nome do terceiro que recebeu direto','err');return;}const d=readCliForm();if(!d.nome){toast('Informe o cliente','err');return;}if(!d.pagamentos.length){toast('Informe ao menos um pagamento com valor','err');return;}
   if(editCliId){const c=state.clientes.find(x=>x.id===editCliId);Object.assign(c,d);persist();printCliente(c);editCliId=null;$('#btnCliGerar').textContent='Emitir e imprimir →';}
   else{const num=(state.clientes.reduce((m,c)=>Math.max(m,c.numero||0),0))+1;const c={id:'c'+Date.now(),...d,numero:num,ts:Date.now()};state.clientes.unshift(c);persist();printCliente(c);}
   fillCliForm(null);renderCli();toast('Recibo gerado','ok');};
@@ -18669,7 +18698,7 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape'){if(fecharSemPerder(
    juntos a cada publicacao, e ha uma prova automatica que falha se um subir
    sem o outro. Assim o numero na tela e o mesmo do arquivo que o aparelho
    guardou, e dizer "estou na v81" passa a significar alguma coisa. */
-const APP_VER='v303';
+const APP_VER='v304';
 (function(){var p=document.getElementById('verPill'); if(p)p.textContent=APP_VER;})();
 
 if('serviceWorker' in navigator){
