@@ -14956,11 +14956,12 @@ $('#btnRepAniv')&&($('#btnRepAniv').onclick=exportAniversariantesPDF);
 /* A forma de pagamento nao mudava o texto do recibo -- so' existia se voce
    escrevesse na mao dentro de "Referente a". Agora e' um campo proprio e
    vira uma linha de Observacao no papel, igual a Rescisao ja faz. */
-const CLI_FORMA_TXT={especie:'recebido em espécie',pix:'recebido via Pix',cheque:'recebido em cheque(s)'};
-const CLI_FORMA_LABEL={especie:'Em espécie',pix:'Pix',cheque:'Cheques'};
+/* transferência bancária: "as formas de pagamento ainda falta transferência" (teste recibos-cliente-pago-terceiro) */
+const CLI_FORMA_TXT={especie:'recebido em espécie',pix:'recebido via Pix',transferencia:'recebido por transferência bancária',cheque:'recebido em cheque(s)'};
+const CLI_FORMA_LABEL={especie:'Em espécie',pix:'Pix',transferencia:'Transferência',cheque:'Cheques'};
 /* Parêntese curto, pra dentro da frase de um recibo com mais de um
    pagamento -- "recebido em espécie" nao cabe no meio de uma enumeração. */
-const CLI_FORMA_PAREN={especie:'em espécie',pix:'via Pix',cheque:'em cheque(s)'};
+const CLI_FORMA_PAREN={especie:'em espécie',pix:'via Pix',transferencia:'por transferência bancária',cheque:'em cheque(s)'};
 /* Um recibo, um valor -- era assim ate' aqui. Agora um recibo pode juntar
    VARIOS pagamentos (dinheiro num dia, Pix noutro), cada um com sua data,
    seu "referente a" e sua forma. Registros antigos (de antes desta
@@ -15083,6 +15084,7 @@ function renderCliPagLinhas(){
       '<select class="cli-pf" data-i="'+i+'"><option value=""'+(!p.forma?' selected':'')+'>Forma — não informar</option>'+
         '<option value="especie"'+(p.forma==='especie'?' selected':'')+'>Em espécie</option>'+
         '<option value="pix"'+(p.forma==='pix'?' selected':'')+'>Pix</option>'+
+        '<option value="transferencia"'+(p.forma==='transferencia'?' selected':'')+'>Transferência</option>'+
         '<option value="cheque"'+(p.forma==='cheque'?' selected':'')+'>Cheques</option></select>'+
       '<select class="cli-pq" data-i="'+i+'" aria-label="Para quem foi pago"><option value="rm"'+(p.paraTerc?'':' selected')+'>Pago à RM</option><option value="terc"'+(p.paraTerc?' selected':'')+'>Pago direto a terceiro</option></select>'+
       '<input class="cli-pt" data-i="'+i+'" list="dlCliTerc" placeholder="Nome do terceiro (ex.: Stabil)" value="'+esc(p.terceiro||'')+'"'+(p.paraTerc?'':' hidden')+'>'+
@@ -18698,7 +18700,7 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape'){if(fecharSemPerder(
    juntos a cada publicacao, e ha uma prova automatica que falha se um subir
    sem o outro. Assim o numero na tela e o mesmo do arquivo que o aparelho
    guardou, e dizer "estou na v81" passa a significar alguma coisa. */
-const APP_VER='v304';
+const APP_VER='v305';
 (function(){var p=document.getElementById('verPill'); if(p)p.textContent=APP_VER;})();
 
 if('serviceWorker' in navigator){
