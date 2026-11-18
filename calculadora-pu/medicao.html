@@ -2196,6 +2196,9 @@ else comeca();
 #v3empty .v3plugin-dica{display:inline-block;margin-top:6px;font-size:12px;color:var(--gray-2);}
 /* seleção por área */
 #v3sel-box{position:fixed;border:1.5px dashed #FFD34D;background:rgba(255,211,77,.08);pointer-events:none;display:none;z-index:1100;}
+#viewer3d .v3plugin-velho{position:absolute;left:12px;right:12px;top:118px;z-index:6;background:#FFF4E5;color:#7A3E00;border:1px solid #F5C77E;border-radius:10px;padding:9px 12px;font-size:12.5px;font-weight:600;line-height:1.4;}
+#viewer3d .v3plugin-velho{pointer-events:none;}
+#viewer3d .v3plugin-velho a{color:#C1310B;pointer-events:auto;}
 #v3laco{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:5;display:none;}
 #v3laco polygon{fill:rgba(0,229,255,.10);stroke:#00E5FF;stroke-width:1.5;stroke-dasharray:6 4;}
 #v3laco.tira polygon{fill:rgba(242,70,25,.10);stroke:#F24619;}
@@ -2330,7 +2333,7 @@ else comeca();
         <div class="ic">📏</div>
         <p>Carregue o arquivo <b>*_linhasPU.json</b><br>gerado pelo plugin do SketchUp.</p>
         <p><button type="button" class="v3b v3carrega" onclick="$('v3file').click()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 9l5-5 5 5"/><path d="M12 4v12"/></svg>Carregar arquivo</button></p>
-        <p><a class="v3plugin" href="sketchup/RM_Estruturas_PU.rbz?v=1.4.0" download="RM_Estruturas_PU.rbz">⬇ Plugin do SketchUp (.rbz)</a><br>
+        <p><a class="v3plugin" href="sketchup/RM_Estruturas_PU.rbz?v=1.4.1" download="RM_Estruturas_PU.rbz">⬇ Plugin do SketchUp (.rbz)</a><br>
           <span class="v3plugin-dica">SketchUp → Extensões → Gerenciador de extensões → Instalar extensão</span></p>
       </div>
       <div id="v3d-list"></div>
@@ -2925,7 +2928,24 @@ function v3AplicaInicia(){
  const amp=on=>{if(!wr||!ab)return;wr.classList.toggle('v3-cheia',on);ab.textContent=on?'✕ Fechar':'⛶ Ampliar';ab.title=on?'Voltar ao tamanho normal (Esc)':'Ampliar o 3D na tela inteira (Esc fecha)';window.dispatchEvent(new Event('resize'));};
  if(ab)ab.addEventListener('click',()=>amp(!wr.classList.contains('v3-cheia')));
  document.addEventListener('keydown',e=>{if(e.key==='Escape'&&wr&&wr.classList.contains('v3-cheia'))amp(false);});}
-let v3Arquivo='', v3Obra='', v3SalvaT=null, v3PecasDados=null;
+let v3Arquivo='', v3Obra='', v3SalvaT=null, v3PecasDados=null, v3Versao='';
+/* PLUGIN VELHO: até o 1.4.0 o plugin lia a placa pela caixa alinhada aos
+   eixos -- no trecho em diagonal (muro) ela virava "placa deitada" e a junta
+   do meio sumia -- e dava linha na base da placa apoiada no chão. O 3D não
+   tem como refazer isso a partir do arquivo velho: avisa para exportar de
+   novo. Teste pu-plugin-muro-diagonal. */
+const V3PLUGIN='1.4.1';
+function v3VersaoMenor(a,b){ const x=String(a||'0').split('.').map(Number), y=String(b).split('.').map(Number);
+  for(let i=0;i<3;i++){ if((x[i]||0)!==(y[i]||0)) return (x[i]||0)<(y[i]||0); } return false; }
+function v3AvisoPlugin(){
+  const w=document.getElementById('v3d-canvas-wrap'); if(!w) return;
+  let a=document.getElementById('v3PluginVelho');
+  const velho=linhasData.length&&v3VersaoMenor(v3Versao,V3PLUGIN);
+  if(!velho){ if(a) a.remove(); return; }
+  if(!a){ a=document.createElement('div'); a.id='v3PluginVelho'; a.className='v3plugin-velho'; w.appendChild(a); }
+  a.innerHTML='⚠ Arquivo gerado com o plugin '+escapeHtml(v3Versao||'antigo')+'. Exporte de novo com o plugin '+V3PLUGIN
+    +': ele lê as juntas do muro em diagonal e não põe linha na base da placa apoiada no chão. <a href="sketchup/RM_Estruturas_PU.rbz?v='+V3PLUGIN+'" download="RM_Estruturas_PU.rbz">Baixar o plugin</a>';
+}
 /* SketchUp é Z para cima; o three.js é Y para cima. Os dois são de mão
    direita, então a troca é (x, z, -y). Era (x, z, y): trocar dois eixos
    inverte a mão do sistema, e o modelo abria ESPELHADO em relação ao que
@@ -2939,7 +2959,7 @@ function v3Salva(){
   v3SalvaT=setTimeout(()=>{ if(!window.v3Guardar||!linhasData.length) return;
     window.v3Guardar({obra:v3Obra, arquivo:v3Arquivo, em:new Date().toISOString(),
       linhas:linhasData.map(l=>Object.assign({id:l.id,nome:l.nome,tipo:l.tipo,junta:v3TipoJunta(l),ml:l.ml,pt1:l.pt1,pt2:l.pt2,app:l.app||'ext_int',incluir:!!l.incluir},l.manual?{manual:true}:{},l.vao?{vao:true}:{},l.etapa?{etapa:l.etapa}:{})),
-      pecas:v3PecasDados||null, camera:v3Cam||null, ocultas:[...v3Ocultas], etapas:v3Etapas.map(e=>({...e}))});
+      pecas:v3PecasDados||null, camera:v3Cam||null, ocultas:[...v3Ocultas], etapas:v3Etapas.map(e=>({...e})), versao:v3Versao||''});
   },300);
 }
 /* LINHA REPETIDA: duas linhas do mesmo tipo, paralelas, a menos de 5 cm
@@ -3045,7 +3065,7 @@ window.v3LoadJSON=function(json,fname,opc){
   objs=[]; linhasData=[];
   const ls=v3RecortaPlacas(json.linhas||[],json.pecas,json.versao);
   if(!ls.length){ document.getElementById('v3Nome').textContent='Nenhum arquivo carregado'; return; }
-  v3Arquivo=String(fname||''); v3Obra=String(json.obra||'');
+  v3Arquivo=String(fname||''); v3Obra=String(json.obra||''); v3Versao=String(json.versao||'');
   v3PecasDados=Array.isArray(json.pecas)&&json.pecas.length?json.pecas:null;
   v3Cam=json.camera&&Array.isArray(json.camera.eye)&&Array.isArray(json.camera.target)?json.camera:null;
   linhasData=ls.map(l=>v3AjustaJuntaLaje({...l,ml:Number(l.ml)||0,incluir:l.incluir!==false},v3PecasDados));
@@ -3207,6 +3227,7 @@ function v3PosLinhas(json,fname,opc){
     V3FORMA_DB.le().then(d=>{ if(d&&d.chave===ch&&d.visual&&v3Cena===cena) v3PoeForma(d.visual); }); }
   else V3FORMA_DB.apaga();
   document.getElementById('v3AplicaBtn').style.display=objs.length?'':'none';
+  v3AvisoPlugin();
   v3Vista(v3Vis==='sketchup'&&!v3Cam?'iso':v3Vis);
   document.getElementById('v3Nome').textContent=(json.obra||String(fname||'').replace(/_linhasPU\.json$/i,''))+(v3VaoInfo.n?' · PU tirado de '+v3VaoInfo.n+' vão(s) de janela: −'+v3m(v3VaoInfo.ml):'');
   document.getElementById('v3empty').style.display='none';
@@ -3897,7 +3918,7 @@ window.v3FecharArquivo=function(){
   if(linhasData.length&&!confirm('Fechar o arquivo do 3D?\n\nAs linhas e as marcações dele saem desta obra. O que já foi enviado para a medição continua.')) return;
   if(v3Trena.on) v3TrenaLiga(false);
   if(v3Cena){ sc.remove(v3Cena); v3Cena.traverse(o=>{ if(o.geometry) o.geometry.dispose(); }); v3Cena=null; }
-  objs=[]; linhasData=[]; v3PecasGrp=null; v3Forma=null; v3PecaAt=-1; v3Ocultas=new Set(); v3PecaPainel(); v3FormaBotoes(); V3FORMA_DB.apaga(); v3PecasDados=null; v3Caixa=null; v3GradeArgs=null; v3Grade=null; v3Partes=[]; v3Arquivo=''; v3Obra='';
+  objs=[]; linhasData=[]; v3AvisoPlugin(); v3PecasGrp=null; v3Forma=null; v3PecaAt=-1; v3Ocultas=new Set(); v3PecaPainel(); v3FormaBotoes(); V3FORMA_DB.apaga(); v3PecasDados=null; v3Caixa=null; v3GradeArgs=null; v3Grade=null; v3Partes=[]; v3Arquivo=''; v3Obra='';
   actId=-1;
   if(window.v3Esquecer) window.v3Esquecer();
   document.getElementById('v3Nome').textContent='Nenhum arquivo carregado';
@@ -4094,7 +4115,7 @@ async function fbRemove(path){
     document.getElementById('viewer3d').classList.add('active');
     /* a obra já tem linhas guardadas: abre o 3D como ficou da última vez */
     if(linhas3d && Array.isArray(linhas3d.linhas) && linhas3d.linhas.length && window.v3LoadJSON){
-      window.v3LoadJSON({obra:linhas3d.obra||'',linhas:linhas3d.linhas,pecas:linhas3d.pecas||null,camera:linhas3d.camera||null,ocultas:linhas3d.ocultas||[],etapas:linhas3d.etapas||[]}, linhas3d.arquivo||'', {restaura:true});
+      window.v3LoadJSON({obra:linhas3d.obra||'',linhas:linhas3d.linhas,pecas:linhas3d.pecas||null,camera:linhas3d.camera||null,ocultas:linhas3d.ocultas||[],etapas:linhas3d.etapas||[],versao:linhas3d.versao||''}, linhas3d.arquivo||'', {restaura:true});
       return;
     }
     document.getElementById('v3d-list').style.display='none';

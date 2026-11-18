@@ -40,6 +40,8 @@ module RM_DeteccaoPU
     placas.reject! do |p|
       b = p[:bounds]
       dx = (b[1]-b[0]).abs; dy = (b[3]-b[2]).abs; dz = (b[5]-b[4]).abs
+      # placa em pé (pela espessura de verdade) nunca é chão, mesmo girada
+      next false if p.key?(:deitada) && !p[:deitada]
       next false unless dz < [dx, dy].min
       perto = lambda do |q|
         c = q[:bounds]

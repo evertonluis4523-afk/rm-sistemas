@@ -21,7 +21,7 @@ load File.join(File.dirname(__FILE__), 'visual_pu.rb')
 
 module RM_LinhasPU
 
-  VERSAO = '1.4.0'
+  VERSAO = '1.4.1'
 
   INCHES_TO_M  = 0.0254
   ADJACENCIA_M = 0.50
@@ -53,6 +53,42 @@ module RM_LinhasPU
     corners = (0..7).map { |i| world_t * bb.corner(i) }
     xs = corners.map(&:x); ys = corners.map(&:y); zs = corners.map(&:z)
     [xs.min, xs.max, ys.min, ys.max, zs.min, zs.max]
+  end
+
+  # ── GEOMETRIA REAL DA PEÇA (girada ou não) ──
+  # "O arquivo do muro está lendo linha de PU apoiada no chão e não lê as
+  # placas que teriam uma linha no meio entre elas." Tudo aqui era medido
+  # pela CAIXA alinhada aos eixos: num trecho de muro em diagonal a caixa da
+  # placa fica mais larga que alta e ela virava "placa deitada" (laje) --
+  # sem linha nenhuma --, e a linha saía na direção do eixo X ou Y, fora da
+  # placa. Agora cada peça leva os eixos dela: comprimento (u, na
+  # horizontal), espessura (w) e se está deitada (a espessura em pé).
+  # Teste pu-plugin-muro-diagonal.
+  def self.geo_peca(defn, world_t)
+    bb = defn.bounds
+    c = (0..7).map { |i| q = world_t * bb.corner(i); [q.x.to_f, q.y.to_f, q.z.to_f] }
+    sub = ->(a, b) { [a[0]-b[0], a[1]-b[1], a[2]-b[2]] }
+    ln = ->(v) { Math.sqrt(v[0]**2 + v[1]**2 + v[2]**2) }
+    e = [sub.(c[1], c[0]), sub.(c[2], c[0]), sub.(c[4], c[0])]
+    l = e.map { |v| ln.(v) }
+    it = (0..2).min_by { |i| l[i] }
+    return { deitada: false, cantos: c } if l[it] <= 0
+    deitada = e[it][2].abs / l[it] >= 0.9
+    outros = (0..2).to_a - [it]
+    # comprimento: o eixo mais deitado dos outros dois (o outro é a altura)
+    iu = outros.min_by { |i| l[i] > 0 ? e[i][2].abs / l[i] : 1 }
+    u = [e[iu][0], e[iu][1]]; lu = Math.sqrt(u[0]**2 + u[1]**2)
+    u = lu > 0 ? [u[0]/lu, u[1]/lu] : [1.0, 0.0]
+    w = [-u[1], u[0]]
+    cx = c.sum { |q| q[0] } / 8.0; cy = c.sum { |q| q[1] } / 8.0
+    { deitada: deitada, cantos: c, u: u, w: w, cx: cx, cy: cy }
+  end
+  # faixa da peça q no eixo da placa p: [s0,s1] ao longo e [t0,t1] de través
+  def self.faixa(p, q)
+    cs = q[:cantos] || (0..7).map { |i| b = q[:bounds]; [b[i&1], b[2+((i>>1)&1)], b[4+((i>>2)&1)]] }
+    s = cs.map { |k| (k[0]-p[:cx])*p[:u][0] + (k[1]-p[:cy])*p[:u][1] }
+    t = cs.map { |k| (k[0]-p[:cx])*p[:w][0] + (k[1]-p[:cy])*p[:w][1] }
+    [s.min, s.max, t.min, t.max]
   end
 
   def self.merge_intervals(ivs)
@@ -92,6 +128,7 @@ module RM_LinhasPU
           dz = (bounds[5]-bounds[4]).abs
           next if [dx,dy,dz].max < 1.0   # ignora peças tiny
           rec = { nome: nome.upcase, tipo: t, bounds: bounds }
+          rec.merge!(geo_peca(e.definition, world_t))
           case t
           when 'Pilar' then pilares << rec
           when 'Viga'  then vigas   << rec
@@ -124,7 +161,9 @@ module RM_LinhasPU
   # altura que na planta) não tem junta de base como a de parede: a junta
   # é o TOPO de cada viga em que ela se apoia. Volta [[viga, a0, a1], ...]
   # no eixo da viga.
-  def self.deitada?(b)
+  def self.deitada?(x)
+    return x[:deitada] if x.is_a?(Hash) && x.key?(:deitada)
+    b = x.is_a?(Hash) ? x[:bounds] : x
     (b[5]-b[4]).abs < [(b[1]-b[0]).abs, (b[3]-b[2]).abs].min
   end
   def self.topos_viga(vigas, placas)
@@ -134,7 +173,7 @@ module RM_LinhasPU
       ivs = []
       placas.each do |p|
         b = p[:bounds]
-        next unless deitada?(b) && (b[4]-vz1).abs <= tol
+        next unless deitada?(p) && (b[4]-vz1).abs <= tol
         ox = [b[1],vx1].min - [b[0],vx0].max; oy = [b[3],vy1].min - [b[2],vy0].max
         next unless ox > 0 && oy > 0
         ivs << (em_x ? [[b[0],vx0].max, [b[1],vx1].min] : [[b[2],vy0].max, [b[3],vy1].min])
@@ -150,10 +189,10 @@ module RM_LinhasPU
   # no eixo da placa de parede.
   def self.topos_parede(placas)
     tol = TOL_JUNTA_M / INCHES_TO_M; adj = ADJACENCIA_M / INCHES_TO_M; out = []
-    deitadas = placas.select { |q| deitada?(q[:bounds]) }
+    deitadas = placas.select { |q| deitada?(q) }
     return out if deitadas.empty?
     placas.each do |p|
-      b = p[:bounds]; next if deitada?(b)
+      b = p[:bounds]; next if deitada?(p)
       em_x = (b[1]-b[0]).abs >= (b[3]-b[2]).abs
       ivs = []
       deitadas.each do |d|
@@ -182,7 +221,7 @@ module RM_LinhasPU
   def self.enterrada?(p, vigas)
     tol = TOL_JUNTA_M / INCHES_TO_M; adj = ADJACENCIA_M / INCHES_TO_M
     x0,x1,y0,y1,z0,z1 = p[:bounds]
-    return false if deitada?(p[:bounds])
+    return false if deitada?(p)
     vigas.any? do |v|
       vx0,vx1,vy0,vy1,vz0,vz1 = v[:bounds]
       gx = [vx0-x1, x0-vx1, 0].max; gy = [vy0-y1, y0-vy1, 0].max
@@ -195,33 +234,29 @@ module RM_LinhasPU
   end
 
   TOL_JUNTA_M = 0.05
+  # A BASE SÓ ONDE ENCOSTA: "está lendo linha de PU apoiada no chão
+  # (errado)". A linha da base vale só nos trechos em que há outra peça
+  # (placa ou viga/baldrame) logo abaixo, encostada. Placa no chão ou no
+  # terreno, sem nada desenhado embaixo, não leva -- antes a placa mais
+  # baixa levava a base inteira, contando com um baldrame não desenhado.
+  # Medido no eixo da placa (girada ou não). Volta [s0,s1] ao longo dela.
+  # Teste pu-plugin-muro-diagonal.
   def self.trechos_base_placa(p, placas, vigas, enterradas = [])
-    x0,x1,y0,y1,z0,_z1 = p[:bounds]
-    em_x = (x1-x0).abs >= (y1-y0).abs
-    a0, a1 = em_x ? [x0, x1] : [y0, y1]
+    z0 = p[:bounds][4]
     tol = TOL_JUNTA_M / INCHES_TO_M; adj = ADJACENCIA_M / INCHES_TO_M
-    chao = placas.reject { |q| enterradas.any? { |e| e.equal?(q) } }
-    base = (chao.empty? ? placas : chao).map { |q| q[:bounds][4] }.min
-    return [[a0, a1]] if z0 <= base + tol
-    perto = lambda do |b|
-      g = em_x ? [b[2]-y1, y0-b[3], 0].max : [b[0]-x1, x0-b[1], 0].max
-      g <= adj
-    end
-    ao_longo = lambda { |b| em_x ? [[b[0], a0].max, [b[1], a1].min] : [[b[2], a0].max, [b[3], a1].min] }
-    apoios = []; abaixo = false
+    _s0, _s1, t0, t1 = faixa(p, p)
+    apoios = []
     (placas + vigas).each do |q|
       next if q.equal?(p)
-      b = q[:bounds]
-      next if deitada?(b)   # em cima do piso não leva PU
-      next unless perto.call(b)
-      i0, i1 = ao_longo.call(b)
-      next unless i1 > i0
-      if (b[5] - z0).abs <= tol then apoios << [i0, i1]
-      elsif b[5] < z0 then abaixo = true
-      end
+      next if deitada?(q)   # em cima do piso não leva PU
+      next unless (q[:bounds][5] - z0).abs <= tol
+      qs0, qs1, qt0, qt1 = faixa(p, q)
+      next if [qt0 - t1, t0 - qt1, 0].max > adj
+      ps0, ps1 = faixa(p, p)
+      i0 = [qs0, ps0].max; i1 = [qs1, ps1].min
+      apoios << [i0, i1] if i1 > i0
     end
-    return merge_intervals(apoios) unless apoios.empty?
-    abaixo ? [] : [[a0, a1]]
+    apoios.empty? ? [] : merge_intervals(apoios)
   end
 
   # ── Gera linhas de PU em coordenadas reais ────────────────
@@ -230,21 +265,15 @@ module RM_LinhasPU
 
     # ── PLACAS: linha horizontal na base (junta inferior) ────
     placas.each do |p|
-      next if deitada?(p[:bounds])   # deitada: a junta é o topo da viga (abaixo)
+      next if deitada?(p)   # deitada: a junta é o topo da viga (abaixo)
       next if enterradas.any? { |e| e.equal?(p) }   # o fundo da enterrada não encontra nada
-      x0,x1,y0,y1,z0,z1 = p[:bounds]
-      dx = (x1-x0).abs; dy = (y1-y0).abs
-      z_base = z0   # base da placa = onde o PU é aplicado
+      z_base = p[:bounds][4]   # base da placa = onde o PU é aplicado
 
-      # um trecho por encontro de junta embaixo (ver trechos_base_placa)
+      # um trecho por encontro de junta embaixo (ver trechos_base_placa),
+      # no meio da espessura e ao longo da placa (girada ou não)
       trechos_base_placa(p, placas, vigas, enterradas).each do |a0, a1|
-        if dx >= dy   # placa estendida em X
-          cy = (y0+y1)/2.0
-          p1 = pt(a0, cy, z_base); p2 = pt(a1, cy, z_base)
-        else           # placa estendida em Y
-          cx = (x0+x1)/2.0
-          p1 = pt(cx, a0, z_base); p2 = pt(cx, a1, z_base)
-        end
+        p1 = pt(p[:cx] + p[:u][0]*a0, p[:cy] + p[:u][1]*a0, z_base)
+        p2 = pt(p[:cx] + p[:u][0]*a1, p[:cy] + p[:u][1]*a1, z_base)
         ml = ((a1-a0) * INCHES_TO_M).round(3)
         next if ml < 0.05
         linhas << { id: id+=1, nome: p[:nome], tipo: 'Placa', junta: 'placa_base',
@@ -253,21 +282,22 @@ module RM_LinhasPU
     end
 
     # ── PILARES: segmentos verticais por face com placa ───────
+    # Pelo eixo do pilar (girado ou não): no muro em diagonal a face vinha
+    # da caixa alinhada aos eixos e a linha saía solta, fora do pilar. O
+    # nome da face segue a direção dela no mundo (x/y, + ou -).
+    # Teste pu-plugin-muro-diagonal.
     pilares.each do |pilar|
-      px0,px1,py0,py1,pz0,pz1 = pilar[:bounds]
-      pcx = (px0+px1)/2.0; pcy = (py0+py1)/2.0
+      pz0 = pilar[:bounds][4]; pz1 = pilar[:bounds][5]
+      s0, s1, t0, t1 = faixa(pilar, pilar)
+      ms = (s0+s1)/2.0; mt = (t0+t1)/2.0
 
-      faces = { xp: [], xn: [], yp: [], yn: [] }
+      faces = { sp: [], sn: [], tp: [], tn: [] }
       placas.each do |pl|
-        plx0,plx1,ply0,ply1,plz0,plz1 = pl[:bounds]
-        x_gap = [plx0-px1, px0-plx1, 0].max
-        y_gap = [ply0-py1, py0-ply1, 0].max
-        next if x_gap > adj || y_gap > adj
-
-        dx = (plx0+plx1)/2.0 - pcx
-        dy = (ply0+ply1)/2.0 - pcy
-        face = dx.abs >= dy.abs ? (dx>=0 ? :xp : :xn) : (dy>=0 ? :yp : :yn)
-
+        plz0 = pl[:bounds][4]; plz1 = pl[:bounds][5]
+        qs0, qs1, qt0, qt1 = faixa(pilar, pl)
+        next if [qs0-s1, s0-qs1, 0].max > adj || [qt0-t1, t0-qt1, 0].max > adj
+        ds = (qs0+qs1)/2.0 - ms; dt = (qt0+qt1)/2.0 - mt
+        face = ds.abs >= dt.abs ? (ds>=0 ? :sp : :sn) : (dt>=0 ? :tp : :tn)
         z0 = [plz0,pz0].max; z1 = [plz1,pz1].min
         faces[face] << [z0,z1] if z1 > z0
       end
@@ -275,23 +305,25 @@ module RM_LinhasPU
       # Sem placa encostada não leva PU: o pilar fica fora (regra da RM).
       next if faces.values.all?(&:empty?)
 
+      u = pilar[:u]; w = pilar[:w]
       faces.each do |face_sym, ivs|
         next if ivs.empty?
         merged = merge_intervals(ivs)
-
-        # Posição no espaço da face do pilar
-        case face_sym
-        when :xp; fx=px1; fy=pcy
-        when :xn; fx=px0; fy=pcy
-        when :yp; fx=pcx; fy=py1
-        when :yn; fx=pcx; fy=py0
-        end
+        # ponto no meio da face, no referencial do pilar
+        fs, ft, nx, ny = case face_sym
+          when :sp then [s1, mt, u[0], u[1]]
+          when :sn then [s0, mt, -u[0], -u[1]]
+          when :tp then [ms, t1, w[0], w[1]]
+          else          [ms, t0, -w[0], -w[1]]
+          end
+        fx = pilar[:cx] + u[0]*fs + w[0]*ft; fy = pilar[:cy] + u[1]*fs + w[1]*ft
+        nome_face = nx.abs >= ny.abs ? (nx >= 0 ? 'xp' : 'xn') : (ny >= 0 ? 'yp' : 'yn')
 
         merged.each do |zs, ze|
           ml = ((ze-zs)*INCHES_TO_M).round(3)
           next if ml < 0.05
           linhas << { id: id+=1,
-                      nome: "#{pilar[:nome]} · face #{face_sym}",
+                      nome: "#{pilar[:nome]} · face #{nome_face}",
                       tipo: 'Pilar', junta: 'pilar_face',
                       pt1: pt(fx, fy, zs),
                       pt2: pt(fx, fy, ze),
