@@ -242,6 +242,9 @@
 
   /* ---------- Grupos colapsáveis ---------- */
   .grp-hdr{background:#F4F5F7;cursor:pointer;user-select:none;}
+  .et-tab .et-cor{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:7px;vertical-align:-1px;}
+  .et-tab tr.et-sem td{color:#6E6E6E;}
+  .et-tab tr.et-tot td{border-top:1.5px solid #141414;}
   .app-aviso td{background:#FFF4E5;color:#8A4B00;font-size:12.5px;font-weight:600;}
   .grp-hdr:hover{background:#ECEEF2;}
   .grp-hdr td{padding:9px 10px!important;}
@@ -1948,6 +1951,15 @@ else comeca();
     </table></div>
   </section>
 
+  <!-- PU POR ETAPA (das etapas marcadas no 3D) -->
+  <section class="card" id="secEtapas" hidden>
+    <p class="eyebrow">PU por etapa</p>
+    <div class="el-rolo"><table class="el-tab et-tab">
+      <thead><tr><th>Etapa</th><th class="num">Linhas</th><th class="num">ML ext</th><th class="num">ML int</th><th class="num">ML total</th><th class="num">Custo</th></tr></thead>
+      <tbody id="etBody"></tbody>
+    </table></div>
+  </section>
+
   <!-- ARREMATES E CORTES DE ALÇAS -->
   <section class="card" id="secAlcas">
     <p class="eyebrow">Extras</p>
@@ -2184,6 +2196,27 @@ else comeca();
 #v3empty .v3plugin-dica{display:inline-block;margin-top:6px;font-size:12px;color:var(--gray-2);}
 /* seleção por área */
 #v3sel-box{position:fixed;border:1.5px dashed #FFD34D;background:rgba(255,211,77,.08);pointer-events:none;display:none;z-index:1100;}
+#v3laco{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:5;display:none;}
+#v3laco polygon{fill:rgba(0,229,255,.10);stroke:#00E5FF;stroke-width:1.5;stroke-dasharray:6 4;}
+#v3laco.tira polygon{fill:rgba(242,70,25,.10);stroke:#F24619;}
+.v3etapas .v3et-cor{white-space:nowrap;flex:none;display:flex;align-items:center;gap:6px;font-size:12px;color:var(--gray-2);cursor:pointer;}
+.v3et-sel{display:flex;flex-direction:column;gap:6px;margin:6px 0 8px;font-size:12.5px;}
+.v3et-sel .lin{display:flex;flex-wrap:wrap;gap:6px;align-items:center;}
+.v3et-sel .ct{font-weight:700;}
+.v3et-sel .seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;}
+.v3et-sel .seg button{border:0;background:transparent;padding:4px 9px;font:inherit;font-size:12px;cursor:pointer;color:var(--gray-2);}
+.v3et-sel .seg button.on{background:#141414;color:#fff;}
+.v3et-b{border:1px solid var(--line);background:#fff;border-radius:8px;padding:4px 9px;font:inherit;font-size:12px;cursor:pointer;}
+.v3et-b.pri{background:#F24619;border-color:#F24619;color:#fff;font-weight:600;}
+.v3et-b:disabled{opacity:.45;cursor:default;}
+.v3et-it{display:grid;grid-template-columns:12px minmax(0,1fr) auto;gap:4px 8px;align-items:center;padding:7px 0;border-top:1px solid var(--line);}
+.v3et-it .cor{width:12px;height:12px;border-radius:3px;}
+.v3et-it .nm{font-weight:700;font-size:13px;border:0;background:transparent;font:inherit;font-weight:700;padding:0;min-width:0;width:100%;color:inherit;}
+.v3et-it .vl{font-size:13px;font-weight:700;text-align:right;font-variant-numeric:tabular-nums;}
+.v3et-it .sub{grid-column:2/4;font-size:11.5px;color:var(--gray-2);font-variant-numeric:tabular-nums;}
+.v3et-it .ac{grid-column:2/4;display:flex;flex-wrap:wrap;gap:5px;}
+.v3et-it.sem .nm{font-weight:600;color:var(--gray-2);}
+.v3et-tot{display:flex;justify-content:space-between;padding-top:7px;border-top:1px solid var(--line);font-size:12.5px;font-weight:700;}
 /* pergunta de como aplicar no orçamento -- por cima do viewer */
 #v3Aplicar{position:fixed;inset:0;z-index:1200;background:rgba(10,11,14,.55);display:none;align-items:center;justify-content:center;padding:16px;}
 #v3Aplicar.on{display:flex;}
@@ -2254,7 +2287,7 @@ else comeca();
         <select id="v3Luz" aria-label="Iluminação" title="Iluminação do 3D (a mesma escolha do Leitor DWG)"><option value="dia">Luz do dia</option><option value="estudio">Luz de estúdio</option></select>
         <button type="button" id="v3AmpBtn" title="Ampliar o 3D na tela inteira (Esc fecha)">⛶ Ampliar</button>
         <label class="v3exp" title="Afasta as peças (só a vista: medidas e preço não mudam)">Explodir <input id="v3Expl" type="range" min="0" max="100" value="0" aria-label="Afastar as peças"></label>
-        <button id="v3boxBtn" onclick="v3ToggleBoxSel()" title="Arraste um retângulo para marcar ou desmarcar as linhas de dentro">Seleção<span class="lg"> por área</span></button>
+        <button id="v3boxBtn" onclick="v3ToggleBoxSel()" title="Laço livre: desenhe em volta das linhas para selecionar e montar as etapas. Botão direito move, roda aproxima, botão do meio gira.">Selecionar<span class="lg"> (laço)</span></button>
       </div>
       <div class="v3leg">
         <div><i style="background:#FF6B6B"></i>Pilar</div><div><i style="background:#5BA3FF"></i>Placa</div>
@@ -2282,6 +2315,12 @@ else comeca();
           <div class="v3seg"><button type="button" onclick="v3SelAll(true)" title="Pôr todas as linhas no preço">Todas</button><button type="button" onclick="v3SelAll(false)" title="Tirar todas as linhas do preço">Nenhuma</button></div></div>
         <div class="v3tipos" id="v3TiposSel"></div>
         <button type="button" class="v3rep-btn" id="v3DesmarcaRep" onclick="v3DesmarcaRepetidas()" style="display:none" title="Tira do preço as linhas que são cópia de outra no mesmo lugar">⚠ Desmarcar repetidas</button>
+      </div>
+      <div class="v3cx v3etapas" id="v3Etapas" style="display:none;">
+        <div class="v3selcab"><h4>Etapas</h4>
+          <label class="v3et-cor" title="Pinta cada linha com a cor da etapa"><input type="checkbox" id="v3CorEtapa"> Cor por etapa</label></div>
+        <div class="v3et-sel" id="v3EtSel"></div>
+        <div class="v3et-lista" id="v3EtLista"></div>
       </div>
       <div id="v3vtabs">
         <button class="v3vtab on" id="v3vt-list" onclick="v3SetView('list')">Lista</button>
@@ -2523,7 +2562,7 @@ function v3MatConcreto(tipo,sz,k){
   return new THREE.MeshStandardMaterial({map:t,bumpMap:t,bumpScale:.6,color:new THREE.Color(tom,tom,tom*.995),roughness:.88,metalness:0,envMapIntensity:.55});
 }
 let v3MatAresta=null;
-function v3ArestaRes(){ if(v3MatAresta&&wrap) v3MatAresta.resolution.set(Math.max(1,wrap.clientWidth),Math.max(1,wrap.clientHeight)); }
+function v3ArestaRes(){ if(!wrap) return; [v3MatAresta,typeof v3EtOverMat!=='undefined'?v3EtOverMat:null].forEach(m=>{ if(m) m.resolution.set(Math.max(1,wrap.clientWidth),Math.max(1,wrap.clientHeight)); }); }
 function v3Ilumina(){
   if(!v3Sol||!v3Pm) return;
   const L=V3LUZ[v3LuzAtual()], cx=v3Caixa||new THREE.Box3(new THREE.Vector3(-5,0,-5),new THREE.Vector3(5,3,5));
@@ -2831,6 +2870,7 @@ function v3Explode(k){
   v3Partes.forEach(p=>{ const d=p.c.clone().sub(cen).multiplyScalar(k*1.2); p.itens.forEach(it=>it.o.position.copy(it.p).add(d)); });
   if(v3Forma) v3PecasAplica();
   if(ren) ren.shadowMap.needsUpdate=true;
+  v3EtOverlay();
 }
 {const ex=document.getElementById('v3Expl');if(ex)ex.addEventListener('input',()=>{v3AplicaPara();v3Explode(+ex.value/100);});}
 /* APLICAR PU: a obra recebe o PU como na montagem -- linha por linha, de
@@ -2898,8 +2938,8 @@ function v3Salva(){
   clearTimeout(v3SalvaT);
   v3SalvaT=setTimeout(()=>{ if(!window.v3Guardar||!linhasData.length) return;
     window.v3Guardar({obra:v3Obra, arquivo:v3Arquivo, em:new Date().toISOString(),
-      linhas:linhasData.map(l=>Object.assign({id:l.id,nome:l.nome,tipo:l.tipo,junta:v3TipoJunta(l),ml:l.ml,pt1:l.pt1,pt2:l.pt2,app:l.app||'ext_int',incluir:!!l.incluir},l.manual?{manual:true}:{},l.vao?{vao:true}:{})),
-      pecas:v3PecasDados||null, camera:v3Cam||null, ocultas:[...v3Ocultas]});
+      linhas:linhasData.map(l=>Object.assign({id:l.id,nome:l.nome,tipo:l.tipo,junta:v3TipoJunta(l),ml:l.ml,pt1:l.pt1,pt2:l.pt2,app:l.app||'ext_int',incluir:!!l.incluir},l.manual?{manual:true}:{},l.vao?{vao:true}:{},l.etapa?{etapa:l.etapa}:{})),
+      pecas:v3PecasDados||null, camera:v3Cam||null, ocultas:[...v3Ocultas], etapas:v3Etapas.map(e=>({...e}))});
   },300);
 }
 /* LINHA REPETIDA: duas linhas do mesmo tipo, paralelas, a menos de 5 cm
@@ -3009,6 +3049,10 @@ window.v3LoadJSON=function(json,fname,opc){
   v3PecasDados=Array.isArray(json.pecas)&&json.pecas.length?json.pecas:null;
   v3Cam=json.camera&&Array.isArray(json.camera.eye)&&Array.isArray(json.camera.target)?json.camera:null;
   linhasData=ls.map(l=>v3AjustaJuntaLaje({...l,ml:Number(l.ml)||0,incluir:l.incluir!==false},v3PecasDados));
+  v3EtOver=null;
+  v3Etapas=Array.isArray(json.etapas)?json.etapas.filter(e=>e&&e.id).map(e=>({id:String(e.id),nome:String(e.nome||'Etapa'),cor:String(e.cor||'#888')})):[];
+  v3SelSet=new Set(); v3CorEtapa=v3Etapas.length>0;
+  linhasData.forEach(l=>{ if(l.etapa!=null&&!v3Etapas.some(e=>e.id===l.etapa)) delete l.etapa; });
   v3MarcaRepetidas();
   linhasData.forEach(l=>{l.medDif=v3ConfereMedida(l);});
 
@@ -3215,7 +3259,10 @@ function v3Pinta(o,l){
   l=l||linhasData.find(d=>d.id===o.id); if(!l) return;
   const vis=!!tVis[l.tipo], ativa=l.id===actId;
   o.tubo.visible=vis; o.sph.visible=vis;
-  const cor=new THREE.Color(ativa?CLH:(l.incluir?v3Cor(l):CLFORA)), op=ativa||l.incluir?1:.45;
+  /* selecionada no laço: ciano; com "Cor por etapa", a cor da etapa (sem etapa: cinza) */
+  const et=v3CorEtapa&&l.incluir?(v3Etapas.find(e=>e.id===l.etapa)||null):null;
+  const base=v3SelSet.has(l.id)?CLSEL:(!l.incluir?CLFORA:(v3CorEtapa?(et?new THREE.Color(et.cor).getHex():0x9AA3AD):v3Cor(l)));
+  const cor=new THREE.Color(ativa?CLH:base), op=ativa||l.incluir||v3SelSet.has(l.id)?1:.45;
   o.tubo.material.color.copy(cor); o.tubo.material.opacity=op;
   if(o.ext){ const a=window.v3Lados?window.v3Lados(l.app):{ext:1,int:1};
     o.ext.visible=a.ext>0; o.int.visible=a.int>0;          /* só interno = só a linha de dentro */
@@ -3350,67 +3397,189 @@ window.v3SetView=function(v){
   v3Render();
 };
 
-// ── Seleção por área ──────────────────────────────────────
-let v3BoxMode=false, v3BoxStart=null;
+// ── Seleção livre (laço) e ETAPAS ─────────────────────────
+/* "Esse arquivo é de um muro, tem áreas de grande extensão: precisa de uma
+   forma mais prática de selecionar setores, ou as partes que o terceirizado
+   de PU passou, para gerar as precificações por etapa. Hoje a seleção por
+   área é travada (só retângulo e o 3D parava de girar); precisaria de algo
+   mais livre para selecionar pontos e definir como etapa 1, etapa 2..."
+   Agora: LAÇO livre (desenha a forma que quiser em volta das linhas), sem
+   travar o 3D -- o botão direito move, a roda aproxima, o do meio gira; no
+   celular, dois dedos. Clique numa linha soma/tira só ela. O laço SOMA à
+   seleção; com Alt ou Ctrl (ou "Tirar" no painel) tira. A seleção vira uma
+   ETAPA (Etapa 1, 2...) com nome, cor, metros ext + int e custo; cada linha
+   fica em uma etapa só. As etapas vão junto da obra (nuvem) e saem na
+   medição impressa, em "PU por etapa". Teste pu-3d-etapas. */
+let v3BoxMode=false, v3BoxStart=null, v3LacoPts=null, v3LacoTira=false, v3LacoArrastou=false, v3CtrlBotoes=null;
+let v3Etapas=[], v3SelSet=new Set(), v3CorEtapa=false, v3LacoTiraFixo=false;
 const v3SelBox=document.getElementById('v3sel-box');
+const V3ET_CORES=['#F24619','#2F80ED','#27AE60','#9B51E0','#F2994A','#00A3A3','#D4A72C','#E0457B','#5D6D7E','#8E5A2B'];
+const CLSEL=0x00E5FF;
 
-window.v3ToggleBoxSel=function(){
-  v3BoxMode=!v3BoxMode;
+window.v3ToggleBoxSel=function(forca){
+  v3BoxMode=typeof forca==='boolean'?forca:!v3BoxMode;
   const btn=document.getElementById('v3boxBtn');
   btn.classList.toggle('on',v3BoxMode);
-  btn.innerHTML=v3BoxMode?'Cancelar<span class="lg"> seleção</span>':'Seleção<span class="lg"> por área</span>';
-  if(ctrl){ ctrl.enableRotate=!v3BoxMode; ctrl.enablePan=!v3BoxMode; }
+  btn.innerHTML=v3BoxMode?'Sair<span class="lg"> da seleção</span>':'Selecionar<span class="lg"> (laço)</span>';
+  if(ctrl){
+    if(v3BoxMode){ v3CtrlBotoes={m:{...ctrl.mouseButtons},t:{...ctrl.touches}};
+      ctrl.mouseButtons={LEFT:-1,MIDDLE:THREE.MOUSE.ROTATE,RIGHT:THREE.MOUSE.PAN};
+      ctrl.touches={ONE:-1,TWO:THREE.TOUCH.DOLLY_PAN}; }
+    else if(v3CtrlBotoes){ ctrl.mouseButtons=v3CtrlBotoes.m; ctrl.touches=v3CtrlBotoes.t; v3CtrlBotoes=null; }
+    ctrl.enableRotate=true; ctrl.enablePan=true; }
   document.getElementById('v3nav').textContent=v3BoxMode
-    ?'Arraste um retângulo: as linhas de dentro trocam de marcado · Shift marca todas · Esc cancela'
+    ?'Desenhe em volta das linhas: o laço soma · Alt/Ctrl tira · clique numa linha soma ou tira · botão direito move · roda aproxima · botão do meio gira · Esc sai'
     :'Arrastar gira · roda do mouse aproxima · botão direito move · clique na linha ou na peça seleciona';
+  v3EtapasRender();
 };
 
 document.addEventListener('keydown',e=>{
   if(e.key!=='Escape') return;
-  if(v3BoxMode){ v3BoxStart=null; v3SelBox.style.display='none'; window.v3ToggleBoxSel(); return; }
+  if(v3BoxMode){ v3LacoPts=null; v3LacoDesenha(); window.v3ToggleBoxSel(false); return; }
   /* Esc fecha o 3D (menos com a pergunta de aplicar aberta por cima) */
   const ap=document.getElementById('v3Aplicar');
   if(ap&&ap.classList.contains('on')){ ap.classList.remove('on'); return; }
   if(document.getElementById('viewer3d').classList.contains('active')) fecharViewer3D();
 });
 
+function v3LacoSvg(){
+  let sv=document.getElementById('v3laco');
+  if(!sv&&wrap){ sv=document.createElementNS('http://www.w3.org/2000/svg','svg'); sv.id='v3laco';
+    sv.appendChild(document.createElementNS('http://www.w3.org/2000/svg','polygon')); wrap.appendChild(sv); }
+  return sv;
+}
+function v3LacoDesenha(){
+  const sv=v3LacoSvg(); if(!sv) return;
+  if(!v3LacoPts||v3LacoPts.length<2){ sv.style.display='none'; return; }
+  sv.style.display='block'; sv.classList.toggle('tira',v3LacoTira);
+  sv.firstChild.setAttribute('points',v3LacoPts.map(p=>p[0].toFixed(1)+','+p[1].toFixed(1)).join(' '));
+}
+function v3DentroPoli(x,y,P){
+  let d=false; for(let i=0,j=P.length-1;i<P.length;j=i++){
+    const [xi,yi]=P[i],[xj,yj]=P[j];
+    if(((yi>y)!==(yj>y))&&(x<(xj-xi)*(y-yi)/(yj-yi||1e-9)+xi)) d=!d; }
+  return d;
+}
+/* aplica um laço (pontos em px dentro do 3D): soma ou tira da seleção as
+   linhas visíveis cujo meio cai dentro dele */
+function v3LacoAplica(P,tira){
+  if(!wrap||!P||P.length<3) return 0;
+  const rect=wrap.getBoundingClientRect(); let n=0;
+  objs.forEach(o=>{ const l=linhasData.find(d=>d.id===o.id); if(!l||!o.sph.visible) return;
+    const q=o.sph.getWorldPosition(new THREE.Vector3()).project(cam); if(q.z>1||q.z<-1) return;
+    const x=(q.x+1)/2*rect.width, y=(1-q.y)/2*rect.height;
+    if(v3DentroPoli(x,y,P)){ if(tira) v3SelSet.delete(l.id); else v3SelSet.add(l.id); n++; } });
+  objs.forEach(o=>v3Pinta(o)); v3EtapasRender(); return n;
+}
+window.v3LacoAplica=v3LacoAplica;
+
 function initV3BoxSel(canvas){
   canvas.addEventListener('pointerdown',e=>{
-    if(!v3BoxMode||e.button!==0)return;
+    if(!v3BoxMode||e.button!==0||!wrap||v3Trena.on)return;
     try{ canvas.setPointerCapture(e.pointerId); }catch(_){}
-    e.stopPropagation();
-    v3BoxStart={x:e.clientX,y:e.clientY};
-    v3SelBox.style.cssText=`display:block;left:${e.clientX}px;top:${e.clientY}px;width:0;height:0;`;
+    const r=wrap.getBoundingClientRect();
+    v3LacoPts=[[e.clientX-r.left,e.clientY-r.top]]; v3LacoTira=v3LacoTiraFixo||e.altKey||e.ctrlKey||e.metaKey; v3LacoArrastou=false;
   });
   canvas.addEventListener('pointermove',e=>{
-    if(!v3BoxMode||!v3BoxStart)return;
-    const x=Math.min(e.clientX,v3BoxStart.x),y=Math.min(e.clientY,v3BoxStart.y);
-    v3SelBox.style.left=x+'px'; v3SelBox.style.top=y+'px';
-    v3SelBox.style.width=Math.abs(e.clientX-v3BoxStart.x)+'px';
-    v3SelBox.style.height=Math.abs(e.clientY-v3BoxStart.y)+'px';
+    if(!v3BoxMode||!v3LacoPts)return;
+    const r=wrap.getBoundingClientRect(), p=[e.clientX-r.left,e.clientY-r.top], u=v3LacoPts[v3LacoPts.length-1];
+    if(Math.hypot(p[0]-u[0],p[1]-u[1])<3) return;
+    v3LacoPts.push(p); if(v3LacoPts.length>3) v3LacoArrastou=true; v3LacoDesenha();
   });
-  canvas.addEventListener('pointerup',e=>{
-    if(!v3BoxMode||!v3BoxStart)return;
-    const r={x1:Math.min(e.clientX,v3BoxStart.x),y1:Math.min(e.clientY,v3BoxStart.y),
-             x2:Math.max(e.clientX,v3BoxStart.x),y2:Math.max(e.clientY,v3BoxStart.y)};
-    v3BoxStart=null; v3SelBox.style.display='none';
-    if(r.x2-r.x1<5||r.y2-r.y1<5)return;
-    if(!wrap)return;
-    const rect=wrap.getBoundingClientRect();
-    const forceIn=e.shiftKey;
-    linhasData.forEach(l=>{
-      const o=objs.find(x=>x.id===l.id); if(!o||!tVis[l.tipo])return;
-      const mid=o.sph.position.clone().project(cam);
-      const sx=rect.left+(mid.x+1)/2*rect.width;
-      const sy=rect.top+(1-(mid.y+1)/2)*rect.height;
-      if(sx>=r.x1&&sx<=r.x2&&sy>=r.y1&&sy<=r.y2){
-        l.incluir=forceIn?true:!l.incluir;
-        v3Pinta(o,l);
-      }
-    });
-    v3Render(); v3Calc(); v3Salva();
-  });
+  const fim=()=>{
+    if(!v3BoxMode||!v3LacoPts)return;
+    const P=v3LacoPts; v3LacoPts=null; v3LacoDesenha();
+    if(v3LacoArrastou&&P.length>=3) v3LacoAplica(P,v3LacoTira);
+  };
+  canvas.addEventListener('pointerup',fim);
+  canvas.addEventListener('pointercancel',()=>{ v3LacoPts=null; v3LacoDesenha(); });
 }
+
+/* ---- etapas ---- */
+/* As etapas e a seleção também saem POR CIMA, em traço de espessura fixa na
+   tela: numa obra de 500 m a linha fina do PU some de longe, e a cor da
+   etapa tem de aparecer em qualquer zoom (e por trás do concreto). */
+let v3EtOver=null, v3EtOverMat=null;
+function v3EtOverlay(){
+  if(v3EtOver){ if(v3EtOver.parent) v3EtOver.parent.remove(v3EtOver); v3EtOver.geometry.dispose(); v3EtOver=null; }
+  if(!v3Cena) return;
+  const pos=[],col=[],c=new THREE.Color();
+  objs.forEach(o=>{ const l=linhasData.find(d=>d.id===o.id); if(!l||!o.tubo.visible) return;
+    const sel=v3SelSet.has(l.id), et=v3CorEtapa&&l.incluir?v3Etapas.find(e=>e.id===l.etapa):null;
+    if(!sel&&!et) return;
+    c.set(sel?CLSEL:et.cor); o.tubo.updateWorldMatrix(true,false);
+    const h=o.len/2, a=new THREE.Vector3(0,-h,0).applyMatrix4(o.tubo.matrixWorld), b=new THREE.Vector3(0,h,0).applyMatrix4(o.tubo.matrixWorld);
+    pos.push(a.x,a.y,a.z,b.x,b.y,b.z); col.push(c.r,c.g,c.b,c.r,c.g,c.b); });
+  if(!pos.length) return;
+  if(!v3EtOverMat){ v3EtOverMat=new LineMaterial({vertexColors:true,linewidth:3.5,transparent:true,depthTest:false}); v3EtOverMat.toneMapped=false; }
+  v3ArestaRes();
+  const g=new LineSegmentsGeometry(); g.setPositions(pos); g.setColors(col);
+  v3EtOver=new LineSegments2(g,v3EtOverMat); v3EtOver.renderOrder=999; v3EtOver.userData.etapas=true; v3Cena.add(v3EtOver);
+}
+function v3EtCor(et){ return et&&et.cor||'#888'; }
+function v3EtNova(ids){
+  const n=v3Etapas.length+1; let k=n; while(v3Etapas.some(e=>e.nome==='Etapa '+k)) k++;
+  const id='et'+Date.now().toString(36)+Math.random().toString(36).slice(2,5);
+  const et={id,nome:'Etapa '+k,cor:V3ET_CORES[(n-1)%V3ET_CORES.length]};
+  v3Etapas.push(et); if(ids) v3EtPoe(et.id,ids); return et;
+}
+function v3EtPoe(etId,ids){ ids.forEach(id=>{ const l=linhasData.find(d=>d.id===id); if(!l) return; if(etId) l.etapa=etId; else delete l.etapa; }); }
+function v3EtTotais(ls){
+  const pr=window.v3Precos?window.v3Precos():{ext:2,int:2}; let mE=0,mI=0,n=0;
+  ls.forEach(l=>{ if(!l.incluir) return; const a=window.v3Lados?window.v3Lados(l.app):{ext:1,int:1}; mE+=l.ml*a.ext; mI+=l.ml*a.int; n++; });
+  return {n,mE,mI,ml:mE+mI,custo:mE*pr.ext+mI*pr.int};
+}
+window.v3EtapasResumo=function(){
+  const r=v3Etapas.map(e=>Object.assign({id:e.id,nome:e.nome,cor:e.cor},v3EtTotais(linhasData.filter(l=>l.etapa===e.id))));
+  return {etapas:r,sem:v3EtTotais(linhasData.filter(l=>!l.etapa)),sel:v3SelSet.size};
+};
+function v3EtapasRender(){
+  const box=document.getElementById('v3Etapas'); if(!box) return;
+  v3EtOverlay();
+  box.style.display=linhasData.length?'':'none'; if(!linhasData.length) return;
+  const f=v=>v.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+  const sel=linhasData.filter(l=>v3SelSet.has(l.id)), ts=v3EtTotais(sel), mlSel=sel.reduce((s2,l)=>s2+l.ml,0);
+  const es=document.getElementById('v3EtSel');
+  es.innerHTML='<div class="lin"><span class="ct">'+sel.length+' linha'+(sel.length===1?'':'s')+' selecionada'+(sel.length===1?'':'s')+'</span>'
+    +(sel.length?'<span>· '+f(mlSel)+' m · ext + int '+f(ts.ml)+' m</span>':'')+'</div>'
+    +'<div class="lin">'+(v3BoxMode?'<span class="seg" role="group" aria-label="O laço"><button type="button" data-laco="soma"'+(v3LacoTiraFixo?'':' class="on"')+'>Somar</button><button type="button" data-laco="tira"'+(v3LacoTiraFixo?' class="on"':'')+'>Tirar</button></span>'
+      :'<button type="button" class="v3et-b" data-et="laco">Selecionar (laço)</button>')
+    +'<button type="button" class="v3et-b pri" data-et="nova"'+(sel.length?'':' disabled')+'>Nova etapa com a seleção</button>'
+    +'<button type="button" class="v3et-b" data-et="limpa"'+(sel.length?'':' disabled')+'>Limpar seleção</button></div>';
+  const R=window.v3EtapasResumo();
+  const lista=document.getElementById('v3EtLista');
+  lista.innerHTML=R.etapas.map(e=>'<div class="v3et-it" data-id="'+escapeHtml(e.id)+'"><span class="cor" style="background:'+escapeHtml(e.cor)+'"></span>'
+      +'<input class="nm" value="'+escapeHtml(e.nome)+'" aria-label="Nome da etapa" maxlength="40"><span class="vl">R$ '+f(e.custo)+'</span>'
+      +'<span class="sub">'+e.n+' linha'+(e.n===1?'':'s')+' · ext '+f(e.mE)+' m + int '+f(e.mI)+' m = '+f(e.ml)+' m</span>'
+      +'<span class="ac"><button type="button" class="v3et-b" data-a="sel">Selecionar</button><button type="button" class="v3et-b" data-a="poe"'+(sel.length?'':' disabled')+'>+ seleção</button><button type="button" class="v3et-b" data-a="exc" title="Excluir a etapa (as linhas ficam sem etapa)">Excluir</button></span></div>').join('')
+    +(R.etapas.length?'<div class="v3et-it sem"><span class="cor" style="background:#9AA3AD"></span><span class="nm">Sem etapa</span><span class="vl">R$ '+f(R.sem.custo)+'</span><span class="sub">'+R.sem.n+' linha'+(R.sem.n===1?'':'s')+' no preço · '+f(R.sem.ml)+' m</span></div>'
+      +'<div class="v3et-tot"><span>Total das etapas</span><span>R$ '+f(R.etapas.reduce((s2,e)=>s2+e.custo,0))+'</span></div>':'');
+  const cb=document.getElementById('v3CorEtapa'); if(cb) cb.checked=v3CorEtapa;
+}
+document.addEventListener('click',e=>{
+  const b=e.target.closest('#v3Etapas button'); if(!b) return;
+  const it=b.closest('.v3et-it'), id=it&&it.dataset.id;
+  if(b.dataset.laco){ v3LacoTiraFixo=b.dataset.laco==='tira'; v3EtapasRender(); return; }
+  const a=b.dataset.et||b.dataset.a;
+  if(a==='laco'){ window.v3ToggleBoxSel(true); return; }
+  if(a==='nova'){ if(!v3SelSet.size) return; v3EtNova([...v3SelSet]); v3SelSet.clear(); v3CorEtapa=true; }
+  else if(a==='limpa'){ v3SelSet.clear(); }
+  else if(a==='sel'){ v3SelSet=new Set(linhasData.filter(l=>l.etapa===id).map(l=>l.id)); }
+  else if(a==='poe'){ v3EtPoe(id,[...v3SelSet]); v3SelSet.clear(); }
+  else if(a==='exc'){ const et=v3Etapas.find(x=>x.id===id); if(!et||!confirm('Excluir a '+et.nome+'? As linhas dela ficam sem etapa.')) return;
+    linhasData.forEach(l=>{ if(l.etapa===id) delete l.etapa; }); v3Etapas=v3Etapas.filter(x=>x.id!==id); }
+  objs.forEach(o=>v3Pinta(o)); v3EtapasRender(); v3Salva();
+});
+document.addEventListener('change',e=>{
+  if(e.target.id==='v3CorEtapa'){ v3CorEtapa=e.target.checked; objs.forEach(o=>v3Pinta(o)); v3EtOverlay(); return; }
+  const nm=e.target.closest('#v3Etapas .v3et-it input.nm'); if(!nm) return;
+  const et=v3Etapas.find(x=>x.id===nm.closest('.v3et-it').dataset.id); if(!et) return;
+  et.nome=nm.value.trim()||et.nome; v3EtapasRender(); v3Salva();
+});
+window.__v3Etapas={sel:()=>[...v3SelSet],etapas:()=>v3Etapas.map(e=>({...e,ids:linhasData.filter(l=>l.etapa===e.id).map(l=>l.id)})),
+  laco:(pts,tira)=>v3LacoAplica(pts,tira),modo:()=>({on:v3BoxMode,botoes:ctrl?{...ctrl.mouseButtons}:null,rotate:ctrl?ctrl.enableRotate:null}),
+  traco:()=>v3EtOver?{n:v3EtOver.geometry.attributes.instanceStart.count,px:v3EtOverMat.linewidth}:{n:0},
+  cor:id=>{ const o=objs.find(x=>x.id===id); return o&&o.ext?'#'+o.ext.material.color.getHexString():''; }};
 
 window.v3Toggle=function(t,btn){
   tVis[t]=!tVis[t]; btn.classList.toggle('off',!tVis[t]);
@@ -3526,6 +3695,7 @@ function v3Calc(){
   document.getElementById('v3Cnt').textContent=inc.length+' / '+linhasData.length;
   document.getElementById('v3ML').textContent=f(mE+mI)+' m';
   document.getElementById('v3Custo').textContent='R$ '+f(mE*pr.ext+mI*pr.int);
+  v3EtapasRender();
 }
 window.v3Calc=v3Calc;
 
@@ -3692,11 +3862,15 @@ function onHov(ev){
 function onClk(ev){
   if(!wrap) return;
   if(v3Trena.on){ v3TrenaClique(ev); return; }
+  if(v3BoxMode&&v3LacoArrastou){ v3LacoArrastou=false; return; }   /* fim de um laço, não é clique */
   const rect=wrap.getBoundingClientRect();
   mouse.x=((ev.clientX-rect.left)/rect.width)*2-1;
   mouse.y=-((ev.clientY-rect.top)/rect.height)*2+1;
   ray.setFromCamera(mouse,cam);
   const hits=ray.intersectObjects(objs.filter(o=>o.sph.visible).map(o=>o.sph));
+  if(v3BoxMode){ /* no laço, o clique soma ou tira só esta linha */
+    if(hits.length){ const id=hits[0].object.userData.id; if(v3SelSet.has(id)) v3SelSet.delete(id); else v3SelSet.add(id); objs.forEach(o=>v3Pinta(o)); v3EtapasRender(); }
+    return; }
   if(hits.length){ v3Sel(hits[0].object.userData.id); return; }
   const pk=v3PecaNoRaio(); v3PecaSel(pk);
 }
@@ -3920,7 +4094,7 @@ async function fbRemove(path){
     document.getElementById('viewer3d').classList.add('active');
     /* a obra já tem linhas guardadas: abre o 3D como ficou da última vez */
     if(linhas3d && Array.isArray(linhas3d.linhas) && linhas3d.linhas.length && window.v3LoadJSON){
-      window.v3LoadJSON({obra:linhas3d.obra||'',linhas:linhas3d.linhas,pecas:linhas3d.pecas||null,camera:linhas3d.camera||null,ocultas:linhas3d.ocultas||[]}, linhas3d.arquivo||'', {restaura:true});
+      window.v3LoadJSON({obra:linhas3d.obra||'',linhas:linhas3d.linhas,pecas:linhas3d.pecas||null,camera:linhas3d.camera||null,ocultas:linhas3d.ocultas||[],etapas:linhas3d.etapas||[]}, linhas3d.arquivo||'', {restaura:true});
       return;
     }
     document.getElementById('v3d-list').style.display='none';
@@ -3928,7 +4102,7 @@ async function fbRemove(path){
     document.getElementById('v3d-sel').style.display='none';
     if(window.v3BotoesArquivo) window.v3BotoesArquivo();
   }
-  window.v3Guardar = function(d){ linhas3d = d; persist(); };
+  window.v3Guardar = function(d){ linhas3d = d; persist(); try{ renderEtapasMed(); }catch(_){} };
   window.v3Esquecer = function(){ linhas3d = null; persist(); };
   window.v3Precos  = function(){ return { ext: val('custoExt'), int: val('custoInt') }; };
   window.v3Lados   = function(app){ const a = APP[app] || APP.ext_int; return { ext: a.ext, int: a.int }; };
@@ -4149,6 +4323,23 @@ async function fbRemove(path){
   function removerElemento(i){ elementos.splice(i,1); if(editIndex===i){editIndex=null;$('addBtn').textContent='+ Adicionar';$('addBtn').classList.replace('btn-red','btn-gray');} render(); }
   function limparElementos(){ if(elementos.length && confirm('Remover todos os elementos cadastrados?')){ elementos=[]; render(); } }
 
+  /* PU POR ETAPA: as etapas marcadas no 3D (laço) saem aqui, na tela e no
+     papel, com os metros ext/int e o custo de cada uma pelo preço da obra --
+     é o que se paga ao terceirizado por etapa. Teste pu-3d-etapas. */
+  function renderEtapasMed(){
+    const sec=$('secEtapas'), tb=$('etBody'); if(!sec||!tb) return;
+    const ets=linhas3d&&Array.isArray(linhas3d.etapas)?linhas3d.etapas:[], ls=linhas3d&&Array.isArray(linhas3d.linhas)?linhas3d.linhas:[];
+    sec.hidden=!ets.length; if(!ets.length){ tb.innerHTML=''; return; }
+    const pe=val('custoExt'), pi=val('custoInt');
+    const soma=f=>{ let n=0,e=0,i=0; ls.forEach(l=>{ if(l.incluir===false||!f(l)) return; const a=APP[l.app]||APP.ext_int; n++; e+=(Number(l.ml)||0)*a.ext; i+=(Number(l.ml)||0)*a.int; }); return {n,e,i,c:e*pe+i*pi}; };
+    const lin=(nome,cor,t,cls)=>'<tr class="'+(cls||'')+'"><td>'+(cor?'<span class="et-cor" style="background:'+escapeHtml(cor)+'"></span>':'')+escapeHtml(nome)+'</td><td class="num">'+t.n+'</td><td class="num">'+numBR(t.e)+'</td><td class="num">'+numBR(t.i)+'</td><td class="num">'+numBR(t.e+t.i)+'</td><td class="num money">'+brl(t.c)+'</td></tr>';
+    let h='', T={n:0,e:0,i:0,c:0};
+    ets.forEach(et=>{ const t=soma(l=>l.etapa===et.id); T.n+=t.n; T.e+=t.e; T.i+=t.i; T.c+=t.c; h+=lin(et.nome,et.cor,t); });
+    const sem=soma(l=>!l.etapa||!ets.some(e=>e.id===l.etapa));
+    if(sem.n) h+=lin('Sem etapa','#9AA3AD',sem,'et-sem');
+    h+='<tr class="et-tot"><td><b>Total das etapas</b></td><td class="num"><b>'+T.n+'</b></td><td class="num"><b>'+numBR(T.e)+'</b></td><td class="num"><b>'+numBR(T.i)+'</b></td><td class="num"><b>'+numBR(T.e+T.i)+'</b></td><td class="num money"><b>'+brl(T.c)+'</b></td></tr>';
+    tb.innerHTML=h;
+  }
   /* Tipo de aplicação que o sistema não conhece (arquivo importado de outra
      versão): conta como Ext + Int e a lista avisa, em vez de sumir inteira.
      Teste pu-medicao-dinheiro. */
@@ -4180,6 +4371,7 @@ async function fbRemove(path){
   /* ---------- Render ---------- */
   function render(){
     let tExt=0,tInt=0,tTot=0,tCusto=0;
+    renderEtapasMed();
     appCorrige(); const nAntes = elementos.filter(e=>e&&e.appOrig!=null).length;
     const body=$('elBody'); body.innerHTML='';
     if(nAntes) body.insertAdjacentHTML('beforeend','<tr class="app-aviso"><td colspan="7">⚠ '+nAntes+' item(ns) com tipo de aplicação desconhecido ('+escapeHtml([...new Set(elementos.filter(e=>e.appOrig!=null).map(e=>String(e.appOrig)))].join(', '))+') contado(s) como Ext + Int. Confira e edite se precisar.</td></tr>');
