@@ -242,6 +242,7 @@
 
   /* ---------- Grupos colapsáveis ---------- */
   .grp-hdr{background:#F4F5F7;cursor:pointer;user-select:none;}
+  .app-aviso td{background:#FFF4E5;color:#8A4B00;font-size:12.5px;font-weight:600;}
   .grp-hdr:hover{background:#ECEEF2;}
   .grp-hdr td{padding:9px 10px!important;}
   .grp-arrow{display:inline-block;width:14px;font-size:11px;color:var(--gray);transition:transform .15s;}
@@ -2102,6 +2103,8 @@ else comeca();
 .v3tb.off{opacity:.4;text-decoration:line-through;}
 .v3tb:hover,.v3sel-btn:hover{border-color:var(--gray-2);}
 #viewer3d .v3leg i.fina{height:3px;width:14px;border-radius:2px;background:#cfd4da;}
+#viewer3d .v3leg i.dupla{height:8px;width:16px;border-radius:0;background:linear-gradient(#5BA3FF 0 2px,transparent 2px 6px,#ADD1FF 6px 8px);}
+#viewer3d .v3lados-txt{color:#8A93A0;}
 /* seleção para o preço: Todas/Nenhuma em segmento, e um contador por tipo */
 .v3selcab{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px;}
 .v3selcab h4{margin:0!important;}
@@ -2256,7 +2259,7 @@ else comeca();
       <div class="v3leg">
         <div><i style="background:#FF6B6B"></i>Pilar</div><div><i style="background:#5BA3FF"></i>Placa</div>
         <div><i style="background:#4CD98A"></i>Viga</div><div><i style="background:#B66BFF"></i>PU inferior da laje</div><div><i style="background:#FFB020"></i>Repetida</div>
-        <div><i style="background:#69717B"></i>Fora do preço</div><div><i class="fina"></i>Só interno</div>
+        <div><i style="background:#69717B"></i>Fora do preço</div><div class="v3leg-lados" title="Cada junta mostra as duas linhas que entram no cálculo: a de fora (cor cheia) é o PU externo e a de dentro (cor clara) o interno. Só interno: só a clara."><i class="dupla"></i>Ext (cheia) + Int (clara)</div>
       </div>
       <div id="v3nav">Arrastar gira · roda do mouse aproxima · botão direito move · clique na linha ou na peça seleciona</div>
       <div id="v3tip"></div>
@@ -2783,6 +2786,9 @@ window.__v3Teste={cena:()=>({...v3HudInfo}),
     caixas:v3PecasGrp?v3PecasGrp.children.filter(o=>o.isMesh&&!o.isLineSegments2).length:0,
     botoes:[...document.querySelectorAll('#v3Camadas [data-cam]')].map(b=>b.dataset.cam+(b.classList.contains('on')?'*':''))}:null,
   concreto:()=>!!(v3PecasGrp&&v3PecasGrp.children.some(o=>o.isMesh&&!o.isLineSegments2&&o.material.bumpMap&&o.material.metalness===0&&!o.material.transparent)),
+  lados:()=>objs.map(o=>{ const w=x=>x.getWorldPosition(new THREE.Vector3()); return {id:o.id,ext:!!(o.ext&&o.ext.visible),int:!!(o.int&&o.int.visible),juntaDesenha:o.tubo.material.visible,
+    raio:o.ext?o.ext.geometry.parameters.radiusTop:0,afast:o.ext?w(o.ext).distanceTo(w(o.int)):0,extFora:o.ext?w(o.ext).distanceTo(v3CentroLinhas())>w(o.int).distanceTo(v3CentroLinhas()):null,
+    corExt:o.ext?'#'+o.ext.material.color.getHexString():'',corInt:o.int?'#'+o.int.material.color.getHexString():''}; }),
   dados:()=>linhasData.map(l=>({id:l.id,nome:l.nome,tipo:l.tipo,ml:l.ml,app:l.app,junta:v3TipoJunta(l)})),
   trena:()=>({on:v3Trena.on,medidas:v3Trena.lista.map(m=>v3TrenaMm(m.a,m.b)),hov:v3Trena.hov&&v3Trena.hov.tipo,aberta:!!v3Trena.a}),
   tela:pt=>{ if(!cam||!wrap) return null; const r=wrap.getBoundingClientRect(), q=v3(pt).project(cam); return [r.left+(q.x+1)/2*r.width, r.top+(1-q.y)/2*r.height]; },linhas:()=>objs.map(o=>Array.from(o.line.geometry.attributes.position.array)),
@@ -3057,7 +3063,8 @@ window.v3LoadJSON=function(json,fname,opc){
 
   /* linha de PU = tubo (a linha de 1 pixel quase não aparecia) + um cilindro
      invisível mais grosso para o clique pegar com folga */
-  v3Raio=Math.min(Math.max(diag/650,.02),.14);
+  /* linha fina: antes diag/650 (até 14 cm de raio numa obra grande) */
+  v3Raio=Math.min(Math.max(diag/2500,.008),.035);
   linhasData.forEach(v3CriaObj);
   v3SemTom(v3Cena); v3Ilumina(); v3MontaPartes();
   v3PosLinhas(json,fname,opc);
@@ -3101,9 +3108,17 @@ function v3CortaVaos(){
   });
   if(!cortes) return {n:0,ml:0};
   /* refaz os tubos das linhas */
-  objs.forEach(o=>[o.line,o.tubo,o.sph].forEach(x=>{ if(x.parent) x.parent.remove(x); x.geometry.dispose(); }));
+  objs.forEach(o=>[o.line,o.tubo,o.ext,o.int,o.sph].forEach(x=>{ if(!x) return; if(x.parent) x.parent.remove(x); x.geometry.dispose(); }));
   objs=[]; linhasData=out; linhasData.forEach(v3CriaObj); v3SemTom(v3Cena); objs.forEach(o=>v3Pinta(o)); v3MontaPartes(); v3Render(); v3Calc();
   return {n:cortes,ml:Math.round(tirado*100)/100};
+}
+/* meio da obra em planta (para saber qual lado da junta é o de fora) */
+let v3CentroCache=null;
+function v3CentroLinhas(){
+  if(v3CentroCache&&v3CentroCache.dados===linhasData&&v3CentroCache.n===linhasData.length) return v3CentroCache.c;
+  const b=new THREE.Box3(); linhasData.forEach(l=>{ b.expandByPoint(v3(l.pt1)); b.expandByPoint(v3(l.pt2)); });
+  const c=b.isEmpty()?new THREE.Vector3():b.getCenter(new THREE.Vector3());
+  v3CentroCache={dados:linhasData,n:linhasData.length,c}; return c;
 }
 function v3CriaObj(l){
     const raio=v3Raio, cima=new THREE.Vector3(0,1,0);
@@ -3114,11 +3129,27 @@ function v3CriaObj(l){
     const len=Math.max(p1.distanceTo(p2),.001), mid=new THREE.Vector3().addVectors(p1,p2).multiplyScalar(.5);
     const q=new THREE.Quaternion().setFromUnitVectors(cima,new THREE.Vector3().subVectors(p2,p1).normalize());
     const rr=l.rep?raio*1.7:raio;   /* a repetida fica por cima da original */
-    const tubo=new THREE.Mesh(new THREE.CylinderGeometry(rr,rr,len,10),new THREE.MeshBasicMaterial({color:v3Cor(l),transparent:true}));
+    /* DUAS LINHAS: "as linhas são muito grossas, e falta um detalhe a mais pra
+       ver se o sistema está calculando 2 linhas ext e int". O tubo da junta
+       (o.tubo) não se desenha mais: ele é o lugar da junta, que a animação,
+       a vista explodida e os rótulos usam. Dentro dele vão duas linhas finas,
+       lado a lado, na horizontal e de través à junta: a de FORA (cor cheia,
+       do lado oposto ao meio da obra) é o PU externo e a de DENTRO (cor
+       clara) o interno. Só interno: só a de dentro. Teste pu-3d-linha-dupla. */
+    const tubo=new THREE.Mesh(new THREE.CylinderGeometry(rr,rr,len,10),new THREE.MeshBasicMaterial({color:v3Cor(l),transparent:true,visible:false}));
     tubo.position.copy(mid); tubo.quaternion.copy(q); v3Cena.add(tubo);
-    const sph=new THREE.Mesh(new THREE.CylinderGeometry(raio*4,raio*4,len,6),new THREE.MeshBasicMaterial({visible:false}));
+    const d=new THREE.Vector3().subVectors(p2,p1).normalize(), C=v3CentroLinhas();
+    let n=Math.abs(d.y)>.9?new THREE.Vector3(mid.x-C.x,0,mid.z-C.z):new THREE.Vector3().crossVectors(d,cima);
+    if(n.lengthSq()<1e-9) n.set(1,0,0); n.normalize();
+    if(Math.abs(d.y)<=.9&&n.x*(mid.x-C.x)+n.z*(mid.z-C.z)<0) n.negate();   /* a de fora: longe do meio da obra */
+    const off=Math.max(raio*3,.05), nl=n.clone().applyQuaternion(q.clone().invert());
+    const mk=f=>{ const m=new THREE.Mesh(new THREE.CylinderGeometry(rr,rr,len,8),new THREE.MeshBasicMaterial({color:v3Cor(l),transparent:true}));
+      m.position.copy(nl).multiplyScalar(f*off); tubo.add(m); return m; };
+    const ext=mk(1), int=mk(-1);
+    const pr=Math.max(raio*6,off*1.6);
+    const sph=new THREE.Mesh(new THREE.CylinderGeometry(pr,pr,len,6),new THREE.MeshBasicMaterial({visible:false}));
     sph.position.copy(mid); sph.quaternion.copy(q); sph.userData={id:l.id}; v3Cena.add(sph);
-    objs.push({id:l.id,line,tubo,sph,len});
+    objs.push({id:l.id,line,tubo,ext,int,sph,len,off});
 }
 function v3PosLinhas(json,fname,opc){
   document.getElementById('v3vSk').style.display=v3Cam?'':'none';
@@ -3184,9 +3215,12 @@ function v3Pinta(o,l){
   l=l||linhasData.find(d=>d.id===o.id); if(!l) return;
   const vis=!!tVis[l.tipo], ativa=l.id===actId;
   o.tubo.visible=vis; o.sph.visible=vis;
-  const f=l.app==='int1'?.5:1; o.tubo.scale.set(f,1,f);   /* só interno = linha fina */
-  o.tubo.material.color.set(ativa?CLH:(l.incluir?v3Cor(l):CLFORA));
-  o.tubo.material.opacity=ativa||l.incluir?1:.45;
+  const cor=new THREE.Color(ativa?CLH:(l.incluir?v3Cor(l):CLFORA)), op=ativa||l.incluir?1:.45;
+  o.tubo.material.color.copy(cor); o.tubo.material.opacity=op;
+  if(o.ext){ const a=window.v3Lados?window.v3Lados(l.app):{ext:1,int:1};
+    o.ext.visible=a.ext>0; o.int.visible=a.int>0;          /* só interno = só a linha de dentro */
+    o.ext.material.color.copy(cor); o.int.material.color.copy(ativa?cor:cor.clone().lerp(new THREE.Color(0xFFFFFF),.5));
+    o.ext.material.opacity=op; o.int.material.opacity=op; }
   o.line.material.color.set(ativa?CLH:v3Cor(l));
 }
 const CLREP=0xFFB020;
@@ -3221,6 +3255,12 @@ function v3LadoHTML(atual,laje=false){
 function v3LigaLado(no,ls){
   no.querySelectorAll('[data-lado]').forEach(bt=>bt.addEventListener('click',e=>{ e.stopPropagation(); v3PoeLado(ls,bt.getAttribute('data-lado')); }));
 }
+/* o que a linha soma no cálculo: "ext + int = 2 × 3,00 m" ou "só int" */
+function v3LadosTxt(l){
+  const a=window.v3Lados?window.v3Lados(l.app):{ext:1,int:1}, n=a.ext+a.int;
+  const q=[a.ext?(a.ext>1?a.ext+' ext':'ext'):'',a.int?(a.int>1?a.int+' int':'int'):''].filter(Boolean).join(' + ');
+  return ' · <span class="v3lados-txt">'+(a.ext?q:'só int')+(n>1?' = '+n+' × '+v3m(l.ml)+' = '+v3m(l.ml*n):'')+'</span>';
+}
 function v3Linha(l,comTipo){
   const r=document.createElement('div');
   r.className='v3er'+(l.id===actId?' hl':'')+(l.incluir?'':' ex');
@@ -3228,7 +3268,7 @@ function v3Linha(l,comTipo){
   r.innerHTML=`<input type="checkbox" class="v3ecb" ${l.incluir?'checked':''} aria-label="No preço">
     <span class="v3cor" style="background:${v3CorCSS(l)}"></span>
     <div class="v3ei"><div class="v3en" title="${escapeHtml(l.nome)}">${escapeHtml(l.nome)}</div>
-      <div class="v3em">${comTipo?l.tipo+' · ':''}${v3m(l.ml)}${l.manual?' · <span class="v3man">manual</span>':''}${l.vao?' · <span class="v3man">sem o vão</span>':''}</div>${v3Avisos(l)}</div>
+      <div class="v3em">${comTipo?l.tipo+' · ':''}${v3m(l.ml)}${v3LadosTxt(l)}${l.manual?' · <span class="v3man">manual</span>':''}${l.vao?' · <span class="v3man">sem o vão</span>':''}</div>${v3Avisos(l)}</div>
     ${v3LadoHTML(v3LadoDe(l),v3TipoJunta(l)==='laje_inferior')}${l.manual?'<button type="button" class="v3apaga" title="Apagar esta linha manual" aria-label="Apagar linha manual">✕</button>':''}`;
   const del=r.querySelector('.v3apaga'); if(del) del.addEventListener('click',e=>{ e.stopPropagation(); v3ApagaLinha(l.id); });
   const cb=r.querySelector('.v3ecb');
@@ -3553,7 +3593,7 @@ function v3NovaLinha(a,b,tipo){
 function v3ApagaLinha(id){
   const i=linhasData.findIndex(l=>l.id===id&&l.manual); if(i<0) return;
   linhasData.splice(i,1); const k=objs.findIndex(o=>o.id===id);
-  if(k>=0){ const o=objs[k]; [o.line,o.tubo,o.sph].forEach(x=>{ if(x.parent) x.parent.remove(x); x.geometry.dispose(); }); objs.splice(k,1); }
+  if(k>=0){ const o=objs[k]; [o.line,o.tubo,o.ext,o.int,o.sph].forEach(x=>{ if(!x) return; if(x.parent) x.parent.remove(x); x.geometry.dispose(); }); objs.splice(k,1); }
   if(actId===id) actId=-1; v3MontaPartes(); v3Render(); v3Calc(); v3Salva();
 }
 document.addEventListener('keydown',e=>{
@@ -3923,12 +3963,17 @@ async function fbRemove(path){
 
   function brPag(v){ return 'R$ ' + v.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}); }
   // Aceita: BR "1.234,56", decimal "1234.56", inteiro "1234"
+  /* Dinheiro: "1.500" é mil e quinhentos, como no Painel (mtNum). Antes todo
+     ponto sem vírgula era decimal e o pagamento de "1.500" entrava como
+     R$ 1,50. Só é milhar o ponto que separa grupos de exatamente três
+     dígitos; "4.5" continua 4,50. Teste pu-medicao-dinheiro. */
   function parseBr(s){
     s = String(s||'').trim().replace(/\s/g,'').replace(/R\$/gi,'');
     if(!s) return 0;
     const lc=s.lastIndexOf(','), ld=s.lastIndexOf('.');
     if(lc>-1 && ld>-1){ s = lc>ld ? s.replace(/\./g,'').replace(',','.') : s.replace(/,/g,''); }
     else if(lc>-1){ s = s.replace(',','.'); }
+    else if(/^-?\d{1,3}(\.\d{3})+$/.test(s)){ s = s.replace(/\./g,''); }
     return parseFloat(s)||0;
   }
 
@@ -3994,6 +4039,10 @@ async function fbRemove(path){
   function adicionarPagamento(){
     const valor = parseBr($('pagValor').value);
     if(!valor || valor <= 0){ alert('Informe um valor válido.'); $('pagValor').focus(); return; }
+    /* Pagamento maior que o que falta: pede confirmação (um 15.000 digitado
+       no lugar de 1.500 passava calado). Teste pu-medicao-dinheiro. */
+    const falta = saldoPagamento();
+    if(valor > falta + 0.01 && !confirm('Este pagamento ('+brPag(valor)+') é maior que o saldo ('+brPag(falta)+'). Lançar assim mesmo?')){ $('pagValor').focus(); return; }
     const data  = $('pagData').value || rmHojeISO();
     const tipo  = valor >= saldoPagamento() - 0.01 ? 'total' : 'parcial';
     const forma = $('pagForma').value;
@@ -4100,8 +4149,14 @@ async function fbRemove(path){
   function removerElemento(i){ elementos.splice(i,1); if(editIndex===i){editIndex=null;$('addBtn').textContent='+ Adicionar';$('addBtn').classList.replace('btn-red','btn-gray');} render(); }
   function limparElementos(){ if(elementos.length && confirm('Remover todos os elementos cadastrados?')){ elementos=[]; render(); } }
 
+  /* Tipo de aplicação que o sistema não conhece (arquivo importado de outra
+     versão): conta como Ext + Int e a lista avisa, em vez de sumir inteira.
+     Teste pu-medicao-dinheiro. */
+  function appCorrige(){
+    let n=0; elementos.forEach(e=>{ if(e && !APP[e.app]){ e.appOrig=e.app; e.app='ext_int'; n++; } }); return n;
+  }
   function calcElemento(e){
-    const a = APP[e.app];
+    const a = APP[e.app] || APP.ext_int;
     const mlExt = e.qtd * e.ml * a.ext;
     const mlInt = e.qtd * e.ml * a.int;
     const custo = mlExt*val('custoExt') + mlInt*val('custoInt');
@@ -4125,7 +4180,9 @@ async function fbRemove(path){
   /* ---------- Render ---------- */
   function render(){
     let tExt=0,tInt=0,tTot=0,tCusto=0;
+    appCorrige(); const nAntes = elementos.filter(e=>e&&e.appOrig!=null).length;
     const body=$('elBody'); body.innerHTML='';
+    if(nAntes) body.insertAdjacentHTML('beforeend','<tr class="app-aviso"><td colspan="7">⚠ '+nAntes+' item(ns) com tipo de aplicação desconhecido ('+escapeHtml([...new Set(elementos.filter(e=>e.appOrig!=null).map(e=>String(e.appOrig)))].join(', '))+') contado(s) como Ext + Int. Confira e edite se precisar.</td></tr>');
     $('elConta').textContent = elementos.length ? '· '+elementos.reduce((n,e)=>n+(Number(e.qtd)||0),0)+' peças' : '';
     if(!elementos.length){
       body.innerHTML='<tr><td colspan="7" class="empty">Nenhum elemento. Importe o arquivo do SketchUp, use o Viewer 3D ou "+ Elemento".</td></tr>';
