@@ -1,7 +1,7 @@
 {
  "Controle-estoque-maquinas": {
-  "commit": "66e1064",
-  "versao": "v49"
+  "commit": "1a52a12",
+  "versao": "v50"
  },
  "Pedidos_perfitec": {
   "commit": "5c2979a",
@@ -16,11 +16,11 @@
   "versao": "v135"
  },
  "calculo_pre_moldados": {
-  "commit": "580934e",
-  "versao": "v70"
+  "commit": "9774f09",
+  "versao": "v71"
  },
  "central_rm": {
-  "commit": "ead7ea4",
+  "commit": "4229840",
   "versao": "v171"
  },
  "controle_cheques": {
@@ -40,16 +40,16 @@
   "versao": "v302"
  },
  "orcamento-rm": {
-  "commit": "c14e684",
-  "versao": "v165"
+  "commit": "e784ed2",
+  "versao": "v166"
  },
  "propostas_rm": {
   "commit": "6b59e8e",
   "versao": "v59"
  },
  "recibos_rm": {
-  "commit": "3a23b07",
-  "versao": "v305"
+  "commit": "5dc6e70",
+  "versao": "v306"
  },
  "rm_contas": {
   "commit": "85e644a",

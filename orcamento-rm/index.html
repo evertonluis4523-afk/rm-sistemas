@@ -6293,7 +6293,9 @@ function askOk(){ askClose(document.getElementById('askInput').value); }
 function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('show'),1900);}
 
 /* ================= CONTROLE POR OBRA (matriz) ================= */
-function parseBRLc(v){ if(v==null)return 0; let str=String(v).replace(/[^0-9.,-]/g,''); if(!str)return 0; if(str.indexOf(',')>=0)str=str.replace(/\./g,'').replace(',','.'); const n=parseFloat(str); return isNaN(n)?0:n; }
+/* dinheiro: "1.500" é mil e quinhentos (antes virava R$ 1,50 no comparativo
+   de cotações). Teste numero-milhar-dinheiro. */
+function parseBRLc(v){ if(v==null)return 0; let str=String(v).replace(/[^0-9.,-]/g,''); if(!str)return 0; if(str.indexOf(',')>=0)str=str.replace(/\./g,'').replace(',','.'); else if(/^-?[1-9]\d{0,2}(\.\d{3})+$/.test(str))str=str.replace(/\./g,''); const n=parseFloat(str); return isNaN(n)?0:n; }
 function round2c(n){ return Math.round((n+Number.EPSILON)*100)/100; }
 function fmtR(v){ return 'R$ '+num(Number(v)||0,2); }
 function ensureControle(){
@@ -10408,10 +10410,13 @@ function desfazerReajuste(){
 
 /* ---------- atualizar preços por planilha ---------- */
 function priceKey(s){return String(s==null?'':s).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]/g,'');}
-function parseMoneyLoose(s){
+/* milhar=true só no PREÇO da lista colada: "1.500" é mil e quinhentos. A
+   espessura ("1.250"?) segue decimal. Teste numero-milhar-dinheiro. */
+function parseMoneyLoose(s,milhar){
   if(s==null)return null;
   let str=String(s).replace(/[^0-9.,-]/g,''); if(!str)return null;
   if(str.indexOf(',')>=0){ str=str.replace(/\./g,'').replace(',','.'); }
+  else if(milhar&&/^-?[1-9]\d{0,2}(\.\d{3})+$/.test(str)){ str=str.replace(/\./g,''); }
   const v=parseFloat(str); return isNaN(v)?null:v;
 }
 function importTargetsList(){
@@ -10609,13 +10614,13 @@ function parseImportRows(){
     let parts=line.indexOf('\t')>=0?line.split('\t'):(line.indexOf(';')>=0?line.split(';'):null);
     if(!parts){
       const m=line.match(/^(.*?)\s+R?\$?\s*([\d.,]+)\s*$/);
-      if(m){const p=parseMoneyLoose(m[2]); if(p!=null)rows.push({desc:m[1].trim(),preco:p});}
+      if(m){const p=parseMoneyLoose(m[2],true); if(p!=null)rows.push({desc:m[1].trim(),preco:p});}
       return;
     }
     parts=parts.map(p=>p.trim());
     // preço = última coluna numérica
     let preco=null, priceIdx=-1;
-    for(let i=parts.length-1;i>=0;i--){ const v=parseMoneyLoose(parts[i]); if(v!=null){preco=v;priceIdx=i;break;} }
+    for(let i=parts.length-1;i>=0;i--){ const v=parseMoneyLoose(parts[i],true); if(v!=null){preco=v;priceIdx=i;break;} }
     // descrição = coluna com mais letras (ignora código e a coluna de preço)
     let desc='', best=-1;
     parts.forEach((p,i)=>{ if(i===priceIdx)return; const lc=letterCount(p); if(lc>best){best=lc;desc=p;} });
@@ -10754,7 +10759,7 @@ function applyImport(){
    publicacao, e ha uma prova automatica que falha se um subir sem o outro.
    Assim o numero na tela e' o mesmo do arquivo que o aparelho guardou, e
    dizer "estou na v15" passa a significar alguma coisa. */
-const APP_VER='v165';
+const APP_VER='v166';
 (function(){ try{ const p=document.getElementById('verPill'); if(p)p.textContent=APP_VER; }catch(e){} })();
 /* Versao nova assumiu com a pagina aberta: avisa, em vez de recarregar por
    conta propria e jogar fora um orcamento pela metade. */
