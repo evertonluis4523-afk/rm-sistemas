@@ -2055,6 +2055,9 @@ table.list.fv-tab th,table.list.fv-tab td{padding-left:7px;padding-right:7px}tab
 .rowact{display:flex;gap:4px;justify-content:flex-end}
 .ex-lote{display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:10px 14px;margin:0 0 8px;border:1px solid var(--line);border-radius:10px;background:var(--panel,#fff)}
 .ex-lote .ex-lote-del{color:var(--rm-perigo,#b3123c)}
+.ex-lote[hidden]{display:none}
+#recLixoBody .rl-l{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--line)}#recLixoBody .rl-l>div{flex:1;min-width:0}
+#recLixoBody .rl-del{color:var(--rm-perigo,#b3123c)}
 .ex-lote:empty{display:none}
 .ex-lote-q{font-size:13.5px;margin-right:4px}
 .ex-lote-data{display:inline-flex;gap:6px;align-items:center}
@@ -4455,7 +4458,7 @@ if(window.RM_CELULAR) document.body.classList.add('rm-campo');
         <button class="btn-act dim" id="btnTConfirma">✓ Confirmar todos como pagos</button></div>
       <div class="tbl-wrap">
         <table class="list cartao-mob">
-          <thead><tr><th style="width:92px">Nº</th><th style="width:96px">Data</th><th>Terceiro</th><th>Obra / NF</th><th class="r">Valor</th><th>Situação</th><th class="r">Ações</th></tr></thead>
+          <thead><tr><th class="c" style="width:44px"></th><th style="width:92px">Nº</th><th style="width:96px">Data</th><th>Terceiro</th><th>Obra / NF</th><th class="r">Valor</th><th>Situação</th><th class="r">Ações</th></tr></thead>
           <tbody id="tercPendBody"></tbody>
         </table>
       </div>
@@ -4489,10 +4492,11 @@ if(window.RM_CELULAR) document.body.classList.add('rm-campo');
           <button class="btn-act dim" id="btnCliLimpar">Limpar campos</button>
         </div>
       </div>
-      <div class="filters"><div class="section-lab" style="margin:0;flex:1">Recibos emitidos <span class="ln"></span></div><div class="fi grow"><span class="lab">Buscar</span><input id="cliSearch" placeholder="cliente, documento ou referência"></div></div>
+      <div class="filters"><div class="section-lab" style="margin:0;flex:1">Recibos emitidos <span class="ln"></span></div><div class="fi grow"><span class="lab">Buscar</span><input id="cliSearch" placeholder="cliente, documento ou referência"></div><button class="btn-act dim rec-lixo-bt" type="button" onclick="abrirRecLixo()" style="align-self:flex-end">Lixeira<span class="rec-lixo-n"></span></button></div>
+      <div class="ex-lote" id="cliLote" hidden></div>
       <div class="tbl-wrap">
         <table class="list cartao-mob">
-          <thead><tr><th style="width:56px">Nº</th><th>Cliente</th><th>Referente a</th><th class="r">Valor</th><th class="c">Data</th><th class="r">Ações</th></tr></thead>
+          <thead><tr><th class="c" style="width:44px"></th><th style="width:56px">Nº</th><th>Cliente</th><th>Referente a</th><th class="r">Valor</th><th class="c">Data</th><th class="r">Ações</th></tr></thead>
           <tbody id="cliBody"></tbody>
         </table>
       </div>
@@ -5282,6 +5286,10 @@ if(window.RM_CELULAR) document.body.classList.add('rm-campo');
   <div class="mfoot"><button class="btn-act dim" data-close>Cancelar</button><button class="btn-act save" id="tmSave">Salvar</button></div>
 </div></div>
 <!-- HISTÓRICO DO TERCEIRO -->
+<div class="overlay" id="recLixoModal"><div class="modal" style="max-width:640px">
+  <div class="mhead"><h2>Lixeira de recibos</h2><button class="x" data-close>✕</button></div>
+  <div class="mbody" id="recLixoBody"></div>
+</div></div>
 <div class="overlay" id="tercHistModal"><div class="modal" style="max-width:980px">
   <div class="mhead"><h2 id="thTitulo">Histórico</h2><button class="x" data-close>✕</button></div>
   <div class="mbody">
@@ -5811,7 +5819,7 @@ function indicToMap(){const m={};state.indicacoes.forEach((x,i)=>{m[x.id]={
   obs:x.obs||"",ord:i};});return m;}
 function mapToIndic(m){return Object.keys(m||{}).map(id=>Object.assign({id},m[id])).sort((a,b)=>(a.ord||0)-(b.ord||0));}
 function seedDefault(){return SEED.map((p,i)=>({id:"e"+i,nome:p[0],docTipo:"CPF",doc:p[1],status:"ativo",funcao:"",banco:"",dtInicio:"",dtCarteira:"",salario:0,metodo:"banco",obs:"",base:0,descRM:0,acresc:0,banheiro:0,almoco:0,he:0,faltas:0,plano:0,inss:0,econ:0,valPagamento:0,valAdiantamento:0,ord:i}));}
-function applyData(v){v=v||{};state.cfg={...DEFAULT_CFG,...(v.cfg||{})};state.employees=v.employees?mapToEmps(v.employees):[];state.employees.forEach(e=>{if(!e.emprestimos)e.emprestimos=[];if(!e.historicoSalario)e.historicoSalario=[];if(!e.historicoFuncao)e.historicoFuncao=[];if(!e.fichasEpi)e.fichasEpi=[];if(!e.folhaExtra)e.folhaExtra=[];});state.terceiros=v.terceiros?mapToTerc(v.terceiros):[];state.historico=v.historico||{};state.movimentos=v.movimentos||{};state.assiduidade=v.assiduidade||{};state.bancoHoras=v.bancoHoras||{};state.fechamentos=v.fechamentos||{};state.pfPontos=v.pfPontos||{};state.rhid=v.rhid||{};state.unimed=v.unimed||{};state.contabil=v.contabil||{};state.ciclos=v.ciclos||{};state.planilhas=v.planilhas||{};state.fichasAdm=v.fichasAdm||{};state.entrevistas=v.entrevistas||{};state.clientes=v.clientes?mapToCli(v.clientes):[];state.indicacoes=v.indicacoes?mapToIndic(v.indicacoes):[];state.rescisoes=v.rescisoes?mapToResc(v.rescisoes):[];state.epiMovimentos=v.epiMovimentos||{};normalizarListas();}
+function applyData(v){v=v||{};state.cfg={...DEFAULT_CFG,...(v.cfg||{})};state.employees=v.employees?mapToEmps(v.employees):[];state.employees.forEach(e=>{if(!e.emprestimos)e.emprestimos=[];if(!e.historicoSalario)e.historicoSalario=[];if(!e.historicoFuncao)e.historicoFuncao=[];if(!e.fichasEpi)e.fichasEpi=[];if(!e.folhaExtra)e.folhaExtra=[];});state.terceiros=v.terceiros?mapToTerc(v.terceiros):[];state.historico=v.historico||{};state.movimentos=v.movimentos||{};state.assiduidade=v.assiduidade||{};state.bancoHoras=v.bancoHoras||{};state.fechamentos=v.fechamentos||{};state.pfPontos=v.pfPontos||{};state.rhid=v.rhid||{};state.unimed=v.unimed||{};state.contabil=v.contabil||{};state.ciclos=v.ciclos||{};state.planilhas=v.planilhas||{};state.fichasAdm=v.fichasAdm||{};state.entrevistas=v.entrevistas||{};state.lixeiraRec=v.lixeiraRec||{};state.clientes=v.clientes?mapToCli(v.clientes):[];state.indicacoes=v.indicacoes?mapToIndic(v.indicacoes):[];state.rescisoes=v.rescisoes?mapToResc(v.rescisoes):[];state.epiMovimentos=v.epiMovimentos||{};normalizarListas();}
 /* A NUVEM NAO GUARDA LISTA, GUARDA MAPA. Uma lista que ganha um buraco (um
    item apagado pelo caminho, uma copia antiga gravada por cima) volta como
    [a,null,c] -- ou, com buraco demais, como objeto {0:a,4:c}. O codigo conta
@@ -6040,6 +6048,7 @@ function startData(){
        e justamente o motivo desta tela existir. */
     state.fichasAdm=(raw&&raw.fichasAdm)||{};
     state.entrevistas=(raw&&raw.entrevistas)||{};
+    state.lixeiraRec=(raw&&raw.lixeiraRec)||{};
     dadosCarregados=true;   // localStorage responde na hora: já pode gravar
     if(!raw || !raw.employees) persist();
     bootUI();
@@ -6050,7 +6059,7 @@ function retratoDados(){
   return {employees:empsToMap(),terceiros:tercToMap(),clientes:cliToMap(),indicacoes:indicToMap(),rescisoes:rescToMap(),epiMovimentos:state.epiMovimentos,
     historico:state.historico,movimentos:state.movimentos,assiduidade:state.assiduidade,bancoHoras:state.bancoHoras,
     fechamentos:state.fechamentos,pfPontos:state.pfPontos,rhid:state.rhid,unimed:state.unimed,contabil:state.contabil,ciclos:state.ciclos,
-    planilhas:state.planilhas,fichasAdm:state.fichasAdm,entrevistas:state.entrevistas,cfg:state.cfg};
+    planilhas:state.planilhas,fichasAdm:state.fichasAdm,entrevistas:state.entrevistas,lixeiraRec:state.lixeiraRec||{},cfg:state.cfg};
 }
 // Último retrato gravado ou recebido — base de comparação pra saber o que
 // mudou de verdade.
@@ -6065,7 +6074,7 @@ let dadosCarregados=false;
    servidor: ela e montada no retratoDados(), e lida no applyData(), e mesmo
    assim some -- fica so na memoria da aba aberta e desaparece no F5.
    Ao acrescentar uma colecao, acrescente o nome aqui tambem. */
-const RAMOS=['employees','terceiros','clientes','indicacoes','rescisoes','epiMovimentos','historico','movimentos','assiduidade','bancoHoras','fechamentos','pfPontos','rhid','unimed','contabil','ciclos','planilhas','fichasAdm','entrevistas'];
+const RAMOS=['employees','terceiros','clientes','indicacoes','rescisoes','epiMovimentos','historico','movimentos','assiduidade','bancoHoras','fechamentos','pfPontos','rhid','unimed','contabil','ciclos','planilhas','fichasAdm','entrevistas','lixeiraRec'];
 const igualJSON=(a,b)=>JSON.stringify(a===undefined?null:a)===JSON.stringify(b===undefined?null:b);
 
 /* Monta o update do Firebase só com os caminhos que mudaram.
@@ -9793,8 +9802,9 @@ function renderTercPend(){
     .sort((a,c)=>String(c.dataPrevista||'').localeCompare(String(a.dataPrevista||''))||movTs(c)-movTs(a));
   $('#btnTConfirma').disabled=!list.length;
   $('#tercPendTot').textContent=list.length?list.length+' · R$ '+fmtBRL(list.reduce((s,m)=>s+(Number(m.valorPrevisto)||0),0)):'';
-  if(!list.length){b.innerHTML='<tr><td colspan="7"><div class="empty"><b>Nada aguardando</b>Os recibos emitidos ficam aqui até o pagamento ser confirmado.</div></td></tr>';return;}
-  b.innerHTML=list.map(m=>'<tr><td class="idx" data-label="Nº">'+esc(m.numeroRecibo||'—')+'</td><td class="sub" data-label="Data">'+(fmtDate(m.dataPrevista)||'—')+'</td>'+
+  if(!list.length){tpSel.clear();tpBotao();b.innerHTML='<tr><td colspan="8"><div class="empty"><b>Nada aguardando</b>Os recibos emitidos ficam aqui até o pagamento ser confirmado.</div></td></tr>';return;}
+  [...tpSel].forEach(id=>{if(!list.some(m=>m.id===id))tpSel.delete(id);});
+  b.innerHTML=list.map(m=>'<tr'+(tpSel.has(m.id)?' class="sel"':'')+'><td class="c" data-label="Marcar"><input type="checkbox" class="chk" data-tpsel="'+m.id+'"'+(tpSel.has(m.id)?' checked':'')+' aria-label="Marcar o recibo"></td><td class="idx" data-label="Nº">'+esc(m.numeroRecibo||'—')+'</td><td class="sub" data-label="Data">'+(fmtDate(m.dataPrevista)||'—')+'</td>'+
     '<td><div class="forn"><button type="button" class="t-nome" data-thist="'+esc(m.pessoaId)+'">'+esc(titlePt(m.nome||''))+'</button></div><div class="sub">'+esc(m.servico||'')+'</div></td>'+
     '<td data-label="Obra / NF">'+esc(m.obra||'—')+(m.nfReferencia?'<div class="sub">'+esc(m.nfReferencia)+'</div>':'')+'</td>'+
     '<td class="r val" data-label="Valor">R$ '+fmtBRL(m.valorPrevisto)+'</td>'+
@@ -9805,16 +9815,24 @@ function renderTercPend(){
   b.querySelectorAll('[data-thist]').forEach(x=>x.onclick=()=>abrirHistTerc(x.dataset.thist));
   b.querySelectorAll('[data-recedit]').forEach(x=>x.onclick=()=>abrirEdicaoRecTerc(x.dataset.recedit));
   b.querySelectorAll('[data-tok]').forEach(x=>x.onclick=()=>{const m=state.movimentos[x.dataset.tok];if(!m)return;confirmaMovTerc(m);persist();renderTercLanc();toast('Pagamento de '+titlePt(m.nome||'')+' confirmado','ok');});
+  b.querySelectorAll('[data-tpsel]').forEach(c=>c.onchange=()=>{if(c.checked)tpSel.add(c.dataset.tpsel);else tpSel.delete(c.dataset.tpsel);c.closest('tr').classList.toggle('sel',c.checked);tpBotao();});
+  tpBotao();
 }
+/* MARCAR E CONFIRMAR OS MARCADOS (PADRAO_RM 1a, volume). Só havia
+   "confirmar todos" ou um por um: pagou parte dos terceiros, ficava preso.
+   Com algum marcado, o botão confirma só os marcados. Teste
+   recibos-terceiros-clientes-lote. */
+var tpSel=new Set();
+function tpBotao(){const bt=$('#btnTConfirma');if(!bt)return;const n=tpSel.size;bt.textContent=n?'✓ Confirmar marcados como pagos ('+n+')':'✓ Confirmar todos como pagos';}
 function confirmaMovTerc(m){
   m.valorPago=Number(m.valorPrevisto)||0;m.dataPagamento=m.dataPrevista||toISO(new Date());m.status='pago';
   m.referenciaPagamento=m.referenciaPagamento||'Confirmação na emissão';m.updatedAt=Date.now();auditarMov(m,'Pagamento confirmado');
 }
 function confirmarTerceirosPendentes(){
-  const list=movLista().filter(m=>m.tipo==='terceiros'&&m.status==='pendente');
+  const todos=movLista().filter(m=>m.tipo==='terceiros'&&m.status==='pendente'), list=tpSel.size?todos.filter(m=>tpSel.has(m.id)):todos;
   if(!list.length){toast('Nada aguardando confirmação','err');return;}
   if(!confirm('Confirmar '+list.length+' pagamento(s) de terceiros como pagos?\n\nValor e data de pagamento ficam os do recibo. Pagamento com valor ou data diferentes: use o botão de situação da linha.'))return;
-  list.forEach(confirmaMovTerc);persist();renderTercLanc();if($('#v-rel').classList.contains('on'))renderRel();
+  list.forEach(confirmaMovTerc);tpSel.clear();persist();renderTercLanc();if($('#v-rel').classList.contains('on'))renderRel();
   toast(list.length+' pagamento(s) de terceiros confirmados','ok');
 }
 /* HISTÓRICO DO TERCEIRO NA PRÓPRIA ABA: por obra (contratado, pago,
@@ -15003,7 +15021,7 @@ function renderCli(){
   const list=state.clientes.filter(c=>!q||buscaTxt(c.nome).includes(q)||buscaTxt(c.doc).includes(q)||cliPagamentos(c).some(p=>buscaTxt(p.descricao).includes(q)));
   let tot=0,terc=0;state.clientes.forEach(c=>{tot+=cliTotalRM(c);terc+=cliTotal(c)-cliTotalRM(c);});
   $('#cliQtd').textContent=state.clientes.length;$('#cliTot').textContent='R$ '+fmtBRL(tot)+(terc>0?' · pago direto a terceiros: R$ '+fmtBRL(terc):'');
-  if(!list.length){b.innerHTML='<tr><td colspan="6"><div class="empty"><b>Nenhum recibo emitido</b>Preencha os campos acima e gere o primeiro.</div></td></tr>';return;}
+  if(!list.length){b.innerHTML='<tr><td colspan="7"><div class="empty"><b>Nenhum recibo emitido</b>Preencha os campos acima e gere o primeiro.</div></td></tr>';cliLoteBarra();return;}
   list.forEach(c=>{const tr=el('tr');const dt=c.data?c.data.split('-').reverse().join('/'):'—';
     const pags=cliPagamentos(c);
     /* Um pagamento: mesma linha de sempre, com a forma embaixo se houver.
@@ -15012,7 +15030,8 @@ function renderCli(){
     const referCel=pags.length===1
       ? (pags[0].descricao?esc(pags[0].descricao):'<span class="sub">—</span>')+(CLI_FORMA_LABEL[pags[0].forma]?'<div class="sub">'+esc(CLI_FORMA_LABEL[pags[0].forma])+' · sai no recibo</div>':'')
       : pags.map(p=>'<div class="sub">R$'+fmtBRL(p.valor)+(p.data?' · '+fmtDate(p.data):'')+(CLI_FORMA_LABEL[p.forma]?' · '+esc(CLI_FORMA_LABEL[p.forma]):'')+' · '+esc(p.descricao||'—')+(cliTerc(p)?' · <b>pago direto a '+esc(cliTerc(p))+'</b>':'')+'</div>').join('');
-    tr.innerHTML='<td class="idx">'+String(c.numero||'').padStart(3,'0')+'</td>'+
+    if(cliSel.has(c.id))tr.className='sel';
+    tr.innerHTML='<td class="c" data-label="Marcar"><input type="checkbox" class="chk" data-clisel="'+c.id+'"'+(cliSel.has(c.id)?' checked':'')+' aria-label="Marcar o recibo"></td><td class="idx">'+String(c.numero||'').padStart(3,'0')+'</td>'+
       '<td><div class="forn">'+esc(titlePt(c.nome))+'</div><div class="sub'+(c.doc?'':' miss')+'">'+(c.doc?esc(c.docTipo)+' '+esc(c.doc):'sem documento')+'</div></td>'+
       '<td data-label="Referente a">'+referCel+'</td>'+
       '<td class="r val" data-label="Valor">R$ '+fmtBRL(cliTotal(c))+(cliTotalRM(c)<cliTotal(c)?'<div class="sub">R$ '+fmtBRL(cliTotalRM(c))+' à RM</div>':'')+'</td>'+
@@ -15021,7 +15040,9 @@ function renderCli(){
     b.appendChild(tr);});
   b.querySelectorAll('[data-cpr]').forEach(x=>x.onclick=()=>{const c=state.clientes.find(y=>y.id===x.dataset.cpr);printCliente(c);});
   b.querySelectorAll('[data-ced]').forEach(x=>x.onclick=()=>editCli(x.dataset.ced));
-  b.querySelectorAll('[data-cde]').forEach(x=>x.onclick=()=>{const c=state.clientes.find(y=>y.id===x.dataset.cde);if(!acessoRec('excluir_recibo',c.id,'Recibo de cliente: '+titlePt(c.nome),()=>x.click()))return;if(!confirm('Excluir o recibo de '+titlePt(c.nome)+'?'))return;state.clientes=state.clientes.filter(y=>y.id!==x.dataset.cde);persist();renderCli();toast('Excluído');});
+  b.querySelectorAll('[data-cde]').forEach(x=>x.onclick=()=>{const c=state.clientes.find(y=>y.id===x.dataset.cde);if(!acessoRec('excluir_recibo',c.id,'Recibo de cliente: '+titlePt(c.nome),()=>x.click()))return;if(!confirm('Mandar o recibo de '+titlePt(c.nome)+' para a lixeira? Fica '+REC_LIXO_DIAS+' dias e dá para restaurar.'))return;recLixo('cli',c,'Cliente nº '+String(c.numero||'').padStart(3,'0')+' · '+titlePt(c.nome));state.clientes=state.clientes.filter(y=>y.id!==x.dataset.cde);cliSel.delete(c.id);persist();renderCli();toast('Recibo na lixeira');});
+  b.querySelectorAll('[data-clisel]').forEach(c=>c.onchange=()=>{if(c.checked)cliSel.add(c.dataset.clisel);else cliSel.delete(c.dataset.clisel);c.closest('tr').classList.toggle('sel',c.checked);cliLoteBarra();});
+  cliLoteBarra();
 }
 let editCliId=null;
 /* A LISTA DE TRABALHO dos pagamentos deste recibo, enquanto o formulário
@@ -17058,6 +17079,43 @@ function exAGerar(){
    recibo de todos e confirmar como pagos. Recibo ainda pendente sai sem a
    marca de 2ª via (não foi assinado); se algum já está pago, o lote sai
    como 2ª via, como a reimpressão de um só. */
+/* LIXEIRA DOS RECIBOS (PADRAO_RM 1a, desfazer). Excluir um recibo do 13º,
+   das férias, avulso ou de cliente apagava de vez. Agora ele vai para
+   state.lixeiraRec (ramo próprio, sobe para a nuvem) por 30 dias: restaurar
+   devolve o recibo como era (o número continua o dele); passou do prazo,
+   sai sozinho. Teste recibos-lixeira. */
+var REC_LIXO_DIAS=30;
+function recLixo(tipo,dados,desc){if(!state.lixeiraRec||typeof state.lixeiraRec!=='object')state.lixeiraRec={};
+  const id=tipo+'_'+(dados.id||Date.now().toString(36));state.lixeiraRec[id]={id,tipo,em:Date.now(),desc:desc||'',dados:JSON.parse(JSON.stringify(dados))};}
+function recLixoLista(){const L=state.lixeiraRec&&typeof state.lixeiraRec==='object'?Object.values(state.lixeiraRec).filter(Boolean):[];
+  const lim=Date.now()-REC_LIXO_DIAS*864e5,velhos=L.filter(x=>(x.em||0)<lim);
+  if(velhos.length&&dadosCarregados){velhos.forEach(x=>delete state.lixeiraRec[x.id]);setTimeout(persist,0);}
+  return L.filter(x=>(x.em||0)>=lim).sort((a,b)=>b.em-a.em);}
+function recLixoN(){const n=recLixoLista().length;return n?' ('+n+')':'';}
+function abrirRecLixo(){renderRecLixo();$('#recLixoModal').classList.add('open');}
+function renderRecLixo(){const box=$('#recLixoBody');if(!box)return;const L=recLixoLista();
+  document.querySelectorAll('.rec-lixo-n').forEach(x=>x.textContent=recLixoN());
+  box.innerHTML=L.length?L.map(x=>'<div class="rl-l"><div><b>'+esc(x.desc||x.id)+'</b><div class="sub">R$ '+fmtBRL(x.tipo==='cli'?cliTotal(x.dados):x.dados.valorPrevisto)+' · excluído em '+new Date(x.em).toLocaleDateString('pt-BR')+'</div></div>'
+    +'<button class="btn-act dim" data-rlrest="'+x.id+'">Restaurar</button><button class="btn-act dim rl-del" data-rldel="'+x.id+'">Apagar de vez</button></div>').join('')
+    :'<div class="sub" style="padding:8px 0">Nada na lixeira. Fica '+REC_LIXO_DIAS+' dias e depois sai sozinho.</div>';
+  box.querySelectorAll('[data-rlrest]').forEach(bt=>bt.onclick=()=>{const x=state.lixeiraRec[bt.dataset.rlrest];if(!x)return;
+    if(x.tipo==='cli'){if(!state.clientes.some(c=>c.id===x.dados.id))state.clientes.push(x.dados);}else state.movimentos[x.dados.id]=x.dados;
+    delete state.lixeiraRec[x.id];if(x.tipo!=='cli')extrasHistSync();persist();renderRecLixo();try{renderExLista();}catch(e){}try{renderCli();}catch(e){}toast('Recibo restaurado','ok');});
+  box.querySelectorAll('[data-rldel]').forEach(bt=>bt.onclick=()=>{if(!confirm('Apagar este recibo de vez? Não volta mais.'))return;delete state.lixeiraRec[bt.dataset.rldel];persist();renderRecLixo();try{renderExLista();}catch(e){}toast('Recibo apagado');});}
+/* clientes: marcar vários e excluir (para a lixeira) -- PADRAO_RM 1a */
+var cliSel=new Set();
+function cliLoteBarra(){const bar=$('#cliLote');if(!bar)return;[...cliSel].forEach(id=>{if(!state.clientes.some(c=>c.id===id))cliSel.delete(id);});
+  document.querySelectorAll('.rec-lixo-n').forEach(x=>x.textContent=recLixoN());
+  const n=cliSel.size;bar.hidden=!n;if(!n){bar.innerHTML='';return;}
+  const tot=state.clientes.filter(c=>cliSel.has(c.id)).reduce((s,c)=>s+cliTotal(c),0);
+  bar.innerHTML='<span class="ex-lote-q"><b>'+n+'</b> selecionado'+(n>1?'s':'')+' · R$ '+fmtBRL(tot)+'</span>'
+    +'<button class="btn-act dim ex-lote-del" id="cliLoteDel">✕ Excluir selecionados ('+n+')</button><button class="btn-act dim" id="cliLoteLimpa">Limpar seleção</button>';
+  $('#cliLoteLimpa').onclick=()=>{cliSel.clear();renderCli();};
+  $('#cliLoteDel').onclick=()=>{const L=state.clientes.filter(c=>cliSel.has(c.id));if(!L.length)return;
+    if(!acessoRec('excluir_recibo','lote:'+L.map(c=>c.id).join(','),L.length+' recibo(s) de cliente',()=>$('#cliLoteDel').click()))return;
+    if(!confirm('Mandar '+L.length+' recibo(s) de cliente para a lixeira? Fica '+REC_LIXO_DIAS+' dias e dá para restaurar.'))return;
+    L.forEach(c=>recLixo('cli',c,'Cliente nº '+String(c.numero||'').padStart(3,'0')+' · '+titlePt(c.nome)));
+    state.clientes=state.clientes.filter(c=>!cliSel.has(c.id));cliSel.clear();persist();renderCli();toast(L.length+' recibo(s) na lixeira','ok');};}
 const exSel=new Set();
 function exLoteMovs(list){const sel=list.filter(m=>exSel.has(m.id));return sel.length?sel:list;}
 function exLoteBarra(list){
@@ -17072,7 +17130,8 @@ function exLoteBarra(list){
     '<span class="ex-lote-data"><input type="date" id="exLoteData" title="Nova data dos recibos"><button class="btn-act dim" id="exLoteDataOk">Mudar data '+(n?'dos selecionados':'de todos')+'</button></span>'+
     (pend?'<button class="btn-act dim" id="exLotePago" title="Confirmar como pagos, com o valor e a data de cada recibo">✓ Confirmar pagos ('+pend+')</button>':'')+
     (n?'<button class="btn-act dim ex-lote-del" id="exLoteDel" title="Excluir os recibos marcados (ex.: uma simulação que não vale)">✕ Excluir selecionados ('+n+')</button>':'')+
-    (n?'<button class="btn-act dim" id="exLoteLimpa">Limpar seleção</button>':'<span class="ex-lote-dica">ou marque na primeira coluna</span>');
+    (n?'<button class="btn-act dim" id="exLoteLimpa">Limpar seleção</button>':'<span class="ex-lote-dica">ou marque na primeira coluna</span>')+
+    '<button class="btn-act dim rec-lixo-bt" type="button" onclick="abrirRecLixo()">Lixeira'+recLixoN()+'</button>';
   $('#exLoteImp').onclick=()=>{const ms=exLoteMovs(list).slice().sort((a,c)=>String(a.numeroRecibo||'').localeCompare(String(c.numeroRecibo||'')));
     imprimirExtras(ms,ms.some(m=>m.status!=='pendente'));};
   $('#exLoteDataOk').onclick=()=>{const d=$('#exLoteData').value;if(!d){toast('Escolha a nova data','err');$('#exLoteData').focus();return;}
@@ -17092,9 +17151,9 @@ function exLoteBarra(list){
   const dl=$('#exLoteDel');if(dl)dl.onclick=()=>{const ms=list.filter(m=>exSel.has(m.id));if(!ms.length)return;
     const tot=ms.reduce((s,m)=>s+(Number(m.valorPrevisto)||0),0),pagos=ms.filter(m=>m.status!=='pendente').length;
     if(!acessoRec('excluir_recibo','lote:'+ms.map(m=>m.id).join(','),ms.length+' recibo(s) · R$ '+fmtBRL(tot),()=>dl.click()))return;
-    if(!confirm('Excluir '+ms.length+' recibo(s) marcado(s) (R$ '+fmtBRL(tot)+')?'+(pagos?'\n\nATENÇÃO: '+pagos+' já confirmado(s) como pago(s) sai(em) do relatório.':'')+'\n\nOs números não voltam a ser usados.'))return;
-    ms.forEach(m=>{delete state.movimentos[m.id];exSel.delete(m.id);});
-    extrasHistSync();persist();renderExLista();toast(ms.length+' recibo(s) excluído(s)','ok');};
+    if(!confirm('Mandar '+ms.length+' recibo(s) marcado(s) (R$ '+fmtBRL(tot)+') para a lixeira? Fica '+REC_LIXO_DIAS+' dias e dá para restaurar.'+(pagos?'\n\nATENÇÃO: '+pagos+' já confirmado(s) como pago(s) sai(em) do relatório.':'')+'\n\nOs números não voltam a ser usados.'))return;
+    ms.forEach(m=>{recLixo('mov',m,(m.numeroRecibo||'')+' · '+titlePt(m.nome||'')+' · '+(EX_TIPO_LAB[m.tipo]||m.tipo));delete state.movimentos[m.id];exSel.delete(m.id);});
+    extrasHistSync();persist();renderExLista();toast(ms.length+' recibo(s) na lixeira','ok');};
 }
 function renderExLista(){
   const f=$('#exFiltro').value,q=($('#exBusca').value||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().trim(),b=$('#exBody');
@@ -17125,7 +17184,7 @@ function renderExLista(){
     if(!acessoRec('excluir_recibo',m.id,'Recibo '+(m.numeroRecibo||'')+' de '+titlePt(m.nome||'')+' · R$ '+fmtBRL(m.valorPrevisto),()=>x.click()))return;
     const pago=m.status!=='pendente';
     if(!confirm('Excluir o recibo '+(m.numeroRecibo||'')+' de '+titlePt(m.nome||'')+' (R$ '+fmtBRL(m.valorPrevisto)+')?'+(pago?'\n\nATENÇÃO: ele já está confirmado como pago e sai do relatório.':'')+'\n\nO número não volta a ser usado.'))return;
-    delete state.movimentos[m.id];extrasHistSync();persist();renderExLista();toast('Recibo excluído');});
+    recLixo('mov',m,(m.numeroRecibo||'')+' · '+titlePt(m.nome||'')+' · '+(EX_TIPO_LAB[m.tipo]||m.tipo));delete state.movimentos[m.id];extrasHistSync();persist();renderExLista();toast('Recibo na lixeira');});
 }
 document.querySelectorAll('#exTipoSeg button').forEach(b=>b.onclick=()=>{exTipo=b.dataset.t;renderExtra();});
 $('#exSelTodos').onchange=ev=>{
@@ -17481,7 +17540,7 @@ $('#fileImport').onchange=ev=>{const f=ev.target.files[0];if(!f)return;const r=n
     /* Indicações e fichas de admissão iam no backup e não voltavam. Backup
        antigo, de antes delas existirem, não apaga as que já estão aqui. */
     if('indicacoes' in d)state.indicacoes=Array.isArray(d.indicacoes)?d.indicacoes.map(x=>({...x})):mapToIndic(d.indicacoes||{});
-    if('fichasAdm' in d)state.fichasAdm=d.fichasAdm||{};if('entrevistas' in d)state.entrevistas=d.entrevistas||{};const tt=Array.isArray(d.terceiros)?d.terceiros:mapToTerc(d.terceiros);state.terceiros=(tt||[]).map((t,i)=>({ord:i,...t}));state.historico=d.historico||{};state.movimentos=d.movimentos||{};state.assiduidade=d.assiduidade||{};state.bancoHoras=d.bancoHoras||{};state.fechamentos=d.fechamentos||{};state.pfPontos=d.pfPontos||{};state.rhid=d.rhid||{};state.unimed=d.unimed||{};state.contabil=d.contabil||{};state.ciclos=d.ciclos||{};state.planilhas=d.planilhas||{};state.clientes=d.clientes?(Array.isArray(d.clientes)?d.clientes:mapToCli(d.clientes)):[];state.rescisoes=d.rescisoes?(Array.isArray(d.rescisoes)?d.rescisoes:mapToResc(d.rescisoes)):[];state.epiMovimentos=d.epiMovimentos||{};dadosCarregados=true;persist();loadCfg();renderEmps();renderTerc();renderPF();renderResc();toast('Backup restaurado','ok');}catch(e){toast('Arquivo inválido','err');}};
+    if('fichasAdm' in d)state.fichasAdm=d.fichasAdm||{};if('entrevistas' in d)state.entrevistas=d.entrevistas||{};if('lixeiraRec' in d)state.lixeiraRec=d.lixeiraRec||{};const tt=Array.isArray(d.terceiros)?d.terceiros:mapToTerc(d.terceiros);state.terceiros=(tt||[]).map((t,i)=>({ord:i,...t}));state.historico=d.historico||{};state.movimentos=d.movimentos||{};state.assiduidade=d.assiduidade||{};state.bancoHoras=d.bancoHoras||{};state.fechamentos=d.fechamentos||{};state.pfPontos=d.pfPontos||{};state.rhid=d.rhid||{};state.unimed=d.unimed||{};state.contabil=d.contabil||{};state.ciclos=d.ciclos||{};state.planilhas=d.planilhas||{};state.clientes=d.clientes?(Array.isArray(d.clientes)?d.clientes:mapToCli(d.clientes)):[];state.rescisoes=d.rescisoes?(Array.isArray(d.rescisoes)?d.rescisoes:mapToResc(d.rescisoes)):[];state.epiMovimentos=d.epiMovimentos||{};dadosCarregados=true;persist();loadCfg();renderEmps();renderTerc();renderPF();renderResc();toast('Backup restaurado','ok');}catch(e){toast('Arquivo inválido','err');}};
   r.readAsText(f);ev.target.value='';};
 $('#btnReset').onclick=()=>{
   if(!confirm('Apagar TODOS os funcionários e configurações?'))return;
@@ -18818,7 +18877,7 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape'){if(fecharSemPerder(
    juntos a cada publicacao, e ha uma prova automatica que falha se um subir
    sem o outro. Assim o numero na tela e o mesmo do arquivo que o aparelho
    guardou, e dizer "estou na v81" passa a significar alguma coisa. */
-const APP_VER='v310';
+const APP_VER='v311';
 (function(){var p=document.getElementById('verPill'); if(p)p.textContent=APP_VER;})();
 
 if('serviceWorker' in navigator){

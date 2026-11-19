@@ -1577,6 +1577,10 @@ table.list tr.sel-on td{background:var(--rm-realce,#fff4ef)}
 @media (max-width:720px){.sel-barra{padding:9px 14px}}
 .sel-barra[hidden]{display:none}
 .sel-barra .sel-del{color:var(--rm-perigo,#b3123c)}
+.lixo-contas{margin:0;border-bottom:1px solid var(--line);background:var(--surface,#fff)}.lixo-contas[hidden]{display:none}
+.lixo-contas .lx-h{display:flex;align-items:center;gap:10px;padding:12px 30px;border-bottom:1px solid var(--line)}.lixo-contas .lx-h span{flex:1;color:var(--muted);font-size:13px}
+.lixo-contas .lx-l{display:flex;align-items:center;gap:10px;padding:10px 30px;border-bottom:1px solid var(--line)}.lixo-contas .lx-l>div{flex:1;min-width:0}
+.lixo-contas .lx-s{color:var(--muted);font-size:12.5px}.lixo-contas .lx-del{color:var(--rm-perigo,#b3123c)}
 .sel-barra .grow{flex:1}
 .sel-barra .btn-act svg{width:15px;height:15px}
 .rel-sel{display:none}
@@ -2900,6 +2904,7 @@ body:not([data-theme="escuro"]){
         <div class="fi grow"><span class="lab">Buscar</span><input id="f_busca" placeholder="fornecedor, documento, observação…" oninput="render()"></div>
         <div class="chip-x">
           <button class="btn-act" onclick="clearFilters()" style="padding:8px 12px">Limpar</button>
+          <button class="btn-act" onclick="lixoAbre()" title="Contas excluídas nos últimos 30 dias: restaurar ou apagar de vez">Lixeira<span id="lixoN"></span></button>
           <button class="btn-act" onclick="exportCSV()" style="padding:8px 12px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>Exportar</button>
         </div>
       </div>
@@ -2912,6 +2917,7 @@ body:not([data-theme="escuro"]){
         <button class="btn-act sel-del" id="selDelBt" onclick="selExcluir()">✕ Excluir</button>
         <button class="btn-act save" id="selRelBt" onclick="relSelecionadas()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 9V3h10v6M7 17H4v-7h16v7h-3M7 14h10v7H7z"/></svg>Relatório (PDF)</button>
       </div>
+      <div class="lixo-contas" id="lixoContas" hidden></div>
       <div class="tbl-wrap">
         <table class="list">
           <thead><tr>
@@ -3363,8 +3369,36 @@ function startData(){
     bootUI();
   }
 }
+/* LIXEIRA (PADRAO_RM 1a, desfazer). Excluir apagava de vez. A conta vai
+   para a lixeira (c.lixeira = quando) no mesmo nó da nuvem -- sem nó novo,
+   sem regra nova --, sai de S.contas (nenhuma soma, filtro ou relatório a
+   vê; a Central também ignora) e fica em S.lixo por 30 dias: restaurar ou
+   apagar de vez; depois disso sai sozinha. Teste contas-lixeira. */
+const LIXO_DIAS=30; S.lixo=S.lixo||{};
+function separaLixo(){
+  Object.keys(S.contas||{}).forEach(id=>{ const c=S.contas[id]; if(c&&c.lixeira){ S.lixo[id]=c; delete S.contas[id]; } });
+  Object.keys(S.lixo).forEach(id=>{ if(S.contas[id]) delete S.lixo[id]; });
+  const lim=Date.now()-LIXO_DIAS*864e5, velhos=Object.values(S.lixo).filter(c=>c.lixeira<lim);
+  if(velhos.length){ velhos.forEach(c=>delete S.lixo[c.id]); Promise.all(velhos.map(c=>gcAnexo(c.anexoKey,velhos.map(x=>x.id)).catch(()=>{}))).then(()=>persistContas([],velhos.map(c=>c.id))); }
+}
+async function paraLixeira(L){
+  L.forEach(c=>{ c.lixeira=Date.now(); S.lixo[c.id]=c; delete S.contas[c.id]; SEL_CONTAS.delete(c.id); });
+  persistContas(L.map(c=>c.id)); if(!useFirebase) bootUI(); else render();
+}
+function lixoRender(){
+  const L=Object.values(S.lixo).sort((a,b)=>b.lixeira-a.lixeira), n=$('lixoN'); if(n) n.textContent=L.length?' ('+L.length+')':'';
+  const box=$('lixoContas'); if(!box||box.hidden) return;
+  box.innerHTML='<div class="lx-h"><b>Lixeira</b><span>fica '+LIXO_DIAS+' dias e depois sai sozinha</span><button class="btn-act" onclick="lixoAbre(false)">Fechar</button></div>'
+    +(L.length?L.map(c=>'<div class="lx-l"><div><b>'+esc(rmNomePt(c.fornecedor)||'—')+'</b><div class="lx-s">'+brl(c.valor)+(c.venc?' · venc. '+fmtDate(c.venc):'')+(c.pago?' · paga':'')+' · excluída em '+new Date(c.lixeira).toLocaleDateString('pt-BR')+'</div></div>'
+      +'<button class="btn-act" onclick="lixoRestaura(\''+c.id+'\')">Restaurar</button><button class="btn-act lx-del" onclick="lixoApaga(\''+c.id+'\')">Apagar de vez</button></div>').join('')
+      :'<div class="lx-s" style="padding:14px 30px">Nada na lixeira.</div>');
+}
+function lixoAbre(v){ const b=$('lixoContas'); if(!b) return; b.hidden=v===undefined?!b.hidden:!v; lixoRender(); }
+function lixoRestaura(id){ const c=S.lixo[id]; if(!c) return; delete c.lixeira; S.contas[id]=c; delete S.lixo[id]; persistContas([id]); if(!useFirebase) bootUI(); else render(); toast('Conta restaurada.','ok'); }
+async function lixoApaga(id){ const c=S.lixo[id]; if(!c) return; if(!confirm('Apagar de vez a conta de '+(rmNomePt(c.fornecedor)||'—')+' ('+brl(c.valor)+')? Não volta mais.')) return;
+  delete S.lixo[id]; await gcAnexo(c.anexoKey,[id]); persistContas([],[id]); if(!useFirebase) bootUI(); else render(); toast('Conta apagada.','ok'); }
 function saveLocal(){
-  localStorage.setItem(LS_KEY, JSON.stringify({contas:S.contas,creditos:S.creditos,empresa:S.empresa,categorias:S.categorias,formas:S.formas}));
+  localStorage.setItem(LS_KEY, JSON.stringify({contas:Object.assign({},S.contas,S.lixo),creditos:S.creditos,empresa:S.empresa,categorias:S.categorias,formas:S.formas}));
 }
 // Grava só as contas que de fato mudaram (adicionadas/editadas em `changedIds`,
 // excluídas em `removedIds`) em vez de sobrescrever o nó "contas" inteiro.
@@ -3377,7 +3411,7 @@ function saveLocal(){
 function persistContas(changedIds, removedIds){
   if(useFirebase){
     const upd={};
-    (changedIds||[]).forEach(id=>{ upd[id]=S.contas[id]; });
+    (changedIds||[]).forEach(id=>{ upd[id]=S.contas[id]||S.lixo[id]||null; });
     (removedIds||[]).forEach(id=>{ upd[id]=null; });
     if(Object.keys(upd).length) fb.db.ref('contas_pagar/contas').update(upd).catch(e=>toast('Erro ao salvar: '+rmErroPt(e),'err'));
   }else{
@@ -3400,6 +3434,7 @@ function persistSettings(){
    ============================================================ */
 let booted=false;
 function bootUI(){
+  separaLixo();
   fillSelectsStatic();
   renderCompany();
   render(); renderForn(); renderCred(); credFormaPadrao();
@@ -3637,12 +3672,9 @@ function togglePago(id){
 async function delConta(id){
   const c=S.contas[id]; if(!c)return;
   if(!acessoPorta('excluir_conta',c,'',()=>delConta(id))) return;
-  if(!confirm(`Excluir a conta de ${c.fornecedor} (${brl(c.valor)})?`))return;
-  const key=c.anexoKey;
-  delete S.contas[id];
-  await gcAnexo(key,[id]);
-  persistContas([],[id]); if(!useFirebase) bootUI();
-  toast('Conta excluída.','ok');
+  if(!confirm(`Mandar a conta de ${c.fornecedor} (${brl(c.valor)}) para a lixeira? Fica ${LIXO_DIAS} dias e dá para restaurar.`))return;
+  await paraLixeira([c]);
+  toast('Conta na lixeira.','ok');
 }
 
 /* ============================================================
@@ -3673,6 +3705,7 @@ function badge(c){
 }
 
 function render(){
+  try{ lixoRender(); }catch(e){}
   fillSelectsStatic();
   renderCards();
   const list=getFiltered();
@@ -3752,11 +3785,9 @@ async function selExcluir(){
   const L=selLista(); if(!L.length) return;
   const tot=brl(L.reduce((s,c)=>s+(Number(c.valor)||0),0)), pagas=L.filter(c=>c.pago).length;
   if(!acessoPorta('excluir_conta',null,L.length+' conta(s) · '+tot,selExcluir)) return;
-  if(!confirm('Excluir '+L.length+' conta(s) selecionada(s) ('+tot+')?'+(pagas?'\n\n'+pagas+' já paga(s) sai(em) do histórico.':''))) return;
-  const ids=L.map(c=>c.id);
-  for(const c of L){ const key=c.anexoKey; delete S.contas[c.id]; await gcAnexo(key,ids); }
-  persistContas([],ids); SEL_CONTAS.clear(); if(!useFirebase) bootUI(); else render();
-  toast(ids.length+' conta(s) excluída(s).','ok');
+  if(!confirm('Mandar '+L.length+' conta(s) selecionada(s) ('+tot+') para a lixeira? Fica '+LIXO_DIAS+' dias e dá para restaurar.'+(pagas?'\n\n'+pagas+' já paga(s) sai(em) do histórico.':''))) return;
+  await paraLixeira(L); SEL_CONTAS.clear();
+  toast(L.length+' conta(s) na lixeira.','ok');
 }
 function relSelHTML(L){
   const agora=new Date(), hh=String(agora.getHours()).padStart(2,'0')+':'+String(agora.getMinutes()).padStart(2,'0');
@@ -5184,7 +5215,7 @@ document.addEventListener('visibilitychange',()=>{ if(!document.hidden) checkDue
 })();
 </script>
 <script>/* versão publicada (PADRAO_RM.md §3): sobe a cada publicação, junto com o CACHE do sw.js */
-const APP_VER='v84';
+const APP_VER='v85';
 </script>
 <script id="rmVersaoBloco">
 /* ===== SELO DE VERSÃO — igual em todos os sistemas (PADRAO_RM.md §3) =====

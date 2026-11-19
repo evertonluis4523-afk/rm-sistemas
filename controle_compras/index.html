@@ -1677,6 +1677,8 @@ html[data-theme="dark"] .tag.cat{background:#2a313c;color:#aeb6c2}
 /* overlay / modal */
 .overlay{position:fixed;inset:0;background:rgba(15,17,22,.55);display:none;align-items:flex-start;justify-content:center;padding:max(env(safe-area-inset-top),18px) 14px 18px;z-index:50;overflow:auto}
 .overlay.open{display:flex}
+#lixoBody .lx-l{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--line-2,var(--line))}#lixoBody .lx-l>div{flex:1;min-width:0}
+#lixoBody .lx-s{color:var(--muted);font-size:12.5px}#lixoBody .lx-del{color:var(--danger,#b3123c)}
 /* ===================== TRANSIÇÕES =====================
    A animação existe para dizer O QUE MUDOU, não para enfeitar: curta, só na
    entrada, e mexendo apenas em opacidade e deslocamento -- coisas que o
@@ -2910,12 +2912,21 @@ body:not([data-theme="escuro"]){
   </div>
 </div>
 
+<div class="overlay" id="lixoOverlay">
+  <div class="modal" style="max-width:560px">
+    <div class="mhead"><h2>Lixeira</h2><button class="x" onclick="fecharLixo()">&times;</button></div>
+    <div class="mbody" id="lixoBody"></div>
+    <div class="mfoot"><button class="btn ghost" onclick="fecharLixo()">Fechar</button></div>
+  </div>
+</div>
+
 <!-- MENU -->
 <div class="overlay" id="menuOverlay">
   <div class="modal" style="max-width:440px">
     <div class="mhead"><h2>Mais opções</h2><button class="x" onclick="closeMenu()">&times;</button></div>
     <div class="mbody">
       <div style="display:flex;flex-direction:column;gap:9px">
+        <button class="btn" onclick="abrirLixo()">Lixeira<span id="lixoN"></span></button>
         <button class="btn" onclick="exportCSV()">⬇ Exportar CSV (planilha)</button>
         <button class="btn" onclick="exportJSON()">⬇ Baixar backup (JSON)</button>
         <button class="btn" onclick="document.getElementById('impFile').click()">⬆ Restaurar backup (JSON)</button>
@@ -3097,6 +3108,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 
 /* ============ render ============ */
 function render(){
+  if(lixoPurga()) save(); renderLixo();
   rebuildLookups();
   const selF=document.getElementById('fForn'),cf=selF.value;
   selF.innerHTML='<option value="">Todos fornecedores</option>'+DB.fornecedores.map(f=>`<option value="${esc(f)}">${esc(rmNomePt(f))}</option>`).join('');
@@ -3238,7 +3250,29 @@ function saveForm(){
   else { rec.id=uid(); rec.criadoEm=Date.now(); DB.compras.unshift(rec); }
   save(); render(); closeForm(); toast(editingId?'Compra atualizada':'Compra registrada');
 }
-function deleteCurrent(){ if(!editingId)return; if(!confirm('Excluir esta compra? Esta ação não pode ser desfeita.'))return; DB.compras=DB.compras.filter(x=>x.id!==editingId); fbPendingDeletes.push(editingId); save(); render(); closeForm(); toast('Compra excluída'); }
+/* LIXEIRA (PADRAO_RM 1a, desfazer). Excluir compra apagava de vez. Agora
+   ela vai para DB.lixeira (no mesmo nó da nuvem, sem regra nova) por 30
+   dias: "Mais › Lixeira" restaura ou apaga de vez; passou do prazo, sai
+   sozinha. Teste compras-lixeira. */
+const LIXO_DIAS=30; let fbLixoFora=[];
+function lixoLista(){ if(!Array.isArray(DB.lixeira)) DB.lixeira=[]; return DB.lixeira; }
+function lixoPurga(){ const lim=Date.now()-LIXO_DIAS*864e5, L=lixoLista(), velhos=L.filter(c=>(c.lixeira||0)<lim); if(!velhos.length) return false;
+  velhos.forEach(c=>fbLixoFora.push(c.id)); DB.lixeira=L.filter(c=>(c.lixeira||0)>=lim); return true; }
+function deleteCurrent(){ if(!editingId)return; if(!confirm('Mandar esta compra para a lixeira? Fica '+LIXO_DIAS+' dias e dá para restaurar.'))return;
+  const c=DB.compras.find(x=>x.id===editingId); DB.compras=DB.compras.filter(x=>x.id!==editingId); fbPendingDeletes.push(editingId);
+  if(c){ c.lixeira=Date.now(); lixoLista().push(c); }
+  save(); closeForm(); render(); toast('Compra na lixeira'); }
+function lixoRestaura(id){ const L=lixoLista(), c=L.find(x=>x.id===id); if(!c) return; DB.lixeira=L.filter(x=>x.id!==id); delete c.lixeira; fbLixoFora.push(id);
+  fbPendingDeletes=fbPendingDeletes.filter(x=>x!==id); DB.compras.push(c); save(); render(); renderLixo(); toast('Compra restaurada'); }
+function lixoApaga(id){ const L=lixoLista(), c=L.find(x=>x.id===id); if(!c) return; if(!confirm('Apagar de vez esta compra? Não volta mais.')) return;
+  DB.lixeira=L.filter(x=>x.id!==id); fbLixoFora.push(id); save(); renderLixo(); toast('Compra apagada'); }
+function abrirLixo(){ closeMenu(); renderLixo(); document.getElementById('lixoOverlay').classList.add('open'); }
+function fecharLixo(){ document.getElementById('lixoOverlay').classList.remove('open'); }
+function renderLixo(){ const L=lixoLista().slice().sort((a,b)=>(b.lixeira||0)-(a.lixeira||0)), box=document.getElementById('lixoBody'), n=document.getElementById('lixoN');
+  if(n) n.textContent=L.length?' ('+L.length+')':''; if(!box) return;
+  box.innerHTML=L.length?L.map(c=>`<div class="lx-l"><div><b>${esc(rmNomePt(c.fornecedor)||'—')}</b><div class="lx-s">${esc(c.descricao||'')} · ${fmtBRL(c.valor)} · excluída em ${new Date(c.lixeira).toLocaleDateString('pt-BR')}</div></div>
+    <button class="btn ghost" onclick="lixoRestaura('${c.id}')">Restaurar</button><button class="btn ghost lx-del" onclick="lixoApaga('${c.id}')">Apagar de vez</button></div>`).join('')
+    :'<div class="lx-s" style="padding:6px 0">Nada na lixeira. Fica '+LIXO_DIAS+' dias e depois sai sozinha.</div>'; }
 function togglePago(id){
   const c=DB.compras.find(x=>x.id===id); if(!c)return; ensureCompra(c);
   if(isPaid(c)){ c.parcelas.forEach(p=>p.pago=false); toast('Pagamentos desmarcados'); }
@@ -3498,12 +3532,18 @@ function fbPush(){
       remote.compras.forEach(c=>{ if(c&&c.id!=null&&!localDeletes.includes(c.id)) byId.set(c.id,c); });
       data.compras.forEach(c=>{ if(c&&c.id!=null) byId.set(c.id,c); });
       data.compras=[...byId.values()];
+      /* lixeira: junta a do servidor com a daqui, sem o que foi restaurado
+         ou apagado de vez aqui e sem o que voltou para as compras */
+      const lxId=new Map(), naCompra=new Set(data.compras.map(c=>c&&c.id));
+      (remote.lixeira||[]).forEach(c=>{ if(c&&c.id!=null&&!fbLixoFora.includes(c.id)&&!naCompra.has(c.id)) lxId.set(c.id,c); });
+      (data.lixeira||[]).forEach(c=>{ if(c&&c.id!=null) lxId.set(c.id,c); });
+      data.lixeira=[...lxId.values()];
       const uni=(a,b)=>[...new Set([...(a||[]),...(b||[])])].filter(Boolean).sort((x,y)=>x.localeCompare(y,'pt-BR'));
       data.fornecedores=uni(remote.fornecedores,data.fornecedores);
       data.categorias=uni(remote.categorias,data.categorias);
     }
     return FB.ref.set(data);
-  }).then(()=>{ fbPendingDeletes=fbPendingDeletes.filter(id=>!localDeletes.includes(id)); setSync('ok'); }).catch(()=>setSync('off'));
+  }).then(()=>{ fbPendingDeletes=fbPendingDeletes.filter(id=>!localDeletes.includes(id)); fbLixoFora=[]; setSync('ok'); }).catch(()=>setSync('off'));
 }
 function fbQueuePush(){ if(!FB.ready||FB.applying||FB.booting)return; setSync('saving'); clearTimeout(FB.timer); FB.timer=setTimeout(fbPush,700); }
 function fbForcePush(){ if(!FB.ready){toast('Nuvem indisponível');return;} fbPush(); toast('Enviado à nuvem'); closeMenu(); }
@@ -4509,7 +4549,7 @@ if('serviceWorker' in navigator){
 })();
 </script>
 <script>/* versão publicada (PADRAO_RM.md §3): sobe a cada publicação, junto com o CACHE do sw.js */
-const APP_VER='v89';
+const APP_VER='v90';
 </script>
 <script id="rmVersaoBloco">
 /* ===== SELO DE VERSÃO — igual em todos os sistemas (PADRAO_RM.md §3) =====

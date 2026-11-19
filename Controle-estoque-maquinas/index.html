@@ -2084,6 +2084,10 @@ td.r,th.r,td.val,.valor,.num{white-space:nowrap}
 /* colunas fixas: o Modelo começa no mesmo lugar em todos os setores */
 table.tab-maq{table-layout:fixed}
 .tab-maq td{overflow-wrap:anywhere}
+.tab-maq input.msel{width:16px;height:16px;margin:0 8px 0 0;vertical-align:-2px;accent-color:var(--rm-marca,#D53309);cursor:pointer}
+.tab-maq tr.msel-on td{background:color-mix(in srgb,var(--rm-marca,#D53309) 6%,transparent)}
+.msel-barra{position:sticky;top:8px;z-index:5;display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:0 0 12px;padding:10px 14px;border:1px solid var(--line);border-radius:12px;background:var(--surface,#fff);box-shadow:0 6px 18px rgba(0,0,0,.08)}
+.msel-barra .grow{flex:1}.msel-barra[hidden]{display:none}
 .tab-maq .c-nome{width:34%}.tab-maq .c-mod{width:24%}.tab-maq .c-qtd{width:7%}.tab-maq .c-sit{width:17%}.tab-maq .c-ac{width:18%}
 .tab-cons .k-nome{width:21%}.tab-cons .k-mod{width:13%}.tab-cons .k-qtd{width:6%}.tab-cons .k-orig{width:13%}
 .tab-cons .k-onde{width:17%}.tab-cons .k-dias{width:9%}.tab-cons .k-prev{width:10%}.tab-cons .k-ac{width:11%}
@@ -3009,6 +3013,7 @@ body:not([data-theme="escuro"]){
   <div class="cards" id="cards"></div>
   <div class="tabs" id="tabs"></div>
   <div class="barra" id="barra" hidden></div>
+  <div class="msel-barra" id="mselBarra" hidden></div>
   <div id="conteudo"></div>
   <div class="app-rodape">
     <span id="appVer"></span>
@@ -3111,7 +3116,7 @@ const DB_NODE = "maquinas_rm";
    visivel, nenhum de nos dois tinha como saber se o aparelho estava rodando o
    que foi publicado ou uma copia velha do cache do app instalado. Diagnostico
    por adivinhacao custa mais caro que um rodape. */
-const APP_VER='v51';
+const APP_VER='v52';
 const STORE_KEY = "rm_maquinas_v1";
 
 const CORES = [
@@ -3825,7 +3830,7 @@ function render(){
   }
   $('btModo').textContent = emAuditoria() ? 'Sair da auditoria' : 'Auditoria';
   $('btModo').className = 'btn sm' + (emAuditoria() ? ' primary' : '');
-  renderCards(); renderTabs(); renderBarra(); renderConteudo(); renderFicha();
+  renderCards(); renderTabs(); renderBarra(); renderConteudo(); renderFicha(); mselBarra();
 }
 function renderConteudo(){
   const c = $('conteudo');
@@ -5256,8 +5261,9 @@ function tabela(ms){
     '<thead><tr><th>Máquina</th><th>Modelo</th><th class="t-num">Qtd</th><th>Situação</th><th></th></tr></thead><tbody>' +
     ms.map(m => {
       const etq = (m.etiquetas || []).filter(Boolean);
-      return '<tr data-id="' + m.id + '">' +
-        '<td><button type="button" class="lk" onclick="abrirFicha(\'' + m.id + '\')">' + esc(m.nome) + '</button>' + selo(m) +
+      return '<tr data-id="' + m.id + '"' + (MSEL.has(m.id) ? ' class="msel-on"' : '') + '>' +
+        '<td>' + (m.situacao !== 'manutencao' ? '<input type="checkbox" class="msel" data-msel="' + m.id + '"' + (MSEL.has(m.id) ? ' checked' : '') + ' aria-label="Selecionar para mover">' : '') +
+        '<button type="button" class="lk" onclick="abrirFicha(\'' + m.id + '\')">' + esc(m.nome) + '</button>' + selo(m) +
           (etq.length ? '<div class="etq-l mono">' + esc(etq.join(', ')) + '</div>' : '') + '</td>' +
         '<td class="modelo">' + esc(m.modelo || '—') + '</td>' +
         '<td class="t-num mono">' + (Number(m.qtd)||0) + '</td>' +
@@ -5381,6 +5387,41 @@ function opcoesDestino(sel, exceto){
   const est = estoqueInternoAtual();
   return '<option value="">— escolha —</option>' + setoresProducao().concat(est ? [est] : []).filter(s => s.id !== exceto)
     .map(s => '<option value="' + s.id + '"' + (s.id === sel ? ' selected' : '') + '>' + esc(s.nome) + '</option>').join('');
+}
+
+/* ---------- MOVER VÁRIAS (PADRAO_RM 1a, volume) ----------
+   No fim de uma obra voltam muitas máquinas juntas, e o Mover era uma por
+   uma. Caixa em cada linha (o que não está no conserto) e a barra: mover as
+   marcadas, inteiras, para um destino, com o mesmo registro no histórico de
+   cada uma. Teste maquinas-mover-varias. */
+const MSEL = new Set();
+function mselBarra(){
+  [...MSEL].forEach(id => { const m = db.maquinas.find(x => x.id === id); if (!m || m.situacao === 'manutencao') MSEL.delete(id); });
+  const b = $('mselBarra'); if (!b) return; const n = MSEL.size; b.hidden = !n;
+  if (!n) { b.innerHTML = ''; return; }
+  const pcs = [...MSEL].reduce((s, id) => { const m = db.maquinas.find(x => x.id === id); return s + (m ? Number(m.qtd) || 0 : 0); }, 0);
+  b.innerHTML = '<span><b>' + n + '</b> linha' + (n > 1 ? 's' : '') + ' marcada' + (n > 1 ? 's' : '') + ' · ' + pcs + ' peça' + (pcs > 1 ? 's' : '') + '</span><span class="grow"></span>' +
+    '<button class="btn" onclick="moverVarias()">Mover marcadas</button><button class="btn" onclick="MSEL.clear();render()">Limpar seleção</button>';
+}
+document.addEventListener('change', e => { const c = e.target.closest && e.target.closest('[data-msel]'); if (!c) return;
+  if (c.checked) MSEL.add(c.dataset.msel); else MSEL.delete(c.dataset.msel); const tr = c.closest('tr'); if (tr) tr.classList.toggle('msel-on', c.checked); mselBarra(); });
+function moverVarias(){
+  const ms = [...MSEL].map(id => db.maquinas.find(x => x.id === id)).filter(m => m && m.situacao !== 'manutencao'); if (!ms.length) return;
+  abrirModal('Mover ' + ms.length + ' linha' + (ms.length > 1 ? 's' : ''),
+    '<div class="mod-dica">' + ms.map(m => esc(m.nome) + ' (' + (Number(m.qtd) || 0) + ') · ' + esc(nomeLocal(m.setor))).join('<br>') + '</div>' +
+    '<label>Para onde</label><select id="mvDest">' + opcoesDestino('', '') + '</select>' +
+    '<label>Motivo ou observação <span class="opc">(opcional)</span></label>' +
+    '<input type="text" id="mvMotivo" autocomplete="off" placeholder="ex.: fim da obra, devolvidas">',
+    function(){
+      const para = $('mvDest').value; if (!para) { toast('Escolha para onde vão', true); return; }
+      const motivo = $('mvMotivo').value.trim(); let n = 0;
+      ms.forEach(m => { if (m.setor === para) return; const de = m.setor, q = Number(m.qtd) || 0, etqs = (m.etiquetas || []).filter(Boolean);
+        const r = separar(m, q, etqs); r.setor = para; r.situacao = 'uso'; delete r.conserto; juntar(r);
+        registrar('mover', m, { qtd: q, de: nomeLocal(de), para: nomeLocal(para), deId: de, paraId: para, motivo: motivo, etiquetas: etqs }); n++; });
+      MSEL.clear(); limparZerados(); salvar(); fecharModal(); render();
+      toast(n + ' linha(s) → ' + nomeLocal(para));
+    });
+  $('ovOk').textContent = 'Mover';
 }
 
 /* ---------- MOVER ---------- */
