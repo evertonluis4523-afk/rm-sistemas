@@ -4853,7 +4853,7 @@ try { var _e = localStorage.getItem('rm_estilo_ultimo'); if (_e === 'viva' || _e
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js" crossorigin="anonymous"></script>
 
 <script>/* versão publicada (PADRAO_RM.md §3): sobe a cada publicação, junto com o CACHE do sw.js */
-const APP_VER='v175';
+const APP_VER='v176';
 </script>
 <script>
   /* ===== LOGIN (Firebase Authentication) =====
@@ -14739,7 +14739,7 @@ const APP_VER='v175';
       ['Logística', 'Depósitos e centros de distribuição.'],
       ['Comércio e atacado', 'Lojas, supermercados e atacados.'],
       ['Institucional', 'Igrejas e espaços para a comunidade.']];
-    p.push('<section class="pg seg">' + foto('cipriani-doca', 'lado esq', 'Cipriani Atacadista · doca e marquise metálica', '56% 50%') + '<div class="col-tx">' + kick('Para quem construímos')
+    p.push('<section class="pg segm">' + foto('cipriani-doca', 'lado esq', 'Cipriani Atacadista · doca e marquise metálica', '56% 50%') + '<div class="col-tx">' + kick('Para quem construímos')
       + '<h2>Obras de empresas que não podem parar</h2><div class="lista">'
       + seg.map(function (s) { return '<div><b>' + s[0] + '</b><span>' + s[1] + '</span></div>'; }).join('')
       + '</div><p class="nota">Atendimento focado em empresas (CNPJ).</p></div>' + pe(7, false, 'left:144mm') + '</section>');
@@ -14814,7 +14814,10 @@ const APP_VER='v175';
     '#apx-barra button:disabled{opacity:.5;cursor:default}',
     '#apx-doc{padding:24px 0;--lj:#F24619;--lj-tx:#C1310B;--tinta:#141414;--graf:#24272c;--cinza:#4A515B;--mudo:#6B7280;--linha:#DCDCD8;--papel:#F4F3F0}',
     '#apx-doc .carregando{color:#fff;text-align:center;padding:80px 0;font-size:15px}',
-    '#apx-doc .pg{width:297mm;height:210mm;margin:0 auto 10mm;position:relative;overflow:hidden;background:#fff;color:var(--tinta);box-shadow:0 18px 50px -20px rgba(0,0,0,.6);',
+    /* display/border/radius explícitos: a Central tem classes globais com os
+       mesmos nomes (.seg virava inline-flex e a folha 7 saía colada à
+       esquerda; .card ganhava canto arredondado) */
+    '#apx-doc .pg{display:block;border:0;border-radius:0;width:297mm;height:210mm;margin:0 auto 10mm;position:relative;overflow:hidden;background:#fff;color:var(--tinta);box-shadow:0 18px 50px -20px rgba(0,0,0,.6);',
     'font-family:Satoshi,-apple-system,Segoe UI,Roboto,sans-serif;font-size:10.5pt;line-height:1.45;-webkit-print-color-adjust:exact;print-color-adjust:exact;box-sizing:border-box}',
     '#apx-doc .pg *{box-sizing:border-box}',
     '#apx-doc h1,#apx-doc h2,#apx-doc h3{margin:0;font-weight:800;letter-spacing:-.02em;text-wrap:balance;color:inherit}',
@@ -14846,7 +14849,7 @@ const APP_VER='v175';
     '#apx-doc .col-tx{position:absolute;left:16mm;top:16mm;width:136mm;bottom:20mm}',
     '#apx-doc .ft.lado{position:absolute;right:0;top:0;bottom:0;width:128mm}',
     '#apx-doc .ft.lado.esq{left:0;right:auto}',
-    '#apx-doc .seg .col-tx{left:auto;right:16mm;width:136mm}',
+    '#apx-doc .segm .col-tx{left:auto;right:16mm;width:136mm}',
     '#apx-doc .nums{display:grid;grid-template-columns:repeat(auto-fit,minmax(0,1fr));gap:4mm;margin:7mm 0 6mm}',
     '#apx-doc .nums div{border-left:.9mm solid var(--lj);padding:1mm 0 1mm 4mm}',
     '#apx-doc .nums b{display:block;white-space:nowrap;font-size:20pt;font-weight:800;letter-spacing:-.02em;line-height:1.05}',
@@ -14866,7 +14869,7 @@ const APP_VER='v175';
     /* cartões */
     '#apx-doc .cards{display:grid;gap:4mm}',
     '#apx-doc .c5{grid-template-columns:repeat(5,1fr)}#apx-doc .c4{grid-template-columns:repeat(4,1fr);padding:0 16mm}',
-    '#apx-doc .card{background:var(--papel);padding:5mm;border-top:.9mm solid var(--lj);display:flex;flex-direction:column;gap:2mm}',
+    '#apx-doc .card{border-radius:0;border-left:0;border-right:0;border-bottom:0;background:var(--papel);padding:5mm;border-top:.9mm solid var(--lj);display:flex;flex-direction:column;gap:2mm}',
     '#apx-doc .card i{font-style:normal;font-weight:800;color:var(--lj-tx);font-size:9pt}',
     '#apx-doc .card b{font-size:11.5pt;line-height:1.2}',
     '#apx-doc .card span{font-size:9pt;color:var(--cinza)}',
@@ -14890,7 +14893,7 @@ const APP_VER='v175';
     '#apx-doc .lista div:last-child{border-bottom:.25mm solid var(--linha)}',
     '#apx-doc .lista b{font-size:11pt}',
     '#apx-doc .lista span{font-size:9.5pt;color:var(--cinza)}',
-    '#apx-doc .seg .lista{margin-bottom:5mm}',
+    '#apx-doc .segm .lista{margin-bottom:5mm}',
     '#apx-doc .mp{margin-top:8mm;background:var(--graf);color:#fff;padding:5mm 6mm}',
     '#apx-doc .mp span{font-size:8pt;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.7);font-weight:700}',
     '#apx-doc .mp div{display:flex;gap:9mm;margin-top:2mm}#apx-doc .mp b{font-size:15pt;font-weight:800;letter-spacing:-.01em}',
