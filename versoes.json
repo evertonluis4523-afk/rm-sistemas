@@ -20,7 +20,7 @@
   "versao": "v72"
  },
  "central_rm": {
-  "commit": "37e63ed",
+  "commit": "736d196",
   "versao": "v179"
  },
  "controle_cheques": {
@@ -48,8 +48,8 @@
   "versao": "v60"
  },
  "recibos_rm": {
-  "commit": "5dabf93",
-  "versao": "v307"
+  "commit": "25a3ba8",
+  "versao": "v308"
  },
  "rm_contas": {
   "commit": "8da7de8",

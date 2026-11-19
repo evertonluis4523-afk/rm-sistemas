@@ -4544,6 +4544,7 @@ if(window.RM_CELULAR) document.body.classList.add('rm-campo');
       <details class="ferias-venc" id="feriasVenc" open><summary>Controle de férias <span id="feriasVencN"></span></summary><div id="feriasVencBody"></div></details>
       <input type="file" id="ferPdfFile" accept="application/pdf,.pdf" hidden>
       <input type="file" id="ferXlsFile" accept=".xlsx,.xls" hidden>
+      <input type="file" id="ex13XlsFile" accept=".xlsx,.xls" hidden>
       <div class="addzone">
         <div class="section-lab">Recibo de 13º salário, férias ou pagamento avulso <span class="ln"></span></div>
         <div class="form-grid">
@@ -4560,6 +4561,7 @@ if(window.RM_CELULAR) document.body.classList.add('rm-campo');
             <div class="f span7 ex-acoes">
               <button type="button" class="btn-act dim" id="exMarcar">Marcar ativos</button>
               <button type="button" class="btn-act dim" id="exDesmarcar">Desmarcar todos</button>
+              <button type="button" class="btn-act dim" id="exImpXls" title="A planilha do 13º que a contabilidade manda (NOME e PAGAMENTO): confere os nomes e preenche os valores">⭳ Importar Excel</button>
               <button type="button" class="btn-act dim" id="exSugerir" title="Salário × meses trabalhados no ano ÷ 12. 1ª parcela: metade. 2ª: o total menos a 1ª já emitida. INSS e IRRF da 2ª parcela não são calculados — desconte à mão.">Sugerir valores</button>
             </div>
           </div>
@@ -5048,6 +5050,14 @@ if(window.RM_CELULAR) document.body.classList.add('rm-campo');
     <div class="tbl-wrap" style="margin-top:10px"><table class="list"><thead><tr><th>Na contabilidade</th><th>No cadastro</th><th>O que entra</th><th>Situação</th></tr></thead><tbody id="fiLista"></tbody></table></div>
     <p class="note" id="fiResumo" style="margin-top:8px"></p></div>
   <div class="mfoot"><button class="btn-act dim" data-close>Cancelar</button><button class="btn-act save" id="fiAplicar">Importar</button></div>
+</div></div>
+<!-- MODAL 13º: IMPORTAR A PLANILHA DA CONTABILIDADE -->
+<div class="overlay" id="ex13ImpModal"><div class="modal" style="max-width:960px">
+  <div class="mhead"><h2>Importar 13º da contabilidade</h2><button class="x" data-close>✕</button></div>
+  <div class="mbody"><div id="e13Topo"></div>
+    <div class="tbl-wrap" style="margin-top:10px"><table class="list"><thead><tr><th>Na contabilidade</th><th>No cadastro</th><th class="c">Meses</th><th class="r">Valor</th><th>Situação</th></tr></thead><tbody id="e13Lista"></tbody></table></div>
+    <p class="note" id="e13Resumo" style="margin-top:8px"></p></div>
+  <div class="mfoot"><button class="btn-act dim" data-close>Cancelar</button><button class="btn-act save" id="e13Aplicar">Importar valores</button></div>
 </div></div>
 <!-- MODAL FÉRIAS: REGISTRAR E HISTÓRICO -->
 <div class="overlay" id="ferRegModal"><div class="modal" style="max-width:900px">
@@ -17057,6 +17067,80 @@ $('#exCidade').onchange=()=>{state.cfg.cidadeEmissao=$('#exCidade').value.trim()
 $('#exMarcar').onclick=()=>{const d=exDec();exEmpLista().forEach(e=>{if(e.status==='ativo')d.checked[e.id]=true;});exDraftSave();renderExDec();};
 $('#exDesmarcar').onclick=()=>{const d=exDec();d.checked={};exDraftSave();renderExDec();};
 $('#exSugerir').onclick=exSugerir;$('#exDecGerar').onclick=exDecGerar;
+/* ---- 13º: importar a planilha da contabilidade ----
+   A contabilidade manda o 13º pronto ("1ª parcela 13º salário": NOME,
+   ADMISSÃO, SALÁRIO, Meses de direito, PAGAMENTO). Como no Excel do
+   salário: lê, acha cada nome no cadastro, mostra o que entra e só então
+   preenche a tabela -- os recibos saem pelo "Emitir e imprimir" de sempre.
+   O valor é o da contabilidade, arredondado ao centavo; os avos do sistema
+   continuam na tela para conferência. */
+let e13Imp=null;
+/* normNome tira os números; aqui eles contam ("1ª parcela": NFKD faz ª -> a) */
+function e13Parcela(txt){const t=String(txt==null?'':txt).normalize('NFKD').replace(/[\u0300-\u036f]/g,'').toUpperCase();
+  if(/(^|\D)2\s*[AO]?\s*PARC|SEGUNDA|FINAL/.test(t))return '2';
+  if(/UNICA/.test(t))return 'u';
+  if(/(^|\D)1\s*[AO]?\s*PARC|PRIMEIRA|ADTO|ADIANT/.test(t))return '1';
+  return '';}
+function e13LeAba(a){
+  const hi=a.findIndex(r=>r&&r.some(c=>normNome(c)==='NOME')&&r.some(c=>/^(PAGAMENTO|VALOR|LIQUIDO|A PAGAR)/.test(normNome(c))));if(hi<0)return null;
+  const h=a[hi].map(c=>normNome(c)),col=re=>h.findIndex(x=>re.test(x));
+  const cN=col(/^NOME$/),cV=[/^PAGAMENTO/,/^A PAGAR/,/^LIQUIDO/,/^VALOR/].map(col).find(i=>i>=0),cM=col(/MESES|AVOS/),cS=col(/^SALARIO/);
+  const itens=[];
+  a.slice(hi+1).forEach(r=>{if(!r||!r[cN]||!String(r[cN]).trim())return;
+    itens.push({nome:String(r[cN]).trim(),valor:Math.round(ferNum(r[cV])*100)/100,meses:cM>=0&&r[cM]!=null&&r[cM]!==''?ferNum(r[cM]):null,salario:cS>=0?ferNum(r[cS]):0});});
+  return itens.length?itens:null;
+}
+$('#exImpXls').onclick=()=>$('#ex13XlsFile').click();
+$('#ex13XlsFile').onchange=ev=>{const f=ev.target.files[0];ev.target.value='';if(!f)return;
+  loadSheetJS(()=>{const rd=new FileReader();rd.onload=()=>{try{
+    const wb=XLSX.read(new Uint8Array(rd.result),{type:'array'}),abas={};
+    wb.SheetNames.forEach(sn=>{const it=e13LeAba(XLSX.utils.sheet_to_json(wb.Sheets[sn],{header:1,raw:true}));if(it)abas[sn]=it;});
+    const nomes=Object.keys(abas);
+    if(!nomes.length){toast('Não encontrei as colunas NOME e PAGAMENTO na planilha','err');return;}
+    const anoArq=(String(f.name).match(/(20\d\d)/)||[])[1];
+    e13Imp={arq:f.name||'',abas,aba:nomes[0],parcela:e13Parcela(nomes[0])||e13Parcela(f.name)||$('#exParcela').value,
+      ano:anoArq||$('#exAno').value||String(new Date().getFullYear()),desmarca:true};
+    e13Mostra();
+  }catch(err){console.warn(err);toast('Não consegui ler a planilha: '+(err&&err.message||err),'err');}};rd.readAsArrayBuffer(f);});
+};
+function e13Situacao(it,ano,parc){
+  if(!it.e)return 'não está no cadastro (ou já saiu)';
+  if(!(it.valor>0))return 'sem valor na planilha';
+  const ja=jaEmitido13(it.e.id,ano,parc);if(ja)return 'já emitido: Nº '+ja.numeroRecibo;
+  return '';
+}
+function e13Itens(){const lista=exEmpLista();return (e13Imp.abas[e13Imp.aba]||[]).map(x=>Object.assign({},x,{e:ferAcha(x.nome,lista)}));}
+function e13Mostra(){
+  const I=e13Imp,nomes=Object.keys(I.abas);
+  $('#e13Topo').innerHTML='<div class="form-grid">'+
+    (nomes.length>1?'<div class="f span4"><span class="lab">Aba da planilha</span><select id="e13Aba">'+nomes.map(n=>'<option'+(n===I.aba?' selected':'')+'>'+esc(n)+'</option>').join('')+'</select></div>'
+      :'<div class="f span4"><span class="lab">Aba da planilha</span><div class="dado">'+esc(I.aba)+'</div></div>')+
+    '<div class="f span3"><span class="lab">Parcela</span><select id="e13Parc"><option value="1">1ª parcela</option><option value="2">2ª parcela</option><option value="u">Parcela única</option></select></div>'+
+    '<div class="f span2"><span class="lab">Ano</span><input id="e13Ano" class="mono" type="number" min="2020" max="2099" value="'+esc(I.ano)+'"></div>'+
+    '<div class="f span3"><label class="sub" style="display:flex;gap:8px;align-items:center;margin-top:22px"><input type="checkbox" id="e13Desm"'+(I.desmarca?' checked':'')+'> Desmarcar quem não está na planilha</label></div></div>';
+  $('#e13Parc').value=I.parcela;
+  const pinta=()=>{
+    I.aba=$('#e13Aba')?$('#e13Aba').value:I.aba;I.parcela=$('#e13Parc').value;I.ano=$('#e13Ano').value;I.desmarca=$('#e13Desm').checked;
+    const its=e13Itens();let ok=0,tot=0;
+    $('#e13Lista').innerHTML=its.map(it=>{const m=e13Situacao(it,I.ano,I.parcela);if(!m){ok++;tot+=it.valor;}
+      return '<tr class="'+(m?'row-off':'')+'"><td>'+esc(titlePt(it.nome))+'</td><td>'+(it.e?esc(titlePt(it.e.nome)):'—')+'</td>'+
+        '<td class="c mono">'+(it.meses!=null?fmtDias(it.meses)+'/12':'—')+'</td><td class="r val">R$ '+fmtBRL(it.valor)+'</td>'+
+        '<td>'+(m?'<span class="fv-ok">'+esc(m)+'</span>':'<span class="fv-okv">importa</span>')+'</td></tr>';}).join('');
+    $('#e13Resumo').textContent=ok+' de '+its.length+' entram na tabela, total R$ '+fmtBRL(tot)+'. Confira e use "Emitir e imprimir" para gerar os recibos.';
+    $('#e13Aplicar').disabled=!ok;
+  };
+  pinta();['e13Aba','e13Parc','e13Ano','e13Desm'].forEach(id=>{const x=$('#'+id);if(x)x.onchange=x.oninput=pinta;});
+  $('#ex13ImpModal').classList.add('open');
+}
+$('#e13Aplicar').onclick=()=>{
+  const I=e13Imp;if(!I)return;
+  $('#exParcela').value=I.parcela;$('#exAno').value=I.ano;
+  const d=exDec(),its=e13Itens().filter(it=>!e13Situacao(it,I.ano,I.parcela)),dentro={};
+  its.forEach(it=>{dentro[it.e.id]=1;d.checked[it.e.id]=true;d.valores[it.e.id]=it.valor;});
+  if(I.desmarca)exEmpLista().forEach(e=>{if(!dentro[e.id])delete d.checked[e.id];});
+  exDraftSave();closeAll();renderExDec();
+  toast(its.length+' valor(es) do 13º importados da contabilidade','ok');
+};
 ['exFGozoIni','exFDias'].forEach(id=>$('#'+id).addEventListener('change',renderExFer));
 $('#exAValor').addEventListener('change',()=>{const x=$('#exAValor'),v=parseValor(x.value);x.value=v>0?fmtBRL(v):'';});
 $('#exAEmp').onchange=()=>{const e=state.employees.find(x=>x.id===$('#exAEmp').value);if(e)$('#exAMetodo').value=e.metodo==='pf'?'pf':'banco';};
@@ -18666,7 +18750,7 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape'){if(fecharSemPerder(
    juntos a cada publicacao, e ha uma prova automatica que falha se um subir
    sem o outro. Assim o numero na tela e o mesmo do arquivo que o aparelho
    guardou, e dizer "estou na v81" passa a significar alguma coisa. */
-const APP_VER='v307';
+const APP_VER='v308';
 (function(){var p=document.getElementById('verPill'); if(p)p.textContent=APP_VER;})();
 
 if('serviceWorker' in navigator){
