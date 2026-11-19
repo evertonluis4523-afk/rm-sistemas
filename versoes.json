@@ -20,8 +20,8 @@
   "versao": "v72"
  },
  "central_rm": {
-  "commit": "736d196",
-  "versao": "v179"
+  "commit": "28524e6",
+  "versao": "v180"
  },
  "controle_cheques": {
   "commit": "bf12c97",
@@ -36,12 +36,12 @@
   "versao": "v122"
  },
  "leitor_dwg": {
-  "commit": "4197918",
-  "versao": "v303"
+  "commit": "98fbd3e",
+  "versao": "v304"
  },
  "orcamento-rm": {
-  "commit": "366eed0",
-  "versao": "v167"
+  "commit": "9db154c",
+  "versao": "v168"
  },
  "propostas_rm": {
   "commit": "7a654b9",

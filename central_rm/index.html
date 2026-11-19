@@ -4853,7 +4853,7 @@ try { var _e = localStorage.getItem('rm_estilo_ultimo'); if (_e === 'viva' || _e
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js" crossorigin="anonymous"></script>
 
 <script>/* versão publicada (PADRAO_RM.md §3): sobe a cada publicação, junto com o CACHE do sw.js */
-const APP_VER='v179';
+const APP_VER='v180';
 </script>
 <script>
   /* ===== LOGIN (Firebase Authentication) =====
@@ -6807,6 +6807,29 @@ const APP_VER='v179';
   }
   window.addEventListener('message', function (ev) {
     if (ev.data && ev.data.rm === 'inbox-importado') { _importAck = true; clearInterval(_importTimer); }
+  });
+  /* UM SISTEMA PEDE OUTRO: o Orçamento abre o Leitor DWG com a planta da
+     chave na mão, e o Leitor devolve a medição ao Orçamento. Só entre
+     sistemas abertos aqui, só para estes dois, e o recado ("depois") vai
+     repetido até o sistema aberto responder que recebeu ({rm:'recebido'}). */
+  var ABRE_PERMITIDO = { corte: ['cnm-abrir'], orcamento: ['cnm-medicao'] };
+  var _abreTimer = null, _abreAck = false;
+  window.addEventListener('message', function (ev) {
+    var m = ev.data;
+    if (m && m.rm === 'recebido') { _abreAck = true; clearInterval(_abreTimer); return; }
+    if (!m || m.rm !== 'abrir-sistema' || !ABRE_PERMITIDO[m.id]) return;
+    var nosso = Array.prototype.some.call(document.querySelectorAll('.iframe-layer iframe'), function (f) { return f.contentWindow === ev.source; });
+    if (!nosso) return;
+    var depois = m.depois && ABRE_PERMITIDO[m.id].indexOf(m.depois.rm) >= 0 ? m.depois : null;
+    openModule(m.id);
+    if (!depois) return;
+    _abreAck = false; clearInterval(_abreTimer);
+    var n = 0;
+    _abreTimer = setInterval(function () {
+      if (_abreAck || ++n > 30) { clearInterval(_abreTimer); return; }
+      var f = document.querySelector('#layer-' + m.id + ' iframe');
+      if (f && f.contentWindow) { try { f.contentWindow.postMessage(depois, '*'); } catch (e) { } }
+    }, 500);
   });
   // Avisa cada compromisso de hoje/amanhã dentro da janela escolhida (15min/1h/1dia antes),
   // uma vez só por ocorrência — repete de novo em cada nova ocorrência de um lembrete recorrente.

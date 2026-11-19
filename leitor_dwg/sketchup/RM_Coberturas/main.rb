@@ -11,7 +11,7 @@ module RM_Estruturas
     VERSION = 1
     # Vai em todo arquivo exportado: o Leitor avisa quando o arquivo veio de
     # uma versao antiga (que descartava parede interna sem dizer nada).
-    EXTENSION_VERSION = '1.2.6'.freeze
+    EXTENSION_VERSION = '1.4.0'.freeze
     MM_PER_INCH = 25.4
 
     module_function
@@ -467,8 +467,320 @@ module RM_Estruturas
       warn(error.full_message) if error.respond_to?(:full_message)
     end
 
+    # ================= CHAVE NA MAO =================
+    # O orcamento chave na mao (sistema Orcamento RM) cobra hidraulica,
+    # pintura, eletrica e piso pela area do pavilhao, e banheiro, forro e as
+    # divisorias (gesso, granilite) pela medida de cada um. Os projetos nao
+    # tem padrao de nome nem de tag: quem orca marca no modelo o que e' cada
+    # coisa (o marcador fica gravado no proprio .skp) e exporta uma vez so'.
+    #   - area  (pavilhao, banheiro, forro, piso): faces horizontais de UM
+    #     nivel -- o mais baixo (piso) ou o mais alto (forro). Um ambiente
+    #     desenhado como caixa (piso e teto) nao conta duas vezes.
+    #   - parede (gesso, granilite): faces verticais, a parede com espessura
+    #     conta um lado so' (mesma regra do fechamento) e a cabeceira estreita
+    #     (a espessura da divisoria) nao entra.
+    CHAVE_FORMAT = 'RM_CHAVE_NA_MAO'.freeze
+    CHAVE_DICT = 'RM_CHAVE'.freeze
+    CHAVE_SERVICOS = [
+      ['Pavilhão (área total)', 'pavilhao', 'area', :baixo],
+      ['Banheiro', 'Banheiro', 'area', :baixo],
+      ['Forro modular', 'Forro Modular', 'area', :alto],
+      ['Piso', 'Piso', 'area', :baixo],
+      ['Divisórias de gesso', 'Gesso', 'parede', nil],
+      ['Divisórias de granilite', 'Granilite', 'parede', nil]
+    ].freeze
+    CHAVE_CABECEIRA_MM = 250.0
+
+    def chave_servico(chave)
+      CHAVE_SERVICOS.find { |s| s[1] == chave }
+    end
+
+    def chave_fmt(valor, casas = 2)
+      format("%.#{casas}f", valor.to_f).sub('.', ',')
+    end
+
+    def chave_extensao(faces, eixo)
+      vals = faces.flat_map { |f| f['outer'].map { |p| p[eixo].to_f } }
+      vals.empty? ? 0.0 : vals.max - vals.min
+    end
+
+    # area de um ambiente marcado: as faces horizontais do nivel pedido
+    def chave_area(faces, nivel)
+      horiz = faces.select { |f| f['normal'][2].to_f.abs >= 0.9 && f['outer'].length >= 3 }
+      return nil if horiz.empty?
+      niveis = horiz.group_by { |f| (f['_centroid_z'].to_f / 20.0).round }
+      chave = nivel == :alto ? niveis.keys.max : niveis.keys.min
+      sel = niveis[chave]
+      area = sel.sum { |f| f['area_m2'].to_f }
+      dims = "#{chave_fmt(chave_extensao(sel, 0) / 1000.0)} × #{chave_fmt(chave_extensao(sel, 1) / 1000.0)} m"
+      { 'area_m2' => area.round(2), 'dims' => dims }
+    end
+
+    def chave_largura_horizontal(face)
+      pts = face['outer']
+      xs = pts.map { |p| p[0].to_f }
+      ys = pts.map { |p| p[1].to_f }
+      Math.hypot(xs.max - xs.min, ys.max - ys.min)
+    end
+
+    # area de divisorias: um lado de cada parede, sem as cabeceiras
+    def chave_parede(faces)
+      verticais = faces.reject { |f| f['normal'][2].to_f.abs > 0.35 || chave_largura_horizontal(f) < CHAVE_CABECEIRA_MM }
+      return nil if verticais.empty?
+      um_lado = filter_closure_faces(verticais.map { |f| f.merge('_root' => f['_root'] || 'chave') })
+      return nil if um_lado.empty?
+      area = um_lado.sum { |f| f['area_m2'].to_f }
+      comp = um_lado.sum { |f| chave_largura_horizontal(f) } / 1000.0
+      alt = um_lado.map { |f| f['outer'].map { |p| p[2].to_f }.max - f['outer'].map { |p| p[2].to_f }.min }.max.to_f / 1000.0
+      { 'area_m2' => area.round(2), 'dims' => "#{chave_fmt(comp)} m × #{chave_fmt(alt)} m", 'comprimento_m' => comp.round(2), 'altura_m' => alt.round(2) }
+    end
+
+    # ---------- ESQUADRIAS ----------
+    # O modelo tem as medidas certas das portas e janelas. Cada esquadria e'
+    # um grupo/componente fino (a espessura do caixilho) em pe': a largura e'
+    # a maior medida horizontal e a altura, a vertical. Vale o que estiver
+    # marcado (Marcar como esquadria…) e, sem marca, o que se reconhece
+    # sozinho: nome/tag com porta, janela, portao, basculante, maxim-ar...,
+    # componente que recorta abertura na parede, ou painel com vidro. Marcar
+    # "Nao e' esquadria" tira um falso achado. No Orcamento cada tipo e medida
+    # vira uma linha da aba Esquadrias (com o preco do banco).
+    CHAVE_ESQ_RE = /porta|janela|port[aã]o|basculante|maxi|vitr[oô]|esquadria|veneziana|window|door|pivotante|camar[aã]o/i
+    CHAVE_VIDRO_RE = /vidro|glass|transl|cristal/i
+    CHAVE_ESQ_TIPOS = %w[Janela Porta Portão Basculante Maxim-ar Outro].freeze
+    CHAVE_NOME_GENERICO = /\A(component[ea]?|grupo|group|componentinstance|instance)\s*#?\s*\d*\z/i
+
+    def chave_esq_tipo(nome, vidro, alt_mm)
+      n = nome.to_s
+      return 'Portão' if n =~ /port[aã]o/i
+      return 'Basculante' if n =~ /basculante/i
+      return 'Maxim-ar' if n =~ /maxi/i
+      return 'Porta' if n =~ /porta|door|pivotante|camar[aã]o/i
+      return 'Janela' if n =~ /janela|window|vitr|veneziana/i
+      # sem nome que diga: porta vai do chao a mais de 1,90 m; janela tem vidro
+      return 'Porta' if alt_mm >= 1900
+      return 'Janela' if vidro
+      'Esquadria'
+    end
+
+    # c: {nome, larg, alt, esp (mm), vidro (fracao da frente em vidro), marcado (tipo ou nil), auto (motivo)}
+    def chave_esq_vale?(c)
+      return true if c['marcado']
+      # fina e do tamanho de uma esquadria (o portao de 5,65 x 5,60 m cabe; uma parede inteira, nao)
+      c['esp'].to_f <= 400 && c['larg'].to_f.between?(300, 7000) && c['alt'].to_f.between?(300, 7000)
+    end
+
+    # junta por tipo e medida (arredondada a 1 cm): uma linha por peca igual
+    def chave_esquadrias(cands)
+      por = {}
+      cands.each do |c|
+        next unless chave_esq_vale?(c)
+        tipo = c['marcado'] || chave_esq_tipo(c['nome'], c['vidro'].to_f >= 0.3, c['alt'].to_f)
+        larg = (c['larg'].to_f / 10.0).round * 10
+        alt = (c['alt'].to_f / 10.0).round * 10
+        k = [tipo, larg, alt]
+        por[k] ||= { 'tipo' => tipo, 'larg_mm' => larg, 'alt_mm' => alt, 'qtd' => 0, 'nomes' => [], 'origem' => c['marcado'] ? 'marcado' : 'automático' }
+        por[k]['qtd'] += 1
+        nome = c['nome'].to_s.strip
+        # "Component#2", "Grupo", "ComponentInstance": nome que o SketchUp da' sozinho nao diz nada
+        next if nome =~ CHAVE_NOME_GENERICO
+        por[k]['nomes'] << nome unless nome.empty? || por[k]['nomes'].include?(nome) || por[k]['nomes'].length >= 4
+      end
+      por.values.sort_by { |e| [e['tipo'], -e['larg_mm'], -e['alt_mm']] }
+    end
+
+    # medida do grupo/componente no modelo (mm), pelas 8 quinas da definicao
+    def chave_esq_medida(ent, transform)
+      bb = ent.definition.bounds
+      t = transform * ent.transformation
+      pts = (0..7).map { |i| point_mm(bb.corner(i).transform(t)) }
+      dx = pts.map { |p| p[0] }.max - pts.map { |p| p[0] }.min
+      dy = pts.map { |p| p[1] }.max - pts.map { |p| p[1] }.min
+      dz = pts.map { |p| p[2] }.max - pts.map { |p| p[2] }.min
+      [[dx, dy].max, dz, [dx, dy].min]
+    end
+
+    def chave_esq_vidro(ent)
+      faces = ent.definition.entities.grep(Sketchup::Face)
+      tot = faces.sum { |f| f.area.to_f }
+      return 0.0 if tot <= 0
+      vid = faces.select { |f| [f.material, f.back_material].compact.any? { |m| m.display_name.to_s =~ CHAVE_VIDRO_RE } }.sum { |f| f.area.to_f }
+      vid / tot * 2.0 # duas faces por vidro: a frente conta uma
+    end
+
+    def chave_esq_procura(entities, transform, saida)
+      entities.each do |e|
+        next if e.respond_to?(:hidden?) && e.hidden?
+        next unless e.is_a?(Sketchup::Group) || e.is_a?(Sketchup::ComponentInstance)
+        marca = e.get_attribute(CHAVE_DICT, 'servico')
+        next if marca == 'nao_esquadria'
+        nome = [e.name.to_s, e.definition.name.to_s, (e.layer ? e.layer.name.to_s : '')].reject(&:empty?).join(' ')
+        corta = e.definition.respond_to?(:behavior) && e.definition.behavior.respond_to?(:cuts_opening?) && e.definition.behavior.cuts_opening?
+        if marca == 'esquadria' || nome =~ CHAVE_ESQ_RE || corta
+          larg, alt, esp = chave_esq_medida(e, transform)
+          saida << { 'nome' => (e.get_attribute(CHAVE_DICT, 'nome') || entity_name(e)).to_s, 'larg' => larg, 'alt' => alt, 'esp' => esp,
+                     'vidro' => chave_esq_vidro(e), 'marcado' => marca == 'esquadria' ? e.get_attribute(CHAVE_DICT, 'tipo') : nil }
+          next
+        end
+        vidro = chave_esq_vidro(e)
+        if vidro >= 0.3
+          larg, alt, esp = chave_esq_medida(e, transform)
+          if esp <= 400 && larg >= 300 && alt >= 300
+            saida << { 'nome' => entity_name(e), 'larg' => larg, 'alt' => alt, 'esp' => esp, 'vidro' => vidro, 'marcado' => nil }
+            next
+          end
+        end
+        chave_esq_procura(e.definition.entities, transform * e.transformation, saida)
+      end
+    end
+
+    def chave_marcar_esquadria
+      model = Sketchup.active_model
+      sel = model.selection.to_a.select { |e| e.is_a?(Sketchup::Group) || e.is_a?(Sketchup::ComponentInstance) }
+      if sel.empty?
+        UI.messagebox('Selecione as portas ou janelas (grupos ou componentes) antes de marcar.')
+        return
+      end
+      resp = UI.inputbox(['Tipo', 'Nome (opcional)'], ['Janela', ''], [CHAVE_ESQ_TIPOS.join('|'), ''], 'Marcar como esquadria')
+      return unless resp
+      model.start_operation('Marcar esquadria', true)
+      sel.each do |e|
+        e.set_attribute(CHAVE_DICT, 'servico', 'esquadria')
+        e.set_attribute(CHAVE_DICT, 'tipo', resp[0].to_s)
+        e.set_attribute(CHAVE_DICT, 'nome', resp[1].to_s.strip.empty? ? entity_name(e) : resp[1].to_s)
+      end
+      model.commit_operation
+      UI.messagebox("#{sel.length} esquadria(s) marcadas como #{resp[0]}.")
+    end
+
+    def chave_nao_esquadria
+      model = Sketchup.active_model
+      sel = model.selection.to_a.select { |e| e.is_a?(Sketchup::Group) || e.is_a?(Sketchup::ComponentInstance) }
+      model.start_operation('Não é esquadria', true)
+      sel.each { |e| e.set_attribute(CHAVE_DICT, 'servico', 'nao_esquadria') }
+      model.commit_operation
+      UI.messagebox("#{sel.length} item(ns) não entram mais como esquadria.")
+    end
+
+    # marcados: [{servico, nome, faces}] -> o arquivo que o Leitor DWG abre (aba Chave na mao)
+    def chave_payload(title, marcados, esquadrias = [])
+      pavilhao = 0.0
+      por = {}
+      marcados.each do |m|
+        s = chave_servico(m['servico'])
+        next unless s
+        med = s[2] == 'parede' ? chave_parede(m['faces']) : chave_area(m['faces'], s[3])
+        next unless med && med['area_m2'].to_f > 0
+        if s[1] == 'pavilhao'
+          pavilhao += med['area_m2'].to_f
+          next
+        end
+        por[s[1]] ||= { 'servico' => s[1], 'tipo' => s[2], 'itens' => [] }
+        por[s[1]]['itens'] << { 'nome' => m['nome'].to_s }.merge(med)
+      end
+      {
+        'format' => CHAVE_FORMAT,
+        'versao' => 1,
+        'origem' => 'sketchup',
+        'extension_version' => EXTENSION_VERSION,
+        'arquivo' => title,
+        'exported_at' => Time.now.iso8601,
+        'pavilhao' => pavilhao > 0 ? { 'area_m2' => pavilhao.round(2), 'fonte' => 'SketchUp (marcado)' } : nil,
+        'servicos' => por.values,
+        'esquadrias' => esquadrias
+      }
+    end
+
+    def chave_marcar(chave)
+      model = Sketchup.active_model
+      sel = model.selection.to_a.select { |e| e.is_a?(Sketchup::Face) || e.is_a?(Sketchup::Group) || e.is_a?(Sketchup::ComponentInstance) }
+      if sel.empty?
+        UI.messagebox('Selecione o piso, o forro ou as paredes (faces, grupos ou componentes) antes de marcar.')
+        return
+      end
+      s = chave_servico(chave)
+      padrao = sel.length == 1 && !sel[0].is_a?(Sketchup::Face) ? entity_name(sel[0]) : s[0]
+      resp = UI.inputbox(['Nome (sai no orçamento)'], [padrao], "Marcar como #{s[0]}")
+      return unless resp
+      model.start_operation('Marcar chave na mão', true)
+      sel.each do |e|
+        e.set_attribute(CHAVE_DICT, 'servico', chave)
+        e.set_attribute(CHAVE_DICT, 'nome', resp[0].to_s)
+      end
+      model.commit_operation
+      UI.messagebox("#{sel.length} item(ns) marcados como #{s[0]}.")
+    end
+
+    def chave_desmarcar
+      model = Sketchup.active_model
+      model.start_operation('Desmarcar chave na mão', true)
+      n = 0
+      model.selection.each { |e| next unless e.respond_to?(:attribute_dictionary) && e.attribute_dictionary(CHAVE_DICT); e.attribute_dictionaries.delete(CHAVE_DICT); n += 1 }
+      model.commit_operation
+      UI.messagebox("#{n} item(ns) desmarcados.")
+    end
+
+    # percorre o modelo inteiro atras do que foi marcado (inclusive dentro de grupos)
+    def chave_procura(entities, transform, saida)
+      entities.each do |e|
+        next if e.respond_to?(:hidden?) && e.hidden?
+        servico = e.respond_to?(:get_attribute) ? e.get_attribute(CHAVE_DICT, 'servico') : nil
+        servico = nil if %w[esquadria nao_esquadria].include?(servico)
+        if servico
+          faces = []
+          walk(e, transform, '', faces, {}, e.is_a?(Sketchup::Face), "#{entity_name(e)}##{entity_id(e)}")
+          saida << { 'servico' => servico, 'nome' => e.get_attribute(CHAVE_DICT, 'nome').to_s, 'faces' => faces }
+        elsif e.is_a?(Sketchup::Group) || e.is_a?(Sketchup::ComponentInstance)
+          chave_procura(e.definition.entities, transform * e.transformation, saida)
+        end
+      end
+    end
+
+    def chave_exportar
+      model = Sketchup.active_model
+      marcados = []
+      chave_procura(model.entities, Geom::Transformation.new, marcados)
+      # faces soltas com o mesmo servico e nome viram um item so' (o piso de
+      # um banheiro desenhado em varias faces); grupo/componente e' um item
+      juntos = {}
+      lista = []
+      marcados.each do |m|
+        if m['faces'].all? { |f| f['_direct'] }
+          k = [m['servico'], m['nome']]
+          if juntos[k]
+            juntos[k]['faces'].concat(m['faces'])
+          else
+            juntos[k] = m
+            lista << m
+          end
+        else
+          lista << m
+        end
+      end
+      marcados = lista
+      cands = []
+      chave_esq_procura(model.entities, Geom::Transformation.new, cands)
+      esquadrias = chave_esquadrias(cands)
+      if marcados.empty? && esquadrias.empty?
+        UI.messagebox("Nada marcado ainda.\n\nSelecione o piso de um banheiro, o forro ou as divisórias e use RM Coberturas › Chave na mão › Marcar como…")
+        return
+      end
+      title = model.title.to_s.empty? ? 'Obra' : model.title
+      payload = chave_payload(title, marcados, esquadrias)
+      target = UI.savepanel('Exportar chave na mão para o Orçamento RM', model.path.to_s.empty? ? nil : File.dirname(model.path), "#{safe_filename(title)} - chave na mao.json")
+      return unless target
+      target += '.json' unless File.extname(target).downcase == '.json'
+      File.open(target, 'wb') { |file| file.write(JSON.pretty_generate(payload)) }
+      linhas = payload['servicos'].map { |s| "#{s['servico']}: #{chave_fmt(s['itens'].sum { |i| i['area_m2'].to_f })} m²" }
+      linhas.unshift("Pavilhão: #{chave_fmt(payload['pavilhao']['area_m2'])} m²") if payload['pavilhao']
+      esquadrias.each { |e| linhas << "#{e['qtd']} × #{e['tipo']} #{chave_fmt(e['larg_mm'] / 1000.0)} × #{chave_fmt(e['alt_mm'] / 1000.0)} m" }
+      UI.messagebox("Chave na mão exportado (RM Coberturas #{EXTENSION_VERSION}).\n\n#{linhas.join("\n")}\n\n#{target}\n\nAbra este arquivo no Leitor DWG, aba Chave na mão (junto da planta, se quiser), confira e use Enviar para o Orçamento.")
+    rescue StandardError => error
+      UI.messagebox("Não foi possível exportar o chave na mão.\n\n#{error.class}: #{error.message}")
+      warn(error.full_message) if error.respond_to?(:full_message)
+    end
+
     def help
-      UI.messagebox("RM COBERTURAS E FECHAMENTOS\n\nREGRA GERAL\nCada superfície é exportada uma única vez.\n\nCOBERTURA\nSelecione as faces ou os grupos do telhado. Quando houver face superior e inferior da mesma água, somente a superior será usada.\n\nFECHAMENTO\nSelecione as faces externas ou o grupo/componente do fechamento. Quando houver face externa e interna da mesma parede, somente a externa será usada. Grupos aninhados são percorridos automaticamente. Portas e janelas devem estar recortadas nas faces.\n\nO DWG continua disponível nos dois modos.")
+      UI.messagebox("RM COBERTURAS E FECHAMENTOS\n\nREGRA GERAL\nCada superfície é exportada uma única vez.\n\nCOBERTURA\nSelecione as faces ou os grupos do telhado. Quando houver face superior e inferior da mesma água, somente a superior será usada.\n\nFECHAMENTO\nSelecione as faces externas ou o grupo/componente do fechamento. Quando houver face externa e interna da mesma parede, somente a externa será usada. Grupos aninhados são percorridos automaticamente. Portas e janelas devem estar recortadas nas faces.\n\nCHAVE NA MÃO\nSelecione o piso de cada banheiro, o forro, o piso e as divisórias (faces, grupos ou componentes) e use Chave na mão › Marcar como…; marque também o piso do pavilhão inteiro. Portas e janelas são achadas sozinhas (pelo nome, pelo vidro ou por recortarem a parede), com a medida do modelo; se alguma não for achada, use Marcar seleção como esquadria…, e o que não for esquadria, Não é esquadria. O marcador fica salvo no modelo. No fim, Exportar chave na mão… e abra o arquivo no Leitor DWG, aba Chave na mão, que envia tudo para o Orçamento RM.\n\nO DWG continua disponível nos dois modos.")
     end
 
     unless file_loaded?(__FILE__)
@@ -480,6 +792,15 @@ module RM_Estruturas
       submenu = menu.add_submenu('RM Coberturas')
       submenu.add_item('Exportar cobertura selecionada…') { export_selected }
       submenu.add_item('Exportar fechamento selecionado…') { export_selected_closure }
+      chave = submenu.add_submenu('Chave na mão')
+      CHAVE_SERVICOS.each { |s| chave.add_item("Marcar seleção como #{s[0]}…") { chave_marcar(s[1]) } }
+      chave.add_separator
+      chave.add_item('Marcar seleção como esquadria…') { chave_marcar_esquadria }
+      chave.add_item('Não é esquadria (ignorar)') { chave_nao_esquadria }
+      chave.add_separator
+      chave.add_item('Desmarcar seleção') { chave_desmarcar }
+      chave.add_separator
+      chave.add_item('Exportar chave na mão…') { chave_exportar }
       submenu.add_separator
       submenu.add_item('Como usar') { help }
       file_loaded(__FILE__)

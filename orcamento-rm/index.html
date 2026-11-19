@@ -1848,6 +1848,19 @@ textarea.din{height:auto;padding:8px 10px}
 /* ---- a tela de conferência da resposta do fornecedor ---- */
 .esq-resp-overlay{position:fixed;inset:0;background:rgba(20,24,32,.6);z-index:95;display:none;align-items:flex-start;justify-content:center;padding:28px 16px;overflow:auto}
 .esq-resp-overlay.open{display:flex}
+.cnm-proj-bts{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.cnm-proj-t{width:100%;border-collapse:collapse;font-size:14px}
+.cnm-proj-t th{font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);text-align:left;padding:6px 8px;border-bottom:1px solid var(--line)}
+.cnm-proj-t td{padding:8px;border-bottom:1px solid var(--line);vertical-align:top}
+.cnm-proj-t td.n,.cnm-proj-t th.n{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.cnm-proj-t tr.off td{opacity:.45}
+.cnm-proj-t .det{font-size:12.5px;color:var(--muted);margin-top:3px;line-height:1.45}
+.cnm-proj-pav{display:flex;gap:14px;align-items:center;flex-wrap:wrap;margin-bottom:14px;padding:12px 14px;border:1px solid var(--line);border-radius:10px;background:var(--bg2,#f6f7f9)}
+.cnm-proj-pav .cnm-in{width:120px}
+.cnm-proj-h{display:flex;gap:10px;align-items:baseline;flex-wrap:wrap;margin:20px 0 6px;font-size:15px}
+.cnm-proj-h span{font-size:12.5px;font-weight:500;color:var(--muted)}
+.cnm-proj-sel{width:100%;min-width:200px;height:32px;border:1px solid var(--line);border-radius:8px;padding:0 6px;font:inherit;font-size:13.5px;background:var(--surface,#fff);color:inherit}
+#cnmImpLeitor.pronta{box-shadow:0 0 0 3px color-mix(in srgb,var(--red,#c8102e) 25%,transparent)}
 #esqTrazOverlay .esq-resp-modal{max-width:980px}
 .esq-resp-modal{background:#fff;width:100%;max-width:1080px;border-radius:14px;box-shadow:0 24px 60px rgba(0,0,0,.3);overflow:hidden}
 .esq-resp-modal .mhead{display:flex;align-items:center;gap:14px;padding:16px 22px;border-bottom:1px solid var(--line);background:var(--ink);color:#fff}
@@ -2999,6 +3012,8 @@ function nomeArquivoSeguro(s,limite){
 .cnm-rm2 .cnm-in{width:96px;padding:6px 9px;font-size:14px}
 .cnm-vals{display:inline-flex;align-items:center;gap:14px;flex-wrap:wrap}
 .cnm-tt .cnm-in{width:124px;font-weight:800}
+.cnm-ar .cnm-in{width:74px}
+.cnm-acr{display:inline-flex;align-items:center;gap:5px;font-size:12.5px;font-weight:700;color:var(--muted,#6b7280);cursor:pointer;white-space:nowrap}
 /* o valor que saiu calculado: mais apagado, mas pode ser digitado por cima */
 .cnm-in.calc{background:#f6f7f9;color:#5f6670;font-weight:600;border-style:dashed}
 .cnm-srv-b{padding:4px 14px 12px}
@@ -5008,6 +5023,9 @@ body[data-theme="escuro"] .cob-t input[type=date]{color-scheme:dark}
     <div><h2 class="esq-h">Chave na mão</h2>
       <p class="esq-sub">Itens e valor de cada serviço, por m² ou total.</p></div>
     <span style="flex:1"></span>
+    <div class="cnm-proj-bts">
+      <button class="btn-sm red" id="cnmImpLeitor" onclick="cnmImportaLeitor()" title="Medidas e esquadrias lidas no Leitor DWG (planta e arquivo do SketchUp)">Importar do Leitor DWG</button>
+    </div>
 
   </div>
   <div class="cnm-estado" id="cnmEstado"></div>
@@ -5047,6 +5065,26 @@ body[data-theme="escuro"] .cob-t input[type=date]{color-scheme:dark}
     <span class="spacer"></span>
     <button class="btn-sm" onclick="esqTrazFecha()">Cancelar</button>
     <button class="btn-sm red" id="esqTrazOk" onclick="esqTrazAplica()">Levar ao banco</button>
+  </div>
+ </div>
+</div>
+
+<!-- ============ CHAVE NA MÃO: IMPORTAR DO LEITOR DWG ============
+     Tudo é lido no Leitor DWG (aba Chave na mão): a planta DWG/DXF e o
+     arquivo do SketchUp (plugin RM Coberturas > Chave na mão), com as
+     esquadrias. Aqui só se escolhe o que entra: os serviços da obra, a área
+     do pavilhão, o que foi medido de cada um e o tipo de cada esquadria no
+     banco de preços. -->
+<div class="esq-resp-overlay" id="cnmProjOverlay" onclick="if(event.target===this)cnmProjFecha()">
+ <div class="esq-resp-modal" style="max-width:900px">
+  <div class="mhead"><h2>Importar do Leitor DWG · chave na mão</h2><button class="x" onclick="cnmProjFecha()">&times;</button></div>
+  <div class="mbody"><div id="cnmProjCorpo"></div></div>
+  <div class="mfoot">
+    <span class="esq-resp-nota" id="cnmProjNota"></span>
+    <span class="spacer"></span>
+    <button class="btn-sm" id="cnmProjLeitor" onclick="cnmProjFecha();cnmAbreLeitor(null)" title="Medir de novo ou abrir outro arquivo">Abrir o Leitor DWG</button>
+    <button class="btn-sm" onclick="cnmProjFecha()">Cancelar</button>
+    <button class="btn-sm red" id="cnmProjOk" onclick="cnmProjAplica()">Lançar no orçamento</button>
   </div>
  </div>
 </div>
@@ -10683,7 +10721,7 @@ function applyImport(){
    publicacao, e ha uma prova automatica que falha se um subir sem o outro.
    Assim o numero na tela e' o mesmo do arquivo que o aparelho guardou, e
    dizer "estou na v15" passa a significar alguma coisa. */
-const APP_VER='v167';
+const APP_VER='v168';
 (function(){ try{ const p=document.getElementById('verPill'); if(p)p.textContent=APP_VER; }catch(e){} })();
 /* Versao nova assumiu com a pagina aberta: avisa, em vez de recarregar por
    conta propria e jogar fora um orcamento pela metade. */
@@ -12123,8 +12161,23 @@ function cnmDefinePor(por){
    orcamento-chave-valor-por-item. */
 function cnmItemTot(i){ return Math.round(cnmNum(i&&i.qtd)*cnmNum(i&&i.vu)*100)/100; }
 function cnmSomaItens(s){ return cnmLista(s&&s.itens).reduce((a,i)=>a+cnmItemTot(i),0); }
-function cnmSubCom(s,m2){ return s&&s.modo==='item'?cnmSomaItens(s):s&&s.modo==='total'?cnmNum(s.total):cnmNum(s&&s.rm2)*m2; }
-function cnmRm2Com(s,m2){ return s&&s.modo==='item'?(m2>0?cnmSomaItens(s)/m2:0):s&&s.modo==='total'?(m2>0?cnmNum(s.total)/m2:0):cnmNum(s&&s.rm2); }
+/* ÁREA PRÓPRIA DO SERVIÇO (s.area). Hidráulica, pintura, elétrica e piso
+   vão pela metragem da obra toda; banheiro, granilite, gesso e forro pela
+   área deles (o banheiro de 6,30 × 3,00 = 18,9 m² × R$ 4.000). Vazio = a
+   metragem da obra, como sempre foi -- detalhamento antigo não muda.
+   ACRÉSCIMO (s.acr): o "+10%" da tabela SERVIÇOS, ligado serviço a serviço;
+   o % fica guardado no serviço (s.acrPct) para a conta não mudar sozinha se
+   a tabela mudar depois. */
+function cnmAreaCom(s,m2){ const a=cnmNum(s&&s.area); return a>0?a:m2; }
+function cnmAcrFat(s){ return s&&s.acr?1+cnmNum(s.acrPct)/100:1; }
+function cnmSubCom(s,m2){ const a=cnmAreaCom(s,m2);
+  return Math.round((s&&s.modo==='item'?cnmSomaItens(s):s&&s.modo==='total'?cnmNum(s.total):cnmNum(s&&s.rm2)*a)*cnmAcrFat(s)*100)/100; }
+function cnmRm2Com(s,m2){ const a=cnmAreaCom(s,m2); return s&&s.modo==='item'?(a>0?cnmSomaItens(s)/a:0):s&&s.modo==='total'?(a>0?cnmNum(s.total)/a:0):cnmNum(s&&s.rm2); }
+/* A tabela SERVIÇOS do Banco de dados: preço por m² (ou un) de cada serviço */
+function cnmCatServ(){ try{ return (S.categorias||[]).find(c=>c.nome==='SERVIÇOS')||null; }catch(e){ return null; } }
+function cnmPrecoCat(nome){ const c=cnmCatServ(); if(!c) return null; const k=esqNorm(nome);
+  const it=(c.items||[]).find(i=>esqNorm(i.tipo||i.desc||'')===k); return it&&!it.manual&&cnmNum(it.valor)>0?cnmNum(it.valor):null; }
+function cnmAcrCat(){ const c=cnmCatServ(); return c?cnmNum(c.acrescimoPct):0; }
 function cnmSub(s){ return cnmSubCom(s,cnmM2()); }
 function cnmRm2(s){ return cnmRm2Com(s,cnmM2()); }
 function cnmTemValor(s){ return cnmNum(s.rm2)>0||cnmNum(s.total)>0||cnmSomaItens(s)>0; }
@@ -12152,7 +12205,8 @@ function cnmRender(){
     ||'<div class="esq-vazio">Nenhum serviço. Use <b>+ Adicionar serviço</b> abaixo.</div>';
   const sug=document.getElementById('cnmSug');
   if(sug){ const tem={}; d.servicos.forEach(s=>{ tem[esqNorm(s.nome)]=1; });
-    sug.innerHTML=CNM_SUG.concat(cnmPadrao()).filter(n=>!tem[esqNorm(n)]).map(n=>'<button type="button" class="cnm-chip" data-cnmsug="'+escapeAttr(n)+'">+ '+escapeAttr(n)+'</button>').join(''); }
+    const doCat=((cnmCatServ()||{}).items||[]).map(i=>i.tipo||i.desc||'').filter(Boolean);
+    sug.innerHTML=doCat.concat(CNM_SUG,cnmPadrao()).filter((n,i,a)=>a.findIndex(x=>esqNorm(x)===esqNorm(n))===i).filter(n=>!tem[esqNorm(n)]).map(n=>'<button type="button" class="cnm-chip" data-cnmsug="'+escapeAttr(n)+'">+ '+escapeAttr(n)+'</button>').join(''); }
   const por=cnmPorItem()?'item':'servico';
   document.querySelectorAll('#cnmModo [data-cnmpor]').forEach(b=>{ const on=b.dataset.cnmpor===por; b.setAttribute('aria-pressed',on?'true':'false'); b.classList.toggle('on',on); });
   const dica=document.getElementById('cnmDica');
@@ -12162,11 +12216,217 @@ function cnmRender(){
   cnmResumo();
   cnmLiga();
   cnmSalvosRender();
+  cnmMedicaoPendente(false);
 }
 /* ---- detalhamentos salvos ----
    O detalhamento e' guardado como orcamento (em Salvos, junto do resto, e
    pela mesma nuvem), mas a lista dele mora aqui: quem trabalha na Chave na
    mao nao precisa garimpar entre os orcamentos de perfil e telha. */
+/* ===================== LER PROJETO (chave na mão) =====================
+   A planta e o SketchUp dão as medidas; quem diz o que a obra leva é quem
+   orça. Hidráulica, pintura, elétrica e piso vão pela área do pavilhão;
+   banheiro, forro e as divisórias (gesso, granilite) pelo que foi medido.
+   O arquivo é o mesmo nos dois caminhos (format RM_CHAVE_NA_MAO):
+     { pavilhao:{area_m2, fonte}, servicos:[{servico, tipo:'area'|'parede',
+       itens:[{nome, area_m2, dims}]}] }
+   - SketchUp: plugin RM Coberturas > Chave na mão > Exportar.
+   - Planta DWG/DXF: medida no Leitor DWG (aba Chave na mão), que devolve a
+     medição para cá (localStorage do mesmo site + aviso pela Central). */
+var CNM_MED=null, CNM_MED_KEY='rm_cnm_medicao';
+function cnmPavPadrao(n){ return ['Elétrica','Hidráulica','Pintura','Piso'].some(x=>esqNorm(x)===esqNorm(n)); }
+function cnmMedValida(m){ return !!(m&&typeof m==='object'&&String(m.format||'').toUpperCase()==='RM_CHAVE_NA_MAO'&&Array.isArray(m.servicos)); }
+function cnmFmt(v){ return num(cnmNum(v),2); }
+/* Importar do Leitor DWG: com medição pronta, abre a conferência; sem,
+   abre o Leitor (pela Central) na aba Chave na mão. */
+function cnmImportaLeitor(){
+  const x=cnmMedLe();
+  if(x){ cnmProjAbre(x.medicao,x.medicao.arquivo||'Leitor DWG',true); return; }
+  cnmAbreLeitor(null);
+}
+/* O Leitor DWG abre pela Central já na aba Chave na mão (arq: a planta ou
+   o arquivo do SketchUp, que vai junto). */
+function cnmAbreLeitor(arq){
+  const vai=dados=>{
+    const msg={rm:'abrir-sistema',id:'corte',depois:{rm:'cnm-abrir',nome:arq?arq.name:'',dados:dados||null}};
+    if(window.parent&&window.parent!==window){ try{ window.parent.postMessage(msg,'*'); toast('Abrindo a planta no Leitor DWG…'); return; }catch(e){} }
+    alert('Abra o Leitor DWG, aba "Chave na mão", e escolha a planta (DWG/DXF) ou o arquivo do SketchUp'+(arq?' "'+arq.name+'"':'')+'. Ao terminar, use "Enviar para o Orçamento" e volte aqui.');
+  };
+  if(!arq){ vai(null); return; }
+  const rd=new FileReader(); rd.onload=()=>vai(rd.result); rd.onerror=()=>vai(null); rd.readAsArrayBuffer(arq);
+}
+/* medição que o Leitor deixou para cá */
+function cnmMedLe(){ try{ const x=JSON.parse(localStorage.getItem(CNM_MED_KEY)||'null'); return x&&cnmMedValida(x.medicao)?x:null; }catch(e){ return null; } }
+function cnmMedicaoPendente(abrir){
+  const x=cnmMedLe(), b=document.getElementById('cnmImpLeitor');
+  if(b){ b.classList.toggle('pronta',!!x); b.textContent=x?'Importar do Leitor DWG · medição pronta':'Importar do Leitor DWG';
+    b.title=x?'Medição enviada pelo Leitor DWG'+(x.medicao.arquivo?' ('+x.medicao.arquivo+')':'')+': confira e lance no orçamento':'Abre o Leitor DWG, aba Chave na mão: planta e arquivo do SketchUp, com as esquadrias'; }
+  if(abrir&&x) cnmProjAbre(x.medicao,x.medicao.arquivo||'Leitor DWG',true);
+  return !!x;
+}
+window.addEventListener('storage',ev=>{ if(ev.key===CNM_MED_KEY) cnmMedicaoPendente(false); });
+window.addEventListener('message',ev=>{ const m=ev.data; if(!m||m.rm!=='cnm-medicao') return;
+  try{ if(ev.source) ev.source.postMessage({rm:'recebido'},'*'); }catch(e){}
+  if(document.getElementById('cnmProjOverlay').classList.contains('open')) return;
+  if(typeof orcAba==='function') orcAba('cnm'); cnmMedicaoPendente(true); });
+
+/* nome do serviço na tabela SERVIÇOS ("Forro" -> "Forro Modular") */
+function cnmNomeCat(n){
+  const nomes=((cnmCatServ()||{}).items||[]).map(i=>i.tipo||i.desc||'').filter(Boolean), k=esqNorm(n);
+  return nomes.find(x=>esqNorm(x)===k)||nomes.find(x=>esqNorm(x).indexOf(k.split(' ')[0])>=0||k.indexOf(esqNorm(x).split(' ')[0])>=0)||n;
+}
+/* ESQUADRIA DO PROJETO -> TIPO DO BANCO. O SketchUp diz só "Janela",
+   "Porta", "Maxim-ar"...; o preço está no tipo do banco ("Janela de correr",
+   "Porta de giro pivotante"). Vai o tipo com a mesma peça e medida já cotada;
+   senão o de mais cotações; senão o primeiro da lista. A escolha fica na tela. */
+var CNM_ESQ_CHAVES={janela:['janela'],porta:['porta de','porta toda','porta'],portao:['portao'],basculante:['basculante','maxiar','maxim'],'maxim-ar':['maxiar','maxim','basculante']};
+function cnmEsqMapa(gen,larg,alt){
+  const tipos=esqAddTiposTodos(), g=esqNorm(gen);
+  const igual=tipos.find(t=>esqNorm(t)===g); if(igual) return igual;
+  const ch=CNM_ESQ_CHAVES[g]||(g?[g]:[]);
+  for(let k=0;k<ch.length;k++){
+    const cand=tipos.filter(t=>{ const n=esqNorm(t); return n.indexOf(ch[k])===0&&!(g==='porta'&&/janela/.test(n)); });
+    if(!cand.length) continue;
+    const H=esqHistLista(), mesma=cand.find(t=>H.some(h=>h.tipo===t&&h.larg===larg&&h.alt===alt)); if(mesma) return mesma;
+    const comRef=cand.map(t=>({t,r:esqRef(t)})).filter(x=>x.r).sort((a,b)=>b.r.n-a.r.n);
+    return comRef.length?comRef[0].t:cand[0];
+  }
+  return '';
+}
+function cnmEsqEst(r){
+  if(!r.tipo) return null;
+  const est=esqEstimativa({tipo:r.tipo,larg:r.larg,alt:r.alt,fornecedor:''});
+  return est&&est.unit>0?est:null;
+}
+function cnmProjAbre(m,arquivo,doLeitor){
+  const d=cnmDados(), linhas=[], vistas={};
+  const poe=(nome,o)=>{ const k=esqNorm(nome); if(vistas[k]){ Object.assign(vistas[k],o); return vistas[k]; } const l=Object.assign({nome:nome,med:null,on:false},o); vistas[k]=l; linhas.push(l); return l; };
+  /* o que foi medido */
+  m.servicos.forEach(sv=>{
+    const itens=(Array.isArray(sv.itens)?sv.itens:[]).filter(i=>cnmNum(i.area_m2)>0);
+    const area=itens.reduce((a,i)=>a+cnmNum(i.area_m2),0);
+    if(!(area>0)) return;
+    const l=poe(cnmNomeCat(sv.servico||'Serviço'),{});
+    l.med={tipo:sv.tipo==='parede'?'parede':'area',area:Math.round(area*100)/100,itens:itens};
+    l.on=true;
+  });
+  /* os da tabela (por m²) e os que a obra já tem */
+  ((cnmCatServ()||{}).items||[]).forEach(i=>{ if(i.manual||!/m/.test(String(i.unidade||'m²'))) return; const n=i.tipo||i.desc; if(!n) return;
+    const l=poe(n,{}); if(!l.med&&cnmPavPadrao(n)) l.on=true; });
+  d.servicos.forEach(s=>{ if(esqNorm(s.nome)==='esquadrias') return; const l=poe(s.nome,{});
+    if(!l.med&&cnmNum(s.area)<=0&&(cnmTemValor(s)||cnmLista(s.itens).length||cnmPavPadrao(s.nome))) l.on=true; });
+  const pav=m.pavilhao&&cnmNum(m.pavilhao.area_m2)>0?Math.round(cnmNum(m.pavilhao.area_m2)*100)/100:cnmM2();
+  const esq=(Array.isArray(m.esquadrias)?m.esquadrias:[]).filter(e=>cnmNum(e.larg_mm)>0&&cnmNum(e.alt_mm)>0).map(e=>{
+    const larg=Math.round(cnmNum(e.larg_mm)), alt=Math.round(cnmNum(e.alt_mm));
+    return {gen:String(e.tipo||'Esquadria'),larg:larg,alt:alt,qtd:Math.max(1,Math.round(cnmNum(e.qtd))||1),nomes:Array.isArray(e.nomes)?e.nomes.map(String):[],tipo:cnmEsqMapa(e.tipo,larg,alt),on:true,mao:false}; });
+  CNM_MED={m:m,arquivo:arquivo||'',doLeitor:!!doLeitor,linhas:linhas,pav:pav,esq:esq};
+  cnmProjRender();
+  document.getElementById('cnmProjOverlay').classList.add('open');
+}
+function cnmProjRender(){
+  const M=CNM_MED; if(!M) return;
+  const pav=M.pav, fonte=M.m.pavilhao&&M.m.pavilhao.fonte?M.m.pavilhao.fonte:'';
+  let tot=0;
+  const rows=M.linhas.map((l,ix)=>{
+    const preco=cnmPrecoCat(l.nome)||0, area=l.med?l.med.area:pav, v=l.on?preco*area:0; tot+=v;
+    const det=l.med?l.med.itens.map(i=>escapeAttr(i.nome||'')+(i.dims?' · '+escapeAttr(i.dims):'')+' · <b>'+cnmFmt(i.area_m2)+' m²</b>').join('<br>'):'';
+    return '<tr class="'+(l.on?'':'off')+'"><td><label style="display:flex;gap:8px;align-items:flex-start;cursor:pointer"><input type="checkbox" data-cnmpj="'+ix+'"'+(l.on?' checked':'')+'><span><b>'+escapeAttr(l.nome)+'</b>'+(det?'<div class="det">'+det+'</div>':'')+'</span></label></td>'
+      +'<td>'+(l.med?(l.med.tipo==='parede'?'divisórias medidas':'área medida'):'área do pavilhão')+'</td>'
+      +'<td class="n">'+cnmFmt(area)+' m²</td><td class="n">'+(preco?brl(preco)+'/m²':'<span style="color:var(--muted)">sem preço</span>')+'</td><td class="n">'+(l.on&&preco?brl(v):'—')+'</td></tr>';
+  }).join('');
+  document.getElementById('cnmProjCorpo').innerHTML=
+    '<div class="cnm-proj-pav"><b>Área do pavilhão</b><input class="cnm-in num" id="cnmProjPav" inputmode="decimal" value="'+escapeAttr(pav>0?cnmFmt(pav):'')+'"> m²'
+      +'<span style="color:var(--muted);font-size:13px">'+escapeAttr(M.arquivo)+(fonte?' · '+escapeAttr(fonte):'')+'</span></div>'
+    +'<p style="margin:0 0 10px;color:var(--muted);font-size:13px">Marque só os serviços da obra. Hidráulica, pintura, elétrica e piso vão pela área do pavilhão.</p>'
+    +'<table class="cnm-proj-t"><thead><tr><th>Serviço</th><th>Medida por</th><th class="n">Área</th><th class="n">Preço</th><th class="n">Total</th></tr></thead><tbody>'+rows+'</tbody></table>'
+    +cnmProjEsqHtml();
+  const tEsq=(M.esq||[]).reduce((a,r)=>{ const e=r.on?cnmEsqEst(r):null; return a+(e?e.unit*r.qtd:0); },0);
+  document.getElementById('cnmProjNota').textContent='Total dos marcados: '+brl(tot+tEsq)+(tEsq?' (esquadrias '+brl(tEsq)+')':'')
+    +(M.linhas.some(l=>l.on&&!cnmPrecoCat(l.nome))||(M.esq||[]).some(r=>r.on&&!cnmEsqEst(r))?' · o que está sem preço entra sem valor':'');
+  document.querySelectorAll('[data-cnmpe]').forEach(c=>c.onchange=()=>{ M.esq[+c.dataset.cnmpe].on=c.checked; cnmProjRender(); });
+  document.querySelectorAll('[data-cnmpet]').forEach(c=>c.onchange=()=>{ const r=M.esq[+c.dataset.cnmpet]; r.tipo=c.value; r.mao=true;
+    /* as outras do mesmo tipo do projeto que ninguém escolheu vão junto */
+    M.esq.forEach(o=>{ if(o!==r&&!o.mao&&esqNorm(o.gen)===esqNorm(r.gen)) o.tipo=c.value; }); cnmProjRender(); });
+  document.querySelectorAll('[data-cnmpj]').forEach(c=>c.onchange=()=>{ M.linhas[+c.dataset.cnmpj].on=c.checked; cnmProjRender(); });
+  const pv=document.getElementById('cnmProjPav'); pv.onchange=()=>{ M.pav=cnmNum(pv.value); cnmProjRender(); };
+}
+function cnmProjEsqHtml(){
+  const M=CNM_MED, L=M&&M.esq||[]; if(!L.length) return '';
+  const tipos=esqAddTiposTodos(), refs={}; tipos.forEach(t=>{ refs[t]=esqRef(t); });
+  const nPc=L.reduce((a,r)=>a+r.qtd,0);
+  return '<h3 class="cnm-proj-h">Esquadrias <span>'+nPc+' peça'+(nPc>1?'s':'')+' · entram na aba Esquadrias e no serviço Esquadrias</span></h3>'
+    +'<table class="cnm-proj-t cnm-proj-esq"><thead><tr><th>Do projeto</th><th class="n">Medida</th><th class="n">Qtd</th><th>Tipo no banco de preços</th><th class="n">Preço un.</th><th class="n">Total</th></tr></thead><tbody>'
+    +L.map((r,ix)=>{ const est=cnmEsqEst(r);
+      const op='<option value="">— escolha o tipo —</option>'+tipos.concat(r.tipo&&tipos.indexOf(r.tipo)<0?[r.tipo]:[]).map(t=>'<option value="'+escapeAttr(t)+'"'+(t===r.tipo?' selected':'')+'>'+escapeAttr(t)+(refs[t]?' · '+brl(refs[t].rm2)+'/m²':'')+'</option>').join('');
+      const como=!r.tipo?'escolha o tipo':!est?'sem cotação deste tipo':est.nivel==='igual'?'mesma peça já cotada':brl(est.rm2)+'/m² · '+est.n+' cotaç'+(est.n>1?'ões':'ão');
+      return '<tr class="'+(r.on?'':'off')+'"><td><label style="display:flex;gap:8px;align-items:flex-start;cursor:pointer"><input type="checkbox" data-cnmpe="'+ix+'"'+(r.on?' checked':'')+'><span><b>'+escapeAttr(r.gen)+'</b>'
+        +(r.nomes.length?'<div class="det">'+escapeAttr(r.nomes.slice(0,4).join(', ')+(r.nomes.length>4?'…':''))+'</div>':'')+'</span></label></td>'
+        +'<td class="n">'+num(r.larg/1000,2)+' × '+num(r.alt/1000,2)+' m</td><td class="n">'+r.qtd+'</td>'
+        +'<td><select class="cnm-proj-sel" data-cnmpet="'+ix+'">'+op+'</select><div class="det">'+escapeAttr(como)+'</div></td>'
+        +'<td class="n">'+(est?brl(est.unit):'<span style="color:var(--muted)">sem preço</span>')+'</td><td class="n">'+(r.on&&est?brl(est.unit*r.qtd):'—')+'</td></tr>'; }).join('')
+    +'</tbody></table>';
+}
+function cnmProjFecha(){ const o=document.getElementById('cnmProjOverlay'); if(o) o.classList.remove('open'); }
+function cnmProjAplica(){
+  const M=CNM_MED; if(!M) return;
+  const d=cnmDados(), pv=document.getElementById('cnmProjPav'); if(pv) M.pav=cnmNum(pv.value);
+  /* sem separador de milhar: "1.500" sem vírgula seria lido como 1,5 */
+  if(M.pav>0) d.m2=String(Math.round(M.pav*100)/100).replace('.',',');
+  let n=0;
+  M.linhas.forEach(l=>{
+    let s=d.servicos.find(x=>esqNorm(x.nome)===esqNorm(l.nome));
+    if(!l.on){
+      /* desmarcado: o serviço vazio sai da obra (não leva gesso, não leva forro) */
+      if(s&&!cnmTemValor(s)&&!cnmLista(s.itens).length) d.servicos=d.servicos.filter(x=>x!==s);
+      return; }
+    if(!s){ s=cnmServNovo(l.nome); d.servicos.push(s); if(cnmPorItem()){ s.modoAnt='m2'; s.modo='item'; } }
+    const pc=cnmPrecoCat(l.nome); if(pc&&!cnmTemValor(s)){ s.rm2=String(pc).replace('.',','); if(s.modo!=='item') s.modo='m2'; }
+    s.itens=cnmLista(s.itens).filter(i=>i.fonte!=='projeto');
+    if(l.med){
+      s.area=cnmFmt(l.med.area);
+      l.med.itens.forEach(i=>s.itens.push({id:cnmId('i'),desc:(i.nome||l.nome)+(i.dims?' — '+i.dims:''),un:'m²',qtd:cnmFmt(i.area_m2),vu:pc?String(pc).replace('.',','):'',fonte:'projeto'}));
+    } else s.area='';
+    n++;
+  });
+  const nE=cnmProjEsqAplica(d);
+  if(M.doLeitor){ try{ localStorage.removeItem(CNM_MED_KEY); }catch(e){} }
+  cnmProjFecha(); cnmGravou(); cnmRender(); cnmMedicaoPendente(false);
+  try{ esqRender(); }catch(e){}
+  toast(n+' serviço(s)'+(nE?' e '+nE+' esquadria(s)':'')+' lançados do projeto');
+}
+
+/* As esquadrias do projeto entram na aba Esquadrias (fonte 'projeto': uma
+   importação nova troca as da anterior) com o preço estimado do banco, e no
+   serviço Esquadrias, uma linha por peça ligada à da aba. */
+function cnmProjEsqAplica(d){
+  const M=CNM_MED; if(!M||!(M.esq||[]).length) return 0;
+  const saem={}; esqLista().forEach(e=>{ if(e.fonte==='projeto') saem[e.id]=1; });
+  S.esquadrias=esqLista().filter(e=>!saem[e.id]);
+  const novas=[]; let tot=0;
+  M.esq.filter(r=>r.on).forEach(r=>{
+    const e={id:'q'+Date.now().toString(36)+Math.random().toString(36).slice(2,5),tipo:'',larg:String(r.larg),alt:String(r.alt),qtd:r.qtd,
+      perfil:'',cor:'',vidro:'',vesp:'',folhas:'',abertura:'',ferragens:'',obs:'',mini:'',fonte:'projeto'};
+    /* a observação vai para o fornecedor: o nome do componente no modelo não */
+    esqPadAplica(e);
+    /* sem tipo do banco, fica o do projeto ("Portão") como tipo digitado */
+    if(r.tipo) esqAplicaTipoSem(e,r.tipo); else e.tipo=r.gen;
+    const est=r.tipo?esqEstimativa(e):null;
+    if(est&&est.unit>0){ e.unit=est.unit; e.estado='estimado'; tot+=est.unit*r.qtd; }
+    S.esquadrias.push(e); novas.push(e);
+  });
+  let s=d.servicos.find(x=>esqNorm(x.nome)==='esquadrias');
+  if(s){ s.itens=cnmLista(s.itens).filter(i=>!(i.esq&&saem[i.esq])&&i.fonte!=='projeto');
+    /* o total que a importação anterior pôs sai junto com as peças dela */
+    if(s.totProj){ delete s.totProj; if(s.modo==='total'){ s.total=''; s.modo='m2'; } } }
+  if(novas.length){
+    if(!s){ s=cnmServNovo('Esquadrias'); d.servicos.push(s); }
+    novas.forEach(e=>s.itens.push({id:cnmId('i'),esq:e.id,desc:[esqDesc(e)||e.tipo||'Esquadria',esqMed(e)].filter(Boolean).join(' · '),un:'un',
+      qtd:String(Math.max(1,esqNum(e.qtd)||1)),vu:esqNum(e.unit)>0?num(esqNum(e.unit),2):'',fonte:'projeto'}));
+    if(cnmPorItem()||s.modo==='item') s.modo='item';
+    else if(tot>0){ s.modo='total'; s.total=String(Math.round(cnmSomaItens(s)*100)/100).replace('.',','); s.totProj=true; }
+    s.area='';
+  }
+  return novas.reduce((a,e)=>a+(Number(e.qtd)||1),0);
+}
 function cnmSalvar(){
   if(!cnmTemConteudo()&&!String(S.obra||'').trim()){ alert('Preencha a obra ou algum serviço antes de salvar o detalhamento.'); return; }
   salvarOrcamento();
@@ -12213,6 +12473,9 @@ function cnmCartao(s){
     +'<b>'+escapeAttr(s.nome||'Serviço')+'</b><span class="cnm-n">· '+n+' '+(n===1?'item':'itens')+'</span>'
     +'<span style="flex:1"></span>'
     +'<span class="cnm-vals">'
+    +'<label class="cnm-rm2 cnm-ar" title="Área deste serviço. Vazio = a metragem da obra"><span>m²</span>'
+    +'<input class="cnm-in num" data-cnmarea="'+s.id+'" inputmode="decimal" placeholder="'+escapeAttr(cnmM2()>0?num(cnmM2(),2).replace(/,00$/,''):'obra')+'" value="'+escapeAttr(s.area==null?'':s.area)+'"></label>'
+    +(cnmAcrCat()>0||s.acr?'<label class="cnm-acr" title="Somar o acréscimo da tabela SERVIÇOS neste serviço"><input type="checkbox" data-cnmacr="'+s.id+'"'+(s.acr?' checked':'')+'> +'+num(s.acr?cnmNum(s.acrPct):cnmAcrCat(),0)+'%</label>':'')
     +'<label class="cnm-rm2" title="'+(porItem?'R$/m² calculado pela soma dos itens':'Valor deste serviço por m² da obra — o total sai calculado')+'"><span>R$</span>'
     +'<input class="cnm-in num'+(porTotal?' calc':'')+(porItem?' calc':'')+'"'+(porItem?' readonly tabindex="-1"':'')+' data-cnmrm2="'+s.id+'" inputmode="decimal" placeholder="0,00" value="'+escapeAttr(porItem||porTotal?cnmCalcTxt(cnmRm2(s)):(s.rm2==null?'':s.rm2))+'"><span>/m²</span></label>'
     +'<label class="cnm-rm2 cnm-tt" title="'+(porItem?'Soma dos itens abaixo':'Valor total deste serviço — o R$/m² sai calculado')+'"><span>Total R$</span>'
@@ -12267,8 +12530,14 @@ function cnmLiga(){
   host.querySelectorAll('[data-cnmrm2]').forEach(i=>{
     i.oninput=()=>{ const s=cnmAcha(i.dataset.cnmrm2); if(!s) return; s.modo='m2'; s.rm2=i.value.trim(); s.total=''; cnmResumo(); cnmGravou(); };
   });
+  host.querySelectorAll('[data-cnmarea]').forEach(i=>{
+    i.oninput=()=>{ const s=cnmAcha(i.dataset.cnmarea); if(!s) return; s.area=i.value.trim(); cnmResumo(); cnmGravou(); };
+  });
+  host.querySelectorAll('[data-cnmacr]').forEach(i=>{
+    i.onchange=()=>{ const s=cnmAcha(i.dataset.cnmacr); if(!s) return; s.acr=i.checked; if(i.checked) s.acrPct=cnmAcrCat()||cnmNum(s.acrPct)||10; cnmResumo(); cnmGravou(); };
+  });
   host.querySelectorAll('[data-cnmtot]').forEach(i=>{
-    i.oninput=()=>{ const s=cnmAcha(i.dataset.cnmtot); if(!s) return; s.modo='total'; s.total=i.value.trim(); s.rm2=''; cnmResumo(); cnmGravou(); };
+    i.oninput=()=>{ const s=cnmAcha(i.dataset.cnmtot); if(!s) return; s.modo='total'; s.total=i.value.trim(); s.rm2=''; delete s.totProj; cnmResumo(); cnmGravou(); };
   });
   host.querySelectorAll('[data-cnmit]').forEach(i=>{
     i.oninput=()=>{ const [sid,iid]=i.dataset.cnmit.split('|'), s=cnmAcha(sid); if(!s) return;
@@ -12310,6 +12579,8 @@ function cnmAddServico(nome){
   const vai=function(v){
     if(v==null) return; v=String(v).trim(); if(!v) return;
     const s=cnmServNovo(v); s.aberto=true;
+    /* serviço que está na tabela SERVIÇOS já entra com o preço de lá */
+    const pc=cnmPrecoCat(v); if(pc) s.rm2=String(pc).replace('.',',');
     if(cnmPorItem()){ s.modoAnt='m2'; s.modo='item'; }
     cnmDados().servicos.push(s); cnmGravou(); cnmRender();
     const c=document.querySelector(s.modo==='item'?'[data-cnmitadd="'+s.id+'"]':'[data-cnmrm2="'+s.id+'"]'); if(c){ c.scrollIntoView({block:'center'}); c.focus(); }
@@ -12361,7 +12632,7 @@ function cnmPDF(){
   let corpo='';
   servs.forEach(s=>{
     corpo+='<div class="sv"><div class="sv-h rmd-grupo"><b>'+escapeAttr(s.nome||'Serviço')+'</b>'
-      +'<span>'+(cnmRm2(s)>0?brl(cnmRm2(s))+'/m² · ':'')+'<b>'+brl(cnmSub(s))+'</b></span></div>'
+      +'<span>'+(cnmRm2(s)>0?brl(cnmRm2(s))+'/m²'+(cnmNum(s.area)>0?' × '+num(cnmNum(s.area),2)+' m²':'')+(s.acr?' + '+num(cnmNum(s.acrPct),0)+'%':'')+' · ':'')+'<b>'+brl(cnmSub(s))+'</b></span></div>'
       +(s.itens.length?'<table><thead><tr><th class="l">Item / descrição</th><th class="l" style="width:22mm">Unid.</th><th style="width:22mm">Qtd.</th>'
         +(s.modo==='item'?'<th style="width:28mm">Valor unit.</th><th style="width:28mm">Total</th>':'')+'</tr></thead><tbody>'
         +s.itens.map(i=>'<tr><td class="l">'+escapeAttr(i.desc||'—')+'</td><td class="l">'+escapeAttr(i.un||'')+'</td><td>'+qtd(i.qtd)+'</td>'
@@ -12387,7 +12658,7 @@ function cnmPDF(){
     +'</div>'+corpo
     +'<div class="rmd-sec">Resumo da obra</div>'
     +'<table class="res"><thead><tr><th class="l">Serviço</th><th>R$/m²</th><th>Valor</th></tr></thead><tbody>'
-    +servs.map(s=>'<tr><td class="l">'+escapeAttr(s.nome||'Serviço')+'</td><td>'+brl(cnmRm2(s))+'</td><td>'+brl(cnmSub(s))+'</td></tr>').join('')
+    +servs.map(s=>'<tr><td class="l">'+escapeAttr(s.nome||'Serviço')+(cnmNum(s.area)>0?' · '+num(cnmNum(s.area),2)+' m²':'')+'</td><td>'+brl(cnmRm2(s))+'</td><td>'+brl(cnmSub(s))+'</td></tr>').join('')
     +'<tr class="tot rmd-tot"><td class="l">Total da obra</td><td>'+(m2>0?brl(tot/m2):'—')+'</td><td>'+brl(tot)+'</td></tr></tbody></table>'
     +'</body></html>';
   esqEntregaPDF(html,nomeArquivoSeguro('RM_Chave_na_mao_'+(S.obra||S.cliente||'obra')+'.pdf'));

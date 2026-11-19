@@ -3629,7 +3629,7 @@ body:not([data-theme="escuro"]){
         <!-- A extensão que gera o .rmfecha / .rmcob mora junto do leitor: quem
              corrige a leitura corrige a exportação no mesmo lugar. -->
         <a class="cob-skp-ext" href="sketchup/RM_Coberturas.rbz" download="RM_Coberturas.rbz"
-           title="No SketchUp: Extensões › Gerenciador de extensões › Instalar extensão, e escolha este arquivo">⬇ Extensão do SketchUp (RM Coberturas 1.2.6)</a>
+           title="No SketchUp: Extensões › Gerenciador de extensões › Instalar extensão, e escolha este arquivo">⬇ Extensão do SketchUp (RM Coberturas 1.4.0)</a>
         <div class="so-home"><h2 class="sec">Obras salvas</h2><div id="historicoTel"></div></div>
       </div>
       <div id="appTel" class="hide">
@@ -7997,9 +7997,11 @@ async function handle(file,aba){
     log('✓ unidade '+(auto?'automática (arquivo e desenho concordam)':'confirmada')+': '+u.nome+' ('+u.sigla+')','ok');
     /* os ids de grupo sao refeitos aqui; um vinculo manual antigo apontaria
        para outro desenho */
+    if(aba!=='cnm'){
     for(const k in FORCE)delete FORCE[k];
     QA_OK=false;EXCL.clear();PONTA_BANZO=false;irEtapa('conferir');
     parseFichas();fitVB();cluster();
+    }
     /* O arquivo pertence a ABA em que foi aberto. Guardar aqui e' o que
        permite trocar de aba sem perder o desenho do outro lado. */
     ABA.atual=aba;
@@ -8011,9 +8013,9 @@ async function handle(file,aba){
       p.classList.toggle('on', p.id==='pane-'+aba));
     const resumo=SEG.length+' segmentos · '+TXT.length+' textos'+
       (COTAS.length?(' · '+COTAS.length+' cotas'):'')+' · '+u.sigla;
-    const fb=document.getElementById(aba==='tel'?'fbNameTel':'fbName');
+    const fb=aba==='cnm'?null:document.getElementById(aba==='tel'?'fbNameTel':'fbName');
     if(fb)fb.textContent=file.name||'arquivo carregado';
-    const fi2=document.getElementById(aba==='tel'?'fbInfoTel':'fbInfo');
+    const fi2=aba==='cnm'?null:document.getElementById(aba==='tel'?'fbInfoTel':'fbInfo');
     if(fi2)fi2.textContent=resumo;
     /* O botao so aparece quando o desenho TEM cotas -- num desenho de tesoura
        ele nao serve para nada e so ocuparia lugar. */
@@ -8029,7 +8031,7 @@ async function handle(file,aba){
       try{telhaAbrir();}catch(_){}
     }
     abasPrepara();
-    renderAll();
+    if(aba!=='cnm')renderAll();
   }catch(e){log('✗ erro: '+(e&&e.message?e.message:e),'err');}
   finally{
     importandoArquivo=false;
@@ -8045,7 +8047,7 @@ async function handle(file,aba){
 
        Agora vale para as duas abas e para os dois desfechos, deu certo ou
        nao: quem escolhe o arquivo escolhe de novo quando quiser. */
-    const inp=document.querySelector(aba==='tel'?'#dropTel input[type=file]':'#file');
+    const inp=document.querySelector(aba==='tel'?'#dropTel input[type=file]':aba==='cnm'?'#fileCnm':'#file');
     if(inp)inp.value='';
   }
 }
@@ -8057,7 +8059,7 @@ async function handle(file,aba){
    O motor e' um so' (SEG, TXT, unitF sao globais), entao cada lado guarda o
    desenho que abriu e ele volta para as globais ao entrar na aba. E' troca de
    ponteiro, nao copia: o leitor de DWG cria vetores novos a cada arquivo. */
-const ABA={atual:'det', arq:{det:null, tel:null}};
+const ABA={atual:'det', arq:{det:null, tel:null, cnm:null}};
 
 /* A tabela de estilos viaja junto com o desenho da aba. Os dois DXF -- o do
    detalhamento e o de conferência de telhas -- saem com a fonte do DWG de
@@ -8091,7 +8093,8 @@ function abaPinta(){
   document.getElementById('appTel').classList.toggle('hide',!temT);
   /* o log so' interessa enquanto se espera a leitura */
   const lg=document.getElementById('log');
-  if(lg)lg.classList.toggle('hide',(ABA.atual==='det'?temD:temT));
+  const temC=!!(ABA.arq.cnm&&ABA.arq.cnm.seg);
+  if(lg)lg.classList.toggle('hide',(ABA.atual==='det'?temD:ABA.atual==='cnm'?temC:temT));
 }
 function abaVai(qual){
   if(qual===ABA.atual){abaPinta();return;}
@@ -13227,7 +13230,7 @@ function tlhFiltraParedesDuplas(faces){
    fica guardada com o motivo, aparece na lista e volta com um clique. Sem
    isso, uma divisoria colada numa parede sumia sem rastro, e nao havia como
    saber se tinha sido o SketchUp, a extensao ou o Leitor. */
-const TLH_EXT_VERSAO='1.2.6';
+const TLH_EXT_VERSAO='1.4.0';
 /* A face que volta passa pela MESMA junção da importação: o painel da
    divisória se junta aos outros painéis dela, e o lado de dentro de uma
    parede se junta à própria parede. Antes ela voltava solta -- cada painel
@@ -20188,6 +20191,395 @@ document.getElementById('detComp').addEventListener('click',e=>{
 /* Gancho da bateria de testes (central_rm/ferramentas/testes/roda.js). O
    estado deste modulo nao existe fora dele; aqui so se le, nada se muda
    (exceto chapasCfg, que poe precos ficticios na memoria para o teste). */
+/* estilos da aba Chave na mão (tokens do tema da casa) */
+(function(){const st=document.createElement('style');st.id='cnm-css';st.textContent=`
+#pane-cnm .entradas{max-width:880px;margin:24px auto}
+#pane-cnm .cnm-nota{margin:14px 2px;color:var(--muted);font-size:13.5px;line-height:1.5}
+#pane-cnm .cnm-grade{display:grid;grid-template-columns:minmax(0,1fr) 330px;gap:14px;margin-top:12px}
+#pane-cnm .cnm-tela{position:relative;border:1px solid var(--line);border-radius:12px;background:var(--surface);overflow:hidden;min-height:560px;height:calc(100vh - 210px)}
+#pane-cnm #cnmSvg{width:100%;height:100%;display:block;cursor:crosshair;touch-action:none;user-select:none}
+#pane-cnm .cnm-lin{fill:none;stroke:var(--ink);stroke-opacity:.55;vector-effect:none}
+#pane-cnm .cnm-dica{position:absolute;left:12px;bottom:12px;right:110px;font-size:12.5px;color:var(--muted);background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:6px 10px;pointer-events:none}
+#pane-cnm .cnm-zoom{position:absolute;right:12px;bottom:12px}
+#pane-cnm .cnm-lado{display:flex;flex-direction:column;gap:12px;min-width:0}
+#pane-cnm .cnm-bloco{border:1px solid var(--line);border-radius:12px;background:var(--surface);padding:12px 14px}
+#pane-cnm .cnm-bloco h3{font-size:11.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin:0 0 10px;font-weight:750}
+#pane-cnm .cnm-pav{display:flex;align-items:center;gap:8px;font-weight:650}
+#pane-cnm .cnm-pav input,#pane-cnm .cnm-alt input{width:110px;height:36px;border:1px solid var(--line);border-radius:9px;padding:0 10px;font:inherit;font-weight:700;text-align:right;background:var(--surface);color:var(--ink)}
+#pane-cnm .cnm-alt input{width:72px}
+#pane-cnm .cnm-sub{font-size:12.5px;color:var(--muted);margin-top:6px;line-height:1.45}
+#pane-cnm .cnm-sub a{color:var(--rm-laranja,#F24619);font-weight:650}
+#pane-cnm .cnm-servs{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+#pane-cnm .cnm-servs button,#pane-cnm .cnm-forma button{display:flex;align-items:center;gap:7px;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:9px;padding:7px 9px;font:inherit;font-size:13px;font-weight:600;cursor:pointer;text-align:left}
+#pane-cnm .cnm-servs button.on,#pane-cnm .cnm-forma button.on{border-color:var(--ink);box-shadow:inset 0 0 0 1px var(--ink)}
+#pane-cnm .cnm-servs i,#pane-cnm .cnm-it>i,#pane-cnm .cnm-tl i{width:10px;height:10px;border-radius:3px;flex:none;display:inline-block}
+#pane-cnm .cnm-forma{display:flex;gap:6px;margin-top:8px}
+#pane-cnm .cnm-forma button{flex:1;justify-content:center}
+#pane-cnm .cnm-alt{display:flex;align-items:center;gap:8px;margin-top:10px;font-size:13px;font-weight:600}
+#pane-cnm #cnmLista{display:flex;flex-direction:column;gap:6px;max-height:300px;overflow:auto}
+#pane-cnm .cnm-it{display:flex;gap:8px;align-items:flex-start;border:1px solid var(--line);border-radius:9px;padding:7px 8px}
+#pane-cnm .cnm-it>i{margin-top:6px}
+#pane-cnm .cnm-it>div{flex:1;min-width:0}
+#pane-cnm .cnm-it input{width:100%;border:0;background:transparent;font:inherit;font-weight:700;color:var(--ink);padding:0}
+#pane-cnm .cnm-it span{display:block;font-size:12px;color:var(--muted)}
+#pane-cnm .cnm-it button{border:0;background:transparent;color:var(--muted);font-size:17px;cursor:pointer;line-height:1}
+#pane-cnm .cnm-fim{display:flex;flex-direction:column;gap:8px}
+#pane-cnm .cnm-semplanta{position:absolute;inset:0;display:flex;flex-direction:column;gap:8px;align-items:center;justify-content:center;text-align:center;padding:30px;color:var(--muted);font-size:14px;line-height:1.5}
+#pane-cnm .cnm-semplanta b{color:var(--ink);font-size:16px}
+#pane-cnm .cnm-semplanta span{max-width:440px}
+#pane-cnm #cnmEsq{display:flex;flex-direction:column;gap:6px;max-height:280px;overflow:auto;margin-bottom:8px}
+#pane-cnm .cnm-esq-l{display:flex;flex-wrap:wrap;align-items:center;gap:5px;font-size:12.5px;border:1px solid var(--line);border-radius:9px;padding:6px 7px}
+#pane-cnm .cnm-esq-l select{flex:1 1 100%;height:30px;border:1px solid var(--line);border-radius:7px;font:inherit;font-weight:650;background:var(--surface);color:var(--ink)}
+#pane-cnm .cnm-esq-l input{width:58px;height:28px;border:1px solid var(--line);border-radius:7px;padding:0 6px;font:inherit;text-align:right;background:var(--surface);color:var(--ink)}
+#pane-cnm .cnm-esq-l input.q{width:40px}
+#pane-cnm .cnm-esq-l button{margin-left:auto;border:0;background:transparent;color:var(--muted);font-size:17px;cursor:pointer}
+#pane-cnm .cnm-esq-l span{flex:1 1 100%;color:var(--muted);font-size:11.5px}
+#pane-cnm .cnm-esq-add{align-self:flex-start}
+#pane-cnm .cnm-tl{display:flex;justify-content:space-between;gap:8px;font-size:13.5px}
+#pane-cnm .cnm-tl span{display:flex;align-items:center;gap:7px}
+#pane-cnm #cnmTot{display:flex;flex-direction:column;gap:5px;margin-bottom:4px}
+@media(max-width:900px){#pane-cnm .cnm-grade{grid-template-columns:1fr}#pane-cnm .cnm-tela{height:62vh;min-height:360px}}
+`;document.head.appendChild(st);})();
+/* ===================== CHAVE NA MÃO (medir a planta) =====================
+   O Orçamento cobra hidráulica, pintura, elétrica e piso pela área do
+   pavilhão, e banheiro, forro e divisórias (gesso, granilite) pela medida de
+   cada um. A planta não tem padrão de layer nem de nome, e os ambientes são
+   paredes com vão de porta (não há contorno fechado para ler sozinho): quem
+   orça escolhe o serviço e clica nos cantos. Retângulo (2 cantos), polígono
+   (vários cantos, fecha no primeiro) e divisória (linha, × a altura). O
+   clique encaixa na ponta de linha mais próxima. Cada medida aparece
+   escrita ("6,30 × 3,00 m = 18,90 m²") para conferir a escala.
+   Sai no formato RM_CHAVE_NA_MAO -- o mesmo da extensão do SketchUp -- e vai
+   ao Orçamento pelo armazenamento do site (e pela Central, se aberta). */
+const CNM_SERV=[
+  {k:'pavilhao',nome:'Pavilhão (área total)',tipo:'area',cor:'#475569'},
+  {k:'Banheiro',nome:'Banheiro',tipo:'area',cor:'#2563eb'},
+  {k:'Forro Modular',nome:'Forro modular',tipo:'area',cor:'#7c3aed'},
+  {k:'Piso',nome:'Piso',tipo:'area',cor:'#0f766e'},
+  {k:'Gesso',nome:'Divisórias de gesso',tipo:'parede',cor:'#c2410c'},
+  {k:'Granilite',nome:'Divisórias de granilite',tipo:'parede',cor:'#be185d'}];
+const CNM={skp:null,esq:[],serv:'Banheiro',forma:'ret',pts:[],mouse:null,itens:[],pav:0,pavFonte:'',pavTexto:0,alt:{Gesso:2.8,Granilite:1.8},vb:null,arq:'',pontas:null,real:null};
+/* serviço que veio do SketchUp e não está na lista acima continua com o nome dele */
+const cnmServ=k=>CNM_SERV.find(s=>s.k===k)||(k?{k:k,nome:k,tipo:'area',cor:'#64748b'}:CNM_SERV[1]);
+const CNM_ESQ_TIPOS=['Janela','Porta','Portão','Basculante','Maxim-ar','Outro'];
+const cnmEsc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const cnmN=(v,c=2)=>Number(v||0).toLocaleString('pt-BR',{minimumFractionDigits:c,maximumFractionDigits:c});
+const cnmNum=v=>{const n=rmNumDigitado(v);return Number.isFinite(n)?n:0;};
+function cnmDes(){return ABA.arq.cnm&&ABA.arq.cnm.seg?ABA.arq.cnm:null;}
+/* metros por unidade do desenho: unitF é mm por unidade (cm = 10) */
+function cnmMpu(){const d=cnmDes();return (d&&d.unitF||1)/1000;}
+/* "A = 831,90m² (térreo) + 120,08m² (mezanino) = 951,98m²": a área total
+   escrita na planta vale como sugestão do pavilhão (o último número depois
+   do último "="). */
+function cnmAreaDoTexto(txt){
+  let melhor=0;
+  (txt||[]).forEach(t=>{const s=String(t.s||'').replace(/\\[A-Za-z][^;\\]*;/g,' ').replace(/\\P/g,' ');
+    if(!/\bA\s*=|área|area/i.test(s)||!/m²|m2/i.test(s))return;
+    const ns=[...s.matchAll(/([\d.]+,\d+|\d+(?:\.\d+)?)\s*m(?:²|2)/gi)].map(m=>cnmNum(m[1]));
+    const ult=s.lastIndexOf('='),depois=ult>=0?s.slice(ult):'',v=(depois.match(/([\d.]+,\d+|\d+(?:\.\d+)?)\s*m(?:²|2)/i)||[])[1];
+    const n=v?cnmNum(v):Math.max(0,...ns);if(n>melhor)melhor=n;});
+  return Math.round(melhor*100)/100;
+}
+/* ---- geometria ---- */
+function cnmAreaPts(p){let a=0;for(let i=0;i<p.length;i++){const q=p[(i+1)%p.length];a+=p[i][0]*q[1]-q[0]*p[i][1];}return Math.abs(a)/2;}
+function cnmCompPts(p){let c=0;for(let i=1;i<p.length;i++)c+=Math.hypot(p[i][0]-p[i-1][0],p[i][1]-p[i-1][1]);return c;}
+function cnmMede(it){
+  const m=cnmMpu(),s=cnmServ(it.serv);
+  if(s.tipo==='parede'){
+    const comp=cnmCompPts(it.pts)*m,alt=cnmNum(it.alt)||CNM.alt[it.serv]||2.8;
+    it.comp_m=Math.round(comp*100)/100;it.alt_m=alt;it.area_m2=Math.round(comp*alt*100)/100;
+    it.dims=cnmN(comp)+' m × '+cnmN(alt)+' m';
+  }else{
+    const xs=it.pts.map(p=>p[0]),ys=it.pts.map(p=>p[1]);
+    it.area_m2=Math.round(cnmAreaPts(it.pts)*m*m*100)/100;
+    const w=(Math.max(...xs)-Math.min(...xs))*m,h=(Math.max(...ys)-Math.min(...ys))*m;
+    it.dims=it.pts.length===4&&it.forma==='ret'?cnmN(w)+' × '+cnmN(h)+' m':cnmN(w)+' × '+cnmN(h)+' m (contorno)';
+  }
+  return it;
+}
+/* pontas das linhas para o encaixe (grade de busca, o desenho tem milhares) */
+function cnmPontas(){
+  const d=cnmDes();if(!d)return null;if(CNM.pontas&&CNM.pontas.seg===d.seg)return CNM.pontas;
+  const pts=[],vis=new Set();
+  d.seg.forEach(s=>[s.a,s.b].forEach(p=>{const k=Math.round(p.x*10)+','+Math.round(p.y*10);if(vis.has(k))return;vis.add(k);pts.push([p.x,p.y]);}));
+  const bb=pts.reduce((b,p)=>({x0:Math.min(b.x0,p[0]),y0:Math.min(b.y0,p[1]),x1:Math.max(b.x1,p[0]),y1:Math.max(b.y1,p[1])}),{x0:1e18,y0:1e18,x1:-1e18,y1:-1e18});
+  const cel=Math.max(bb.x1-bb.x0,bb.y1-bb.y0)/200||1,g=new Map();
+  pts.forEach(p=>{const k=Math.floor(p[0]/cel)+'|'+Math.floor(p[1]/cel);(g.get(k)||g.set(k,[]).get(k)).push(p);});
+  CNM.pontas={seg:d.seg,cel,g,bb};return CNM.pontas;
+}
+function cnmEncaixa(x,y,raio){
+  const P=cnmPontas();if(!P)return [x,y];
+  let melhor=null,dm=raio;const r=Math.ceil(raio/P.cel),cx=Math.floor(x/P.cel),cy=Math.floor(y/P.cel);
+  for(let i=-r;i<=r;i++)for(let j=-r;j<=r;j++){const l=P.g.get((cx+i)+'|'+(cy+j));if(!l)continue;
+    l.forEach(p=>{const dd=Math.hypot(p[0]-x,p[1]-y);if(dd<dm){dm=dd;melhor=p;}});}
+  return melhor?[melhor[0],melhor[1]]:[x,y];
+}
+/* ---- tela ---- */
+function cnmMontaPane(){
+  if(document.getElementById('pane-cnm'))return;
+  const ab=document.getElementById('abas');
+  const b=document.createElement('button');b.type='button';b.className='aba';b.dataset.aba='cnm';b.textContent='Chave na mão';
+  b.title='Medir banheiros, forro, piso e divisórias na planta para o Orçamento';
+  b.addEventListener('click',()=>{abaVai('cnm');cnmPinta();});ab.appendChild(b);
+  const p=document.createElement('div');p.className='pane';p.id='pane-cnm';
+  p.innerHTML='<div class="entradas" id="entCnm">'
+    +'<label class="drop"><b>Abrir a planta (DWG/DXF) ou o arquivo do SketchUp</b><span>toque ou arraste · na planta, clique nos cantos; do SketchUp, medidas e esquadrias já vêm prontas</span><input type="file" id="fileCnm" accept=".dwg,.dxf,.json"></label>'
+    +'<p class="cnm-nota">SketchUp: extensão <b>RM Coberturas › Chave na mão › Exportar</b>. Planta e SketchUp juntos: as medidas se somam.</p></div>'
+    +'<div id="appCnm" class="hide"><div class="filebar"><span class="fb-name" id="cnmArq"></span><span class="fb-info" id="cnmInfo"></span><span class="fb-esp"></span>'
+    +'<label class="btn ghost" title="Planta (DWG/DXF) ou arquivo do SketchUp">Abrir arquivo<input type="file" id="fileCnm2" accept=".dwg,.dxf,.json" hidden></label>'
+    +'<button type="button" class="btn ghost" id="cnmLimpa" title="Começar a medição de novo">Limpar</button></div>'
+    +'<div class="cnm-grade"><div class="cnm-tela" id="cnmTela"><svg id="cnmSvg" xmlns="http://www.w3.org/2000/svg"></svg>'
+    +'<div class="cnm-semplanta" id="cnmSemPlanta"><b>Medidas do SketchUp</b><span>Áreas e esquadrias vêm do modelo. Para medir clicando, abra a planta em <b>Abrir arquivo</b>.</span></div>'
+    +'<div class="cnm-dica" id="cnmDica"></div><div class="cnm-zoom"><button type="button" class="btn ghost" id="cnmAjusta" title="Mostrar a planta inteira">Ajustar</button></div></div>'
+    +'<aside class="cnm-lado">'
+    +'<section class="cnm-bloco"><h3>Área do pavilhão</h3><div class="cnm-pav"><input id="cnmPav" inputmode="decimal" placeholder="0,00"> m²</div><div class="cnm-sub" id="cnmPavFonte"></div></section>'
+    +'<section class="cnm-bloco" id="cnmMedirB"><h3>Medir</h3><div class="cnm-servs" id="cnmServs"></div>'
+    +'<div class="cnm-forma" id="cnmForma"><button type="button" data-cnmforma="ret">Retângulo</button><button type="button" data-cnmforma="pol">Polígono</button></div>'
+    +'<label class="cnm-alt" id="cnmAltL">Altura das divisórias <input id="cnmAlt" inputmode="decimal"> m</label></section>'
+    +'<section class="cnm-bloco"><h3>Medições <span id="cnmQtd"></span></h3><div id="cnmLista"></div></section>'
+    +'<section class="cnm-bloco"><h3>Esquadrias <span id="cnmEsqQtd"></span></h3><div id="cnmEsq"></div><button type="button" class="btn ghost cnm-esq-add" id="cnmEsqAdd">+ Esquadria</button></section>'
+    +'<section class="cnm-bloco cnm-fim"><div id="cnmTot"></div>'
+    +'<button type="button" class="btn primary" id="cnmEnviar">Enviar para o Orçamento</button>'
+    +'<button type="button" class="btn ghost" id="cnmBaixar" title="Guarda a medição num arquivo; para continuar depois, abra-o aqui em Abrir arquivo">Salvar arquivo da medição</button></section>'
+    +'</aside></div></div>';
+  (document.getElementById('pane-tel')||document.getElementById('pane-pln')).after(p);
+  const abre=f=>{if(!f)return;
+    if(/\.json$/i.test(f.name||'')){f.text().then(t=>{let m=null;try{m=JSON.parse(t);}catch(_){}
+      if(!cnmLeSkp(m,f.name))alert('Este arquivo não é o chave na mão exportado pela extensão do SketchUp (RM Coberturas › Chave na mão › Exportar chave na mão…).');});return;}
+    Promise.resolve(handle(f,'cnm')).then(()=>{if(cnmDes()&&ABA.arq.cnm.nome===(f.name||'arquivo'))cnmAbriu();});};
+  ['fileCnm','fileCnm2'].forEach(id=>{const i=document.getElementById(id);i.addEventListener('change',e=>{const f=e.target.files[0];e.target.value='';abre(f);});});
+  const dz=p.querySelector('.drop');dz.addEventListener('dragover',e=>e.preventDefault());dz.addEventListener('drop',e=>{e.preventDefault();abre(e.dataTransfer.files[0]);});
+  document.getElementById('cnmPav').addEventListener('change',e=>{CNM.pav=cnmNum(e.target.value);CNM.pavFonte='digitada';cnmGuarda();cnmPinta();});
+  document.getElementById('cnmAlt').addEventListener('change',e=>{const v=cnmNum(e.target.value);if(v>0){CNM.alt[CNM.serv]=v;}cnmGuarda();cnmPinta();});
+  document.getElementById('cnmAjusta').onclick=()=>{CNM.vb=null;cnmPinta();};
+  document.getElementById('cnmEnviar').onclick=cnmEnvia;
+  document.getElementById('cnmEsqAdd').onclick=()=>{CNM.esq.push({id:'e'+Date.now().toString(36),tipo:'Janela',larg:0,alt:0,qtd:1,nomes:[],origem:'manual'});cnmGuarda();cnmPinta();
+    const l=document.querySelectorAll('#cnmEsq [data-cnmesq-k="larg"]');if(l.length)l[l.length-1].focus();};
+  document.getElementById('cnmLimpa').onclick=()=>{if(!confirm('Limpar todas as medições e esquadrias desta obra?'))return;CNM.itens=[];CNM.esq=[];CNM.pts=[];CNM.skp=null;
+    CNM.pav=CNM.pavTexto||0;CNM.pavFonte=CNM.pavTexto?'texto da planta':'';cnmGuarda();cnmPinta();};
+  document.getElementById('cnmBaixar').onclick=cnmBaixa;
+  p.querySelectorAll('[data-cnmforma]').forEach(x=>x.onclick=()=>{CNM.forma=x.dataset.cnmforma;CNM.pts=[];cnmPinta();});
+  cnmLigaTela();
+}
+/* o desenho foi lido nesta aba: recupera o que já tinha sido medido nele */
+function cnmAbriu(){
+  const d=cnmDes();if(!d)return;
+  CNM.arq=d.nome||'planta';CNM.vb=null;CNM.pts=[];CNM.pontas=null;
+  CNM.pavTexto=cnmAreaDoTexto(d.txt);
+  /* o arquivo do SketchUp aberto agora vale com qualquer planta; sem ele, a
+     planta volta como foi deixada (com o SketchUp que estava junto) */
+  const g=cnmLeGuardado()[CNM.arq], doSkp=CNM.itens.filter(i=>i.origem==='sketchup'), skpAgora=!!CNM.skp;
+  if(g){
+    if(skpAgora)CNM.itens=(g.itens||[]).filter(i=>i.origem!=='sketchup').concat(doSkp);
+    else{CNM.itens=g.itens||[];CNM.esq=g.esq||[];CNM.skp=g.skp||null;}
+    if(!(skpAgora&&CNM.pavFonte==='SketchUp'&&g.pavFonte!=='medida')){CNM.pav=g.pav||0;CNM.pavFonte=g.pavFonte||'';}
+    Object.assign(CNM.alt,g.alt||{});}
+  else{CNM.itens=doSkp;if(!skpAgora||!CNM.pav){CNM.pav=CNM.pavTexto;CNM.pavFonte=CNM.pavTexto?'texto da planta':'';}if(!skpAgora)CNM.esq=[];}
+  /* o Detalhamento continua com o nome do arquivo dele */
+  try{const ad=ABA.arq.det,fb=document.getElementById('fbName');if(fb&&ad&&ad.nome)fb.textContent=ad.nome;}catch(_){}
+  cnmPinta();
+}
+const CNM_GUARDA='rm_cnm_leitor_v1';
+function cnmLeGuardado(){try{return JSON.parse(localStorage.getItem(CNM_GUARDA)||'{}')||{};}catch(_){return {};}}
+/* o arquivo do SketchUp: as medidas dele entram junto das da planta (as
+   anteriores do SketchUp saem), as esquadrias vêm com a medida do modelo e
+   o pavilhão vem dele quando não foi medido na planta */
+function cnmLeSkp(m,nome){
+  if(!m||String(m.format||'').toUpperCase()!=='RM_CHAVE_NA_MAO')return false;
+  cnmMontaPane();
+  CNM.itens=CNM.itens.filter(i=>i.origem!=='sketchup');
+  (m.servicos||[]).forEach(sv=>(sv.itens||[]).forEach((it,k)=>{const a=cnmNum(it.area_m2);if(!(a>0))return;
+    CNM.itens.push({id:'s'+Date.now().toString(36)+k+Math.random().toString(36).slice(2,5),serv:String(sv.servico||'Serviço'),nome:String(it.nome||sv.servico||'SketchUp'),
+      area_m2:Math.round(a*100)/100,dims:String(it.dims||''),origem:'sketchup',pts:[],comp_m:it.comprimento_m,alt_m:it.altura_m});}));
+  if(m.pavilhao&&cnmNum(m.pavilhao.area_m2)>0&&CNM.pavFonte!=='medida'){CNM.pav=Math.round(cnmNum(m.pavilhao.area_m2)*100)/100;CNM.pavFonte='SketchUp';}
+  CNM.esq=CNM.esq.filter(e=>e.origem!=='sketchup').concat((m.esquadrias||[]).map((e,k)=>({id:'q'+Date.now().toString(36)+k,tipo:String(e.tipo||'Esquadria'),
+    larg:Math.round(cnmNum(e.larg_mm)),alt:Math.round(cnmNum(e.alt_mm)),qtd:Math.max(1,Math.round(cnmNum(e.qtd))||1),nomes:Array.isArray(e.nomes)?e.nomes:[],origem:'sketchup'})));
+  /* o arquivo salvo aqui mesmo ("Salvar arquivo da medição") também abre */
+  CNM.skp={nome:nome||m.arquivo||'SketchUp',leitor:m.origem==='leitor'};
+  cnmGuarda();abaVai('cnm');cnmPinta();
+  log('✓ '+cnmRotSkp()+' "'+CNM.skp.nome+'": '+CNM.itens.filter(i=>i.origem==='sketchup').length+' medição(ões) e '+CNM.esq.filter(e=>e.origem==='sketchup').reduce((a,e)=>a+e.qtd,0)+' esquadria(s)','ok');
+  return true;
+}
+function cnmRotSkp(){return CNM.skp&&CNM.skp.leitor?'Arquivo':'SketchUp';}
+function cnmChave(){return CNM.arq||(CNM.skp?'skp:'+CNM.skp.nome:'');}
+function cnmGuarda(){const ch=cnmChave();if(!ch)return;try{const g=cnmLeGuardado();g[ch]={itens:CNM.itens,esq:CNM.esq,skp:CNM.skp,pav:CNM.pav,pavFonte:CNM.pavFonte,alt:CNM.alt,em:Date.now()};
+  const ks=Object.keys(g).sort((a,b)=>(g[b].em||0)-(g[a].em||0));ks.slice(12).forEach(k=>delete g[k]);localStorage.setItem(CNM_GUARDA,JSON.stringify(g));}catch(_){}}
+function cnmVB(){
+  if(CNM.vb)return CNM.vb;const P=cnmPontas();if(!P)return {x:0,y:0,w:1,h:1};
+  const w=P.bb.x1-P.bb.x0,h=P.bb.y1-P.bb.y0,pad=Math.max(w,h)*.03;
+  CNM.vb={x:P.bb.x0-pad,y:-(P.bb.y1+pad),w:w+2*pad,h:h+2*pad};return CNM.vb;
+}
+function cnmPinta(){
+  if(!document.getElementById('pane-cnm'))return;
+  const d=cnmDes(),tem=!!(d||CNM.skp);
+  document.getElementById('entCnm').classList.toggle('hide',tem);
+  document.getElementById('appCnm').classList.toggle('hide',!tem);
+  if(!tem)return;
+  const s=cnmServ(CNM.serv),m=cnmMpu();
+  document.getElementById('cnmArq').textContent=[d?CNM.arq:'',CNM.skp?cnmRotSkp()+': '+CNM.skp.nome:''].filter(Boolean).join(' · ');
+  document.getElementById('cnmInfo').textContent=d?d.seg.length+' linhas · 1 unidade = '+(d.unitF||1)+' mm':'';
+  document.getElementById('cnmSvg').style.display=d?'':'none';
+  document.getElementById('cnmSemPlanta').style.display=d?'none':'';
+  document.getElementById('cnmDica').style.display=d?'':'none';
+  document.getElementById('cnmMedirB').style.display=d?'':'none';
+  document.getElementById('cnmAjusta').style.display=d?'':'none';
+  cnmEsqPinta();
+  const pav=document.getElementById('cnmPav');if(document.activeElement!==pav)pav.value=CNM.pav?cnmN(CNM.pav):'';
+  document.getElementById('cnmPavFonte').innerHTML=(CNM.pavFonte?'Pelo '+cnmEsc(CNM.pavFonte)+'. ':'')+(CNM.pavTexto&&Math.abs(CNM.pavTexto-CNM.pav)>.01?'<a href="#" id="cnmPavUsa">Usar '+cnmN(CNM.pavTexto)+' m² do texto da planta</a>':'')+(!d?(CNM.pav?'':'Digite a área: hidráulica, pintura, elétrica e piso vão por ela.'):CNM.pavFonte!=='medida'?' Ou meça com "Pavilhão".':'');
+  const pu=document.getElementById('cnmPavUsa');if(pu)pu.onclick=e=>{e.preventDefault();CNM.pav=CNM.pavTexto;CNM.pavFonte='texto da planta';cnmGuarda();cnmPinta();};
+  document.getElementById('cnmServs').innerHTML=CNM_SERV.map(x=>'<button type="button" data-cnmserv="'+cnmEsc(x.k)+'" class="'+(x.k===CNM.serv?'on':'')+'"><i style="background:'+x.cor+'"></i>'+cnmEsc(x.nome)+'</button>').join('');
+  document.querySelectorAll('[data-cnmserv]').forEach(b=>b.onclick=()=>{CNM.serv=b.dataset.cnmserv;CNM.pts=[];cnmPinta();});
+  document.getElementById('cnmForma').style.display=s.tipo==='parede'?'none':'';
+  document.querySelectorAll('[data-cnmforma]').forEach(b=>b.classList.toggle('on',b.dataset.cnmforma===CNM.forma));
+  document.getElementById('cnmAltL').style.display=s.tipo==='parede'?'':'none';
+  const al=document.getElementById('cnmAlt');if(document.activeElement!==al)al.value=cnmN(CNM.alt[CNM.serv]||2.8);
+  document.getElementById('cnmDica').textContent=s.tipo==='parede'?'Clique ao longo da divisória; duplo clique (ou Enter) termina. Esc cancela.'
+    :(CNM.forma==='ret'?'Clique em dois cantos opostos do '+s.nome.toLowerCase()+'.':'Clique nos cantos; clique no primeiro (ou Enter) fecha. Esc cancela.')+' Arraste para mover, roda do mouse para o zoom.';
+  /* lista e totais */
+  const lista=document.getElementById('cnmLista');
+  document.getElementById('cnmQtd').textContent=CNM.itens.length?'('+CNM.itens.length+')':'';
+  lista.innerHTML=CNM.itens.length?CNM.itens.map((it,i)=>{const sv=cnmServ(it.serv);
+    return '<div class="cnm-it" data-cnmit="'+i+'"><i style="background:'+sv.cor+'"></i><div><input value="'+cnmEsc(it.nome)+'" data-cnmnome="'+i+'"><span>'+cnmEsc(sv.nome)+(it.origem==='sketchup'?' · '+cnmRotSkp():'')+' · '+cnmEsc(it.dims)+(it.dims?' = ':'')+'<b>'+cnmN(it.area_m2)+' m²</b></span></div><button type="button" title="Tirar" data-cnmdel="'+i+'">×</button></div>';}).join('')
+    :'<p class="cnm-sub">Nada medido ainda.'+(d?' Escolha o serviço acima e clique na planta.':'')+'</p>';
+  lista.querySelectorAll('[data-cnmnome]').forEach(i=>i.onchange=()=>{CNM.itens[+i.dataset.cnmnome].nome=i.value.trim()||CNM.itens[+i.dataset.cnmnome].nome;cnmGuarda();});
+  lista.querySelectorAll('[data-cnmdel]').forEach(b=>b.onclick=()=>{CNM.itens.splice(+b.dataset.cnmdel,1);cnmRecalcPav();cnmGuarda();cnmPinta();});
+  lista.querySelectorAll('[data-cnmit]').forEach(r=>{r.onmouseenter=()=>{CNM.real=+r.dataset.cnmit;cnmDesenha();};r.onmouseleave=()=>{CNM.real=null;cnmDesenha();};});
+  const tot={};CNM.itens.forEach(it=>{if(it.serv!=='pavilhao')tot[it.serv]=(tot[it.serv]||0)+it.area_m2;});
+  document.getElementById('cnmTot').innerHTML='<div class="cnm-tl"><span>Pavilhão</span><b>'+(CNM.pav?cnmN(CNM.pav)+' m²':'—')+'</b></div>'
+    +Object.keys(tot).map(cnmServ).map(x=>'<div class="cnm-tl"><span><i style="background:'+x.cor+'"></i>'+cnmEsc(x.nome)+'</span><b>'+cnmN(tot[x.k])+' m²</b></div>').join('');
+  const nEsq=CNM.esq.filter(e=>e.larg>0&&e.alt>0).reduce((a,e)=>a+e.qtd,0);
+  if(nEsq)document.getElementById('cnmTot').innerHTML+='<div class="cnm-tl"><span>Esquadrias</span><b>'+nEsq+' peça'+(nEsq>1?'s':'')+'</b></div>';
+  document.getElementById('cnmEnviar').disabled=!(CNM.pav>0||CNM.itens.length||nEsq);
+  cnmDesenha();
+}
+function cnmEsqPinta(){
+  const box=document.getElementById('cnmEsq');if(!box)return;
+  const n=CNM.esq.reduce((a,e)=>a+(e.qtd||0),0);
+  document.getElementById('cnmEsqQtd').textContent=n?'('+n+')':'';
+  const op=t=>CNM_ESQ_TIPOS.concat(CNM_ESQ_TIPOS.indexOf(t)<0&&t?[t]:[]).map(x=>'<option'+(x===t?' selected':'')+'>'+cnmEsc(x)+'</option>').join('');
+  box.innerHTML=CNM.esq.length?CNM.esq.map((e,i)=>'<div class="cnm-esq-l"><select data-cnmesq="'+i+'" data-cnmesq-k="tipo">'+op(e.tipo)+'</select>'
+    +'<input data-cnmesq="'+i+'" data-cnmesq-k="larg" inputmode="decimal" value="'+(e.larg?cnmN(e.larg/1000):'')+'" placeholder="larg." title="Largura (m)">×'
+    +'<input data-cnmesq="'+i+'" data-cnmesq-k="alt" inputmode="decimal" value="'+(e.alt?cnmN(e.alt/1000):'')+'" placeholder="alt." title="Altura (m)"> m'
+    +'<input class="q" data-cnmesq="'+i+'" data-cnmesq-k="qtd" inputmode="numeric" value="'+(e.qtd||1)+'" title="Quantidade"> un'
+    +'<button type="button" title="Tirar" data-cnmesqdel="'+i+'">×</button>'
+    +((e.nomes||[]).length||e.origem==='sketchup'?'<span>'+(e.origem==='sketchup'?cnmRotSkp():'')+((e.nomes||[]).length?' · '+cnmEsc(e.nomes.join(', ')):'')+'</span>':'')+'</div>').join('')
+    :'<p class="cnm-sub">Do SketchUp as portas e janelas vêm com a medida do modelo. Na planta não há altura: use + Esquadria.</p>';
+  box.querySelectorAll('[data-cnmesq]').forEach(x=>x.onchange=()=>{const e=CNM.esq[+x.dataset.cnmesq],k=x.dataset.cnmesqK;if(!e)return;
+    if(k==='tipo')e.tipo=x.value;else if(k==='qtd')e.qtd=Math.max(1,Math.round(cnmNum(x.value))||1);else e[k]=Math.round(cnmNum(x.value)*1000);
+    cnmGuarda();cnmPinta();});
+  box.querySelectorAll('[data-cnmesqdel]').forEach(b=>b.onclick=()=>{CNM.esq.splice(+b.dataset.cnmesqdel,1);cnmGuarda();cnmPinta();});
+}
+function cnmDesenha(){
+  const svg=document.getElementById('cnmSvg'),d=cnmDes();if(!svg||!d)return;
+  const vb=cnmVB();svg.setAttribute('viewBox',vb.x+' '+vb.y+' '+vb.w+' '+vb.h);svg.setAttribute('preserveAspectRatio','xMidYMid meet');
+  const px=vb.w/Math.max(1,svg.clientWidth||900);
+  if(!svg._linhas||svg._linhas!==d.seg){
+    let h='';d.seg.forEach(s=>{h+='M'+s.a.x.toFixed(2)+' '+(-s.a.y).toFixed(2)+'L'+s.b.x.toFixed(2)+' '+(-s.b.y).toFixed(2);});
+    svg.innerHTML='<path class="cnm-lin" d="'+h+'"/><g id="cnmMed"></g><g id="cnmCur"></g>';svg._linhas=d.seg;
+  }
+  svg.querySelector('.cnm-lin').setAttribute('stroke-width',(px*1).toFixed(3));
+  const poli=(pts,fechado)=>pts.map((p,i)=>(i?'L':'M')+p[0].toFixed(2)+' '+(-p[1]).toFixed(2)).join('')+(fechado?'Z':'');
+  const lw=(px*2.2).toFixed(3),fs=(px*13).toFixed(2);
+  /* nomes sem encavalar: ambientes no mesmo lugar (forro e piso da mesma
+     sala) e divisórias vizinhas empilham o nome para baixo */
+  const postos=[];
+  const poe=(cx,cy,txt)=>{const w=txt.length*fs*.56,h=fs*1.3;let y=cy;
+    for(let k=0;k<30;k++){if(!postos.some(b=>Math.abs(b.x-cx)<(b.w+w)/2&&Math.abs(b.y-y)<h))break;y+=h;}
+    postos.push({x:cx,y:y,w:w});return y;};
+  svg.querySelector('#cnmMed').innerHTML=CNM.itens.map((it,i)=>({it,i})).filter(x=>x.it.pts&&x.it.pts.length).sort((a,b)=>(cnmServ(a.it.serv).tipo==='parede')-(cnmServ(b.it.serv).tipo==='parede')).map(({it,i})=>{const sv=cnmServ(it.serv),par=sv.tipo==='parede',real=CNM.real===i;
+    const xs=it.pts.map(p=>p[0]),ys=it.pts.map(p=>p[1]),cx=(Math.min(...xs)+Math.max(...xs))/2,cy=(Math.min(...ys)+Math.max(...ys))/2;
+    const txt=it.nome+' · '+cnmN(it.area_m2)+' m²',ty=poe(cx,-cy,txt);
+    return '<path d="'+poli(it.pts,!par)+'" fill="'+(par?'none':sv.cor)+'" fill-opacity="'+(real?.45:.18)+'" stroke="'+sv.cor+'" stroke-width="'+(real?lw*2:lw)+'"/>'
+      +'<text x="'+cx+'" y="'+ty+'" font-size="'+fs+'" text-anchor="middle" fill="'+sv.cor+'" font-weight="700" paint-order="stroke" stroke="#fff" stroke-width="'+(px*3)+'">'+cnmEsc(txt)+'</text>';}).join('');
+  /* o que está sendo medido agora, com a medida ao vivo */
+  const s=cnmServ(CNM.serv),cur=CNM.pts.slice();let txt='';
+  if(CNM.mouse&&cur.length){
+    if(s.tipo!=='parede'&&CNM.forma==='ret'){const a=cur[0],b=CNM.mouse;cur.splice(0,cur.length,[a[0],a[1]],[b[0],a[1]],[b[0],b[1]],[a[0],b[1]]);
+      txt=cnmN(Math.abs(b[0]-a[0])*cnmMpu())+' × '+cnmN(Math.abs(b[1]-a[1])*cnmMpu())+' m = '+cnmN(Math.abs((b[0]-a[0])*(b[1]-a[1]))*cnmMpu()*cnmMpu())+' m²';}
+    else{cur.push(CNM.mouse);txt=s.tipo==='parede'?cnmN(cnmCompPts(cur)*cnmMpu())+' m':(cur.length>2?cnmN(cnmAreaPts(cur)*cnmMpu()*cnmMpu())+' m²':cnmN(cnmCompPts(cur)*cnmMpu())+' m');}
+  }
+  const m=CNM.mouse;
+  svg.querySelector('#cnmCur').innerHTML=(cur.length?'<path d="'+poli(cur,s.tipo!=='parede'&&cur.length>2)+'" fill="'+(s.tipo==='parede'?'none':s.cor)+'" fill-opacity=".15" stroke="'+s.cor+'" stroke-dasharray="'+(px*6)+' '+(px*4)+'" stroke-width="'+lw+'"/>':'')
+    +(m?'<circle cx="'+m[0]+'" cy="'+(-m[1])+'" r="'+(px*5)+'" fill="none" stroke="'+s.cor+'" stroke-width="'+lw+'"/>':'')
+    +(txt&&m?'<text x="'+(m[0]+px*10)+'" y="'+(-m[1]-px*10)+'" font-size="'+fs+'" fill="'+s.cor+'" font-weight="800" paint-order="stroke" stroke="#fff" stroke-width="'+(px*3)+'">'+txt+'</text>':'');
+}
+function cnmPonto(ev){
+  const svg=document.getElementById('cnmSvg'),q=svg.createSVGPoint();q.x=ev.clientX;q.y=ev.clientY;
+  const p=q.matrixTransform(svg.getScreenCTM().inverse()),px=cnmVB().w/Math.max(1,svg.clientWidth||900);
+  return cnmEncaixa(p.x,-p.y,px*12);
+}
+function cnmNomeNovo(k){const sv=cnmServ(k),n=CNM.itens.filter(i=>i.serv===k).length+1;return k==='pavilhao'?'Pavilhão '+n:(sv.tipo==='parede'?'Divisória '+n:sv.nome+' '+n);}
+function cnmRecalcPav(){const p=CNM.itens.filter(i=>i.serv==='pavilhao');if(p.length){CNM.pav=Math.round(p.reduce((a,i)=>a+i.area_m2,0)*100)/100;CNM.pavFonte='medida';}}
+function cnmFecha(){
+  const s=cnmServ(CNM.serv);let pts=CNM.pts.slice();
+  if(s.tipo==='parede'){if(pts.length<2)return;}else if(pts.length<3)return;
+  const it=cnmMede({id:'m'+Date.now().toString(36),serv:CNM.serv,nome:cnmNomeNovo(CNM.serv),forma:s.tipo==='parede'?'linha':CNM.forma,pts:pts,alt:s.tipo==='parede'?(CNM.alt[CNM.serv]||2.8):undefined});
+  CNM.pts=[];if(!(it.area_m2>0))return;
+  CNM.itens.push(it);if(it.serv==='pavilhao')cnmRecalcPav();cnmGuarda();cnmPinta();
+}
+function cnmClique(p){
+  const s=cnmServ(CNM.serv);
+  if(s.tipo!=='parede'&&CNM.forma==='ret'){
+    if(!CNM.pts.length){CNM.pts=[p];cnmDesenha();return;}
+    const a=CNM.pts[0];if(Math.abs(p[0]-a[0])<1e-9||Math.abs(p[1]-a[1])<1e-9)return;
+    CNM.pts=[[a[0],a[1]],[p[0],a[1]],[p[0],p[1]],[a[0],p[1]]];cnmFecha();return;}
+  if(s.tipo!=='parede'&&CNM.pts.length>2){const f=CNM.pts[0],px=cnmVB().w/Math.max(1,document.getElementById('cnmSvg').clientWidth||900);
+    if(Math.hypot(p[0]-f[0],p[1]-f[1])<px*12){cnmFecha();return;}}
+  const u=CNM.pts[CNM.pts.length-1];if(u&&u[0]===p[0]&&u[1]===p[1]){if(s.tipo==='parede')cnmFecha();return;}
+  CNM.pts.push(p);cnmDesenha();
+}
+function cnmLigaTela(){
+  const svg=document.getElementById('cnmSvg');let arr=null;
+  svg.addEventListener('pointerdown',e=>{if(e.button!==0&&e.button!==1)return;arr={x:e.clientX,y:e.clientY,vb:Object.assign({},cnmVB()),moveu:false,meio:e.button===1};svg.setPointerCapture(e.pointerId);});
+  svg.addEventListener('pointermove',e=>{
+    if(arr){const dx=e.clientX-arr.x,dy=e.clientY-arr.y;if(arr.moveu||Math.hypot(dx,dy)>5){arr.moveu=true;const k=arr.vb.w/Math.max(1,svg.clientWidth);CNM.vb=Object.assign({},arr.vb,{x:arr.vb.x-dx*k,y:arr.vb.y-dy*k});cnmDesenha();return;}}
+    CNM.mouse=cnmPonto(e);cnmDesenha();});
+  svg.addEventListener('pointerup',e=>{const a=arr;arr=null;if(!a||a.moveu||a.meio)return;cnmClique(cnmPonto(e));});
+  svg.addEventListener('dblclick',e=>{e.preventDefault();if(cnmServ(CNM.serv).tipo==='parede')cnmFecha();else if(CNM.forma==='pol')cnmFecha();});
+  svg.addEventListener('pointerleave',()=>{CNM.mouse=null;cnmDesenha();});
+  svg.addEventListener('wheel',e=>{e.preventDefault();const vb=cnmVB(),q=svg.createSVGPoint();q.x=e.clientX;q.y=e.clientY;const p=q.matrixTransform(svg.getScreenCTM().inverse());
+    const f=e.deltaY>0?1.2:1/1.2;CNM.vb={x:p.x-(p.x-vb.x)*f,y:p.y-(p.y-vb.y)*f,w:vb.w*f,h:vb.h*f};cnmDesenha();},{passive:false});
+  document.addEventListener('keydown',e=>{if(ABA.atual!=='cnm'||/INPUT|TEXTAREA|SELECT/.test((e.target||{}).tagName||''))return;
+    if(e.key==='Escape'&&CNM.pts.length){CNM.pts=[];cnmDesenha();e.preventDefault();}
+    if(e.key==='Enter'&&CNM.pts.length){cnmFecha();e.preventDefault();}
+    if((e.key==='Backspace'||e.key==='Delete')&&CNM.pts.length){CNM.pts.pop();cnmDesenha();e.preventDefault();}});
+  window.addEventListener('resize',()=>{if(ABA.atual==='cnm')cnmDesenha();});
+}
+/* ---- saída: o mesmo arquivo da extensão do SketchUp ---- */
+function cnmMedicao(){
+  const por={};
+  CNM.itens.filter(it=>it.serv!=='pavilhao').forEach(it=>{const sv=cnmServ(it.serv);
+    (por[it.serv]=por[it.serv]||{servico:it.serv,tipo:sv.tipo,itens:[]}).itens.push(Object.assign({nome:it.nome,area_m2:it.area_m2,dims:it.dims},sv.tipo==='parede'?{comprimento_m:it.comp_m,altura_m:it.alt_m}:{}));});
+  const esq=CNM.esq.filter(e=>e.larg>0&&e.alt>0).map(e=>({tipo:e.tipo,larg_mm:e.larg,alt_mm:e.alt,qtd:e.qtd||1,nomes:e.nomes||[],origem:e.origem||'manual'}));
+  return {format:'RM_CHAVE_NA_MAO',versao:1,origem:'leitor',arquivo:[CNM.arq,CNM.skp?CNM.skp.nome:''].filter(Boolean).join(' + '),exported_at:new Date().toISOString(),esquadrias:esq,
+    pavilhao:CNM.pav>0?{area_m2:CNM.pav,fonte:CNM.pavFonte==='medida'?'medida na planta':CNM.pavFonte==='texto da planta'?'texto da planta':CNM.pavFonte==='SketchUp'?'SketchUp':'informada'}:null,
+    servicos:Object.values(por)};
+}
+function cnmEnvia(){
+  const med=cnmMedicao();
+  try{localStorage.setItem('rm_cnm_medicao',JSON.stringify({em:Date.now(),medicao:med}));}catch(e){alert('Não foi possível guardar a medição: '+(e&&e.message||e));return;}
+  if(window.parent&&window.parent!==window){
+    try{window.parent.postMessage({rm:'abrir-sistema',id:'orcamento',depois:{rm:'cnm-medicao'}},'*');}catch(_){}
+    log('✓ medição enviada ao Orçamento','ok');
+  }else alert('Medição enviada.\n\nAbra o Orçamento RM, aba Chave na mão: o botão "Medição do Leitor DWG" traz as medidas.');
+}
+function cnmBaixa(){
+  const med=cnmMedicao(),txt=JSON.stringify(med,null,2),nome=(CNM.arq||(CNM.skp&&CNM.skp.nome)||'planta').replace(/\.json$/i,'').replace(/\.(dwg|dxf)$/i,'')+' - chave na mao.json';
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([txt],{type:'application/json'}));a.download=nome;document.body.appendChild(a);a.click();
+  setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},4000);
+}
+/* o Orçamento pede (pela Central) para abrir a planta aqui */
+window.addEventListener('message',ev=>{const m=ev.data;if(!m||m.rm!=='cnm-abrir')return;
+  try{if(ev.source)ev.source.postMessage({rm:'recebido'},'*');}catch(_){}
+  cnmMontaPane();abaVai('cnm');
+  if(m.dados&&m.nome&&/\.json$/i.test(m.nome)){try{cnmLeSkp(JSON.parse(new TextDecoder().decode(m.dados)),m.nome);}catch(_){}}
+  else if(m.dados&&m.nome){const f=new File([m.dados],m.nome);Promise.resolve(handle(f,'cnm')).then(()=>{if(cnmDes())cnmAbriu();});}
+  else cnmPinta();});
+cnmMontaPane();
+if(/^#cnm\b/.test(location.hash||'')){abaVai('cnm');cnmPinta();}
+window.__cnmTeste={CNM,aba:()=>ABA.atual,temDet:()=>!!(ABA.arq.det&&ABA.arq.det.seg),abre:f=>Promise.resolve(handle(f,'cnm')).then(()=>{if(cnmDes())cnmAbriu();}),clique:(x,y,r)=>{cnmClique(cnmEncaixa(x,y,r||0));},fecha:cnmFecha,
+  medicao:cnmMedicao,area:cnmAreaDoTexto,lerSkp:cnmLeSkp,esq:()=>CNM.esq,serv:k=>{CNM.serv=k;CNM.pts=[];cnmPinta();},forma:f=>{CNM.forma=f;cnmPinta();},envia:cnmEnvia,pinta:cnmPinta};
+
 window.__leitorTeste={
   estado:()=>({SEG,TXT,FICHAS,CL,COTAS,unitF,CAD_META,LASTROWS,LASTPESO}),
   pranchas:()=>{const d=detCalcularSecoes();detIdentPreparar(d.secoes);return detPranchas(d.secoes,'A4');},
@@ -31777,7 +32169,7 @@ if('serviceWorker' in navigator && location.protocol.startsWith('http')){
 }
 </script>
 <script>/* versão publicada (PADRAO_RM.md §3): sobe a cada publicação, junto com o CACHE do sw.js */
-const APP_VER='v303';
+const APP_VER='v304';
 </script>
 <script id="rmVersaoBloco">
 /* ===== SELO DE VERSÃO — igual em todos os sistemas (PADRAO_RM.md §3) =====
