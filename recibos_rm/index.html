@@ -2046,6 +2046,13 @@ table.list.fv-tab th,table.list.fv-tab td{padding-left:7px;padding-right:7px}tab
 .vinp.zero{border-color:var(--warn);background:var(--warn-soft)}
 .cur{font-family:var(--mono);color:var(--muted);font-size:13px;margin-right:5px;font-weight:530}
 .rowact{display:flex;gap:4px;justify-content:flex-end}
+.ex-lote{display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:10px 14px;margin:0 0 8px;border:1px solid var(--line);border-radius:10px;background:var(--panel,#fff)}
+.ex-lote:empty{display:none}
+.ex-lote-q{font-size:13.5px;margin-right:4px}
+.ex-lote-data{display:inline-flex;gap:6px;align-items:center}
+.ex-lote-data input{height:34px;border:1px solid var(--line);border-radius:8px;padding:0 8px;font:inherit;font-size:13.5px}
+.ex-lote-dica{font-size:12.5px;color:var(--gray)}
+#exBody tr.sel td{background:color-mix(in srgb,var(--accent,#F24619) 7%,transparent)}
 .alm-imp-mes{margin:0 0 10px;padding:8px 11px;border-radius:8px;font-size:12.5px;font-weight:600;color:var(--rm-aviso,#9a5a0c);background:var(--rm-aviso-suave,#fff6e6)}
 .alm-imp-mes.ok{color:var(--rm-ok,#1f7a4d);background:var(--rm-ok-suave,#eaf7f0)}
 .rte-aviso{margin:0 0 12px;padding:9px 12px;border-radius:9px;font-size:12.5px;color:var(--rm-aviso,#9a5a0c);background:var(--rm-aviso-suave,#fff6e6)}
@@ -4618,9 +4625,10 @@ if(window.RM_CELULAR) document.body.classList.add('rm-campo');
       <div class="filters"><div class="section-lab" style="margin:0;flex:1">Recibos emitidos <span class="ln"></span></div>
         <div class="fi"><span class="lab">Tipo</span><select id="exFiltro"><option value="">Todos</option><option value="decimo">13º salário</option><option value="ferias">Férias</option><option value="avulso">Avulso</option></select></div>
         <div class="fi grow"><span class="lab">Buscar</span><input id="exBusca" type="search" autocomplete="off" placeholder="funcionário, número ou referência"></div></div>
+      <div class="ex-lote" id="exLote"></div>
       <div class="tbl-wrap">
         <table class="list cartao-mob">
-          <thead><tr><th style="width:92px">Nº</th><th>Funcionário</th><th>Referente a</th><th style="width:110px">Método</th><th class="r">Valor</th><th class="c" style="width:96px">Data</th><th>Situação</th><th class="r">Ações</th></tr></thead>
+          <thead><tr><th class="c" style="width:44px"><input type="checkbox" class="chk" id="exSelTodos" title="Marcar todos os recibos da lista"></th><th style="width:92px">Nº</th><th>Funcionário</th><th>Referente a</th><th style="width:110px">Método</th><th class="r">Valor</th><th class="c" style="width:96px">Data</th><th>Situação</th><th class="r">Ações</th></tr></thead>
           <tbody id="exBody"></tbody>
         </table>
       </div>
@@ -17035,13 +17043,51 @@ function exAGerar(){
   exEmitidos([m],'Recibo '+m.numeroRecibo+' emitido — confirme o pagamento na lista abaixo');
   });
 }
+/* ---- recibos emitidos em lote ----
+   Emitidos os 30 recibos do 13º, só dava para reimprimir um por vez e não
+   havia como mudar a data de todos. Agora: marcar vários (ou todos da lista,
+   que já respeita o tipo e a busca) e imprimir de uma vez, mudar a data do
+   recibo de todos e confirmar como pagos. Recibo ainda pendente sai sem a
+   marca de 2ª via (não foi assinado); se algum já está pago, o lote sai
+   como 2ª via, como a reimpressão de um só. */
+const exSel=new Set();
+function exLoteMovs(list){const sel=list.filter(m=>exSel.has(m.id));return sel.length?sel:list;}
+function exLoteBarra(list){
+  const bar=$('#exLote');if(!bar)return;
+  const n=list.filter(m=>exSel.has(m.id)).length,alvo=exLoteMovs(list),todos=$('#exSelTodos');
+  if(todos){todos.checked=!!list.length&&n===list.length;todos.indeterminate=n>0&&n<list.length;}
+  if(!list.length){bar.innerHTML='';return;}
+  const quem=n?'<b>'+n+'</b> selecionado'+(n>1?'s':'')+' · R$ '+fmtBRL(alvo.reduce((s,m)=>s+(Number(m.valorPrevisto)||0),0)):'Todos os <b>'+list.length+'</b> da lista';
+  const pend=alvo.filter(m=>m.status==='pendente').length;
+  bar.innerHTML='<span class="ex-lote-q">'+quem+'</span>'+
+    '<button class="btn-act dim" id="exLoteImp">'+ri('imprimir')+' Imprimir '+(n?'selecionados':'todos ('+list.length+')')+'</button>'+
+    '<span class="ex-lote-data"><input type="date" id="exLoteData" title="Nova data dos recibos"><button class="btn-act dim" id="exLoteDataOk">Mudar data '+(n?'dos selecionados':'de todos')+'</button></span>'+
+    (pend?'<button class="btn-act dim" id="exLotePago" title="Confirmar como pagos, com o valor e a data de cada recibo">✓ Confirmar pagos ('+pend+')</button>':'')+
+    (n?'<button class="btn-act dim" id="exLoteLimpa">Limpar seleção</button>':'<span class="ex-lote-dica">ou marque na primeira coluna</span>');
+  $('#exLoteImp').onclick=()=>{const ms=exLoteMovs(list).slice().sort((a,c)=>String(a.numeroRecibo||'').localeCompare(String(c.numeroRecibo||'')));
+    imprimirExtras(ms,ms.some(m=>m.status!=='pendente'));};
+  $('#exLoteDataOk').onclick=()=>{const d=$('#exLoteData').value;if(!d){toast('Escolha a nova data','err');$('#exLoteData').focus();return;}
+    const ms=exLoteMovs(list),pagos=ms.filter(m=>m.status!=='pendente').length;
+    if(!confirm('Mudar a data de '+ms.length+' recibo(s) para '+fmtDate(d)+'?'+(pagos?'\n\n'+pagos+' já confirmado(s) como pago(s): muda a data do recibo, não a do pagamento.':'')))return;
+    ms.forEach(m=>{const ant=m.dataPrevista;if(ant===d)return;m.dataPrevista=d;m.updatedAt=Date.now();auditarMov(m,'Data do recibo: '+(fmtDate(ant)||'—')+' → '+fmtDate(d));});
+    extrasHistSync();persist();renderExLista();toast(ms.length+' recibo(s) com a data '+fmtDate(d),'ok');};
+  const pg=$('#exLotePago');if(pg)pg.onclick=()=>{const ms=exLoteMovs(list).filter(m=>m.status==='pendente');
+    if(!confirm('Confirmar '+ms.length+' recibo(s) como pagos, com o valor e a data de cada um?'))return;
+    ms.forEach(m=>{m.valorPago=Number(m.valorPrevisto)||0;m.dataPagamento=m.dataPrevista||toISO(new Date());m.status='pago';m.referenciaPagamento=m.referenciaPagamento||'Confirmação em lote';
+      m.updatedAt=Date.now();auditarMov(m,'Pagamento confirmado (lote)');});
+    extrasHistSync();persist();renderExLista();toast(ms.length+' pagamento(s) confirmados','ok');};
+  const lp=$('#exLoteLimpa');if(lp)lp.onclick=()=>{exSel.clear();renderExLista();};
+}
 function renderExLista(){
   const f=$('#exFiltro').value,q=($('#exBusca').value||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().trim(),b=$('#exBody');
   const todos=exMovs().sort((a,c)=>String(c.dataPrevista||'').localeCompare(String(a.dataPrevista||''))||String(c.numeroRecibo||'').localeCompare(String(a.numeroRecibo||'')));
   const list=todos.filter(m=>(!f||m.tipo===f)&&(!q||[m.nome,m.numeroRecibo,exRefTexto(m)].join(' ').normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().includes(q)));
   $('#exQtd').textContent=list.length;$('#exTot').textContent='R$ '+fmtBRL(list.reduce((s,m)=>s+(Number(m.valorPrevisto)||0),0));
-  if(!list.length){b.innerHTML='<tr><td colspan="8"><div class="empty"><b>Nenhum recibo'+(todos.length?' com este filtro':' emitido ainda')+'</b>'+(todos.length?'Ajuste a busca ou o tipo.':'Escolha o tipo acima e emita.')+'</div></td></tr>';return;}
-  b.innerHTML=list.map(m=>'<tr><td class="idx" data-label="Nº">'+esc(m.numeroRecibo||'—')+'</td>'+
+  /* a seleção vale só para o que está na lista (filtro e busca) */
+  const naLista=new Set(list.map(m=>m.id));[...exSel].forEach(id=>{if(!naLista.has(id))exSel.delete(id);});
+  exLoteBarra(list);
+  if(!list.length){b.innerHTML='<tr><td colspan="9"><div class="empty"><b>Nenhum recibo'+(todos.length?' com este filtro':' emitido ainda')+'</b>'+(todos.length?'Ajuste a busca ou o tipo.':'Escolha o tipo acima e emita.')+'</div></td></tr>';return;}
+  b.innerHTML=list.map(m=>'<tr class="'+(exSel.has(m.id)?'sel':'')+'"><td class="c" data-label="Marcar"><input type="checkbox" class="chk" data-exsel="'+m.id+'"'+(exSel.has(m.id)?' checked':'')+' aria-label="Marcar o recibo '+esc(m.numeroRecibo||'')+'"></td><td class="idx" data-label="Nº">'+esc(m.numeroRecibo||'—')+'</td>'+
     '<td><div class="forn">'+esc(titlePt(m.nome||''))+'</div><div class="sub">'+esc(EX_TIPO_LAB[m.tipo]||m.tipo)+'</div></td>'+
     '<td data-label="Referente a">'+esc(exRefTexto(m))+'</td>'+
     '<td class="sub" data-label="Método">'+(m.metodo==='pf'?'Espécie (PF)':'Banco')+'</td>'+
@@ -17050,6 +17096,8 @@ function renderExLista(){
     '<td data-label="Situação"><button class="btn-mini" data-payedit="'+m.id+'" title="Conferir: data, valor e forma efetivos">'+statusMovHTML(m.status)+'</button></td>'+
     '<td class="r" data-label="Ações"><div class="rowact">'+(m.status==='pendente'?'<button class="ia" data-exok="'+m.id+'" title="Confirmar como pago (valor e data do recibo)">✓</button>':'')+
       '<button class="ia" data-expr="'+m.id+'" title="2ª via">'+ri('imprimir')+'</button><button class="ia del" data-exdel="'+m.id+'" title="Excluir">✕</button></div></td></tr>').join('');
+  b.querySelectorAll('[data-exsel]').forEach(c=>c.onchange=()=>{if(c.checked)exSel.add(c.dataset.exsel);else exSel.delete(c.dataset.exsel);
+    c.closest('tr').classList.toggle('sel',c.checked);exLoteBarra(list);});
   b.querySelectorAll('[data-payedit]').forEach(x=>x.onclick=()=>abrirPayModal(x.dataset.payedit));
   b.querySelectorAll('[data-expr]').forEach(x=>x.onclick=()=>{const m=state.movimentos[x.dataset.expr];if(m)imprimirExtras([m],true);});
   b.querySelectorAll('[data-exok]').forEach(x=>x.onclick=()=>{const m=state.movimentos[x.dataset.exok];if(!m)return;
@@ -17062,6 +17110,8 @@ function renderExLista(){
     delete state.movimentos[m.id];extrasHistSync();persist();renderExLista();toast('Recibo excluído');});
 }
 document.querySelectorAll('#exTipoSeg button').forEach(b=>b.onclick=()=>{exTipo=b.dataset.t;renderExtra();});
+$('#exSelTodos').onchange=ev=>{
+  document.querySelectorAll('#exBody [data-exsel]').forEach(c=>{if(ev.target.checked)exSel.add(c.dataset.exsel);else exSel.delete(c.dataset.exsel);});renderExLista();};
 $('#exParcela').onchange=renderExDec;$('#exAno').onchange=renderExDec;
 $('#exCidade').onchange=()=>{state.cfg.cidadeEmissao=$('#exCidade').value.trim();persist();};
 $('#exMarcar').onclick=()=>{const d=exDec();exEmpLista().forEach(e=>{if(e.status==='ativo')d.checked[e.id]=true;});exDraftSave();renderExDec();};
@@ -18750,7 +18800,7 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape'){if(fecharSemPerder(
    juntos a cada publicacao, e ha uma prova automatica que falha se um subir
    sem o outro. Assim o numero na tela e o mesmo do arquivo que o aparelho
    guardou, e dizer "estou na v81" passa a significar alguma coisa. */
-const APP_VER='v308';
+const APP_VER='v309';
 (function(){var p=document.getElementById('verPill'); if(p)p.textContent=APP_VER;})();
 
 if('serviceWorker' in navigator){
