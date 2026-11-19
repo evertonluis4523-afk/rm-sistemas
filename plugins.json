@@ -1,0 +1,46 @@
+[
+ {
+  "arquivo": "calculadora-pu/sketchup/RM_Estruturas_PU.rbz",
+  "data": "2026-11-18",
+  "instalar": "SketchUp › Extensões › Gerenciador de extensões › Instalar extensão, e escolha o arquivo. Reinicie o SketchUp.",
+  "nome": "RM Estruturas — Controle de PU",
+  "sistema": "calculadora-pu",
+  "tamanho": 14391,
+  "tipo": "SketchUp",
+  "uso": "Exporta as linhas de PU do modelo para o 3D do Cálculo PU.",
+  "versao": "1.4.1"
+ },
+ {
+  "arquivo": "leitor_dwg/sketchup/RM_Coberturas.rbz",
+  "data": "2026-11-19",
+  "instalar": "SketchUp › Extensões › Gerenciador de extensões › Instalar extensão, e escolha o arquivo. Reinicie o SketchUp.",
+  "nome": "RM Coberturas",
+  "sistema": "leitor_dwg",
+  "tamanho": 10776,
+  "tipo": "SketchUp",
+  "uso": "Cobertura e fechamento para o Leitor DWG (aba Telhas) e medidas e esquadrias da chave na mão (aba Chave na mão).",
+  "versao": "1.4.0"
+ },
+ {
+  "arquivo": "leitor_dwg/RM-TELHA.lsp",
+  "data": "2026-08-26",
+  "instalar": "AutoCAD › APPLOAD, carregue o arquivo e ponha em Conteúdo da inicialização (Startup Suite).",
+  "nome": "RM-TELHA",
+  "sistema": "leitor_dwg",
+  "tamanho": 26263,
+  "tipo": "AutoCAD",
+  "uso": "Desenha e cota no AutoCAD o esboço de telhas que o Leitor DWG lê (comandos TL, TLC, TLS; RMONDE mostra a versão carregada).",
+  "versao": "7"
+ },
+ {
+  "arquivo": "propostas_rm/sketchup/RM_Cenas.rbz",
+  "data": "2026-10-23",
+  "instalar": "SketchUp › Extensões › Gerenciador de extensões › Instalar extensão, e escolha o arquivo. Reinicie o SketchUp.",
+  "nome": "RM Cenas",
+  "sistema": "propostas_rm",
+  "tamanho": 8037,
+  "tipo": "SketchUp",
+  "uso": "Exporta as cenas do modelo como imagens para a proposta (Propostas e Contratos).",
+  "versao": "1.6.0"
+ }
+]

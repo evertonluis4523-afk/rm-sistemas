@@ -1,0 +1,6 @@
+/versoes.json
+  Access-Control-Allow-Origin: *
+  Cache-Control: no-cache
+/plugins.json
+  Access-Control-Allow-Origin: *
+  Cache-Control: no-cache

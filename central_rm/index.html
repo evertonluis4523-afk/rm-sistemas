@@ -1701,6 +1701,8 @@ var RM_FONTE="@font-face{font-family:'Satoshi';src:url(data:font/woff2;base64,d0
      mão para copiar, mandar pelo WhatsApp ou abrir. */
   .tel-links { display: grid; gap: 10px; }
   .links-panel { width: 640px; }
+  .tel-link .tl-ver { display:inline-block; margin-left:6px; padding:0 7px; border-radius:7px; background: var(--divider); color: var(--text-dim); font-size:12px; font-weight:800; vertical-align:1px; font-variant-numeric: tabular-nums; }
+  .tel-link .tl-inst { font-size: 12px; color: var(--text-dim); margin-top: 4px; }
   .links-body { padding: 16px 20px 20px; overflow: auto; }
   .links-exp { margin: 0 0 12px; font-size: 13px; color: var(--text-muted); }
   .tel-link { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; padding: 14px 16px; background: var(--card);
@@ -1713,18 +1715,18 @@ var RM_FONTE="@font-face{font-family:'Satoshi';src:url(data:font/woff2;base64,d0
   .tel-link .tl-desc { font-size: 12.5px; color: var(--text-muted); margin-top: 2px; }
   .tel-link .tl-url { font-size: 12px; color: var(--text-dim); margin-top: 4px; word-break: break-all; font-variant-numeric: tabular-nums; }
   .tel-link .tl-acoes { display: flex; gap: 8px; flex-wrap: wrap; }
-  .tel-link .tl-acoes button { height: 34px; padding: 0 12px; border-radius: 8px; border: 1px solid var(--divider); background: var(--card);
+  .tel-link .tl-acoes button, .tel-link .tl-acoes a.pri { display:inline-flex; align-items:center; text-decoration:none; height: 34px; padding: 0 12px; border-radius: 8px; border: 1px solid var(--divider); background: var(--card);
     color: var(--text); font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }
   .tel-link .tl-acoes button:hover { background: var(--card-hover); border-color: var(--text-dim); }
-  .tel-link .tl-acoes button.pri { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .tel-link .tl-acoes button.pri, .tel-link .tl-acoes a.pri { background: var(--accent); border-color: var(--accent); color: #fff; }
   /* no escuro o --accent e' a laranja clara (feita para TEXTO): como fundo
      de botao ela dava 3,7:1 com o branco. O botao usa a laranja do botao. */
-  body[data-theme="escuro"] .tel-link .tl-acoes button.pri { background: var(--rm-marca, #D53309); border-color: var(--rm-marca, #D53309); }
+  body[data-theme="escuro"] .tel-link .tl-acoes button.pri, body[data-theme="escuro"] .tel-link .tl-acoes a.pri { background: var(--rm-marca, #D53309); border-color: var(--rm-marca, #D53309); }
   /* A Central nao passa pelo escuro derivado dos sistemas: o selo da versao
      e o estado da nuvem ficavam no cinza do claro (3,0:1 e 3,9:1). */
   body[data-theme="escuro"] #topbar-ver, body[data-theme="escuro"] #rm-nuvem .rm-nuvem-txt { color: var(--text-muted); }
 
-  .tel-link .tl-acoes button.pri:hover { filter: brightness(.93); }
+  .tel-link .tl-acoes button.pri:hover, .tel-link .tl-acoes a.pri:hover { filter: brightness(.93); }
 
   /* Cards repaginados — mais sofisticados: ícone em chip com gradiente,
      glow de canto na cor da categoria, barra lateral que se expande no
@@ -2270,6 +2272,9 @@ var RM_FONTE="@font-face{font-family:'Satoshi';src:url(data:font/woff2;base64,d0
     border:none; background-image: linear-gradient(135deg, var(--accent-light), var(--accent));
     color:#fff; cursor:pointer; margin-top:1px; }
   .al-acao:hover { filter:brightness(1.08); }
+  /* aba Versões: uma linha por sistema, a versão em destaque à direita */
+  .al-ver { font-weight:800; font-size:15px; font-variant-numeric:tabular-nums; color: var(--text); white-space:nowrap; align-self:center; }
+  .al-item.velho { opacity:.62; }
   .al-vazio { font-size:14px; color: var(--text-muted); text-align:center; padding:26px 10px;font-weight:505}
   .al-barra { display:flex; gap:8px; justify-content:space-between; align-items:center; margin:2px 0 10px; }
   .al-barra .al-resumo { font-size:13px; color: var(--text-muted);font-weight:530}
@@ -4097,6 +4102,15 @@ try { var _e = localStorage.getItem('rm_estilo_ultimo'); if (_e === 'viva' || _e
         </svg>
         <span class="nav-name">Links úteis</span>
       </div>
+      <!-- Extensões do SketchUp e rotinas do AutoCAD dos sistemas, num lugar
+           só. A lista vem do site (plugins.json, montado a cada publicação):
+           plugin novo publicado, link e versão já são os novos. -->
+      <div class="nav-item" id="btn-plugins" data-tooltip="Plugins e arquivos" tabindex="0" role="button" onclick="abrirPlugins()">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 3v11M7.5 9.5 12 14l4.5-4.5"/><path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/>
+        </svg>
+        <span class="nav-name">Plugins e arquivos</span>
+      </div>
       <div class="nav-item" data-docs data-tooltip="Documentos" tabindex="0" role="button" onclick="showDocumentos(this)" style="display:none">
         <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
           <path d="M4 7a2 2 0 0 1 2-2h3.5l2 2H18a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"/>
@@ -4456,6 +4470,15 @@ try { var _e = localStorage.getItem('rm_estilo_ultimo'); if (_e === 'viva' || _e
     </div>
   </div>
 </div>
+<div class="overlay" id="plugins-overlay" onclick="if(event.target===this) fecharPlugins()">
+  <div class="assist-panel links-panel">
+    <div class="assist-head">
+      <h3>Plugins e arquivos</h3>
+      <button class="assist-close" onclick="fecharPlugins()" aria-label="Fechar">✕</button>
+    </div>
+    <div class="assist-body links-body"><div id="plugins-lista"></div></div>
+  </div>
+</div>
 <div class="overlay" id="assist-overlay" onclick="if(event.target===this) closeAssistant()">
   <div class="assist-panel">
     <div class="assist-head">
@@ -4466,11 +4489,13 @@ try { var _e = localStorage.getItem('rm_estilo_ultimo'); if (_e === 'viva' || _e
       <button class="assist-tab on" data-aba="avisos"      onclick="assistTab('avisos')">Avisos<span class="at-n" id="at-n-avisos"></span></button>
       <button class="assist-tab"    data-aba="atividade"   onclick="assistTab('atividade')">Atividade</button>
       <button class="assist-tab"    data-aba="diagnostico" onclick="assistTab('diagnostico')">Saúde<span class="at-n" id="at-n-diag"></span></button>
+      <button class="assist-tab"    data-aba="versoes"     onclick="assistTab('versoes')">Versões</button>
     </div>
     <div class="assist-body">
       <div class="assist-pane on" data-aba="avisos"><div id="assist-avisos"></div></div>
       <div class="assist-pane" data-aba="atividade"><div id="assist-atividade"></div></div>
       <div class="assist-pane" data-aba="diagnostico"><div id="assist-diagnostico"></div></div>
+      <div class="assist-pane" data-aba="versoes"><div id="assist-versoes"></div></div>
     </div>
   </div>
 </div>
@@ -4853,7 +4878,7 @@ try { var _e = localStorage.getItem('rm_estilo_ultimo'); if (_e === 'viva' || _e
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js" crossorigin="anonymous"></script>
 
 <script>/* versão publicada (PADRAO_RM.md §3): sobe a cada publicação, junto com o CACHE do sw.js */
-const APP_VER='v180';
+const APP_VER='v181';
 </script>
 <script>
   /* ===== LOGIN (Firebase Authentication) =====
@@ -6392,7 +6417,81 @@ const APP_VER='v180';
   }
   window.__rmOuvirErros = ouvirErrosNuvem;
   function errosNovos() {
-    return Object.keys(_erros).filter(function (k) { return _erros[k].ultimo > _errosVistos; }).length;
+    return Object.keys(_erros).filter(function (k) { return _erros[k].ultimo > _errosVistos && !erroDeVersaoAntiga(_erros[k]); }).length;
+  }
+
+  /* ---------------- versões publicadas ----------------
+     O site (Cloudflare) guarda em versoes.json a versão que está no ar de
+     cada sistema -- é o mesmo arquivo que o monta_site grava a cada
+     publicação. A aba Versões mostra a lista; a Saúde usa para separar o
+     erro que só apareceu numa versão já trocada (o "sw.js load failed" do
+     Máquinas v32, corrigido depois) do que continua na versão de hoje. */
+  var VERSOES_URL = (/\.pages\.dev$/.test(location.hostname) ? location.origin : 'https://rm-estruturas.pages.dev') + '/versoes.json';
+  var _versoes = (function () { try { return JSON.parse(localStorage.getItem('rm_versoes_site') || 'null'); } catch (e) { return null; } })();
+  var _versoesLendo = null, _versoesFalha = '';
+  function carregaVersoes(forca) {
+    if (_versoesLendo) return _versoesLendo;
+    if (!forca && _versoes && Date.now() - (_versoes.em || 0) < 5 * 60000) return Promise.resolve(_versoes);
+    _versoesLendo = fetch(VERSOES_URL + '?t=' + Date.now(), { cache: 'no-store' })
+      .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+      .then(function (j) { _versoes = { em: Date.now(), lista: j }; _versoesFalha = '';
+        try { localStorage.setItem('rm_versoes_site', JSON.stringify(_versoes)); } catch (e) { } return _versoes; })
+      .catch(function (e) { _versoesFalha = (window.rmErroPt ? window.rmErroPt(e) : String(e && e.message || e)); return _versoes; })
+      .then(function (v) { _versoesLendo = null; atualizarAssistBadge(); refreshAssistIfOpen(); return v; });
+    return _versoesLendo;
+  }
+  function numVer(v) { var m = String(v || '').match(/(\d+)/); return m ? +m[1] : 0; }
+  /* pasta do site de cada sistema (pelo endereço dele) e o nome que aparece na aba */
+  function pastasDosSistemas() {
+    var out = { central_rm: 'RM Central' };
+    try {
+      if (typeof allSystems === 'function') allSystems(true).forEach(function (x) {
+        var p = ''; try { p = new URL(x.url).pathname.split('/')[1] || ''; } catch (e) { }
+        if (p && !out[p] && !/\.html$/.test(x.url)) out[p] = x.name;
+      });
+    } catch (e) { }
+    return out;
+  }
+  function versaoNoArDe(nomeSistema) {
+    var L = _versoes && _versoes.lista; if (!L) return '';
+    if (nomeSistema === 'Central') return (L.central_rm || {}).versao || '';
+    var P = pastasDosSistemas();
+    for (var p in P) if (P[p] === nomeSistema && L[p]) return L[p].versao || '';
+    return '';
+  }
+  /* erro cuja última vez foi numa versão mais velha que a publicada: não
+     voltou desde a troca -- fica separado, sem contar no selo */
+  function erroDeVersaoAntiga(e) {
+    if (!e || !e.ver) return false;
+    var atual = numVer(versaoNoArDe(e.sistema));
+    return atual > 0 && numVer(e.ver) > 0 && numVer(e.ver) < atual;
+  }
+  function renderVersoes() {
+    var el = document.getElementById('assist-versoes'); if (!el) return;
+    if (!_versoes || Date.now() - (_versoes.em || 0) > 5 * 60000) carregaVersoes();
+    var L = _versoes && _versoes.lista, P = pastasDosSistemas();
+    var topo = '<div class="al-barra"><span class="al-resumo">'
+      + (L ? 'No ar no site · lido ' + quandoRelativo(_versoes.em) : (_versoesLendo ? 'Lendo as versões do site…' : 'Ainda sem a lista do site'))
+      + (_versoesFalha ? ' · ' + escHtml(_versoesFalha) : '') + '</span>'
+      + '<span><button class="btn-ghost-sm" onclick="carregaVersoes(true)">Atualizar</button></span></div>';
+    if (!L) { el.innerHTML = topo + '<div class="al-vazio">' + (_versoesLendo ? 'Lendo…' : 'Sem internet, não deu para ler a lista.') + '</div>'; return; }
+    var pastas = Object.keys(L).sort(function (a, b) {
+      if (a === 'central_rm') return -1; if (b === 'central_rm') return 1;
+      return String(P[a] || a).localeCompare(String(P[b] || b), 'pt-BR'); });
+    var linhas = pastas.map(function (p) {
+      var v = L[p] || {}, nome = P[p] || p, sub = [];
+      if (v.data) sub.push('publicada em ' + String(v.data).split('-').reverse().join('/'));
+      if (v.extensao) sub.push('extensão do SketchUp ' + v.extensao);
+      /* a Central desta janela atrás da publicada: recarregar traz a nova */
+      var aviso = p === 'central_rm' && typeof APP_VER !== 'undefined' && numVer(APP_VER) && numVer(v.versao) > numVer(APP_VER)
+        ? 'esta janela está na ' + APP_VER + ' — feche e abra para atualizar' : '';
+      if (aviso) sub.push(aviso);
+      return '<div class="al-item' + (aviso ? ' urgent' : '') + '"><span class="al-ico">' + svgIcon('doc', '', 15) + '</span>'
+        + '<div class="al-body"><div class="al-t">' + escHtml(nome) + '</div>'
+        + '<div class="al-s">' + escHtml(sub.join(' · ') || p) + '</div></div>'
+        + '<span class="al-ver">' + escHtml(v.versao || '—') + '</span></div>';
+    }).join('');
+    el.innerHTML = topo + linhas;
   }
   window.addEventListener('error', function (ev) {
     registrarErro('Central', ev.message, ev.filename, ev.error && ev.error.stack, typeof APP_VER !== 'undefined' ? APP_VER : '');
@@ -6434,9 +6533,11 @@ const APP_VER='v180';
     return c.outerHTML;
   }
   function relatorioMelhorias() {
-    var chaves = Object.keys(_erros).sort(function (a, b) { return _erros[b].n - _erros[a].n; });
-    if (!chaves.length) { alert('Nenhum erro registrado ainda — nada a relatar.'); return; }
-    var linhas = chaves.map(function (k, i) {
+    var todas = Object.keys(_erros).sort(function (a, b) { return _erros[b].n - _erros[a].n; });
+    if (!todas.length) { alert('Nenhum erro registrado ainda — nada a relatar.'); return; }
+    var chaves = todas.filter(function (k) { return !erroDeVersaoAntiga(_erros[k]); });
+    var antigas = todas.filter(function (k) { return erroDeVersaoAntiga(_erros[k]); });
+    var linhaDe = function (k, i) {
       var e = _erros[k];
       return '<tr' + (i % 2 ? ' class="z"' : '') + '>'
         + '<td>' + escHtml(e.sistema) + '</td>'
@@ -6445,7 +6546,12 @@ const APP_VER='v180';
         + '<td class="n">' + escHtml(versaoDoErro(e)) + '</td>'
         + '<td class="n">' + new Date(e.primeiro).toLocaleDateString('pt-BR') + '</td>'
         + '<td class="n">' + new Date(e.ultimo).toLocaleDateString('pt-BR') + '</td></tr>';
-    }).join('');
+    };
+    var linhas = chaves.length ? chaves.map(linhaDe).join('') : '<tr><td colspan="6">Nenhum erro na versão atual dos sistemas.</td></tr>';
+    var cabT = '<table><thead><tr><th>Sistema</th><th>Erro</th><th class="n">Vezes</th><th class="n">Versão</th>'
+      + '<th class="n">1ª vez</th><th class="n">Última</th></tr></thead><tbody>';
+    var tabAntigas = antigas.length ? '<h2 style="font-size:10.5pt;margin:7mm 0 2mm">De versões antigas · não voltaram na versão atual</h2>'
+      + cabT + antigas.map(linhaDe).join('') + '</tbody></table>' : '';
     var total = chaves.reduce(function (s, k) { return s + _erros[k].n; }, 0);
     var html = '<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8">'
       + '<title>Relatório de melhorias — RM Central</title><style>'
@@ -6494,8 +6600,7 @@ const APP_VER='v180';
       + '<h1>Relatório de melhorias</h1>'
       + '<div style="margin-bottom:4mm"><div class="meta rmd-subtit">Erros distintos: ' + chaves.length + ' &nbsp;·&nbsp; ocorrências no total: ' + total
       + ' &nbsp;·&nbsp; gerado em ' + new Date().toLocaleString('pt-BR') + '</div></div>'
-      + '<table><thead><tr><th>Sistema</th><th>Erro</th><th class="n">Vezes</th><th class="n">Versão</th>'
-      + '<th class="n">1ª vez</th><th class="n">Última</th></tr></thead><tbody>' + linhas + '</tbody></table>'
+      + cabT + linhas + '</tbody></table>' + tabAntigas
       + '<div class="nota rmd-obs">Ordenado pelo número de ocorrências.</div>'
       + '<div class="pe"><div class="lin"><div>51 99789-7879 · @rm.estruturas</div><div class="c">www.rmestruturas.com.br</div>'
       + '<div class="d">' + desenhoDaMarca('.topbar-mark') + '</div></div></div>'
@@ -6538,6 +6643,7 @@ const APP_VER='v180';
   function renderAssistAba() {
     if (_assistAba === 'avisos')      return renderAvisos();
     if (_assistAba === 'atividade')   return renderAtividade();
+    if (_assistAba === 'versoes')     return renderVersoes();
     if (_assistAba === 'diagnostico') return renderDiagnostico();
   }
   function renderAvisos() {
@@ -6635,7 +6741,10 @@ const APP_VER='v180';
   function renderDiagnostico() {
     var el = document.getElementById('assist-diagnostico'); if (!el) return;
     var d = window.RM_DADOS;
-    var chaves = Object.keys(_erros).sort(function (a, b) { return _erros[b].ultimo - _erros[a].ultimo; });
+    if (!_versoes) carregaVersoes();
+    var todas = Object.keys(_erros).sort(function (a, b) { return _erros[b].ultimo - _erros[a].ultimo; });
+    var chaves = todas.filter(function (k) { return !erroDeVersaoAntiga(_erros[k]); });
+    var antigas = todas.filter(function (k) { return erroDeVersaoAntiga(_erros[k]); });
     var totalErros = chaves.reduce(function (s, k) { return s + _erros[k].n; }, 0);
 
     /* --- como a Central está rodando --- */
@@ -6693,10 +6802,9 @@ const APP_VER='v180';
     var barraErros = '<div class="al-barra"><span class="al-resumo">'
       + (chaves.length ? chaves.length + ' erro(s) distinto(s) · ' + totalErros + ' ocorrência(s)' : 'Nenhum erro registrado')
       + '</span><span>'
-      + (chaves.length ? '<button class="btn-ghost-sm" onclick="limparErros()">Limpar</button> ' : '')
+      + (todas.length ? '<button class="btn-ghost-sm" onclick="limparErros()">Limpar</button> ' : '')
       + '<button class="btn-add" onclick="relatorioMelhorias()">Gerar relatório</button></span></div>';
-    var listaErros = chaves.length
-      ? chaves.map(function (k) {
+    var umErro = function (k, velho) {
           var e = _erros[k];
           /* O titulo vai em portugues: quem abre a Saude quer saber o que
              aconteceu, e o erro chega do navegador em ingles. O texto original
@@ -6706,14 +6814,19 @@ const APP_VER='v180';
           var titulo = window.rmErroPt ? window.rmErroPt({ message: e.msg }) : e.msg;
           var cru = (window.rmErroConhecido && window.rmErroConhecido({ message: e.msg })) ? e.msg : '';
           var detalhe = [cru, e.pilha].filter(Boolean).join('\n');
-          return '<div class="al-item"><span class="al-ico">' + svgIcon('doc', '', 15) + '</span>'
+          return '<div class="al-item' + (velho ? ' velho' : '') + '"><span class="al-ico">' + svgIcon('doc', '', 15) + '</span>'
             + '<div class="al-body"><div class="al-t">' + escHtml(titulo) + '</div>'
             + '<div class="al-s">' + escHtml(e.sistema) + (e.ver ? ' ' + escHtml(versaoDoErro(e)) : '') + ' · ' + quandoRelativo(e.ultimo)
-            + (e.onde ? ' · ' + escHtml(String(e.onde).split('/').pop()) : '') + '</div>'
+            + (e.onde ? ' · ' + escHtml(String(e.onde).split('/').pop()) : '')
+            + (velho ? ' · hoje está na ' + escHtml(versaoNoArDe(e.sistema)) : '') + '</div>'
             + (detalhe ? '<div class="al-det">' + escHtml(detalhe) + '</div>' : '') + '</div>'
             + '<span class="al-vezes">' + e.n + '×</span></div>';
-        }).join('')
-      : '<div class="al-vazio">Nada quebrou por aqui.</div>';
+        };
+    var listaErros = (chaves.length
+      ? chaves.map(function (k) { return umErro(k, false); }).join('')
+      : '<div class="al-vazio">Nada quebrou por aqui.</div>')
+      + (antigas.length ? '<div class="al-group">De versões antigas · não voltaram na versão atual</div>'
+        + antigas.map(function (k) { return umErro(k, true); }).join('') : '');
 
     /* --- cópias locais: o que saiu dos cartões do painel ---
        Voltar para a versão anterior é ação de emergência e ocupava uma linha
@@ -8711,6 +8824,62 @@ const APP_VER='v180';
   function abrirLinks() { if (centralEnxuta()) return; document.getElementById('links-overlay').classList.add('open'); }
   function fecharLinks() { document.getElementById('links-overlay').classList.remove('open'); }
   window.abrirLinks = abrirLinks; window.fecharLinks = fecharLinks;
+
+  /* PLUGINS E ARQUIVOS. A lista é o plugins.json do site, que o monta_site
+     tira dos próprios arquivos a cada publicação (nome e versão de quem
+     registra a extensão, RM-VER da rotina do AutoCAD). O link aponta para o
+     arquivo publicado, com a versão no endereço: depois de publicar, baixa o
+     novo -- nenhum cache entrega o velho. */
+  const PLUGINS_BASE = /\.pages\.dev$/.test(location.hostname) ? location.origin : 'https://rm-estruturas.pages.dev';
+  let PLUGINS = (() => { try { return JSON.parse(localStorage.getItem('rm_plugins_site') || 'null'); } catch (e) { return null; } })();
+  let pluginsFalha = '', pluginsLendo = false;
+  const NOME_SISTEMA_PASTA = { leitor_dwg: 'Leitor DWG', 'calculadora-pu': 'Cálculo PU', propostas_rm: 'Propostas e Contratos', orcamento_rm: 'Orçamento', central_rm: 'Central' };
+  function urlPlugin(p) { return PLUGINS_BASE + '/' + p.arquivo.split('/').map(encodeURIComponent).join('/') + (p.versao ? '?v=' + encodeURIComponent(p.versao) : ''); }
+  function lerPlugins(forca) {
+    if (pluginsLendo) return;
+    if (!forca && PLUGINS && Date.now() - (PLUGINS.em || 0) < 5 * 60000) return;
+    pluginsLendo = true;
+    fetch(PLUGINS_BASE + '/plugins.json?t=' + Date.now(), { cache: 'no-store' })
+      .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+      .then(j => { PLUGINS = { em: Date.now(), lista: Array.isArray(j) ? j : [] }; pluginsFalha = '';
+        try { localStorage.setItem('rm_plugins_site', JSON.stringify(PLUGINS)); } catch (e) { } })
+      .catch(e => { pluginsFalha = window.rmErroPt ? window.rmErroPt(e) : String(e && e.message || e); })
+      .then(() => { pluginsLendo = false; pintaPlugins(); });
+  }
+  function pintaPlugins() {
+    const el = document.getElementById('plugins-lista'); if (!el) return;
+    const L = PLUGINS && PLUGINS.lista;
+    const topo = '<div class="al-barra"><span class="al-resumo">'
+      + (L ? 'Do site · lido ' + (typeof quandoRelativo === 'function' ? quandoRelativo(PLUGINS.em) : '') : (pluginsLendo ? 'Lendo a lista do site…' : 'Ainda sem a lista'))
+      + (pluginsFalha ? ' · ' + escHtml(pluginsFalha) : '') + '</span>'
+      + '<span><button class="btn-ghost-sm" onclick="lerPlugins(true)">Atualizar</button></span></div>';
+    if (!L) { el.innerHTML = topo + '<div class="al-vazio">' + (pluginsLendo ? 'Lendo…' : 'Sem internet, não deu para ler a lista.') + '</div>'; return; }
+    const grupos = {};
+    L.forEach((p, i) => { (grupos[p.tipo || 'Outros'] = grupos[p.tipo || 'Outros'] || []).push(i); });
+    const kb = n => n >= 1e6 ? (n / 1e6).toFixed(1).replace('.', ',') + ' MB' : Math.max(1, Math.round(n / 1024)) + ' KB';
+    const ordem = ['SketchUp', 'AutoCAD'].concat(Object.keys(grupos).filter(g => g !== 'SketchUp' && g !== 'AutoCAD'));
+    el.innerHTML = topo + ordem.filter(g => grupos[g]).map(g => '<div class="al-group">' + escHtml(g) + '</div><div class="tel-links">'
+      + grupos[g].map(i => { const p = L[i];
+        const info = [NOME_SISTEMA_PASTA[p.sistema] || p.sistema, p.data ? 'atualizado em ' + String(p.data).split('-').reverse().join('/') : '', p.tamanho ? kb(p.tamanho) : '', p.arquivo.split('/').pop()].filter(Boolean).join(' · ');
+        return '<div class="tel-link" data-plugin="' + escHtml(p.arquivo) + '">'
+          + '<div class="tl-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v11M7.5 9.5 12 14l4.5-4.5"/><path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></svg></div>'
+          + '<div class="tl-txt"><div class="tl-nome">' + escHtml(p.nome) + (p.versao ? '<span class="tl-ver">' + escHtml(/^\d+$/.test(p.versao) ? 'versão ' + p.versao : p.versao) + '</span>' : '') + '</div>'
+          + (p.uso ? '<div class="tl-desc">' + escHtml(p.uso) + '</div>' : '')
+          + '<div class="tl-url">' + escHtml(info) + '</div>'
+          + (p.instalar ? '<div class="tl-inst">' + escHtml(p.instalar) + '</div>' : '') + '</div>'
+          + '<div class="tl-acoes"><button type="button" onclick="pluginLink(' + i + ',\'copiar\')">Copiar link</button>'
+          + '<button type="button" onclick="pluginLink(' + i + ',\'whats\')">Enviar pelo WhatsApp</button>'
+          + '<a class="pri" href="' + escHtml(urlPlugin(p)) + '" target="_blank" rel="noopener" download="' + escHtml(p.arquivo.split('/').pop()) + '">Baixar</a></div></div>'; }).join('')
+      + '</div>').join('');
+  }
+  function pluginLink(i, acao) {
+    const p = PLUGINS && PLUGINS.lista && PLUGINS.lista[i]; if (!p) return;
+    TEL_LINKS['plugin'] = { nome: p.nome + (p.versao ? ' ' + p.versao : ''), url: urlPlugin(p) };
+    telLink('plugin', acao);
+  }
+  function abrirPlugins() { if (centralEnxuta()) return; document.getElementById('plugins-overlay').classList.add('open'); pintaPlugins(); lerPlugins(); }
+  function fecharPlugins() { document.getElementById('plugins-overlay').classList.remove('open'); }
+  window.abrirPlugins = abrirPlugins; window.fecharPlugins = fecharPlugins; window.lerPlugins = lerPlugins; window.pluginLink = pluginLink;
 
   function toast(msg, tipo) {
     let caixa = document.getElementById('rm-toasts');
