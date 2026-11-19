@@ -1,73 +1,73 @@
 {
  "Controle-estoque-maquinas": {
-  "commit": "7e9651f",
-  "data": "2026-11-18",
+  "commit": "84eaf70",
+  "data": "2026-11-19",
   "versao": "v51"
  },
  "Pedidos_perfitec": {
-  "commit": "460cec2",
-  "data": "2026-11-18",
-  "versao": "v87"
+  "commit": "382e451",
+  "data": "2026-11-19",
+  "versao": "v88"
  },
  "almo-os": {
-  "commit": "e30316f",
-  "data": "2026-11-18",
+  "commit": "c1e9776",
+  "data": "2026-11-19",
   "versao": "v112"
  },
  "calculadora-pu": {
-  "commit": "bf6cf79",
-  "data": "2026-11-18",
+  "commit": "be08734",
+  "data": "2026-11-19",
   "versao": "v137"
  },
  "calculo_pre_moldados": {
-  "commit": "a75b1ff",
-  "data": "2026-11-18",
+  "commit": "a77b0f7",
+  "data": "2026-11-19",
   "versao": "v72"
  },
  "central_rm": {
-  "commit": "f293f72",
+  "commit": "5921863",
   "data": "2026-11-19",
-  "versao": "v181"
+  "versao": "v182"
  },
  "controle_cheques": {
-  "commit": "bf12c97",
-  "data": "2026-11-18",
-  "versao": "v87"
- },
- "controle_compras": {
-  "commit": "6c2b9f3",
-  "data": "2026-11-18",
+  "commit": "312cd93",
+  "data": "2026-11-19",
   "versao": "v88"
  },
+ "controle_compras": {
+  "commit": "b5c4c9e",
+  "data": "2026-11-19",
+  "versao": "v89"
+ },
  "controle_obras": {
-  "commit": "94b498c",
-  "data": "2026-11-18",
+  "commit": "06202b8",
+  "data": "2026-11-19",
   "versao": "v122"
  },
  "leitor_dwg": {
-  "commit": "98fbd3e",
+  "commit": "97b62da",
   "data": "2026-11-19",
   "extensao": "1.4.0",
-  "versao": "v304"
+  "versao": "v305"
  },
  "orcamento-rm": {
-  "commit": "9db154c",
+  "commit": "c20f9e0",
   "data": "2026-11-19",
-  "versao": "v168"
+  "versao": "v169"
  },
  "propostas_rm": {
-  "commit": "7a654b9",
-  "data": "2026-11-18",
-  "versao": "v60"
+  "commit": "a30297f",
+  "data": "2026-11-19",
+  "versao": "v61"
  },
  "recibos_rm": {
-  "commit": "0523d47",
+  "commit": "97ca969",
   "data": "2026-11-19",
-  "versao": "v309"
+  "versao": "v310"
  },
  "rm_contas": {
-  "commit": "8da7de8",
-  "data": "2026-11-18",
-  "versao": "v83"
+  "commit": "122654a",
+  "data": "2026-11-19",
+  "versao": "v84"
  }
 }

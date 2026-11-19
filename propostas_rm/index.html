@@ -2708,6 +2708,9 @@ body:not(.com-doc) .docs-card,body:not(.com-doc) .ed-grid{display:none}
 .ini-tit p{margin:2px 0 0;font-size:13px;color:var(--muted)}
 .ini-busca{min-width:240px}
 .ini-acoes{display:flex;gap:8px;flex-wrap:wrap}
+/* botões na linha de um campo têm a altura do campo (o pequeno, 32 px, ao
+   lado da caixa de 38 ficava com o topo abaixo dela). Teste campos-padrao. */
+.ini-acoes .btn-sm,.docs-b .btn-sm{min-height:var(--rm-ctl,38px)}
 .ini-blocos{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;align-items:start}
 .ini-bloco{padding:0;overflow:hidden}
 .ini-h{display:flex;align-items:center;gap:8px;padding:12px 16px;border-bottom:1px solid var(--line)}
@@ -6974,7 +6977,7 @@ if ('serviceWorker' in navigator) {
 })();
 </script>
 <script>/* versão publicada (PADRAO_RM.md §3): sobe a cada publicação, junto com o CACHE do sw.js */
-const APP_VER='v60';
+const APP_VER='v61';
 </script>
 <script id="rmVersaoBloco">
 /* ===== SELO DE VERSÃO — igual em todos os sistemas (PADRAO_RM.md §3) =====

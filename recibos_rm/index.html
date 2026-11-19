@@ -1927,6 +1927,13 @@ table.list.fv-tab th,table.list.fv-tab td{padding-left:7px;padding-right:7px}tab
 .fv-okv{color:#1f7a4d;font-weight:600}
 .fv-r{color:#b3261e}.fv-a{color:#a4570c}.fv-ok{color:var(--muted)}
 .form-grid .f.ex-acoes,.ex-acoes{display:flex;flex-direction:row;gap:8px;align-items:flex-end;justify-content:flex-start;flex-wrap:wrap}
+/* NA LINHA DOS CAMPOS, TUDO NA ALTURA DO CAMPO. "No 13º tinha lugares
+   desalinhados": os botões sem rótulo subiam para a altura do rótulo dos
+   vizinhos, e o seletor 13º/Férias/Avulso tinha 42 px ao lado da caixa de
+   38. Teste campos-padrao (agora mede botão e seletor ao lado de campo). */
+.form-grid .f.ex-acoes{align-self:end}
+.form-grid .seg,.filters .seg{height:var(--rm-ctl,38px);padding:2px;box-sizing:border-box;align-self:flex-end}
+.form-grid .seg button,.filters .seg button{padding:0 8px}
 .t-dica{margin-top:8px;font-size:12.5px;color:var(--gray);font-weight:560;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
 .t-nome{background:none;border:0;padding:0;font:inherit;color:inherit;cursor:pointer;text-align:left;text-decoration:underline;text-decoration-color:var(--line);text-underline-offset:3px}
 .t-nome:hover{color:var(--red);text-decoration-color:currentColor}
@@ -2047,6 +2054,7 @@ table.list.fv-tab th,table.list.fv-tab td{padding-left:7px;padding-right:7px}tab
 .cur{font-family:var(--mono);color:var(--muted);font-size:13px;margin-right:5px;font-weight:530}
 .rowact{display:flex;gap:4px;justify-content:flex-end}
 .ex-lote{display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:10px 14px;margin:0 0 8px;border:1px solid var(--line);border-radius:10px;background:var(--panel,#fff)}
+.ex-lote .ex-lote-del{color:var(--rm-perigo,#b3123c)}
 .ex-lote:empty{display:none}
 .ex-lote-q{font-size:13.5px;margin-right:4px}
 .ex-lote-data{display:inline-flex;gap:6px;align-items:center}
@@ -2789,7 +2797,7 @@ kbd,code,pre,samp,.codigo,.chave,[data-mono]{
 /* ---- barra do ciclo (aba Salários) ---- */
 .ciclo-bar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:14px 30px;
   background:#fff;border-bottom:1px solid var(--line)}
-.ciclo-nav{width:32px;height:32px;flex:0 0 32px;border-radius:9px;border:1.5px solid var(--line);
+.ciclo-nav{width:38px;height:38px;flex:0 0 38px;border-radius:9px;border:1.5px solid var(--line);
   background:#fafbfc;color:var(--gray);font-size:17px;font-weight:700;line-height:1;cursor:pointer;
   display:grid;place-items:center;transition:border-color .15s,background .15s}
 .ciclo-nav:hover{border-color:var(--brand);color:var(--brand);background:#fff}
@@ -4070,10 +4078,10 @@ if(window.RM_CELULAR) document.body.classList.add('rm-campo');
         <div class="section-lab">Competência e funcionário <span class="ln"></span></div>
         <div class="form-grid">
           <div class="f span3"><span class="lab">Mês de referência</span><input type="month" id="pfMes"></div>
-          <div class="f span5"><span class="lab">Funcionário PF</span><select id="pfFuncionario"><option value="">— selecione —</option></select></div>
-          <div class="f span4" style="align-self:flex-end;display:flex;gap:8px;flex-wrap:wrap">
-            <button class="btn-act dim" id="pfPadrao" style="flex:1">Aplicar horário padrão</button>
-            <button class="btn-act dim" id="pfFechar" style="flex:1">Fechar mês</button>
+          <div class="f span4"><span class="lab">Funcionário PF</span><select id="pfFuncionario"><option value="">— selecione —</option></select></div>
+          <div class="f span5" style="align-self:flex-end;display:flex;flex-direction:row;gap:8px">
+            <button class="btn-act dim" id="pfPadrao" style="flex:1;justify-content:center">Aplicar horário padrão</button>
+            <button class="btn-act dim" id="pfFechar" style="flex:1;justify-content:center">Fechar mês</button>
           </div>
           <div class="f span12"><span class="lab">Cartão-ponto RHID</span><div class="sub" id="pfRhidStatus">Nenhum cartão importado nesta competência.</div></div>
         </div>
@@ -17063,6 +17071,7 @@ function exLoteBarra(list){
     '<button class="btn-act dim" id="exLoteImp">'+ri('imprimir')+' Imprimir '+(n?'selecionados':'todos ('+list.length+')')+'</button>'+
     '<span class="ex-lote-data"><input type="date" id="exLoteData" title="Nova data dos recibos"><button class="btn-act dim" id="exLoteDataOk">Mudar data '+(n?'dos selecionados':'de todos')+'</button></span>'+
     (pend?'<button class="btn-act dim" id="exLotePago" title="Confirmar como pagos, com o valor e a data de cada recibo">✓ Confirmar pagos ('+pend+')</button>':'')+
+    (n?'<button class="btn-act dim ex-lote-del" id="exLoteDel" title="Excluir os recibos marcados (ex.: uma simulação que não vale)">✕ Excluir selecionados ('+n+')</button>':'')+
     (n?'<button class="btn-act dim" id="exLoteLimpa">Limpar seleção</button>':'<span class="ex-lote-dica">ou marque na primeira coluna</span>');
   $('#exLoteImp').onclick=()=>{const ms=exLoteMovs(list).slice().sort((a,c)=>String(a.numeroRecibo||'').localeCompare(String(c.numeroRecibo||'')));
     imprimirExtras(ms,ms.some(m=>m.status!=='pendente'));};
@@ -17077,6 +17086,15 @@ function exLoteBarra(list){
       m.updatedAt=Date.now();auditarMov(m,'Pagamento confirmado (lote)');});
     extrasHistSync();persist();renderExLista();toast(ms.length+' pagamento(s) confirmados','ok');};
   const lp=$('#exLoteLimpa');if(lp)lp.onclick=()=>{exSel.clear();renderExLista();};
+  /* EXCLUIR EM LOTE. "Uma simulação pra ver como ficariam os recibos me
+     travou a excluir um por um." Só os MARCADOS (nunca "todos" sem marcar),
+     com a mesma porta de acesso e o mesmo aviso de pago da exclusão de um. */
+  const dl=$('#exLoteDel');if(dl)dl.onclick=()=>{const ms=list.filter(m=>exSel.has(m.id));if(!ms.length)return;
+    const tot=ms.reduce((s,m)=>s+(Number(m.valorPrevisto)||0),0),pagos=ms.filter(m=>m.status!=='pendente').length;
+    if(!acessoRec('excluir_recibo','lote:'+ms.map(m=>m.id).join(','),ms.length+' recibo(s) · R$ '+fmtBRL(tot),()=>dl.click()))return;
+    if(!confirm('Excluir '+ms.length+' recibo(s) marcado(s) (R$ '+fmtBRL(tot)+')?'+(pagos?'\n\nATENÇÃO: '+pagos+' já confirmado(s) como pago(s) sai(em) do relatório.':'')+'\n\nOs números não voltam a ser usados.'))return;
+    ms.forEach(m=>{delete state.movimentos[m.id];exSel.delete(m.id);});
+    extrasHistSync();persist();renderExLista();toast(ms.length+' recibo(s) excluído(s)','ok');};
 }
 function renderExLista(){
   const f=$('#exFiltro').value,q=($('#exBusca').value||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().trim(),b=$('#exBody');
@@ -18800,7 +18818,7 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape'){if(fecharSemPerder(
    juntos a cada publicacao, e ha uma prova automatica que falha se um subir
    sem o outro. Assim o numero na tela e o mesmo do arquivo que o aparelho
    guardou, e dizer "estou na v81" passa a significar alguma coisa. */
-const APP_VER='v309';
+const APP_VER='v310';
 (function(){var p=document.getElementById('verPill'); if(p)p.textContent=APP_VER;})();
 
 if('serviceWorker' in navigator){

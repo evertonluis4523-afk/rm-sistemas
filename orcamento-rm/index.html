@@ -1410,7 +1410,11 @@ html .search-in input:focus{box-shadow:none}
 .miniadd input{width:66px;border:1.5px solid var(--line);border-radius:9px;padding:9px 9px;font-family:var(--mono);font-weight:600;font-size:14px;text-align:right;background:#fafbfc}
 .miniadd input:focus{outline:0;border-color:var(--red);background:#fff;box-shadow:0 0 0 3px var(--red-soft)}
 .forn-input input{width:100%;text-align:left;font-family:var(--sans);font-weight:600;font-size:14px}
-.qadd-btn{align-self:flex-end;height:42px;white-space:nowrap;flex:none}
+.qadd-btn{align-self:flex-end;height:var(--rm-ctl,38px);white-space:nowrap;flex:none}
+/* NA LINHA DOS CAMPOS, O BOTÃO TEM A ALTURA DO CAMPO: o botão pequeno
+   (32 px) ao lado da caixa (38) ficava com o topo abaixo dela, e o
+   "+ Adicionar" (42) com o topo acima. Teste campos-padrao. */
+.qadd .btn-sm,.f > .btn-sm,.reajuste-bar .btn-sm,:is(input,select)~.btn-sm,.btn-sm:has(~ :is(input,select)){min-height:var(--rm-ctl,38px);height:var(--rm-ctl,38px)}
 .catsel-wrap{display:flex;flex-direction:column;gap:4px;flex:none}
 .catsel-wrap label{font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-weight:700;padding-left:2px}
 .catsel-wrap select{height:var(--rm-ctl,38px);width:184px;border:1.5px solid var(--line);border-radius:9px;padding:0 10px;font-weight:600;background:#fafbfc;font-size:14px}
@@ -10721,7 +10725,7 @@ function applyImport(){
    publicacao, e ha uma prova automatica que falha se um subir sem o outro.
    Assim o numero na tela e' o mesmo do arquivo que o aparelho guardou, e
    dizer "estou na v15" passa a significar alguma coisa. */
-const APP_VER='v168';
+const APP_VER='v169';
 (function(){ try{ const p=document.getElementById('verPill'); if(p)p.textContent=APP_VER; }catch(e){} })();
 /* Versao nova assumiu com a pagina aberta: avisa, em vez de recarregar por
    conta propria e jogar fora um orcamento pela metade. */
