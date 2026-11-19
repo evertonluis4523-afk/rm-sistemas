@@ -4853,7 +4853,7 @@ try { var _e = localStorage.getItem('rm_estilo_ultimo'); if (_e === 'viva' || _e
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js" crossorigin="anonymous"></script>
 
 <script>/* versão publicada (PADRAO_RM.md §3): sobe a cada publicação, junto com o CACHE do sw.js */
-const APP_VER='v172';
+const APP_VER='v173';
 </script>
 <script>
   /* ===== LOGIN (Firebase Authentication) =====
@@ -13185,6 +13185,7 @@ const APP_VER='v172';
                   + '<button class="docs-bt" id="docs-relatorio" onclick="docsRelatorioFrota()">Relatório da frota</button>'
                   + '<button class="docs-bt pri" onclick="docsNovoVeiculo()">＋ Veículo</button>'
                 : '<button class="docs-bt" onclick="rmApresentacao()">Apresentação da empresa</button>'
+                  + '<button class="docs-bt" onclick="rmFichaCadastral()">Ficha cadastral</button>'
                   + '<button class="docs-bt pri" onclick="docsAdicionar(\'empresa\',\'\')">＋ Documento</button>'))
       + '</div>';
 
@@ -14438,7 +14439,11 @@ const APP_VER='v172';
 </script>
 
 <script>
-/* ===== APRESENTAÇÃO DA EMPRESA =====
+/* ===== FICHA CADASTRAL =====
+
+   Era a "Apresentação da empresa"; a apresentação comercial agora é outra
+   peça (logo abaixo), e esta ficou só com o que é ficha: dados
+   cadastrais, banco e referências comerciais.
 
    Substitui o arquivo que estava solto na gaveta "Empresa". Arquivo solto
    envelhece calado: mudou o telefone ou a sala, e a cópia que está
@@ -14453,7 +14458,8 @@ const APP_VER='v172';
    instalado, "Salvar como PDF" no navegador. */
 (function () {
   'use strict';
-  if (window.rmApresentacao) return;
+  if (window.rmFichaCadastral) return;
+  
 
   var MESES = ['janeiro','fevereiro','março','abril','maio','junho',
                'julho','agosto','setembro','outubro','novembro','dezembro'];
@@ -14465,7 +14471,8 @@ const APP_VER='v172';
   var CSS = ':root{  --laranja:#F24619;      /* a marca */  --laranja-txt:#C1310B;  /* a mesma, escurecida ate\' passar em texto miudo */  --tinta:#141414;  --cinza:#4A515B;  --mudo:#6B7280;  --linha:#DCDCD8;  --faixa:#F2F4F7;}*{box-sizing:border-box}html,body{margin:0;padding:0;background:#525659}body{font-family:\'Satoshi\',-apple-system,Segoe UI,Roboto,sans-serif;     color:var(--tinta);font-weight:480;-webkit-font-smoothing:antialiased}.folha{width:210mm;min-height:297mm;background:#fff;margin:18px auto;       padding:16mm 18mm 14mm;display:flex;flex-direction:column;       box-shadow:0 6px 28px rgba(0,0,0,.35);position:relative}/* ---- timbrado: o mesmo dos outros documentos da casa ---- */.cab{display:flex;justify-content:space-between;align-items:flex-start;gap:24px}.cab .marca img{height:34px;display:block}.cab .co{text-align:right;font-size:9.5pt;color:var(--cinza);line-height:1.55;font-weight:500}.cab .co .nm{font-size:8.5pt;font-weight:700;color:var(--tinta);             text-transform:uppercase;letter-spacing:.11em;margin-bottom:2px}.cab .co .tag{display:inline-block;margin-top:5px;font-size:7.5pt;letter-spacing:.18em;              text-transform:uppercase;color:var(--laranja-txt);font-weight:700}.cab .tb2{display:flex;gap:14px;text-align:left;align-self:center;font-size:7pt;line-height:1.6;white-space:nowrap}.tb2 .tb2-c{text-align:left!important}.cab .tb2-c+.tb2-c{border-left:1px solid #e1e4e8;padding-left:14px}.cab .tb2-rz{font-weight:700;color:var(--tinta)}.tb2-tipo{margin:0 0 2px;font-size:7.5pt;letter-spacing:.18em;text-transform:uppercase;color:var(--laranja-txt);font-weight:700}.regua{height:2.2pt;background:var(--laranja);margin:9px 0 0}.regua+.fio{height:.6pt;background:var(--tinta);opacity:.85;margin-bottom:16px}/* ---- titulos ---- */h1{font-size:19pt;letter-spacing:.02em;margin:10px 0 2px;font-weight:700;line-height:1.15}.sub{font-size:10.5pt;color:var(--laranja-txt);font-weight:600;margin:0 0 16px}h2{font-size:9pt;letter-spacing:.16em;text-transform:uppercase;color:var(--cinza);   font-weight:700;margin:16px 0 8px;display:flex;align-items:center;gap:9px}h2::before{content:\'\';width:3px;height:13px;background:var(--laranja);flex:0 0 auto;border-radius:1px}h2::after{content:\'\';flex:1 1 auto;height:1px;background:var(--linha)}p.lead{font-size:11pt;line-height:1.56;margin:0 0 4px;text-align:justify;font-weight:500}/* ---- as frentes de fabricacao ---- */.frentes{display:grid;grid-template-columns:1fr 1fr;gap:10px 14px;margin:0}.frente{border:1px solid var(--linha);border-left:2.5px solid var(--laranja);        border-radius:0 7px 7px 0;padding:10px 12px}.frente b{display:block;font-size:10.5pt;font-weight:700;margin-bottom:3px}.frente span{font-size:9.5pt;color:var(--cinza);line-height:1.5;font-weight:500}/* ---- as etapas ---- */.etapas{display:flex;gap:0;margin:0;counter-reset:et}.etapa{flex:1 1 0;padding:0 14px 0 0;position:relative}.etapa+.etapa{padding-left:16px;border-left:1px solid var(--linha)}.etapa b{display:block;font-size:10pt;font-weight:700;margin-bottom:3px}.etapa b::before{counter-increment:et;content:counter(et);display:inline-block;  width:16px;height:16px;line-height:16px;text-align:center;border-radius:50%;  background:var(--laranja);color:#fff;font-size:8pt;margin-right:6px;vertical-align:1px}.etapa span{font-size:9pt;color:var(--cinza);line-height:1.5;font-weight:500}/* ---- tabelas de cadastro ---- */table{width:100%;border-collapse:collapse;font-size:9.5pt}.cad th{width:34%;text-align:left;font-weight:600;color:var(--cinza);        background:var(--faixa);padding:5.5px 11px;border-bottom:1px solid #fff;        vertical-align:top;font-size:9pt}.cad td{padding:5.5px 11px;border-bottom:1px solid var(--linha);font-weight:530}/* ---- referencias ---- */.refs thead th{background:var(--faixa);color:var(--cinza);font-size:8pt;  letter-spacing:.09em;text-transform:uppercase;font-weight:700;  padding:9px 10px;text-align:left;border-bottom:1.5px solid var(--linha)}.refs td{padding:9.5px 10px;border-bottom:1px solid var(--linha);font-weight:520;vertical-align:top}.refs td.e{font-weight:650}.refs td.t{font-family:ui-monospace,Menlo,Consolas,monospace;white-space:nowrap;font-size:9pt}.refs td.m{color:var(--cinza);font-size:9pt;word-break:break-all}.refs tr:nth-child(even) td{background:#FBFBFA}/* ---- fecho: local, data e assinatura ---- */.fecho{margin-top:26px}.fecho .local{font-size:10pt;font-weight:530;margin:0 0 30px}.fecho .ass{width:74mm;margin:0 auto;text-align:center}.socios{display:flex;justify-content:center;gap:28mm;margin-top:6mm;text-align:center}.fecho .linha{border-top:1px solid var(--tinta);margin-bottom:6px}.fecho .quem{font-size:10pt;font-weight:700}.fecho .cargo{font-size:9pt;color:var(--cinza);font-weight:530}/* ---- rodape ---- */.pe{margin-top:auto;padding-top:14px;border-top:1px solid var(--linha);    display:flex;justify-content:space-between;align-items:flex-end;    font-size:8.5pt;color:var(--mudo);font-weight:530}.pe .site{color:var(--laranja-txt);font-weight:650}.nota{font-size:8.5pt;color:var(--mudo);margin:9px 0 0;font-weight:500}@media print{  html,body{background:#fff}  .folha{margin:0;box-shadow:none;width:auto;min-height:auto;         padding:12mm 15mm 10mm;page-break-after:always}  .folha:last-child{page-break-after:auto}  @page{size:A4;margin:0}}';
   /* o logo da folha (simbolo laranja), uma vez so para as duas folhas */
   var LOGO_COR = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA4MDUuNTEgMTU3Ljk2NyI+PHBhdGggZmlsbD0iIzE0MTQxNCIgZD0iTTQzMy4xMjYgNjMuMDlMNDE0LjE2NSA2My4wOUw0MTQuMTY1IDQ5LjM1OUw0MzEuNjE3IDQ5LjM1OUw0MzEuNjE3IDQ2LjM0Mkw0MTQuMTY1IDQ2LjM0Mkw0MTQuMTY1IDM0LjUyMkw0MzMuMTI2IDM0LjUyMkw0MzMuMTI2IDMxLjQ1NEw0MTAuNzk1IDMxLjQ1NEw0MTAuNzk1IDY2LjE1OEw0MzMuMTI2IDY2LjE1OFoiLz48cGF0aCBmaWxsPSIjMTQxNDE0IiBkPSJNNDYxLjU0NCA1OC42NjRMNDYxLjU0NCA1NS4yNDRDNDYxLjU0NCA1MS4xNTMgNDU5Ljc1IDQ4LjczOSA0NTYuMTYyIDQ4LjAwMUw0NDUuMDQ2IDQ1LjgzOUM0NDMuMTAxIDQ1LjQzNyA0NDIuMTI5IDQ0LjEyOSA0NDIuMTI5IDQxLjkxNkw0NDIuMTI5IDM4LjQ0NUM0NDIuMTI5IDM1LjgzIDQ0My40NTMgMzQuNTIyIDQ0Ni4xMDMgMzQuNTIyTDQ2MC41MzggMzQuNTIyTDQ2MC41MzggMzIuOTYzTDQ1OC42MjcgMzEuNDU0TDQ0Ni4yNTMgMzEuNDU0QzQ0MS4yNTcgMzEuNDU0IDQzOC43NiAzMy45NTMgNDM4Ljc2IDM4Ljk0OEw0MzguNzYgNDEuNTYzQzQzOC43NiA0NS42ODggNDQwLjU3IDQ4LjEwMiA0NDQuMTkxIDQ4LjgwNkw0NTUuMjU2IDUxLjA2OUM0NTcuMjAxIDUxLjQ3MiA0NTguMTc0IDUyLjc2MyA0NTguMTc0IDU0Ljk0Mkw0NTguMTc0IDU5LjE2N0M0NTguMTc0IDYxLjc4MiA0NTYuODY2IDYzLjA5IDQ1NC4yNSA2My4wOUw0MzguNzYgNjMuMDlMNDM4Ljc2IDY0LjY0OUw0NDAuNzIxIDY2LjE1OEw0NTQuMDQ5IDY2LjE1OEM0NTkuMDQ1IDY2LjE1OCA0NjEuNTQ0IDYzLjY2MSA0NjEuNTQ0IDU4LjY2NCIvPjxwYXRoIGZpbGw9IiMxNDE0MTQiIGQ9Ik00NzcuNzg4IDY2LjE1OEw0ODEuMTA4IDY2LjE1OEw0ODEuMTA4IDM0LjUyMkw0OTIuOTc3IDM0LjUyMkw0OTIuOTc3IDMxLjQ1NEw0NjUuOTE4IDMxLjQ1NEw0NjUuOTE4IDM0LjUyMkw0NzcuNzg4IDM0LjUyMloiLz48cGF0aCBmaWxsPSIjMTQxNDE0IiBkPSJNNTAyLjE4MSA0OC44NTZMNTAyLjE4MSAzNC41MjJMNTE1LjMwNyAzNC41MjJDNTE3LjkyNCAzNC41MjIgNTE5LjIzMiAzNS44MjkgNTE5LjIzMiAzOC40NDVMNTE5LjIzMiA0NC44ODNDNTE5LjIzMiA0Ny41MzIgNTE3LjkyNCA0OC44NTYgNTE1LjMwNyA0OC44NTZaTTUyMy42MDcgNjUuMzAyTDUxNi43NjcgNTEuNzIzQzUyMC42NTYgNTEuMjUzIDUyMi42MDEgNDguODIzIDUyMi42MDEgNDQuNDNMNTIyLjYwMSAzOC45NDhDNTIyLjYwMSAzMy45NTIgNTIwLjEwMiAzMS40NTQgNTE1LjEwOCAzMS40NTRMNDk4LjgxMSAzMS40NTRMNDk4LjgxMSA2Ni4xNThMNTAyLjE4MSA2Ni4xNThMNTAyLjE4MSA1MS44NzRMNTEzLjE0NSA1MS44NzRMNTIwLjM4OCA2Ni4xNThMNTIzLjE1NSA2Ni4xNThaIi8+PHBhdGggZmlsbD0iIzE0MTQxNCIgZD0iTTUzOC4wOTEgNjYuMTU4TDU0OC45MDUgNjYuMTU4QzU1My45MDEgNjYuMTU4IDU1Ni4zOTkgNjMuNjYxIDU1Ni4zOTkgNTguNjY0TDU1Ni4zOTkgMzEuNDU0TDU1My4wMyAzMS40NTRMNTUzLjAzIDU5LjE2N0M1NTMuMDMgNjEuNzgyIDU1MS43MjEgNjMuMDkgNTQ5LjEwNiA2My4wOUw1MzcuOTQgNjMuMDlDNTM1LjI5MSA2My4wOSA1MzMuOTY3IDYxLjc4MiA1MzMuOTY3IDU5LjE2N0w1MzMuOTY3IDMxLjQ1NEw1MzAuNTk3IDMxLjQ1NEw1MzAuNTk3IDU4LjY2NEM1MzAuNTk3IDYzLjY2MSA1MzMuMDk1IDY2LjE1OCA1MzguMDkxIDY2LjE1OCIvPjxwYXRoIGZpbGw9IiMxNDE0MTQiIGQ9Ik01ODkuMDQgMzEuNDU0TDU2MS45ODEgMzEuNDU0TDU2MS45ODEgMzQuNTIyTDU3My44NTEgMzQuNTIyTDU3My44NTEgNjYuMTU4TDU3Ny4xNyA2Ni4xNThMNTc3LjE3IDM0LjUyMkw1ODkuMDQgMzQuNTIyWiIvPjxwYXRoIGZpbGw9IiMxNDE0MTQiIGQ9Ik02MDIuMDY2IDY2LjE1OEw2MTIuODggNjYuMTU4QzYxNy44NzUgNjYuMTU4IDYyMC4zNzQgNjMuNjYxIDYyMC4zNzQgNTguNjY0TDYyMC4zNzQgMzEuNDU0TDYxNy4wMDUgMzEuNDU0TDYxNy4wMDUgNTkuMTY3QzYxNy4wMDUgNjEuNzgyIDYxNS42OTYgNjMuMDkgNjEzLjA4MSA2My4wOUw2MDEuOTE1IDYzLjA5QzU5OS4yNjcgNjMuMDkgNTk3Ljk0MiA2MS43ODIgNTk3Ljk0MiA1OS4xNjdMNTk3Ljk0MiAzMS40NTRMNTk0LjU3MiAzMS40NTRMNTk0LjU3MiA1OC42NjRDNTk0LjU3MiA2My42NjEgNTk3LjA3IDY2LjE1OCA2MDIuMDY2IDY2LjE1OCIvPjxwYXRoIGZpbGw9IiMxNDE0MTQiIGQ9Ik02MzIuNzQ3IDQ4Ljg1Nkw2MzIuNzQ3IDM0LjUyMkw2NDUuODc0IDM0LjUyMkM2NDguNDkgMzQuNTIyIDY0OS43OTggMzUuODI5IDY0OS43OTggMzguNDQ1TDY0OS43OTggNDQuODgzQzY0OS43OTggNDcuNTMyIDY0OC40OSA0OC44NTYgNjQ1Ljg3NCA0OC44NTZaTTY1My4xNjcgNDQuNDNMNjUzLjE2NyAzOC45NDhDNjUzLjE2NyAzMy45NTIgNjUwLjY2OCAzMS40NTQgNjQ1LjY3NCAzMS40NTRMNjI5LjM3NyAzMS40NTRMNjI5LjM3NyA2Ni4xNThMNjMyLjc0NyA2Ni4xNThMNjMyLjc0NyA1MS44NzRMNjQzLjcxMiA1MS44NzRMNjUwLjk1NCA2Ni4xNThMNjUzLjcyMSA2Ni4xNThMNjU0LjE3MyA2NS4zMDJMNjQ3LjMzMyA1MS43MjNDNjUxLjIyMiA1MS4yNTMgNjUzLjE2NyA0OC44MjMgNjUzLjE2NyA0NC40MyIvPjxwYXRoIGZpbGw9IiMxNDE0MTQiIGQ9Ik02NjUuMjg3IDUzLjg4Nkw2NzEuNzc2IDM0LjUyMkw2NzMuMDgzIDM0LjUyMkw2NzkuNTcxIDUzLjg4NlpNNjg2Ljk2NSA2NS4zNTNMNjc1LjI5NyAzMS40NTRMNjY5LjU2MyAzMS40NTRMNjU3Ljg0MyA2NS4zNTNMNjU4LjM5NiA2Ni4xNThMNjYxLjExMyA2Ni4xNThMNjY0LjE4MSA1Ni45MDRMNjgwLjYyOCA1Ni45MDRMNjgzLjY5NSA2Ni4xNThMNjg2LjQ2MiA2Ni4xNThaIi8+PHBhdGggZmlsbD0iIzE0MTQxNCIgZD0iTTcwOC40OTEgNDguMDAxTDY5Ny4zNzYgNDUuODM4QzY5NS40MzEgNDUuNDM2IDY5NC40NTggNDQuMTI4IDY5NC40NTggNDEuOTE2TDY5NC40NTggMzguNDQ1QzY5NC40NTggMzUuODI5IDY5NS43ODMgMzQuNTIyIDY5OC40MzEgMzQuNTIyTDcxMi44NjYgMzQuNTIyTDcxMi44NjYgMzIuOTYzTDcxMC45NTYgMzEuNDU0TDY5OC41ODIgMzEuNDU0QzY5My41ODYgMzEuNDU0IDY5MS4wODggMzMuOTUyIDY5MS4wODggMzguOTQ4TDY5MS4wODggNDEuNTYzQzY5MS4wODggNDUuNjg3IDY5Mi44OTkgNDguMTAyIDY5Ni41MiA0OC44MDZMNzA3LjU4NSA1MS4wNjlDNzA5LjUzIDUxLjQ3MSA3MTAuNTAyIDUyLjc2MyA3MTAuNTAyIDU0Ljk0MUw3MTAuNTAyIDU5LjE2N0M3MTAuNTAyIDYxLjc4MiA3MDkuMTk1IDYzLjA5IDcwNi41OCA2My4wOUw2OTEuMDg4IDYzLjA5TDY5MS4wODggNjQuNjQ5TDY5My4wNSA2Ni4xNThMNzA2LjM3OCA2Ni4xNThDNzExLjM3NCA2Ni4xNTggNzEzLjg3MyA2My42NiA3MTMuODczIDU4LjY2NEw3MTMuODczIDU1LjI0M0M3MTMuODczIDUxLjE1MyA3MTIuMDc4IDQ4LjczOSA3MDguNDkxIDQ4LjAwMSIvPjxwYXRoIGZpbGw9IiMxNDE0MTQiIGQ9Ik00MzEuMjE1IDEwNi4yNDRDNDMxLjIxNSAxMDguODkzIDQyOS45MDcgMTEwLjIxNyA0MjcuMjkyIDExMC4yMTdMNDE0LjE2NSAxMTAuMjE3TDQxNC4xNjUgOTQuODc2TDQyNy4yOTIgOTQuODc2QzQyOS45MDcgOTQuODc2IDQzMS4yMTUgOTYuMTg0IDQzMS4yMTUgOTguOFpNNDI3LjA5MiA5MS44MDlMNDEwLjc5NiA5MS44MDlMNDEwLjc5NiAxMjYuNTEzTDQxNC4xNjUgMTI2LjUxM0w0MTQuMTY1IDExMy4yMzRMNDI3LjA5MiAxMTMuMjM0QzQzMi4wODYgMTEzLjIzNCA0MzQuNTg1IDExMC43NTQgNDM0LjU4NSAxMDUuNzkxTDQzNC41ODUgOTkuMzAzQzQzNC41ODUgOTQuMzA2IDQzMi4wODYgOTEuODA5IDQyNy4wOTIgOTEuODA5Ii8+PHBhdGggZmlsbD0iIzE0MTQxNCIgZD0iTTQ0NS43NSAxMDkuMjExTDQ0NS43NSA5NC44NzZMNDU4Ljg3NyA5NC44NzZDNDYxLjQ5MyA5NC44NzYgNDYyLjgwMSA5Ni4xODQgNDYyLjgwMSA5OC44TDQ2Mi44MDEgMTA1LjIzOEM0NjIuODAxIDEwNy44ODcgNDYxLjQ5MyAxMDkuMjExIDQ1OC44NzcgMTA5LjIxMVpNNDY2LjE3IDEwNC43ODVMNDY2LjE3IDk5LjMwM0M0NjYuMTcgOTQuMzA3IDQ2My42NzEgOTEuODA5IDQ1OC42NzcgOTEuODA5TDQ0Mi4zOCA5MS44MDlMNDQyLjM4IDEyNi41MTNMNDQ1Ljc1IDEyNi41MTNMNDQ1Ljc1IDExMi4yMjlMNDU2LjcxNCAxMTIuMjI5TDQ2My45NTcgMTI2LjUxM0w0NjYuNzIzIDEyNi41MTNMNDY3LjE3NiAxMjUuNjU4TDQ2MC4zMzYgMTEyLjA3N0M0NjQuMjI1IDExMS42MDggNDY2LjE3IDEwOS4xNzggNDY2LjE3IDEwNC43ODUiLz48cGF0aCBmaWxsPSIjMTQxNDE0IiBkPSJNNDc0LjQ2OCAxMjYuNTEyTDQ5Ni43OTkgMTI2LjUxMkw0OTYuNzk5IDEyMy40NDRMNDc3LjgzOCAxMjMuNDQ0TDQ3Ny44MzggMTA5LjcxNEw0OTUuMjkgMTA5LjcxNEw0OTUuMjkgMTA2LjY5Nkw0NzcuODM4IDEwNi42OTZMNDc3LjgzOCA5NC44NzZMNDk2Ljc5OSA5NC44NzZMNDk2Ljc5OSA5MS44MDhMNDc0LjQ2OCA5MS44MDhaIi8+PHBhdGggZmlsbD0iIzE0MTQxNCIgZD0iTTQ4NC42NzggODkuNTk2TDQ5MS4zNjggODIuODU2TDQ4OS4zMDYgODAuODQ0TDQ4Mi45MTggODcuODg2WiIvPjxwYXRoIGZpbGw9IiMxNDE0MTQiIGQ9Ik01MDEuMzI2IDExMi41OEw1MTUuMTA2IDExMi41OEw1MTUuMTA2IDEwOS43NjRMNTAxLjMyNiAxMDkuNzY0WiIvPjxwYXRoIGZpbGw9IiMxNDE0MTQiIGQ9Ik01MjEuNzQ2IDEyNi41MTJMNTI1LjExNiAxMjYuNTEyTDUyNS4xMTYgMTExLjIyM0w1NDIuNTY2IDExMS4yMjNMNTQyLjU2NiAxMDguMjA1TDUyNS4xMTYgMTA4LjIwNUw1MjUuMTE2IDk0Ljg3Nkw1NDQuMDc1IDk0Ljg3Nkw1NDQuMDc1IDkxLjgwOEw1MjEuNzQ2IDkxLjgwOFoiLz48cGF0aCBmaWxsPSIjMTQxNDE0IiBkPSJNNTUzLjAyOSAxMTQuMjRMNTU5LjUxNyA5NC44NzZMNTYwLjgyNSA5NC44NzZMNTY3LjMxMiAxMTQuMjRaTTU1Ny4zMDQgOTEuODA5TDU0NS41ODUgMTI1LjcwOEw1NDYuMTM4IDEyNi41MTNMNTQ4Ljg1NCAxMjYuNTEzTDU1MS45MjMgMTE3LjI1OEw1NjguMzY5IDExNy4yNThMNTcxLjQzNiAxMjYuNTEzTDU3NC4yMDMgMTI2LjUxM0w1NzQuNzA2IDEyNS43MDhMNTYzLjAzOCA5MS44MDlaIi8+PHBhdGggZmlsbD0iIzE0MTQxNCIgZD0iTTYwMS4yNjIgMTE5LjUyMUM2MDEuMjYyIDEyMi4xMzcgNTk5Ljk1NCAxMjMuNDQ1IDU5Ny4zMzkgMTIzLjQ0NUw1ODMuNzEgMTIzLjQ0NUw1ODMuNzEgMTA5LjcxNEw1OTcuMzM5IDEwOS43MTRDNTk5Ljk1NCAxMDkuNzE0IDYwMS4yNjIgMTExLjAzOCA2MDEuMjYyIDExMy42ODZaTTU4My43MSA5NC44NzZMNTk2LjMzNCA5NC44NzZDNTk4Ljk0OSA5NC44NzYgNjAwLjI1NiA5Ni4xODQgNjAwLjI1NiA5OC44TDYwMC4yNTYgMTAyLjcyM0M2MDAuMjU2IDEwNS4zNzIgNTk4Ljk0OSAxMDYuNjk2IDU5Ni4zMzQgMTA2LjY5Nkw1ODMuNzEgMTA2LjY5NlpNNjAwLjg2IDEwNy45MDNMNjAyLjYyIDEwNS43OUM2MDMuMjkxIDEwNC45ODYgNjAzLjYyNiAxMDQuMDEzIDYwMy42MjYgMTAyLjg3M0w2MDMuNjI2IDk5LjMwMkM2MDMuNjI2IDk0LjMwNiA2MDEuMTI5IDkxLjgwOCA1OTYuMTMyIDkxLjgwOEw1ODAuMzQgOTEuODA4TDU4MC4zNCAxMjYuNTEyTDU5Ny4xMzggMTI2LjUxMkM2MDIuMTM0IDEyNi41MTIgNjA0LjYzMiAxMjQuMDE1IDYwNC42MzIgMTE5LjAxOUw2MDQuNjMyIDExMy42ODZDNjA0LjYzMiAxMTEuOTEgNjA0LjA3OCAxMTAuNTY5IDYwMi45NzIgMTA5LjY2M1oiLz48cGF0aCBmaWxsPSIjMTQxNDE0IiBkPSJNNjE1Ljk5OCAxMDkuMjExTDYxNS45OTggOTQuODc2TDYyOS4xMjQgOTQuODc2QzYzMS43NDEgOTQuODc2IDYzMy4wNDkgOTYuMTg0IDYzMy4wNDkgOTguOEw2MzMuMDQ5IDEwNS4yMzhDNjMzLjA0OSAxMDcuODg3IDYzMS43NDEgMTA5LjIxMSA2MjkuMTI0IDEwOS4yMTFaTTYzNi40MTkgMTA0Ljc4NUw2MzYuNDE5IDk5LjMwM0M2MzYuNDE5IDk0LjMwNyA2MzMuOTIgOTEuODA5IDYyOC45MjUgOTEuODA5TDYxMi42MjkgOTEuODA5TDYxMi42MjkgMTI2LjUxM0w2MTUuOTk4IDEyNi41MTNMNjE1Ljk5OCAxMTIuMjI5TDYyNi45NjMgMTEyLjIyOUw2MzQuMjA1IDEyNi41MTNMNjM2Ljk3MyAxMjYuNTEzTDYzNy40MjQgMTI1LjY1OEw2MzAuNTg0IDExMi4wNzdDNjM0LjQ3NCAxMTEuNjA4IDYzNi40MTkgMTA5LjE3OCA2MzYuNDE5IDEwNC43ODUiLz48cGF0aCBmaWxsPSIjMTQxNDE0IiBkPSJNNjQ0LjcxNyAxMjYuNTEyTDY0OC4wODcgMTI2LjUxMkw2NDguMDg3IDkxLjgwOEw2NDQuNzE3IDkxLjgwOFoiLz48cGF0aCBmaWxsPSIjMTQxNDE0IiBkPSJNNjY0LjM4MSA5MS44MDhDNjU5LjM4NiA5MS44MDggNjU2Ljg4NyA5NC4zMDcgNjU2Ljg4NyA5OS4zMDNMNjU2Ljg4NyAxMTkuMDE5QzY1Ni44ODcgMTI0LjAxNSA2NTkuMzg2IDEyNi41MTMgNjY0LjM4MSAxMjYuNTEzTDY3OC43NjcgMTI2LjUxM0w2ODAuNzI4IDEyNS4wMDRMNjgwLjcyOCAxMjMuNDQ1TDY2NC4yMyAxMjMuNDQ1QzY2MS41ODIgMTIzLjQ0NSA2NjAuMjU3IDEyMi4xMzggNjYwLjI1NyAxMTkuNTIyTDY2MC4yNTcgOTguODAxQzY2MC4yNTcgOTYuMTgzIDY2MS41ODIgOTQuODc2IDY2NC4yMyA5NC44NzZMNjgwLjcyOCA5NC44NzZMNjgwLjcyOCA5My4zMThMNjc4Ljc2NyA5MS44MDhaIi8+PHBhdGggZmlsbD0iIzE0MTQxNCIgZD0iTTY5MS42OTIgMTE0LjI0TDY5OC4xODEgOTQuODc2TDY5OS40ODggOTQuODc2TDcwNS45NzYgMTE0LjI0Wk02OTUuOTY3IDkxLjgwOUw2ODQuMjQ4IDEyNS43MDhMNjg0LjgwMSAxMjYuNTEzTDY4Ny41MTggMTI2LjUxM0w2OTAuNTg2IDExNy4yNThMNzA3LjAzMyAxMTcuMjU4TDcxMC4xIDEyNi41MTNMNzEyLjg2NyAxMjYuNTEzTDcxMy4zNyAxMjUuNzA4TDcwMS43MDIgOTEuODA5WiIvPjxwYXRoIGZpbGw9IiMxNDE0MTQiIGQ9Ik03NDEuNDM0IDExNC45NDRDNzQxLjQzNCAxMjAuNjExIDczOC42IDEyMy40NDQgNzMyLjkzNSAxMjMuNDQ0TDcyMi4zNzIgMTIzLjQ0NEw3MjIuMzcyIDk0Ljg3Nkw3MzIuOTM1IDk0Ljg3NkM3MzguNiA5NC44NzYgNzQxLjQzNCA5Ny43MSA3NDEuNDM0IDEwMy4zNzZaTTczMi43MzMgOTEuODA4TDcxOS4wMDIgOTEuODA4TDcxOS4wMDIgMTI2LjUxMkw3MzIuNzMzIDEyNi41MTJDNzQwLjc4IDEyNi41MTIgNzQ0LjgwNCAxMjIuNDcyIDc0NC44MDQgMTE0LjM5MUw3NDQuODA0IDEwMy45M0M3NDQuODA0IDk1Ljg0OSA3NDAuNzggOTEuODA4IDczMi43MzMgOTEuODA4Ii8+PHBhdGggZmlsbD0iIzE0MTQxNCIgZD0iTTc1Ni45MjQgMTE0LjI0TDc2My40MTMgOTQuODc2TDc2NC43MiA5NC44NzZMNzcxLjIwOCAxMTQuMjRaTTc2MS4yIDkxLjgwOUw3NDkuNDggMTI1LjcwOEw3NTAuMDMzIDEyNi41MTNMNzUyLjc1IDEyNi41MTNMNzU1LjgxOCAxMTcuMjU4TDc3Mi4yNjUgMTE3LjI1OEw3NzUuMzMyIDEyNi41MTNMNzc4LjA5OSAxMjYuNTEzTDc3OC42MDIgMTI1LjcwOEw3NjYuOTM0IDkxLjgwOVoiLz48cGF0aCBmaWxsPSIjMTQxNDE0IiBkPSJNODAwLjEyOCAxMDguMzU2TDc4OS4wMTIgMTA2LjE5M0M3ODcuMDY4IDEwNS43OTEgNzg2LjA5NSAxMDQuNDgzIDc4Ni4wOTUgMTAyLjI3MUw3ODYuMDk1IDk4LjhDNzg2LjA5NSA5Ni4xODQgNzg3LjQyIDk0Ljg3NiA3OTAuMDY5IDk0Ljg3Nkw4MDQuNTAzIDk0Ljg3Nkw4MDQuNTAzIDkzLjMxOEw4MDIuNTkzIDkxLjgwOUw3OTAuMjIgOTEuODA5Qzc4NS4yMjMgOTEuODA5IDc4Mi43MjUgOTQuMzA3IDc4Mi43MjUgOTkuMzAzTDc4Mi43MjUgMTAxLjkxOEM3ODIuNzI1IDEwNi4wNDMgNzg0LjUzNiAxMDguNDU3IDc4OC4xNTggMTA5LjE2TDc5OS4yMjIgMTExLjQyNEM4MDEuMTY2IDExMS44MjYgODAyLjEzOSAxMTMuMTE3IDgwMi4xMzkgMTE1LjI5Nkw4MDIuMTM5IDExOS41MjFDODAyLjEzOSAxMjIuMTM3IDgwMC44MzIgMTIzLjQ0NSA3OTguMjE3IDEyMy40NDVMNzgyLjcyNSAxMjMuNDQ1TDc4Mi43MjUgMTI1LjAwNEw3ODQuNjg3IDEyNi41MTNMNzk4LjAxNSAxMjYuNTEzQzgwMy4wMTEgMTI2LjUxMyA4MDUuNTEgMTI0LjAxNiA4MDUuNTEgMTE5LjAxOUw4MDUuNTEgMTE1LjU5OEM4MDUuNTEgMTExLjUwOSA4MDMuNzE1IDEwOS4wOTQgODAwLjEyOCAxMDguMzU2Ii8+PHBhdGggZmlsbD0iIzE0MTQxNCIgZD0iTTI2Ni4yOTYgNjIuNzk1TDI2Ni4yOTYgNTUuNDQ0QzI2Ni4yOTYgNDIuMjk5IDI1NS41NCAzMS41NDQgMjQyLjM5NiAzMS41NDRMMTc3LjAxNiAzMS41NDRMMTc3LjAxNiA0OC4wMjZMMjQyLjM5NiA0OC4wMjZDMjQ2LjQ3NiA0OC4wMjYgMjQ5LjgxMyA1MS4zNjQgMjQ5LjgxMyA1NS40NDRMMjQ5LjgxMyA2Mi43OTVDMjQ5LjgxMyA2Ni44NzUgMjQ2LjQ3NiA3MC4yMTIgMjQyLjM5NiA3MC4yMTJMMTkzLjQ5OCA3MC4yMTJMMTc3LjAxNiA3MC4yMTJMMTc3LjAxNiA4Ni42OTVMMTc3LjAxNiAxMjYuNDIzTDE5My40OTggMTI2LjQyM0wxOTMuNDk4IDg2LjY5NUwyMzEuMjEzIDg2LjY5NUwyNTEuODEgMTI2LjQyM0wyNzEuNDggMTI2LjQyM0wyNTAuMDU5IDg1LjQyOEMyNTkuNDc0IDgyLjIxNiAyNjYuMjk2IDczLjI2MyAyNjYuMjk2IDYyLjc5NSIvPjxwYXRoIGZpbGw9IiMxNDE0MTQiIGQ9Ik0zMzcuODU4IDcyLjU4OEwzMjguMzI5IDg5LjA2MUwzMTguODAyIDcyLjU4OEwyOTUuMDcyIDMxLjU2NUwyNzguNTkgMzEuNTY1TDI3OC41OSAzNi4wMTZMMjc4LjU5IDEyNi40MjNMMjk1LjA3MiAxMjYuNDIzTDI5NS4wNzIgNjQuNTExTDMwOS4yNzQgODkuMDYxTDMxOC44MDIgMTA1LjUzNUwzMjAuMjc5IDEwOC4wODZMMzM2LjM4MyAxMDguMDg2TDMzNy44NTggMTA1LjUzNUwzNDcuMzg3IDg5LjA2MUwzNjEuNTg4IDY0LjUxMUwzNjEuNTg4IDEyNi40MjNMMzc4LjA2OSAxMjYuNDIzTDM3OC4wNjkgMzYuMDE2TDM3OC4wNjkgMzEuNTY1TDM2MS41ODggMzEuNTY1WiIvPjxwYXRoIGZpbGw9IiNGMjQ2MTkiIGQ9Ik00Ny4xNzIgMEwxOC4xNjYgMjkuMDA2TDE4LjIzMyAyOS4wMDZMMCA0Ny4yMzlMMCAxMjYuNDIzTDAgMTU3Ljk2NkwyOS4wMDYgMTU3Ljk2NkwyOS4wMDYgMTU0LjE4MkwyOS4wMDYgMTI2LjQyM0wyOS4wMDYgMjkuMDA2TDg3LjMxOSAyOS4wMDZMODcuMzE5IDg3LjM5OEw4Ny41NTQgODcuMTYyTDExNi4zMjUgNTguMzkxTDExNi4zMjUgMFoiLz48cGF0aCBmaWxsPSIjRjI0NjE5IiBkPSJNNTguMzEzIDEyNi40MjNMNTguMzEzIDE1MC4zNjNMNTguMzEzIDE1Ny45NjdMODcuMzE5IDE1Ny45NjdMODcuMzE5IDE0Ni41NzlMODcuMzE5IDEyNi40MjNMODcuMzE5IDg3LjM5OEw1OC4zMTMgMTE2LjQwNFoiLz48cGF0aCBmaWxsPSIjRjI0NjE5IiBkPSJNMTE2LjMyNSAxMjYuNDIzTDExNi4zMjUgMTQyLjc5NUwxMTYuMzI1IDE1Ny45NjdMMTQ1LjMzIDE1Ny45NjdMMTQ1LjMzIDEzOS4wMTFMMTQ1LjMzIDEyNi40MjNMMTQ1LjMzIDg3LjM5OEwxMTYuMzI1IDU4LjM5MloiLz48L3N2Zz4=';
-  var CORPO = '<div class="folha"><div class="cab"><div class="marca"><img src="' + LOGO_COR + '" alt="RM Estruturas Pré-Fabricadas"></div><div class="co tb2"><div class="tb2-c"><div class="tb2-rz">Nunes e Kuhn Estruturas Metálicas Ltda</div><div>CNPJ 28.654.965/0001-17</div></div><div class="tb2-c"><div>Rod RSC 453, KM 42 nº 6151, Pavilhão 2, Sala 2</div><div>Novo Paraíso · Estrela/RS · 95883-000</div></div></div></div><div class="regua"></div><div class="fio"></div><div class="tb2-tipo">Apresentação</div><h1>Apresentação institucional</h1><p class="sub">Estruturas metálicas e pré-moldados de concreto</p><p class="lead">A RM Estruturas Pré-Fabricadas fabrica estruturas metálicas e pré-moldados de concreto em Estrela, no Rio Grande do Sul. Atende obras industriais, comerciais e rurais, do dimensionamento à montagem, com projeto, fábrica e equipe de montagem próprios, o que mantém prazo e responsabilidade técnica em uma única mão.</p><h2>O que fabricamos</h2><div class="frentes"><div class="frente"><b>Estruturas metálicas</b><span>Perfis conformados a frio, pórticos e galpões. Dimensionamento, fabricação e montagem com equipe própria.</span></div><div class="frente"><b>Pré-moldados de concreto</b><span>Placas de fechamento, contenções, pilares e vigas, produzidos em pista e entregues prontos para içamento.</span></div><div class="frente"><b>Telhas térmicas e fechamentos</b><span>Projeto de distribuição, fabricação sob medida e montagem de cobertura e lateral.</span></div><div class="frente"><b>Aplicação de poliuretano</b><span>Isolamento térmico injetado, para painéis e câmaras.</span></div></div><h2>Como o trabalho acontece</h2><div class="etapas"><div class="etapa"><b>Projeto</b><span>Levantamento, dimensionamento e detalhamento. O cliente aprova antes de a chapa ser cortada.</span></div><div class="etapa"><b>Fabricação</b><span>Produção na fábrica em Estrela/RS, com controle de peça por peça.</span></div><div class="etapa"><b>Montagem</b><span>Equipe e equipamento próprios em obra, com cronograma acertado na assinatura.</span></div></div><h2>Dados cadastrais</h2><table class="cad"><tbody><tr><th>Razão social</th><td>Nunes e Kuhn Estruturas Metálicas Ltda</td></tr><tr><th>Nome fantasia</th><td>RM Estruturas Pré-Fabricadas</td></tr><tr><th>CNPJ</th><td>28.654.965/0001-17</td></tr><tr><th>Inscrição estadual</th><td>044/0063833</td></tr><tr><th>Endereço</th><td>Rod. RSC 453, Km 42, nº 6151, Pavilhão 2, Sala 2, Novo Paraíso · Estrela/RS · CEP 95883-000</td></tr><tr><th>Telefone</th><td>51 99789-7879</td></tr><tr><th>E-mail</th><td>financeiro@rmestruturas.com.br</td></tr><tr><th>Site</th><td>www.rmestruturas.com.br</td></tr></tbody></table><div class="pe"><span class="site">www.rmestruturas.com.br</span><span>51 99789-7879 · financeiro@rmestruturas.com.br</span><span>Página 1 de 2</span></div></div><div class="folha larga"><div class="cab"><div class="marca"><img src="' + LOGO_COR + '" alt="RM Estruturas Pré-Fabricadas"></div><div class="co tb2"><div class="tb2-c"><div class="tb2-rz">Nunes e Kuhn Estruturas Metálicas Ltda</div><div>CNPJ 28.654.965/0001-17</div></div><div class="tb2-c"><div>Rod RSC 453, KM 42 nº 6151, Pavilhão 2, Sala 2</div><div>Novo Paraíso · Estrela/RS · 95883-000</div></div></div></div><div class="regua"></div><div class="fio"></div><div class="tb2-tipo">Referências</div><h2>Dados bancários</h2><table class="cad"><tbody><tr><th>Banco</th><td>Sicredi</td></tr><tr><th>Agência</th><td>0119</td></tr><tr><th>Conta corrente</th><td>23166-3</td></tr><tr><th>Cidade</th><td>Estrela/RS</td></tr></tbody></table><h2>Referências comerciais</h2><table class="refs"><thead><tr><th>Empresa</th><th>Telefone</th><th>E-mail</th></tr></thead><tbody><tr><td class="e">ArcelorMittal Brasil S/A</td><td class="t">(51) 2121.7777</td><td class="m">arcelormittalnet@arcelormittal.com.br</td></tr><tr><td class="e">Gerdau Aços Longos S.A</td><td class="t">(51) 3373.2500</td><td class="m">ricardo@escritoriodoaco.com</td></tr><tr><td class="e">Brastelha Industrial Ltda</td><td class="t">(54) 3521.4000</td><td class="m">faturamentors@brastelha.com.br</td></tr><tr><td class="e">Stabil Argamassa e Concreto Ltda</td><td class="t">(51) 3748.1680</td><td class="m">financeiro@stabilargamassa.com.br</td></tr><tr><td class="e">Terraplanagem e Concretos Brandão Ltda</td><td class="t">(51) 3762.8221</td><td class="m">concretosbrandao@gmail.com</td></tr><tr><td class="e">FM Ferragens Ltda</td><td class="t">(51) 3720.2472</td><td class="m">financeiro@fmferragens.com.br</td></tr><tr><td class="e">Casagrande e Pinheiros Ltda EPP (Perfitec)</td><td class="t">(51) 3712.1963</td><td class="m">financeiro@perfitecrs.com.br</td></tr><tr><td class="e">Importadora Americana Ltda</td><td class="t">(51) 3076.2250</td><td class="m">lucas@importadoraamericana.com.br</td></tr><tr><td class="e">CR Guindastes Representações Ltda (Argos)</td><td class="t">(54) 3329.4442</td><td class="m">contato@guindastescr.com.br</td></tr></tbody></table><p class="nota">Fornecedores e parceiros com relacionamento comercial ativo, disponíveis para consulta de crédito e referência.</p><h2>Onde estamos</h2><p class="lead">Rod. RSC 453, Km 42, nº 6151, Pavilhão 2, Sala 2, Novo Paraíso · Estrela/RS · CEP 95883-000. Fábrica e escritório no mesmo endereço, às margens da RSC-453, entre Lajeado e Estrela.</p><div class="fecho"><p class="local">Estrela/RS, __DATA__.</p><div class="socios"><div><div class="quem">Maiquel José Kuhn</div><div class="cargo">Sócio</div></div><div><div class="quem">Rudimar Nunes</div><div class="cargo">Sócio</div></div></div></div><div class="pe"><span class="site">www.rmestruturas.com.br</span><span>51 99789-7879 · financeiro@rmestruturas.com.br</span><span>Página 2 de 2</span></div></div>';
+  window.rmLogoCor = LOGO_COR;   /* a apresentação comercial usa o mesmo */
+  var CORPO = '<div class="folha"><div class="cab"><div class="marca"><img src="' + LOGO_COR + '" alt="RM Estruturas Pré-Fabricadas"></div><div class="co tb2"><div class="tb2-c"><div class="tb2-rz">Nunes e Kuhn Estruturas Metálicas Ltda</div><div>CNPJ 28.654.965/0001-17</div></div><div class="tb2-c"><div>Rod RSC 453, KM 42 nº 6151, Pavilhão 2, Sala 2</div><div>Novo Paraíso · Estrela/RS · 95883-000</div></div></div></div><div class="regua"></div><div class="fio"></div><div class="tb2-tipo">Ficha cadastral</div><h1>Ficha cadastral</h1><p class="sub">RM Estruturas Pré-Fabricadas</p><h2>Dados cadastrais</h2><table class="cad"><tbody><tr><th>Razão social</th><td>Nunes e Kuhn Estruturas Metálicas Ltda</td></tr><tr><th>Nome fantasia</th><td>RM Estruturas Pré-Fabricadas</td></tr><tr><th>CNPJ</th><td>28.654.965/0001-17</td></tr><tr><th>Inscrição estadual</th><td>044/0063833</td></tr><tr><th>Endereço</th><td>Rod. RSC 453, Km 42, nº 6151, Pavilhão 2, Sala 2, Novo Paraíso · Estrela/RS · CEP 95883-000</td></tr><tr><th>Telefone</th><td>51 99789-7879</td></tr><tr><th>E-mail</th><td>financeiro@rmestruturas.com.br</td></tr><tr><th>Site</th><td>www.rmestruturas.com.br</td></tr></tbody></table><h2>Dados bancários</h2><table class="cad"><tbody><tr><th>Banco</th><td>Sicredi</td></tr><tr><th>Agência</th><td>0119</td></tr><tr><th>Conta corrente</th><td>23166-3</td></tr><tr><th>Cidade</th><td>Estrela/RS</td></tr></tbody></table><div class="pe"><span class="site">www.rmestruturas.com.br</span><span>51 99789-7879 · financeiro@rmestruturas.com.br</span><span>Página 1 de 2</span></div></div><div class="folha larga"><div class="cab"><div class="marca"><img src="' + LOGO_COR + '" alt="RM Estruturas Pré-Fabricadas"></div><div class="co tb2"><div class="tb2-c"><div class="tb2-rz">Nunes e Kuhn Estruturas Metálicas Ltda</div><div>CNPJ 28.654.965/0001-17</div></div><div class="tb2-c"><div>Rod RSC 453, KM 42 nº 6151, Pavilhão 2, Sala 2</div><div>Novo Paraíso · Estrela/RS · 95883-000</div></div></div></div><div class="regua"></div><div class="fio"></div><div class="tb2-tipo">Ficha cadastral</div><h2>Referências comerciais</h2><table class="refs"><thead><tr><th>Empresa</th><th>Telefone</th><th>E-mail</th></tr></thead><tbody><tr><td class="e">ArcelorMittal Brasil S/A</td><td class="t">(51) 2121.7777</td><td class="m">arcelormittalnet@arcelormittal.com.br</td></tr><tr><td class="e">Gerdau Aços Longos S.A</td><td class="t">(51) 3373.2500</td><td class="m">ricardo@escritoriodoaco.com</td></tr><tr><td class="e">Brastelha Industrial Ltda</td><td class="t">(54) 3521.4000</td><td class="m">faturamentors@brastelha.com.br</td></tr><tr><td class="e">Stabil Argamassa e Concreto Ltda</td><td class="t">(51) 3748.1680</td><td class="m">financeiro@stabilargamassa.com.br</td></tr><tr><td class="e">Terraplanagem e Concretos Brandão Ltda</td><td class="t">(51) 3762.8221</td><td class="m">concretosbrandao@gmail.com</td></tr><tr><td class="e">FM Ferragens Ltda</td><td class="t">(51) 3720.2472</td><td class="m">financeiro@fmferragens.com.br</td></tr><tr><td class="e">Casagrande e Pinheiros Ltda EPP (Perfitec)</td><td class="t">(51) 3712.1963</td><td class="m">financeiro@perfitecrs.com.br</td></tr><tr><td class="e">Importadora Americana Ltda</td><td class="t">(51) 3076.2250</td><td class="m">lucas@importadoraamericana.com.br</td></tr><tr><td class="e">CR Guindastes Representações Ltda (Argos)</td><td class="t">(54) 3329.4442</td><td class="m">contato@guindastescr.com.br</td></tr></tbody></table><p class="nota">Fornecedores e parceiros com relacionamento comercial ativo, disponíveis para consulta de crédito e referência.</p><h2>Onde estamos</h2><p class="lead">Rod. RSC 453, Km 42, nº 6151, Pavilhão 2, Sala 2, Novo Paraíso · Estrela/RS · CEP 95883-000. Fábrica e escritório no mesmo endereço, às margens da RSC-453, entre Lajeado e Estrela.</p><div class="fecho"><p class="local">Estrela/RS, __DATA__.</p><div class="socios"><div><div class="quem">Maiquel José Kuhn</div><div class="cargo">Sócio</div></div><div><div class="quem">Rudimar Nunes</div><div class="cargo">Sócio</div></div></div></div><div class="pe"><span class="site">www.rmestruturas.com.br</span><span>51 99789-7879 · financeiro@rmestruturas.com.br</span><span>Página 2 de 2</span></div></div>';
 
   function monta() {
     if (document.getElementById('ap-overlay')) return;
@@ -14514,32 +14521,400 @@ const APP_VER='v172';
 
     var o = document.createElement('div');
     o.id = 'ap-overlay';
-    o.innerHTML = '<div id="ap-barra"><h3>Apresentação da empresa</h3>'
-      + '<button class="pri" onclick="rmApresPDF()">Imprimir / PDF</button>'
-      + '<button onclick="rmApresFechar()">Fechar</button></div>'
+    o.innerHTML = '<div id="ap-barra"><h3>Ficha cadastral</h3>'
+      + '<button class="pri" onclick="rmFichaPDF()">Imprimir / PDF</button>'
+      + '<button onclick="rmFichaFechar()">Fechar</button></div>'
       + '<div id="ap-doc"></div>';
     document.body.appendChild(o);
   }
 
-  window.rmApresentacao = function () {
+  window.rmFichaCadastral = function () {
+    if (window.rmApresFechar) window.rmApresFechar();
     monta();
     var o = document.getElementById('ap-overlay');
     document.getElementById('ap-doc').innerHTML = CORPO.replace('__DATA__', dataHoje());
     o.classList.add('on');
   };
-  window.rmApresFechar = function () {
-    var o = document.getElementById('ap-overlay');
-    if (o) o.classList.remove('on');
+  /* fechar tira o documento e o estilo dele: o @page em pé e o "esconde
+     tudo" da impressão não podem ficar valendo para a apresentação */
+  window.rmFichaFechar = function () {
+    ['ap-overlay', 'ap-css'].forEach(function (i) { var x = document.getElementById(i); if (x) x.remove(); });
   };
-  window.rmApresPDF = function () {
+  window.rmFichaPDF = function () {
     try {
       if (typeof window.rmSalvarPDF === 'function') {
-        window.rmSalvarPDF('Apresentacao-RM-Estruturas');
+        window.rmSalvarPDF('Ficha-cadastral-RM-Estruturas');
         return;
       }
     } catch (e) { }
     window.print();
   };
+})();
+</script>
+<script>
+/* ===== APRESENTAÇÃO COMERCIAL =====
+
+   A peça que vai por e-mail ou é impressa para apresentar a RM a uma
+   empresa. A antiga "Apresentação" virou a Ficha cadastral (dados,
+   banco, referências): apresentação não leva referência de compra.
+
+   A4 deitado, 12 folhas. Os textos vêm do site (rmestruturas.com.br);
+   as linhas de produto, da apresentação anterior. Números só os que a
+   empresa confirmou: 9 anos e mais de 90 obras. A metragem total entra em
+   M2_OBRAS quando estiver somada pelos contratos (null = não aparece).
+
+   As fotos moram em apresentacao/ e entram no documento como data: antes
+   de mostrar -- o PDF do aplicativo é gerado de um HTML solto, sem
+   endereço, e um src relativo sairia em branco. */
+(function () {
+  'use strict';
+  if (window.rmApresComercial) return;
+
+  var M2_OBRAS = '+70 mil m²';  /* somada pelos contratos (nov/2026); null = não aparece */
+  var ANOS = 9, OBRAS = 90;
+  var FOTOS = ['cascata', 'cipriani', 'cipriani-doca', 'refricomp', 'refricomp-pilares', 'serplan', 'tempo', 'primo',
+    'dg-1', 'dg-2', 'trevisol', 'tesouras-1', 'tesouras-2', 'socios', 'fabrica-concretagem', 'equipe-corte',
+    'clientes/refricomp.png', 'clientes/primavis.png', 'clientes/cipriani.png', 'clientes/stabil.png', 'clientes/cris-motos.png',
+    'clientes/nutriarts.png', 'clientes/yung-yes.png', 'clientes/fm-ferragens.png', 'clientes/preco-bom.png', 'clientes/cascata.png'];
+  var IMG = {}, QR = '';
+
+  function dataUrl(u) {
+    return fetch(u).then(function (r) { if (!r.ok) throw 0; return r.blob(); }).then(function (b) {
+      return new Promise(function (ok, erro) { var f = new FileReader(); f.onload = function () { ok(f.result); }; f.onerror = erro; f.readAsDataURL(b); });
+    });
+  }
+  function carrega() {
+    var falta = FOTOS.filter(function (n) { return !IMG[n]; });
+    return Promise.all(falta.map(function (n) {
+      var u = 'apresentacao/' + n + (/\.(svg|png)$/.test(n) ? '' : '.jpg');
+      return dataUrl(u).then(function (d) { IMG[n] = d; }, function () { IMG[n] = u; });
+    }).concat(QR ? [] : [dataUrl('apresentacao/qr-whatsapp.svg').then(function (d) { QR = d; }, function () { QR = 'apresentacao/qr-whatsapp.svg'; })]));
+  }
+  function logo(cor) {
+    var l = window.rmLogoCor || '';
+    if (!cor || l.indexOf('base64,') < 0) return l;
+    return 'data:image/svg+xml;base64,' + btoa(atob(l.split('base64,')[1]).replace(/#141414/g, cor));
+  }
+
+  var TOTAL = 12;
+  function pe(n, escuro, livre) {
+    /* livre: a margem do lado em que está a foto, para o pé não passar por cima dela */
+    return '<div class="pe' + (escuro ? ' esc' : '') + '"' + (livre ? ' style="' + livre + '"' : '') + '><span>RM Estruturas Pré-Fabricadas</span>'
+      + '<span class="fl">rmestruturas.com.br<b>' + (n < 10 ? '0' : '') + n + ' / ' + TOTAL + '</b></span></div>';
+  }
+  function kick(t) { return '<div class="kick">' + t + '</div>'; }
+  /* pos: o ponto da foto que fica no quadro quando ela é cortada (object-position) */
+  function foto(n, cls, leg, pos) {
+    return '<figure class="ft ' + (cls || '') + '"><img src="' + IMG[n] + '" alt=""' + (pos ? ' style="object-position:' + pos + '"' : '') + '>'
+      + (leg ? '<figcaption>' + leg + '</figcaption>' : '') + '</figure>';
+  }
+
+  function corpo() {
+    var p = [];
+    /* 1. capa */
+    p.push('<section class="pg capa">' + foto('cascata', 'fundo', '', '62% 50%')
+      + '<div class="veu"></div>'
+      + '<img class="logo" src="' + logo('#FFFFFF') + '" alt="RM Estruturas Pré-Fabricadas">'
+      + '<div class="capa-tx">' + kick('Apresentação institucional')
+      + '<h1>Pré-fabricados em concreto e aço para pavilhões, com entrega no prazo.</h1>'
+      + '<p>Da fabricação à montagem: estrutura sob medida, logística planejada e acabamento que valoriza a obra.</p></div>'
+      + '<div class="capa-pe"><span>Estrela/RS</span><span>Vale do Taquari · Vale dos Sinos</span><span>rmestruturas.com.br</span></div>'
+      + '</section>');
+
+    /* 2. quem somos */
+    var nums = [[ANOS + ' anos', 'de história'], ['+' + OBRAS, 'obras entregues']];
+    if (M2_OBRAS) nums.push([M2_OBRAS, 'de área construída']);
+    p.push('<section class="pg quem"><div class="col-tx">' + kick('Quem somos')
+      + '<h2>Uma fábrica que entrega a obra montada.</h2>'
+      + '<p class="lead">A RM Estruturas fabrica, transporta e monta pré-fabricados em concreto e estruturas metálicas para obras comerciais, industriais e rurais, com agilidade na execução e alto padrão de acabamento.</p>'
+      + '<p>Projeto, fábrica e equipe de montagem são próprios. Isso mantém o prazo e a responsabilidade técnica em uma única mão, do primeiro desenho à entrega da chave.</p>'
+      + '<div class="nums">' + nums.map(function (x) { return '<div><b>' + x[0] + '</b><span>' + x[1] + '</span></div>'; }).join('') + '</div>'
+      + '<p class="nota">Atendemos empresas no Vale do Taquari e no Vale dos Sinos; outras regiões conforme a viabilidade da obra.</p>'
+      + '</div>' + foto('socios', 'lado', 'Os sócios da RM Estruturas', '50% 30%') + pe(2, false, 'right:144mm') + '</section>');
+
+    /* 3. propósito */
+    p.push('<section class="pg prop"><div class="col-tx">' + kick('Propósito')
+      + '<div class="mv"><h3>Missão</h3><p>Entregar soluções em pré-fabricados com prazo, organização e acabamento superior, ajudando nossos clientes a tirar seus projetos do papel com segurança e eficiência.</p></div>'
+      + '<div class="mv"><h3>Visão</h3><p>Ser reconhecida como uma das referências em pré-fabricados na região, não apenas pela estrutura, mas pela qualidade de entrega, compromisso com o prazo e confiança construída em cada obra.</p></div>'
+      + '</div><div class="valores">' + foto('fabrica-concretagem', 'fundo', '', '50% 40%') + '<div class="veu"></div><div class="v-tx">' + kick('Valores')
+      + '<ol>' + ['Compromisso com o prazo', 'Qualidade no acabamento', 'Organização na execução', 'Responsabilidade com o cliente', 'Trabalho com transparência']
+        .map(function (v, i) { return '<li><i>0' + (i + 1) + '</i>' + v + '</li>'; }).join('') + '</ol></div></div>'
+      + pe(3, false, 'right:138mm') + '</section>');
+
+    /* 4. diferenciais */
+    var dif = [
+      ['Prazo que cabe no seu planejamento', 'Cronograma mais previsível: a obra começa com data de entrega acertada.'],
+      ['Acabamento superior', 'Equipe dedicada ao acabamento, para a obra ficar com cara de pronta.'],
+      ['Execução completa', 'Fabricação, transporte e montagem com a mesma empresa responsável.'],
+      ['Organização de obra', 'Logística planejada para reduzir retrabalho e tempo parado.'],
+      ['Atendimento B2B', 'Decisão rápida e orçamento objetivo, com escopo claro.']];
+    p.push('<section class="pg dif"><div class="dif-lado">' + foto('equipe-corte', 'fundo', '', '30% 50%') + '<div class="veu"></div><div class="dif-tx">' + kick('Diferenciais')
+      + '<h2>Por que construir com a RM</h2><p>Da fábrica à montagem, a mesma empresa responde pela obra.</p></div></div>'
+      + '<ol class="dif-lista">'
+      + dif.map(function (d, i) { return '<li><i>0' + (i + 1) + '</i><b>' + d[0] + '</b><span>' + d[1] + '</span></li>'; }).join('')
+      + '</ol>' + pe(4, false, 'left:116mm') + '</section>');
+
+    /* 5. soluções */
+    var sol = [
+      ['trevisol', 'Pavilhões pré-fabricados', 'Estrutura rápida, organizada e com previsibilidade, para indústria, comércio e uso institucional.'],
+      ['serplan', 'Painéis de fechamento', 'Fechamento lateral com visual limpo e robusto, entregue pronto para içamento.'],
+      ['dg-1', 'Muros de contenção pré-moldados', 'Instalação ágil e segura, sem a espera de cura em obra.'],
+      ['tesouras-1', 'Coberturas metálicas', 'Tesouras metálicas e cobertura dimensionadas para cada vão.']];
+    p.push('<section class="pg sol"><div class="topo">' + kick('Soluções') + '<h2>O que entregamos</h2></div><div class="cards c4">'
+      + sol.map(function (s) { return '<div class="card fcard">' + foto(s[0], 'mini') + '<b>' + s[1] + '</b><span>' + s[2] + '</span></div>'; }).join('')
+      + '</div>' + pe(5) + '</section>');
+
+    /* 6. linhas de produto */
+    var lin = [
+      ['Estruturas metálicas', 'Perfis conformados a frio, pórticos e galpões. Dimensionamento, fabricação e montagem com equipe própria.'],
+      ['Pré-moldados de concreto', 'Placas de fechamento, contenções, pilares e vigas, produzidos em pista e entregues prontos para içamento.'],
+      ['Telhas térmicas e fechamentos', 'Projeto de distribuição, fabricação sob medida e montagem de cobertura e lateral.'],
+      ['Aplicação de poliuretano', 'Isolamento térmico injetado, para painéis e câmaras.']];
+    p.push('<section class="pg lin"><div class="col-tx">' + kick('Linhas de produto') + '<h2>Concreto e aço na mesma fábrica</h2>'
+      + '<div class="lista">' + lin.map(function (l) { return '<div><b>' + l[0] + '</b><span>' + l[1] + '</span></div>'; }).join('') + '</div>'
+      + '<div class="mp"><span>Matéria-prima de quem é referência no Brasil</span><div><b>ArcelorMittal</b><b>Gerdau</b><b>Brastelha</b></div></div>'
+      + '</div>' + foto('tesouras-2', 'lado', 'Tesouras metálicas e pilares pré-moldados') + pe(6, false, 'right:144mm') + '</section>');
+
+    /* 7. segmentos */
+    var seg = [
+      ['Indústrias e operações', 'Produção, armazenagem e oficinas.'],
+      ['Agronegócio', 'Pavilhões e estruturas para o campo.'],
+      ['Logística', 'Depósitos e centros de distribuição.'],
+      ['Comércio e atacado', 'Lojas, supermercados e atacados.'],
+      ['Institucional', 'Igrejas e espaços para a comunidade.']];
+    p.push('<section class="pg seg">' + foto('cipriani-doca', 'lado esq', 'Cipriani Atacadista · doca e marquise metálica', '56% 50%') + '<div class="col-tx">' + kick('Para quem construímos')
+      + '<h2>Obras de empresas que não podem parar</h2><div class="lista">'
+      + seg.map(function (s) { return '<div><b>' + s[0] + '</b><span>' + s[1] + '</span></div>'; }).join('')
+      + '</div><p class="nota">Atendimento focado em empresas (CNPJ).</p></div>' + pe(7, false, 'left:144mm') + '</section>');
+
+    /* 8. como trabalhamos */
+    var et = [
+      ['Contato', 'Pelo WhatsApp: cidade, tipo de obra e prazo.'],
+      ['Entendimento', 'Ouvimos a necessidade e o uso do espaço.'],
+      ['Proposta', 'Escopo claro, valores e prazos por escrito.'],
+      ['Produção e logística', 'Fábrica e transporte planejados para a data da obra.'],
+      ['Montagem', 'Acompanhamento até a entrega.']];
+    p.push('<section class="pg proc"><div class="topo">' + kick('Como trabalhamos') + '<h2>Do primeiro contato à entrega</h2></div>'
+      + '<ol class="linha">' + et.map(function (e, i) { return '<li><i>' + (i + 1) + '</i><b>' + e[0] + '</b><span>' + e[1] + '</span></li>'; }).join('') + '</ol>'
+      + '<div class="etapas"><b>Dá para fazer por etapas.</b><span>A obra pode ser contratada e executada em fases, acompanhando o caixa e o cronograma da empresa.</span></div>'
+      + foto('dg-2', 'faixa baixo', '', '50% 62%') + pe(8, true) + '</section>');
+
+    /* 9. obras (1) */
+    p.push('<section class="pg obras"><div class="topo">' + kick('Obras entregues') + '<h2>Obras que falam por nós</h2></div>'
+      + '<div class="gal g1">' + foto('cipriani', 'a', 'Cipriani Atacadista · Carlos Barbosa/RS', '14% 45%')
+      + foto('refricomp', 'b', 'Refricomp · estrutura metálica', '50% 55%') + foto('refricomp-pilares', 'c', 'Refricomp · pilares e vigas', '50% 62%')
+      + '<div class="d obra-tx"><span>Refricomp</span><b>Lajeado/RS</b><p>Da montagem dos pilares e painéis pré-moldados à cobertura metálica, com a mesma equipe.</p></div></div>' + pe(9) + '</section>');
+
+    /* 10. obras (2) */
+    p.push('<section class="pg obras"><div class="topo">' + kick('Obras entregues') + '<h2>Do pavilhão rural ao prédio comercial</h2></div>'
+      + '<div class="gal g2">' + foto('cascata', '', 'Mercado Cascata · Cruzeiro do Sul/RS') + foto('tempo', '', 'Tempo · Arroio do Meio/RS')
+      + foto('serplan', '', 'Serplan · Encantado/RS') + foto('primo', '', 'Primo · Lajeado/RS')
+      + foto('dg-1', '', 'D&amp;G · Encantado/RS') + foto('trevisol', '', 'Pavilhão · Lajeado/RS')
+      + '</div><p class="nota">Mais de ' + OBRAS + ' obras entregues em ' + ANOS + ' anos.</p>' + pe(10) + '</section>');
+
+    /* 11. clientes */
+    var cli = [['clientes/cipriani.png', 'Cipriani Atacadista'], ['clientes/refricomp.png', 'Refricomp'],
+      ['clientes/primavis.png', 'Primavis'], ['clientes/stabil.png', 'Stabil'], ['clientes/nutriarts.png', 'Nutriarts'],
+      ['clientes/yung-yes.png', 'Yung | YES Logística'], ['clientes/fm-ferragens.png', 'FM Ferragens'],
+      ['clientes/preco-bom.png', 'Preço Bom'], ['clientes/cascata.png', 'Cascata Supermercado'], ['clientes/cris-motos.png', 'Cris Motos']];
+    p.push('<section class="pg cli"><div class="topo">' + kick('Clientes') + '<h2>Empresas que confiam na RM</h2></div>'
+      + '<div class="logos">' + cli.map(function (c) { return '<img src="' + IMG[c[0]] + '" alt="' + c[1] + '" title="' + c[1] + '">'; }).join('') + '</div>'
+      + '<div class="cli-faixa"><b>+' + OBRAS + '</b><span>obras entregues para indústria, comércio, agronegócio e instituições do Rio Grande do Sul.</span></div>'
+      + pe(11) + '</section>');
+
+    /* 12. contato */
+    p.push('<section class="pg fim">' + foto('tempo', 'fundo') + '<div class="veu"></div>'
+      + '<div class="fim-tx"><img class="logo" src="' + logo('#FFFFFF') + '" alt="RM Estruturas Pré-Fabricadas">'
+      + '<h2>Vamos conversar sobre a sua obra?</h2><p class="lead">Mande pelo WhatsApp a cidade, o tipo de obra e o prazo. A gente responde com o próximo passo.</p>'
+      + '<dl><dt>WhatsApp</dt><dd>(51) 99672-5383</dd><dt>Telefone</dt><dd>(51) 99865-1820</dd>'
+      + '<dt>E-mail</dt><dd>contato@rmestruturas.com.br</dd><dt>Site</dt><dd>rmestruturas.com.br</dd>'
+      + '<dt>Instagram</dt><dd>@rm.estruturas</dd>'
+      + '<dt>Endereço</dt><dd>Rod. RSC 453 (Rota do Sol), Km 42, nº 6151, Pavilhão 2, Sala 2<br>Novo Paraíso · Estrela/RS · CEP 95883-000</dd></dl></div>'
+      + '<div class="qr"><img src="' + QR + '" alt="QR code do WhatsApp"><span>Aponte a câmera<br>e fale no WhatsApp</span></div>'
+      + pe(12, true) + '</section>');
+    return p.join('');
+  }
+
+  var CSS = [
+    '#apx-overlay{position:fixed;inset:0;z-index:9500;background:rgba(15,16,18,.78);display:none;overflow:auto;padding:0 0 40px}',
+    '#apx-overlay.on{display:block}',
+    '#apx-barra{position:sticky;top:0;z-index:2;display:flex;gap:10px;align-items:center;padding:12px 18px;background:#16171a;color:#fff;font-weight:650}',
+    '#apx-barra h3{margin:0;font-size:15px;flex:1 1 auto;font-weight:700}',
+    '#apx-barra button{font:inherit;font-size:13px;font-weight:650;padding:8px 15px;border-radius:9px;cursor:pointer;border:1px solid rgba(255,255,255,.25);background:transparent;color:#fff}',
+    '#apx-barra button.pri{background:#F24619;border-color:#F24619}',
+    '#apx-barra button:disabled{opacity:.5;cursor:default}',
+    '#apx-doc{padding:24px 0;--lj:#F24619;--lj-tx:#C1310B;--tinta:#141414;--graf:#24272c;--cinza:#4A515B;--mudo:#6B7280;--linha:#DCDCD8;--papel:#F4F3F0}',
+    '#apx-doc .carregando{color:#fff;text-align:center;padding:80px 0;font-size:15px}',
+    '#apx-doc .pg{width:297mm;height:210mm;margin:0 auto 10mm;position:relative;overflow:hidden;background:#fff;color:var(--tinta);box-shadow:0 18px 50px -20px rgba(0,0,0,.6);',
+    'font-family:Satoshi,-apple-system,Segoe UI,Roboto,sans-serif;font-size:10.5pt;line-height:1.45;-webkit-print-color-adjust:exact;print-color-adjust:exact;box-sizing:border-box}',
+    '#apx-doc .pg *{box-sizing:border-box}',
+    '#apx-doc h1,#apx-doc h2,#apx-doc h3{margin:0;font-weight:800;letter-spacing:-.02em;text-wrap:balance;color:inherit}',
+    '#apx-doc h2{font-size:25pt;line-height:1.08;margin:2.5mm 0 6mm}',
+    '#apx-doc p{margin:0 0 3.5mm}',
+    '#apx-doc .lead{font-size:12.5pt;line-height:1.45;color:var(--graf)}',
+    '#apx-doc .nota{font-size:9pt;color:var(--mudo)}',
+    '#apx-doc .kick{font-size:8pt;font-weight:800;letter-spacing:.16em;text-transform:uppercase;color:var(--lj-tx);display:flex;align-items:center;gap:3mm}',
+    '#apx-doc .kick:before{content:"";width:9mm;height:.7mm;background:var(--lj)}',
+    '#apx-doc .ft{margin:0;position:relative;overflow:hidden;background:#d9dadc}',
+    '#apx-doc .ft img{display:block;width:100%;height:100%;object-fit:cover}',
+    '#apx-doc .ft figcaption{position:absolute;left:0;bottom:0;padding:2mm 3.5mm;font-size:8pt;font-weight:700;color:#fff;background:rgba(20,20,20,.72);border-top-right-radius:1.5mm}',
+    '#apx-doc .ft.fundo{position:absolute;inset:0}',
+    '#apx-doc .veu{position:absolute;inset:0}',
+    '#apx-doc .pe{position:absolute;left:16mm;right:16mm;bottom:7mm;display:flex;justify-content:space-between;font-size:7.5pt;color:var(--mudo);border-top:.25mm solid var(--linha);padding-top:2mm;letter-spacing:.02em;z-index:3}',
+    '#apx-doc .pe .fl b{margin-left:4mm;color:var(--tinta);font-weight:800}',
+    '#apx-doc .pe.esc{color:rgba(255,255,255,.7);border-color:rgba(255,255,255,.25)}#apx-doc .pe.esc .fl b{color:#fff}',
+    '#apx-doc .topo{padding:16mm 16mm 0}',
+    /* capa */
+    '#apx-doc .capa{color:#fff;background:#141414}',
+    '#apx-doc .capa .veu{background:linear-gradient(90deg,rgba(14,15,17,.94) 0,rgba(14,15,17,.82) 36%,rgba(14,15,17,.1) 72%,rgba(14,15,17,0))}',
+    '#apx-doc .capa .logo{position:absolute;left:18mm;top:17mm;width:78mm;z-index:2}',
+    '#apx-doc .capa-tx{position:absolute;left:18mm;bottom:34mm;width:142mm;z-index:2}',
+    '#apx-doc .capa .kick{color:#ff8a66}',
+    '#apx-doc .capa h1{font-size:33pt;line-height:1.04;margin:4mm 0 5mm}',
+    '#apx-doc .capa-tx p{font-size:12.5pt;color:rgba(255,255,255,.86);max-width:118mm}',
+    '#apx-doc .capa-pe{position:absolute;left:18mm;right:18mm;bottom:12mm;display:flex;gap:9mm;font-size:8.5pt;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:rgba(255,255,255,.75);z-index:2;border-top:.6mm solid var(--lj);padding-top:3mm;width:165mm}',
+    /* colunas com foto ao lado */
+    '#apx-doc .col-tx{position:absolute;left:16mm;top:16mm;width:136mm;bottom:20mm}',
+    '#apx-doc .ft.lado{position:absolute;right:0;top:0;bottom:0;width:128mm}',
+    '#apx-doc .ft.lado.esq{left:0;right:auto}',
+    '#apx-doc .seg .col-tx{left:auto;right:16mm;width:136mm}',
+    '#apx-doc .nums{display:grid;grid-template-columns:repeat(auto-fit,minmax(0,1fr));gap:4mm;margin:7mm 0 6mm}',
+    '#apx-doc .nums div{border-left:.9mm solid var(--lj);padding:1mm 0 1mm 4mm}',
+    '#apx-doc .nums b{display:block;white-space:nowrap;font-size:20pt;font-weight:800;letter-spacing:-.02em;line-height:1.05}',
+    '#apx-doc .nums span{font-size:9pt;color:var(--cinza)}',
+    /* propósito */
+    '#apx-doc .prop .col-tx{width:142mm}',
+    '#apx-doc .mv{margin-top:8mm}',
+    '#apx-doc .mv h3{font-size:9pt;letter-spacing:.14em;text-transform:uppercase;color:var(--mudo);font-weight:800;margin-bottom:2mm}',
+    '#apx-doc .mv p{font-size:15pt;line-height:1.38;font-weight:600;letter-spacing:-.01em}',
+    '#apx-doc .valores{position:absolute;right:0;top:0;bottom:0;width:122mm;color:#fff}',
+    '#apx-doc .valores .veu{background:linear-gradient(180deg,rgba(20,22,26,.86) 0,rgba(20,22,26,.8) 55%,rgba(20,22,26,.35))}',
+    '#apx-doc .v-tx{position:absolute;left:14mm;right:14mm;top:16mm}',
+    '#apx-doc .valores .kick{color:#ff8a66}',
+    '#apx-doc .valores ol{list-style:none;margin:8mm 0 0;padding:0}',
+    '#apx-doc .valores li{display:flex;gap:5mm;align-items:baseline;font-size:14pt;font-weight:700;padding:4.2mm 0;border-bottom:.25mm solid rgba(255,255,255,.2)}',
+    '#apx-doc .valores li i{font-style:normal;color:var(--lj);font-size:10pt;font-weight:800}',
+    /* cartões */
+    '#apx-doc .cards{display:grid;gap:4mm}',
+    '#apx-doc .c5{grid-template-columns:repeat(5,1fr)}#apx-doc .c4{grid-template-columns:repeat(4,1fr);padding:0 16mm}',
+    '#apx-doc .card{background:var(--papel);padding:5mm;border-top:.9mm solid var(--lj);display:flex;flex-direction:column;gap:2mm}',
+    '#apx-doc .card i{font-style:normal;font-weight:800;color:var(--lj-tx);font-size:9pt}',
+    '#apx-doc .card b{font-size:11.5pt;line-height:1.2}',
+    '#apx-doc .card span{font-size:9pt;color:var(--cinza)}',
+    '#apx-doc .ft.faixa{position:absolute;left:0;right:0;top:0;height:86mm}',
+    '#apx-doc .dif-lado{position:absolute;left:0;top:0;bottom:0;width:100mm;background:var(--graf);color:#fff}#apx-doc .dif-lado .veu{background:linear-gradient(180deg,rgba(20,22,26,.92) 0,rgba(20,22,26,.78) 45%,rgba(20,22,26,.2))}#apx-doc .dif-tx{position:absolute;left:16mm;right:12mm;top:16mm}',
+    '#apx-doc .dif-lado .kick{color:#ff8a66}',
+    '#apx-doc .dif-lado h2{font-size:27pt;margin:4mm 0 6mm}',
+    '#apx-doc .dif-lado p{font-size:12pt;color:rgba(255,255,255,.8)}',
+    '#apx-doc .dif-lista{list-style:none;margin:0;padding:0;position:absolute;left:116mm;right:16mm;top:18mm;bottom:26mm;display:flex;flex-direction:column;justify-content:space-between}',
+    '#apx-doc .dif-lista li{display:grid;grid-template-columns:16mm 1fr;column-gap:2mm;padding:5.2mm 0;border-bottom:.25mm solid var(--linha)}',
+    '#apx-doc .dif-lista li:last-child{border-bottom:0}',
+    '#apx-doc .dif-lista i{font-style:normal;grid-row:1/3;font-size:20pt;font-weight:800;color:var(--lj);line-height:1}',
+    '#apx-doc .dif-lista b{font-size:14pt;line-height:1.2}',
+    '#apx-doc .dif-lista span{font-size:10pt;color:var(--cinza);margin-top:1mm}',
+    '#apx-doc .fcard{padding:0 0 5mm;border-top:0;background:transparent}',
+    '#apx-doc .fcard .ft{height:66mm;border-bottom:.9mm solid var(--lj);margin-bottom:2mm}',
+    '#apx-doc .fcard b{font-size:12.5pt}',
+    /* listas */
+    '#apx-doc .lista{display:flex;flex-direction:column}',
+    '#apx-doc .lista div{display:grid;grid-template-columns:56mm 1fr;gap:5mm;padding:3.4mm 0;border-top:.25mm solid var(--linha)}',
+    '#apx-doc .lista div:last-child{border-bottom:.25mm solid var(--linha)}',
+    '#apx-doc .lista b{font-size:11pt}',
+    '#apx-doc .lista span{font-size:9.5pt;color:var(--cinza)}',
+    '#apx-doc .seg .lista{margin-bottom:5mm}',
+    '#apx-doc .mp{margin-top:8mm;background:var(--graf);color:#fff;padding:5mm 6mm}',
+    '#apx-doc .mp span{font-size:8pt;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.7);font-weight:700}',
+    '#apx-doc .mp div{display:flex;gap:9mm;margin-top:2mm}#apx-doc .mp b{font-size:15pt;font-weight:800;letter-spacing:-.01em}',
+    /* processo */
+    '#apx-doc .linha{list-style:none;margin:10mm 16mm 0;padding:0;display:grid;grid-template-columns:repeat(5,1fr);gap:5mm;position:relative}',
+    '#apx-doc .linha:before{content:"";position:absolute;left:5mm;right:5mm;top:5mm;height:.5mm;background:var(--linha)}',
+    '#apx-doc .linha li{position:relative;display:flex;flex-direction:column;gap:1.5mm}',
+    '#apx-doc .linha i{font-style:normal;width:10mm;height:10mm;border-radius:50%;background:var(--lj);color:#fff;font-weight:800;display:flex;align-items:center;justify-content:center;margin-bottom:2mm;font-size:11pt}',
+    '#apx-doc .linha b{font-size:12pt}#apx-doc .linha span{font-size:9pt;color:var(--cinza)}',
+    '#apx-doc .etapas{margin:9mm 16mm 0;border-left:.9mm solid var(--lj);padding:2mm 0 2mm 5mm;display:flex;gap:4mm;align-items:baseline}',
+    '#apx-doc .etapas b{font-size:13pt;white-space:nowrap}#apx-doc .etapas span{font-size:10pt;color:var(--cinza)}',
+    '#apx-doc .ft.faixa.baixo{top:auto;bottom:0;height:62mm}',
+    /* obras */
+    '#apx-doc .gal{position:absolute;left:16mm;right:16mm;top:45mm;bottom:20mm;display:grid;gap:3.5mm}',
+    '#apx-doc .g1{grid-template-columns:1.35fr 1fr .62fr;grid-template-rows:1fr 1fr}#apx-doc .g1 .a{grid-row:1/3}#apx-doc .g1 .c{grid-column:3;grid-row:1/3}#apx-doc .g1 .b{grid-column:2;grid-row:1}#apx-doc .g1 .d{grid-column:2;grid-row:2}',
+    '#apx-doc .g2{grid-template-columns:repeat(3,1fr);grid-template-rows:1fr 1fr;bottom:28mm}',
+    '#apx-doc .obra-tx{background:var(--graf);color:#fff;padding:7mm 7mm;display:flex;flex-direction:column;justify-content:flex-end;border-bottom:.9mm solid var(--lj)}',
+    '#apx-doc .obra-tx span{font-size:8pt;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:#ff8a66}',
+    '#apx-doc .obra-tx b{font-size:19pt;font-weight:800;letter-spacing:-.02em;margin:1mm 0 3mm}',
+    '#apx-doc .obra-tx p{font-size:10pt;color:rgba(255,255,255,.82);margin:0}',
+    '#apx-doc .obras .nota{position:absolute;left:16mm;bottom:17mm;margin:0}',
+    /* clientes */
+    '#apx-doc .logos{display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:13mm 11mm;padding:16mm 16mm 0}',
+    '#apx-doc .logos img{display:block;width:44mm;height:25mm;object-fit:contain}',
+    '#apx-doc .cli-faixa{position:absolute;left:16mm;right:16mm;bottom:22mm;background:var(--graf);color:#fff;padding:8mm 10mm;display:flex;gap:8mm;align-items:center}',
+    '#apx-doc .cli-faixa b{font-size:40pt;font-weight:800;letter-spacing:-.03em;color:var(--lj);line-height:1}',
+    '#apx-doc .cli-faixa span{font-size:14pt;font-weight:600;max-width:150mm;line-height:1.35}',
+    /* contato */
+    '#apx-doc .fim{color:#fff;background:#141414}',
+    '#apx-doc .fim .veu{background:linear-gradient(90deg,rgba(14,15,17,.95) 0,rgba(14,15,17,.88) 55%,rgba(14,15,17,.55))}',
+    '#apx-doc .fim-tx{position:absolute;left:18mm;top:17mm;width:165mm;z-index:2}',
+    '#apx-doc .fim .logo{width:62mm;margin-bottom:12mm;display:block}',
+    '#apx-doc .fim h2{font-size:28pt;margin:0 0 4mm}',
+    '#apx-doc .fim .lead{color:rgba(255,255,255,.85);max-width:140mm}',
+    '#apx-doc .fim dl{display:grid;grid-template-columns:26mm 1fr;gap:2.2mm 5mm;margin:7mm 0 0;font-size:10.5pt}',
+    '#apx-doc .fim dt{color:#ff8a66;font-weight:800;font-size:8pt;letter-spacing:.12em;text-transform:uppercase;padding-top:.8mm}',
+    '#apx-doc .fim dd{margin:0;font-weight:600}',
+    '#apx-doc .qr{position:absolute;right:20mm;top:50%;transform:translateY(-55%);background:#fff;color:var(--tinta);padding:6mm;width:64mm;text-align:center;z-index:2;border-bottom:1.2mm solid var(--lj)}',
+    '#apx-doc .qr img{width:52mm;height:52mm;display:block;margin:0 auto 3mm}',
+    '#apx-doc .qr span{font-size:9.5pt;font-weight:700;line-height:1.3}',
+    '@media print{body>*{display:none!important}',
+    '#apx-overlay{display:block!important;position:static;background:#fff;padding:0;overflow:visible}',
+    '#apx-barra{display:none!important}',
+    '#apx-doc{padding:0!important;zoom:1!important}',
+    '#apx-doc .pg{margin:0;box-shadow:none;page-break-after:always;break-after:page}',
+    '#apx-doc .pg:last-child{page-break-after:auto;break-after:auto}',
+    '@page{size:A4 landscape;margin:0}}'
+  ].join('\n');
+
+  function monta() {
+    if (document.getElementById('apx-overlay')) return;
+    var e = document.createElement('style');
+    e.id = 'apx-css';
+    e.textContent = CSS;
+    document.head.appendChild(e);
+    var o = document.createElement('div');
+    o.id = 'apx-overlay';
+    o.innerHTML = '<div id="apx-barra"><h3>Apresentação da empresa</h3>'
+      + '<button class="pri" id="apx-pdf" onclick="rmApresPDF()" disabled>Imprimir / PDF</button>'
+      + '<button onclick="rmApresFechar()">Fechar</button></div>'
+      + '<div id="apx-doc"><div class="carregando">Montando a apresentação…</div></div>';
+    document.body.appendChild(o);
+  }
+  /* cabe na largura da janela (a folha tem 297 mm = 1123 px) */
+  function ajusta() {
+    var d = document.getElementById('apx-doc'); if (!d) return;
+    var z = Math.min(1, (window.innerWidth - 32) / 1123);
+    d.style.zoom = z < 1 ? String(Math.round(z * 1000) / 1000) : '';
+  }
+  /* uma peça por vez: o estilo de impressão da ficha (A4 em pé, esconde
+     tudo que não é ela) não pode ficar na página junto com este */
+  function tira(ids) { ids.forEach(function (i) { var x = document.getElementById(i); if (x) x.remove(); }); }
+
+  window.rmApresComercial = true;
+  window.rmApresentacao = function () {
+    if (window.rmFichaFechar) window.rmFichaFechar();
+    monta();
+    document.getElementById('apx-overlay').classList.add('on');
+    ajusta();
+    return carrega().then(function () {
+      var d = document.getElementById('apx-doc'); if (!d) return;
+      d.innerHTML = corpo();
+      var b = document.getElementById('apx-pdf'); if (b) b.disabled = false;
+    });
+  };
+  window.rmApresFechar = function () { tira(['apx-overlay', 'apx-css']); };
+  window.rmApresPDF = function () {
+    try {
+      if (typeof window.rmSalvarPDF === 'function') { window.rmSalvarPDF('Apresentacao-RM-Estruturas'); return; }
+    } catch (e) { }
+    window.print();
+  };
+  window.addEventListener('resize', function () { if (document.getElementById('apx-overlay')) ajusta(); });
 })();
 </script>
 <!-- rm_barra -->
