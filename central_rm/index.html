@@ -4853,7 +4853,7 @@ try { var _e = localStorage.getItem('rm_estilo_ultimo'); if (_e === 'viva' || _e
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js" crossorigin="anonymous"></script>
 
 <script>/* versão publicada (PADRAO_RM.md §3): sobe a cada publicação, junto com o CACHE do sw.js */
-const APP_VER='v178';
+const APP_VER='v179';
 </script>
 <script>
   /* ===== LOGIN (Firebase Authentication) =====
@@ -12454,7 +12454,12 @@ const APP_VER='v178';
   .docs-topo{gap:9px}
   .doc-ac.env span{display:none}
   .doc-ac.env{width:34px;padding:0}
+  /* arquivo pronto (iPhone): o botão cresce e diz "Compartilhar" -- é o
+     segundo toque que abre a folha de compartilhar */
+  .doc-ac.env.pronto{width:auto;padding:0 12px}
+  .doc-ac.env.pronto span{display:inline}
 }
+.doc-ac.env.pronto{box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 30%,transparent)}
 </style>
 
 <!-- ===== DOCUMENTOS ===== -->
@@ -12704,24 +12709,61 @@ const APP_VER='v178';
      saia aquele "blob:https://...7609ffbe" na conversa. Endereco blob so
      existe dentro do navegador de quem enviou; pra quem recebe nao abre
      nada. */
+  /* COMPARTILHAR NO IPHONE (e em todo celular).
+     O iPhone só abre a folha de compartilhar se o pedido vier colado no toque.
+     O Enviar baixava o arquivo do servidor primeiro (1 a 3 s) e só depois
+     pedia -- o toque já tinha "vencido", o iPhone recusava calado e a reserva
+     (baixar) não faz nada no sistema instalado na tela de início. Agora: se o
+     celular recusar por isso, o arquivo fica pronto na memória, o botão vira
+     "Compartilhar" e o segundo toque abre a folha na hora, sem esperar nada.
+     No Android o primeiro toque já costuma bastar. */
+  var _prontos = {};                 /* chave -> { files, titulo, t } */
+  var PRONTO_MS = 3 * 60 * 1000;
+  function prontoDe(ch) { var p = _prontos[ch]; if (p && Date.now() - p.t > PRONTO_MS) { delete _prontos[ch]; p = null; } return p; }
+  function rotuloBt(bt, txt) { var sp = bt && bt.querySelector && bt.querySelector('span'); if (sp) sp.textContent = txt; }
+  /* carregar(): Promise de { files:[File], titulo }; reserva(files): quando não há como compartilhar */
+  window.rmCompartilhar = function (ch, carregar, bt, reserva, rotulo) {
+    rotulo = rotulo || 'Enviar';
+    var pr = prontoDe(ch);
+    if (pr) {
+      /* segundo toque: nada de await antes do share */
+      delete _prontos[ch];
+      if (bt) bt.classList.remove('pronto'); rotuloBt(bt, rotulo);
+      return navigator.share({ files: pr.files, title: pr.titulo })
+        .then(function () { avisar(pr.files.length > 1 ? pr.files.length + ' documentos enviados' : 'Enviado'); })
+        .catch(function (e) { if (!e || e.name !== 'AbortError') { if (reserva) reserva(pr.files); } });
+    }
+    if (bt) bt.disabled = true;
+    return Promise.resolve().then(carregar).then(function (r) {
+      var files = r.files, podeComp = false;
+      try { podeComp = !!(navigator.canShare && navigator.canShare({ files: files })); } catch (e) {}
+      if (!podeComp) { if (reserva) reserva(files); return; }
+      return navigator.share({ files: files, title: r.titulo })
+        .then(function () { avisar(files.length > 1 ? files.length + ' documentos enviados' : 'Enviado'); })
+        .catch(function (e) {
+          if (e && e.name === 'AbortError') return;
+          /* recusado por falta do toque: fica pronto para o próximo */
+          _prontos[ch] = { files: files, titulo: r.titulo, t: Date.now() };
+          if (bt) { bt.classList.add('pronto'); rotuloBt(bt, 'Compartilhar'); }
+          avisar('Arquivo pronto — toque em “Compartilhar”');
+        });
+    }).catch(function (e) {
+      avisar('Não foi possível preparar o arquivo: ' + ((e && e.message) || e), 'err');
+    }).then(function () { if (bt) bt.disabled = false; });
+  };
+  window.rmCompartilharPronto = function (ch) { return !!prontoDe(ch); };
+
   window.docsEnviar = function (id, bt) {
     var f = _docs[id]; if (!f) return;
-    if (bt) { bt.disabled = true; }
-    carregarArquivo(id).then(function (arq) {
-      var blob = dataURLparaBlob(arq.dados);
-      var nome = nomeParaEnviar(f, arq);
-      var file = null;
-      try { file = new File([blob], nome, { type: f.tipo || arq.tipo || blob.type }); } catch (e) {}
-      if (file && navigator.canShare && navigator.canShare({ files: [file] })) {
-        return navigator.share({ files: [file], title: nome })
-          .then(function () { avisar('Enviado'); })
-          .catch(function (e) { if (!e || e.name !== 'AbortError') { baixar(blob, nome); } });
-      }
-      baixar(blob, nome);
-      avisar('Baixado como "' + nome + '" — anexe no e-mail ou no WhatsApp');
-    }).catch(function (e) {
-      avisar('Não foi possível abrir o arquivo: ' + ((e && e.message) || e), 'err');
-    }).then(function () { if (bt) bt.disabled = false; });
+    rmCompartilhar('doc:' + id, function () {
+      return carregarArquivo(id).then(function (arq) {
+        var blob = dataURLparaBlob(arq.dados), nome = nomeParaEnviar(f, arq);
+        return { files: [new File([blob], nome, { type: f.tipo || arq.tipo || blob.type })], titulo: nome };
+      });
+    }, bt, function (files) {
+      baixar(files[0], files[0].name);
+      avisar('Baixado como "' + files[0].name + '" — anexe no e-mail ou no WhatsApp');
+    });
   };
 
   /* Abrir o documento. Dois mundos, dois caminhos -- e os dois já falharam
@@ -13075,15 +13117,33 @@ const APP_VER='v178';
      cada um se monta na hora (com a data do dia) e sai em PDF de dentro
      dele -- por isso so' "Abrir", sem renomear nem excluir. */
   var DOCS_GERADOS = [
-    { nome: 'Apresentação da empresa', sub: 'Gerada pela Central · 12 folhas, A4 deitado', fn: 'rmApresentacao', pdf: 'rmApresPDF' },
-    { nome: 'Ficha cadastral', sub: 'Gerada pela Central · dados, banco e referências', fn: 'rmFichaCadastral', pdf: 'rmFichaPDF' }
+    { nome: 'Apresentação da empresa', sub: 'Gerada pela Central · 12 folhas, A4 deitado', fn: 'rmApresentacao', pdf: 'rmApresPDF', arq: 'Apresentacao-RM-Estruturas.pdf' },
+    { nome: 'Ficha cadastral', sub: 'Gerada pela Central · dados, banco e referências', fn: 'rmFichaCadastral', pdf: 'rmFichaPDF', arq: 'Ficha-cadastral-RM-Estruturas.pdf' }
   ];
+  /* NO CELULAR NÃO HÁ IMPRESSORA: o PDF delas sai pela janela de imprimir, e
+     o iPhone com o sistema instalado na tela de início ignora o imprimir.
+     Por isso cada publicação leva os dois PDFs já prontos em apresentacao/
+     (ferramentas/gera_pdfs_documentos.js) e, no celular, Enviar e o botão de
+     dentro compartilham esse arquivo. A ficha pronta tem a data da publicação. */
+  window.rmPdfCelular = function () {
+    if (window.rmDesktop) return false;
+    var ua = navigator.userAgent || '';
+    return /iPhone|iPad|iPod|Android/i.test(ua) || navigator.standalone === true || (navigator.maxTouchPoints > 1 && /Macintosh/.test(ua));
+  };
+  window.rmPdfProntoCompartilhar = function (arq, titulo, bt) {
+    var u = 'apresentacao/' + arq;
+    return rmCompartilhar('pdf:' + arq, function () {
+      return fetch(u, { cache: 'no-cache' }).then(function (r) { if (!r.ok) throw new Error('PDF não encontrado'); return r.blob(); })
+        .then(function (b) { return { files: [new File([b], arq, { type: 'application/pdf' })], titulo: titulo }; });
+    }, bt, function () { window.open(u, '_blank'); }, bt && bt.dataset && bt.dataset.rotulo);
+  };
   /* Enviar: monta o documento (a apresentação espera as fotos) e já sai o
      PDF -- no programa, "salvar como" e abre no leitor, de onde vai para o
      e-mail ou o WhatsApp; no navegador, a janela de imprimir em "Salvar como
      PDF" (e no celular, compartilhar). Mesmo caminho do botão de dentro. */
   window.docsGeradoEnviar = function (i, bt) {
     var g = DOCS_GERADOS[i]; if (!g || typeof window[g.fn] !== 'function') return;
+    if (rmPdfCelular()) { rmPdfProntoCompartilhar(g.arq, g.nome, bt); return; }
     if (bt) bt.disabled = true;
     Promise.resolve(window[g.fn]()).then(function () {
       if (typeof window[g.pdf] === 'function') window[g.pdf]();
@@ -13098,8 +13158,8 @@ const APP_VER='v178';
       + '<div class="doc-txt"><div class="doc-nome">' + esc(g.nome) + '</div>'
       +   '<div class="doc-sub">' + esc(g.sub) + '</div></div>'
       + '<div class="doc-acs">'
-      +   '<button class="doc-ac env" onclick="event.stopPropagation();docsGeradoEnviar(' + i + ',this)" title="Enviar (gera o PDF)">'
-      +     ICO_ENV + '<span>Enviar</span></button>'
+      +   '<button class="doc-ac env' + (prontoDe('pdf:' + g.arq) ? ' pronto' : '') + '" onclick="event.stopPropagation();docsGeradoEnviar(' + i + ',this)" title="Enviar (gera o PDF)">'
+      +     ICO_ENV + '<span>' + (prontoDe('pdf:' + g.arq) ? 'Compartilhar' : 'Enviar') + '</span></button>'
       +   '<button class="doc-ac" onclick="event.stopPropagation();' + g.fn + '()" title="Abrir">' + ICO_OLHO + '</button>'
       + '</div></div>';
   }
@@ -13124,8 +13184,8 @@ const APP_VER='v178';
       + '<div class="doc-txt"><div class="doc-nome">' + esc(d.nome) + '</div>'
       +   '<div class="doc-sub">' + sub.join(' · ') + '</div></div>'
       + '<div class="doc-acs">'
-      +   '<button class="doc-ac env" onclick="docsEnviar(\'' + d.id + '\',this)" title="Enviar">'
-      +     ICO_ENV + '<span>Enviar</span></button>'
+      +   '<button class="doc-ac env' + (prontoDe('doc:' + d.id) ? ' pronto' : '') + '" onclick="docsEnviar(\'' + d.id + '\',this)" title="Enviar">'
+      +     ICO_ENV + '<span>' + (prontoDe('doc:' + d.id) ? 'Compartilhar' : 'Enviar') + '</span></button>'
       +   '<button class="doc-ac" onclick="docsAbrir(\'' + d.id + '\',this)" title="Abrir">' + ICO_OLHO + '</button>'
       +   '<button class="doc-ac" onclick="docsRenomear(\'' + d.id + '\')" title="Renomear / validade">' + ICO_LAPIS + '</button>'
       +   '<button class="doc-ac" onclick="docsExcluir(\'' + d.id + '\')" title="Excluir">' + ICO_LIXO + '</button>'
@@ -13365,18 +13425,17 @@ const APP_VER='v178';
   }
   function dataArqHoje() { var d = hojeISO(); return d.slice(8, 10) + '-' + d.slice(5, 7) + '-' + d.slice(0, 4); }
   window.docsEnviarSelecionados = function (bt) {
-    carregarLote(bt).then(function (lst) {
-      var files = null;
-      try { files = lst.map(function (x) { return new File([x.blob], x.nome, { type: x.tipo || x.blob.type }); }); } catch (e) {}
-      if (files && navigator.canShare && navigator.canShare({ files: files })) {
-        return navigator.share({ files: files, title: 'Documentos RM Estruturas' })
-          .then(function () { avisar(files.length + ' documentos enviados'); })
-          .catch(function (e) { if (!e || e.name !== 'AbortError') baixarZip(lst); });
-      }
-      baixarZip(lst);
-    }).catch(function (e) {
-      avisar('Não foi possível juntar os documentos: ' + ((e && e.message) || e), 'err');
-    }).then(function () { if (bt) bt.disabled = false; });
+    /* a chave é a seleção: mudou a seleção, prepara de novo */
+    var ch = 'sel:' + selecionados().map(function (d) { return d.id; }).sort().join(',');
+    var lote = null;
+    rmCompartilhar(ch, function () {
+      return carregarLote(bt).then(function (lst) {
+        lote = lst;
+        return { files: lst.map(function (x) { return new File([x.blob], x.nome, { type: x.tipo || x.blob.type }); }), titulo: 'Documentos RM Estruturas' };
+      });
+    }, bt, function (files) {
+      baixarZip(lote || files.map(function (f) { return { blob: f, nome: f.name, tipo: f.type }; }));
+    });
   };
   function baixarZip(lst) {
     var nome = 'Documentos RM Estruturas ' + dataArqHoje() + '.zip';
@@ -14560,7 +14619,7 @@ const APP_VER='v178';
     var o = document.createElement('div');
     o.id = 'ap-overlay';
     o.innerHTML = '<div id="ap-barra"><h3>Ficha cadastral</h3>'
-      + '<button class="pri" onclick="rmFichaPDF()">Imprimir / PDF</button>'
+      + '<button class="pri" id="ap-pdf" onclick="rmFichaPDF()"><span>' + (window.rmPdfCelular && rmPdfCelular() ? 'Enviar PDF' : 'Imprimir / PDF') + '</span></button>'
       + '<button onclick="rmFichaFechar()">Fechar</button></div>'
       + '<div id="ap-doc"></div>';
     document.body.appendChild(o);
@@ -14580,6 +14639,10 @@ const APP_VER='v178';
     ['ap-overlay', 'ap-css'].forEach(function (i) { var x = document.getElementById(i); if (x) x.remove(); });
   };
   window.rmFichaPDF = function () {
+    if (window.rmPdfCelular && rmPdfCelular() && window.rmPdfProntoCompartilhar) {
+      var b = document.getElementById('ap-pdf'); if (b) b.dataset.rotulo = 'Enviar PDF';
+      rmPdfProntoCompartilhar('Ficha-cadastral-RM-Estruturas.pdf', 'Ficha cadastral', b); return;
+    }
     try {
       if (typeof window.rmSalvarPDF === 'function') {
         window.rmSalvarPDF('Ficha-cadastral-RM-Estruturas');
@@ -14952,7 +15015,7 @@ const APP_VER='v178';
     var o = document.createElement('div');
     o.id = 'apx-overlay';
     o.innerHTML = '<div id="apx-barra"><h3>Apresentação da empresa</h3>'
-      + '<button class="pri" id="apx-pdf" onclick="rmApresPDF()" disabled>Imprimir / PDF</button>'
+      + '<button class="pri" id="apx-pdf" onclick="rmApresPDF()" disabled><span>' + (window.rmPdfCelular && rmPdfCelular() ? 'Enviar PDF' : 'Imprimir / PDF') + '</span></button>'
       + '<button onclick="rmApresFechar()">Fechar</button></div>'
       + '<div id="apx-doc"><div class="carregando">Montando a apresentação…</div></div>';
     document.body.appendChild(o);
@@ -14995,6 +15058,10 @@ const APP_VER='v178';
   };
   window.rmApresFechar = function () { tira(['apx-overlay', 'apx-css']); };
   window.rmApresPDF = function () {
+    if (window.rmPdfCelular && rmPdfCelular() && window.rmPdfProntoCompartilhar) {
+      var b = document.getElementById('apx-pdf'); if (b) b.dataset.rotulo = 'Enviar PDF';
+      rmPdfProntoCompartilhar('Apresentacao-RM-Estruturas.pdf', 'Apresentação da empresa', b); return;
+    }
     try {
       if (typeof window.rmSalvarPDF === 'function') { window.rmSalvarPDF('Apresentacao-RM-Estruturas'); return; }
     } catch (e) { }
