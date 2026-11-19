@@ -1,58 +1,58 @@
 {
-  "Controle-estoque-maquinas": {
-    "commit": "7e9651f",
-    "versao": "v51"
-  },
-  "Pedidos_perfitec": {
-    "commit": "460cec2",
-    "versao": "v87"
-  },
-  "almo-os": {
-    "commit": "e30316f",
-    "versao": "v112"
-  },
-  "calculadora-pu": {
-    "commit": "bf6cf79",
-    "versao": "v137"
-  },
-  "calculo_pre_moldados": {
-    "commit": "a75b1ff",
-    "versao": "v72"
-  },
-  "central_rm": {
-    "commit": "736d196",
-    "versao": "v179"
-  },
-  "controle_cheques": {
-    "commit": "bf12c97",
-    "versao": "v87"
-  },
-  "controle_compras": {
-    "commit": "6c2b9f3",
-    "versao": "v88"
-  },
-  "controle_obras": {
-    "commit": "94b498c",
-    "versao": "v122"
-  },
-  "leitor_dwg": {
-    "commit": "4197918",
-    "versao": "v303"
-  },
-  "orcamento-rm": {
-    "commit": "366eed0",
-    "versao": "v167"
-  },
-  "propostas_rm": {
-    "commit": "7a654b9",
-    "versao": "v60"
-  },
-  "recibos_rm": {
-    "commit": "0523d47",
-    "versao": "v309"
-  },
-  "rm_contas": {
-    "commit": "8da7de8",
-    "versao": "v83"
-  }
+ "Controle-estoque-maquinas": {
+  "commit": "7e9651f",
+  "versao": "v51"
+ },
+ "Pedidos_perfitec": {
+  "commit": "460cec2",
+  "versao": "v87"
+ },
+ "almo-os": {
+  "commit": "e30316f",
+  "versao": "v112"
+ },
+ "calculadora-pu": {
+  "commit": "bf6cf79",
+  "versao": "v137"
+ },
+ "calculo_pre_moldados": {
+  "commit": "a75b1ff",
+  "versao": "v72"
+ },
+ "central_rm": {
+  "commit": "736d196",
+  "versao": "v179"
+ },
+ "controle_cheques": {
+  "commit": "bf12c97",
+  "versao": "v87"
+ },
+ "controle_compras": {
+  "commit": "6c2b9f3",
+  "versao": "v88"
+ },
+ "controle_obras": {
+  "commit": "94b498c",
+  "versao": "v122"
+ },
+ "leitor_dwg": {
+  "commit": "4197918",
+  "versao": "v303"
+ },
+ "orcamento-rm": {
+  "commit": "366eed0",
+  "versao": "v167"
+ },
+ "propostas_rm": {
+  "commit": "7a654b9",
+  "versao": "v60"
+ },
+ "recibos_rm": {
+  "commit": "0523d47",
+  "versao": "v309"
+ },
+ "rm_contas": {
+  "commit": "8da7de8",
+  "versao": "v83"
+ }
 }
