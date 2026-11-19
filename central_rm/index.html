@@ -4853,7 +4853,7 @@ try { var _e = localStorage.getItem('rm_estilo_ultimo'); if (_e === 'viva' || _e
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js" crossorigin="anonymous"></script>
 
 <script>/* versão publicada (PADRAO_RM.md §3): sobe a cada publicação, junto com o CACHE do sw.js */
-const APP_VER='v173';
+const APP_VER='v174';
 </script>
 <script>
   /* ===== LOGIN (Firebase Authentication) =====
@@ -13070,6 +13070,24 @@ const APP_VER='v173';
   var ICO_MARCA = '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="3.5" width="17" height="17" rx="3"/><path d="M8 12.5l2.8 2.8L16.5 9"/></svg>';
   var ICO_LUPA = '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>';
 
+  /* DOCUMENTOS GERADOS PELA CENTRAL: ficam na lista da gaveta Empresa junto
+     com os arquivos guardados, e nao num botao proprio. Nao sao arquivo:
+     cada um se monta na hora (com a data do dia) e sai em PDF de dentro
+     dele -- por isso so' "Abrir", sem renomear nem excluir. */
+  var DOCS_GERADOS = [
+    { nome: 'Apresentação da empresa', sub: 'Gerada pela Central · 12 folhas, A4 deitado', fn: 'rmApresentacao' },
+    { nome: 'Ficha cadastral', sub: 'Gerada pela Central · dados, banco e referências', fn: 'rmFichaCadastral' }
+  ];
+  function linhaGerada(g) {
+    return '<div class="doc doc-gerado" data-gerado="' + g.fn + '" onclick="' + g.fn + '()" style="cursor:pointer">'
+      + '<span class="doc-ico">' + ICO_DOC + '</span>'
+      + '<div class="doc-txt"><div class="doc-nome">' + esc(g.nome) + '</div>'
+      +   '<div class="doc-sub">' + esc(g.sub) + '</div></div>'
+      + '<div class="doc-acs">'
+      +   '<button class="doc-ac" onclick="event.stopPropagation();' + g.fn + '()" title="Abrir">' + ICO_OLHO + '</button>'
+      + '</div></div>';
+  }
+
   function linhaDoc(d) {
     var s = situacao(d.validade);
     var sub = [];
@@ -13184,9 +13202,7 @@ const APP_VER='v173';
                   + '<button class="docs-bt" id="docs-mover" onclick="docsMover()">Mover veículos</button>'
                   + '<button class="docs-bt" id="docs-relatorio" onclick="docsRelatorioFrota()">Relatório da frota</button>'
                   + '<button class="docs-bt pri" onclick="docsNovoVeiculo()">＋ Veículo</button>'
-                : '<button class="docs-bt" onclick="rmApresentacao()">Apresentação da empresa</button>'
-                  + '<button class="docs-bt" onclick="rmFichaCadastral()">Ficha cadastral</button>'
-                  + '<button class="docs-bt pri" onclick="docsAdicionar(\'empresa\',\'\')">＋ Documento</button>'))
+                : '<button class="docs-bt pri" onclick="docsAdicionar(\'empresa\',\'\')">＋ Documento</button>'))
       + '</div>';
 
     var corpo;
@@ -13213,8 +13229,9 @@ const APP_VER='v173';
       }
     } else {
       var es = docsEmpresa().filter(function (d) { return !_busca || norm(d.nome).indexOf(_busca) >= 0; });
-      corpo = es.length
-        ? '<div class="veic aberto"><div class="veic-corpo" style="border-top:0">' + es.map(linhaDoc).join('') + '</div></div>'
+      var gs = _sel ? [] : DOCS_GERADOS.filter(function (g) { return !_busca || norm(g.nome).indexOf(_busca) >= 0; });
+      corpo = es.length || gs.length
+        ? '<div class="veic aberto"><div class="veic-corpo" style="border-top:0">' + gs.map(linhaGerada).join('') + es.map(linhaDoc).join('') + '</div></div>'
         : (docsEmpresa().length
             ? '<div class="docs-vazio">Nenhum documento com “' + esc(_busca) + '”.</div>'
             : '<div class="docs-vazio"><b>Nenhum documento da empresa</b>'
@@ -14486,7 +14503,8 @@ const APP_VER='v173';
     e.textContent = '#ap-overlay{position:fixed;inset:0;z-index:9500;background:rgba(15,16,18,.72);'
       + 'display:none;overflow:auto;padding:0 0 40px}'
       + '#ap-overlay.on{display:block}'
-      + '#ap-barra{position:sticky;top:0;z-index:2;display:flex;gap:10px;align-items:center;'
+      + '#ap-barra{position:sticky;top:0;z-index:2;display:flex;gap:10px;align-items:center;min-height:52px;-webkit-app-region:no-drag;'
+      + 'padding-right:max(18px,calc(100vw - env(titlebar-area-x,0px) - env(titlebar-area-width,100vw) + 14px))!important;'
       + 'padding:12px 18px;background:#16171a;color:#fff;font-weight:650}'
       + '#ap-barra h3{margin:0;font-size:15px;flex:1 1 auto;font-weight:700}'
       + '#ap-barra button{font:inherit;font-size:13px;font-weight:650;padding:8px 15px;'
@@ -14531,6 +14549,7 @@ const APP_VER='v173';
   window.rmFichaCadastral = function () {
     if (window.rmApresFechar) window.rmApresFechar();
     monta();
+    if (window.rmFolgaJanela) window.rmFolgaJanela(document.getElementById('ap-barra'));
     var o = document.getElementById('ap-overlay');
     document.getElementById('ap-doc').innerHTML = CORPO.replace('__DATA__', dataHoje());
     o.classList.add('on');
@@ -14583,12 +14602,30 @@ const APP_VER='v173';
       return new Promise(function (ok, erro) { var f = new FileReader(); f.onload = function () { ok(f.result); }; f.onerror = erro; f.readAsDataURL(b); });
     });
   }
+  /* De onde vêm as fotos. No navegador, da pasta ao lado da página. No
+     programa instalado a Central abre de file:// (a cópia do instalador com o
+     index.html baixado por cima) e a pasta apresentacao/ não está ao lado:
+     vem do site publicado -- primeiro o principal, depois o reserva. Sem
+     conseguir converter (sem internet, ou o site sem CORS), fica o endereço
+     do site: na tela aparece igual, e o PDF do programa também busca por ele. */
+  var SITES = ['https://rm-estruturas.pages.dev', 'https://evertonluis4523-afk.github.io'];
+  function busca(arq) {
+    var rel = 'apresentacao/' + arq;
+    var fontes = (/^https?:$/.test(location.protocol) ? [rel] : [])
+      .concat(SITES.map(function (s) { return s + '/central_rm/' + rel; }));
+    var i = 0;
+    function tenta() {
+      if (i >= fontes.length) return Promise.resolve(/^https?:$/.test(location.protocol) ? rel : SITES[0] + '/central_rm/' + rel);
+      var u = fontes[i++];
+      return dataUrl(u).catch(tenta);
+    }
+    return tenta();
+  }
   function carrega() {
     var falta = FOTOS.filter(function (n) { return !IMG[n]; });
     return Promise.all(falta.map(function (n) {
-      var u = 'apresentacao/' + n + (/\.(svg|png)$/.test(n) ? '' : '.jpg');
-      return dataUrl(u).then(function (d) { IMG[n] = d; }, function () { IMG[n] = u; });
-    }).concat(QR ? [] : [dataUrl('apresentacao/qr-whatsapp.svg').then(function (d) { QR = d; }, function () { QR = 'apresentacao/qr-whatsapp.svg'; })]));
+      return busca(n + (/\.(svg|png)$/.test(n) ? '' : '.jpg')).then(function (d) { IMG[n] = d; });
+    }).concat(QR ? [] : [busca('qr-whatsapp.svg').then(function (d) { QR = d; })]));
   }
   function logo(cor) {
     var l = window.rmLogoCor || '';
@@ -14738,7 +14775,11 @@ const APP_VER='v173';
   var CSS = [
     '#apx-overlay{position:fixed;inset:0;z-index:9500;background:rgba(15,16,18,.78);display:none;overflow:auto;padding:0 0 40px}',
     '#apx-overlay.on{display:block}',
-    '#apx-barra{position:sticky;top:0;z-index:2;display:flex;gap:10px;align-items:center;padding:12px 18px;background:#16171a;color:#fff;font-weight:650}',
+    /* no programa instalado os botões da janela (minimizar, maximizar,
+       fechar) ficam por cima do canto direito: a barra deixa esse canto
+       livre, senão "Fechar" some atrás deles. Fora do programa as variáveis
+       não existem e sobra a folga normal. */
+    '#apx-barra{position:sticky;top:0;z-index:2;display:flex;gap:10px;align-items:center;min-height:52px;padding:8px max(18px,calc(100vw - env(titlebar-area-x,0px) - env(titlebar-area-width,100vw) + 14px)) 8px 18px;background:#16171a;color:#fff;font-weight:650;-webkit-app-region:no-drag}',
     '#apx-barra h3{margin:0;font-size:15px;flex:1 1 auto;font-weight:700}',
     '#apx-barra button{font:inherit;font-size:13px;font-weight:650;padding:8px 15px;border-radius:9px;cursor:pointer;border:1px solid rgba(255,255,255,.25);background:transparent;color:#fff}',
     '#apx-barra button.pri{background:#F24619;border-color:#F24619}',
@@ -14895,10 +14936,24 @@ const APP_VER='v173';
      tudo que não é ela) não pode ficar na página junto com este */
   function tira(ids) { ids.forEach(function (i) { var x = document.getElementById(i); if (x) x.remove(); }); }
 
+  /* Folga dos botões da janela também por javascript: a medida vem da API
+     do próprio Chromium (Window Controls Overlay); no programa sem ela, uma
+     folga fixa do tamanho dos três botões. */
+  window.rmFolgaJanela = function (barra) {
+    if (!barra) return;
+    var d = 0;
+    try {
+      var w = navigator.windowControlsOverlay;
+      if (w && w.visible) { var r = w.getTitlebarAreaRect(); d = Math.max(0, window.innerWidth - (r.x + r.width)); }
+      else if (window.rmDesktop) d = 150;
+    } catch (e) { if (window.rmDesktop) d = 150; }
+    if (d) barra.style.setProperty('padding-right', (d + 14) + 'px', 'important');
+  };
   window.rmApresComercial = true;
   window.rmApresentacao = function () {
     if (window.rmFichaFechar) window.rmFichaFechar();
     monta();
+    window.rmFolgaJanela(document.getElementById('apx-barra'));
     document.getElementById('apx-overlay').classList.add('on');
     ajusta();
     return carrega().then(function () {
@@ -14915,6 +14970,12 @@ const APP_VER='v173';
     window.print();
   };
   window.addEventListener('resize', function () { if (document.getElementById('apx-overlay')) ajusta(); });
+  /* Esc fecha a que estiver aberta (apresentação ou ficha) */
+  document.addEventListener('keydown', function (e) {
+    if (e.key !== 'Escape') return;
+    if (document.getElementById('apx-overlay')) { rmApresFechar(); e.preventDefault(); }
+    else if (document.getElementById('ap-overlay') && window.rmFichaFechar) { rmFichaFechar(); e.preventDefault(); }
+  });
 })();
 </script>
 <!-- rm_barra -->
