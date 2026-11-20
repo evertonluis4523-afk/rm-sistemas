@@ -4489,12 +4489,14 @@ try { var _e = localStorage.getItem('rm_estilo_ultimo'); if (_e === 'viva' || _e
       <button class="assist-tab on" data-aba="avisos"      onclick="assistTab('avisos')">Avisos<span class="at-n" id="at-n-avisos"></span></button>
       <button class="assist-tab"    data-aba="atividade"   onclick="assistTab('atividade')">Atividade</button>
       <button class="assist-tab"    data-aba="diagnostico" onclick="assistTab('diagnostico')">Saúde<span class="at-n" id="at-n-diag"></span></button>
+      <button class="assist-tab"    data-aba="travas"      onclick="assistTab('travas')">Travas<span class="at-n" id="at-n-travas"></span></button>
       <button class="assist-tab"    data-aba="versoes"     onclick="assistTab('versoes')">Versões</button>
     </div>
     <div class="assist-body">
       <div class="assist-pane on" data-aba="avisos"><div id="assist-avisos"></div></div>
       <div class="assist-pane" data-aba="atividade"><div id="assist-atividade"></div></div>
       <div class="assist-pane" data-aba="diagnostico"><div id="assist-diagnostico"></div></div>
+      <div class="assist-pane" data-aba="travas"><div id="assist-travas"></div></div>
       <div class="assist-pane" data-aba="versoes"><div id="assist-versoes"></div></div>
     </div>
   </div>
@@ -4878,7 +4880,7 @@ try { var _e = localStorage.getItem('rm_estilo_ultimo'); if (_e === 'viva' || _e
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js" crossorigin="anonymous"></script>
 
 <script>/* versão publicada (PADRAO_RM.md §3): sobe a cada publicação, junto com o CACHE do sw.js */
-const APP_VER='v183';
+const APP_VER='v184';
 </script>
 <script>
   /* ===== LOGIN (Firebase Authentication) =====
@@ -6220,6 +6222,7 @@ const APP_VER='v183';
   var _atividade  = RM_PERSIST.ler('atividade', []);   // [{quando, sistema, texto}]
   var _erros      = RM_PERSIST.ler('erros', {});       // assinatura -> {sistema, msg, onde, n, primeiro, ultimo}
   var _errosVistos= RM_PERSIST.ler('erros_vistos', 0); // timestamp da última visita à aba
+  var _travas     = RM_PERSIST.ler('travas', {});      // sistema|aba|ação -> {sistema, aba, acao, vezes, maior, n, primeiro, ultimo, ver, dispensada}
   var _assistAba  = 'registrar';
 
   function contarRegistros(v) {
@@ -6407,15 +6410,89 @@ const APP_VER='v183';
         var v = snap.val() || {};
         Object.keys(v).forEach(function (k) {
           var c = v[k]; if (!c || !c.chave || !c.msg) return;
+          if (c.tipo === 'trava') { juntaTrava(c); return; }
           var l = _erros[c.chave] || {};
           _erros[c.chave] = Object.assign({}, l, c, { n: Math.max(c.n || 0, l.n || 0), ultimo: Math.max(c.ultimo || 0, l.ultimo || 0),
             primeiro: Math.min(c.primeiro || Date.now(), l.primeiro || Date.now()) });
         });
-        RM_PERSIST.gravar('erros', _erros); atualizarAssistBadge(); refreshAssistIfOpen();
+        RM_PERSIST.gravar('erros', _erros); RM_PERSIST.gravar('travas', _travas); atualizarAssistBadge(); refreshAssistIfOpen();
       }, function () { _errosOuvindo = false; });
     } catch (x) { _errosOuvindo = false; }
   }
   window.__rmOuvirErros = ouvirErrosNuvem;
+
+  /* ---------------- possíveis travas (PADRAO_RM 1a) ----------------
+     O bloco comum relata-erro.html, em cada sistema, avisa quando a MESMA
+     ação foi repetida 8 vezes ou mais em 5 minutos -- excluir um por um,
+     confirmar linha a linha. Chega só o nome do botão, a aba e quantas
+     vezes: nenhum dado. Vai para o mesmo nó da nuvem dos erros (tipo
+     'trava', dentro da regra que já existe) para juntar o de todos os
+     aparelhos, e aparece na aba Travas do Acompanhamento e no relatório de
+     melhorias -- é a lista do que falta virar ação em lote. */
+  function chaveTrava(sistema, m) { return 'trava|' + sistema + '|' + String(m.aba || '').slice(0, 60) + '|' + String(m.acao || '').slice(0, 60); }
+  function textoTrava(t) { return 'Repetiu "' + t.acao + '" ' + t.maior + ' vezes seguidas' + (t.aba ? ' em ' + t.aba : ''); }
+  function registrarTrava(sistema, m) {
+    if (!m.acao) return;
+    var chave = chaveTrava(sistema, m), agora = Date.now();
+    var t = _travas[chave] || { sistema: sistema, aba: String(m.aba || '').slice(0, 60), acao: String(m.acao).slice(0, 60), vezes: 0, maior: 0, n: 0, primeiro: agora };
+    var seq = Math.min(Number(m.n) || 0, 9999);
+    /* a mesma rajada avisa de novo ao dobrar (8, 16, 32...): só a primeira
+       conta como uma ocorrência nova */
+    if (!t.ultimo || agora - t.ultimo > 5 * 60000) t.n++;
+    t.maior = Math.max(t.maior || 0, seq); t.minutos = Number(m.minutos) || 1; t.ultimo = agora;
+    var ver = String(m.ver || '').slice(0, 12); if (ver) t.ver = ver;
+    _travas[chave] = t;
+    var ks = Object.keys(_travas);
+    if (ks.length > 60) { ks.sort(function (a, b) { return _travas[a].ultimo - _travas[b].ultimo; }); ks.slice(0, ks.length - 60).forEach(function (k) { delete _travas[k]; }); }
+    RM_PERSIST.gravar('travas', _travas);
+    enviaTravaNuvem(chave, t);
+    atualizarAssistBadge(); refreshAssistIfOpen();
+  }
+  function enviaTravaNuvem(chave, t) {
+    try {
+      if (!window.firebase || !firebase.auth || !firebase.auth().currentUser) return;
+      firebase.database().ref(NO_ERROS + '/' + chaveNuvemErro(chave)).transaction(function (cur) {
+        cur = cur || { chave: chave, tipo: 'trava', sistema: t.sistema, aba: t.aba, acao: t.acao, n: 0, maior: 0, primeiro: t.primeiro };
+        if (!cur.ultimo || Date.now() - cur.ultimo > 5 * 60000) cur.n = (cur.n || 0) + 1;
+        cur.maior = Math.max(cur.maior || 0, t.maior); cur.ultimo = Date.now(); if (t.ver) cur.ver = t.ver;
+        cur.msg = textoTrava(cur).slice(0, 300);
+        return cur;
+      }).catch(function () { });
+    } catch (x) { }
+  }
+  function juntaTrava(c) {
+    var l = _travas[c.chave] || {};
+    _travas[c.chave] = Object.assign({}, l, { sistema: c.sistema, aba: c.aba || '', acao: c.acao || '', ver: c.ver || l.ver,
+      n: Math.max(c.n || 0, l.n || 0), maior: Math.max(c.maior || 0, l.maior || 0),
+      ultimo: Math.max(c.ultimo || 0, l.ultimo || 0), primeiro: Math.min(c.primeiro || Date.now(), l.primeiro || Date.now()) });
+  }
+  function travasAbertas() {
+    return Object.keys(_travas).filter(function (k) { var t = _travas[k]; return !(t.dispensada && t.dispensada >= t.ultimo); })
+      .sort(function (a, b) { return _travas[b].ultimo - _travas[a].ultimo; });
+  }
+  function dispensarTrava(k) {
+    if (!_travas[k]) return;
+    _travas[k].dispensada = Date.now(); RM_PERSIST.gravar('travas', _travas);
+    atualizarAssistBadge(); renderAssistAba(); atualizarContadoresAba();
+  }
+  window.dispensarTrava = dispensarTrava;
+  function renderTravas() {
+    var el = document.getElementById('assist-travas'); if (!el) return;
+    var ks = travasAbertas();
+    var topo = '<div class="al-s" style="padding:4px 2px 12px;line-height:1.5">A mesma ação repetida 8 vezes ou mais em poucos minutos. '
+      + 'Costuma ser o lugar que pede ação em lote. Só chega o nome do botão e a aba, nenhum dado.</div>';
+    if (!ks.length) { el.innerHTML = topo + '<div class="al-vazio">Nenhuma repetição longa até agora.</div>'; return; }
+    el.innerHTML = '<div class="al-barra"><span class="al-resumo">' + ks.length + ' possível(is) trava(s)</span>'
+      + '<span><button class="btn-add" onclick="relatorioMelhorias()">Gerar relatório</button></span></div>' + topo + ks.map(function (k) {
+      var t = _travas[k];
+      return '<div class="al-item"><span class="al-marca" style="color:#B26A00">↻</span>'
+        + '<div class="al-body"><div class="al-t">' + escHtml(t.sistema) + ' · ' + escHtml(t.acao) + '</div>'
+        + '<div class="al-s">' + escHtml((t.aba ? t.aba + ' · ' : '') + 'até ' + t.maior + ' vezes seguidas · '
+          + t.n + (t.n === 1 ? ' vez' : ' vezes') + ' desde ' + new Date(t.primeiro).toLocaleDateString('pt-BR')
+          + ' · última ' + quandoRelativo(t.ultimo) + (t.ver ? ' · ' + t.ver : '')) + '</div></div>'
+        + '<button class="btn-ghost-sm" data-trava="' + escHtml(k) + '" onclick="dispensarTrava(this.dataset.trava)">Já resolvi</button></div>';
+    }).join('');
+  }
   function errosNovos() {
     return Object.keys(_erros).filter(function (k) { return _erros[k].ultimo > _errosVistos && !erroDeVersaoAntiga(_erros[k]); }).length;
   }
@@ -6505,6 +6582,7 @@ const APP_VER='v183';
      sistemas) */
   window.addEventListener('message', function (ev) {
     var m = ev.data;
+    if (m && typeof m === 'object' && m.rm === 'trava') return registrarTrava(String(sistemaDaJanela(ev.source) || m.sistema || 'Sistema').slice(0, 40), m);
     if (!m || typeof m !== 'object' || m.rm !== 'erro') return;
     registrarErro(String(sistemaDaJanela(ev.source) || m.sistema || 'Sistema').slice(0, 40), m.msg, m.onde, m.pilha, m.ver);
   });
@@ -6534,7 +6612,8 @@ const APP_VER='v183';
   }
   function relatorioMelhorias() {
     var todas = Object.keys(_erros).sort(function (a, b) { return _erros[b].n - _erros[a].n; });
-    if (!todas.length) { alert('Nenhum erro registrado ainda — nada a relatar.'); return; }
+    var travas = travasAbertas();
+    if (!todas.length && !travas.length) { alert('Nenhum erro nem trava registrado ainda — nada a relatar.'); return; }
     var chaves = todas.filter(function (k) { return !erroDeVersaoAntiga(_erros[k]); });
     var antigas = todas.filter(function (k) { return erroDeVersaoAntiga(_erros[k]); });
     var linhaDe = function (k, i) {
@@ -6552,6 +6631,12 @@ const APP_VER='v183';
       + '<th class="n">1ª vez</th><th class="n">Última</th></tr></thead><tbody>';
     var tabAntigas = antigas.length ? '<h2 style="font-size:10.5pt;margin:7mm 0 2mm">De versões antigas · não voltaram na versão atual</h2>'
       + cabT + antigas.map(linhaDe).join('') + '</tbody></table>' : '';
+    var tabTravas = travas.length ? '<h2 style="font-size:10.5pt;margin:7mm 0 2mm">Possíveis travas · a mesma ação repetida muitas vezes</h2>'
+      + '<table><thead><tr><th>Sistema</th><th>Ação</th><th>Aba</th><th class="n">Seguidas</th><th class="n">Vezes</th><th class="n">Última</th></tr></thead><tbody>'
+      + travas.map(function (k, i) { var t = _travas[k];
+          return '<tr' + (i % 2 ? ' class="z"' : '') + '><td>' + escHtml(t.sistema) + '</td><td>' + escHtml(t.acao) + '</td><td>' + escHtml(t.aba || '—') + '</td>'
+            + '<td class="n">' + t.maior + '</td><td class="n">' + t.n + '</td><td class="n">' + new Date(t.ultimo).toLocaleDateString('pt-BR') + '</td></tr>'; }).join('')
+      + '</tbody></table>' : '';
     var total = chaves.reduce(function (s, k) { return s + _erros[k].n; }, 0);
     var html = '<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8">'
       + '<title>Relatório de melhorias — RM Central</title><style>'
@@ -6600,7 +6685,7 @@ const APP_VER='v183';
       + '<h1>Relatório de melhorias</h1>'
       + '<div style="margin-bottom:4mm"><div class="meta rmd-subtit">Erros distintos: ' + chaves.length + ' &nbsp;·&nbsp; ocorrências no total: ' + total
       + ' &nbsp;·&nbsp; gerado em ' + new Date().toLocaleString('pt-BR') + '</div></div>'
-      + cabT + linhas + '</tbody></table>' + tabAntigas
+      + cabT + linhas + '</tbody></table>' + tabAntigas + tabTravas
       + '<div class="nota rmd-obs">Ordenado pelo número de ocorrências.</div>'
       + '<div class="pe"><div class="lin"><div>51 99789-7879 · @rm.estruturas</div><div class="c">www.rmestruturas.com.br</div>'
       + '<div class="d">' + desenhoDaMarca('.topbar-mark') + '</div></div></div>'
@@ -6644,6 +6729,7 @@ const APP_VER='v183';
     if (_assistAba === 'avisos')      return renderAvisos();
     if (_assistAba === 'atividade')   return renderAtividade();
     if (_assistAba === 'versoes')     return renderVersoes();
+    if (_assistAba === 'travas')      return renderTravas();
     if (_assistAba === 'diagnostico') return renderDiagnostico();
   }
   function renderAvisos() {
@@ -6867,6 +6953,7 @@ const APP_VER='v183';
     var cAv = document.getElementById('at-n-avisos'), cDi = document.getElementById('at-n-diag');
     if (cAv) { cAv.textContent = itens.length ? String(itens.length) : ''; cAv.classList.toggle('urgent', urg > 0); }
     if (cDi) { var n = errosNovos(); cDi.textContent = n ? String(n) : ''; cDi.classList.toggle('urgent', n > 0); }
+    var cTr = document.getElementById('at-n-travas'); if (cTr) { var nt = travasAbertas().length; cTr.textContent = nt ? String(nt) : ''; }
   }
   /* O selo mudou de lugar junto com o resto: era a bolinha do balão flutuante,
      agora é o número no botão da barra de cima, ao lado do sino. Sem ele isto

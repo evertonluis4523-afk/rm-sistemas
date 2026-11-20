@@ -1,73 +1,73 @@
 {
  "Controle-estoque-maquinas": {
-  "commit": "0e67299",
+  "commit": "ecc5320",
   "data": "2026-11-19",
-  "versao": "v52"
+  "versao": "v53"
  },
  "Pedidos_perfitec": {
-  "commit": "7ea99b0",
-  "data": "2026-11-19",
-  "versao": "v89"
- },
- "almo-os": {
-  "commit": "9a5974e",
-  "data": "2026-11-19",
-  "versao": "v112"
- },
- "calculadora-pu": {
-  "commit": "ed43c98",
-  "data": "2026-11-19",
-  "versao": "v137"
- },
- "calculo_pre_moldados": {
-  "commit": "f3078bd",
-  "data": "2026-11-19",
-  "versao": "v72"
- },
- "central_rm": {
-  "commit": "9a69e35",
-  "data": "2026-11-19",
-  "versao": "v183"
- },
- "controle_cheques": {
-  "commit": "d0a959e",
-  "data": "2026-11-19",
-  "versao": "v88"
- },
- "controle_compras": {
-  "commit": "91e97d5",
+  "commit": "36272f1",
   "data": "2026-11-19",
   "versao": "v90"
  },
- "controle_obras": {
-  "commit": "367601c",
+ "almo-os": {
+  "commit": "eaae1a8",
   "data": "2026-11-19",
-  "versao": "v122"
+  "versao": "v113"
+ },
+ "calculadora-pu": {
+  "commit": "d5968b1",
+  "data": "2026-11-19",
+  "versao": "v138"
+ },
+ "calculo_pre_moldados": {
+  "commit": "8225b3b",
+  "data": "2026-11-19",
+  "versao": "v73"
+ },
+ "central_rm": {
+  "commit": "c2c8794",
+  "data": "2026-11-19",
+  "versao": "v184"
+ },
+ "controle_cheques": {
+  "commit": "cafd448",
+  "data": "2026-11-19",
+  "versao": "v89"
+ },
+ "controle_compras": {
+  "commit": "81e65d4",
+  "data": "2026-11-19",
+  "versao": "v91"
+ },
+ "controle_obras": {
+  "commit": "75d835e",
+  "data": "2026-11-19",
+  "versao": "v123"
  },
  "leitor_dwg": {
-  "commit": "81c0b7f",
+  "commit": "8f55126",
   "data": "2026-11-19",
   "extensao": "1.4.0",
-  "versao": "v305"
+  "versao": "v306"
  },
  "orcamento-rm": {
-  "commit": "1607de8",
+  "commit": "bd7fe45",
   "data": "2026-11-19",
-  "versao": "v169"
+  "versao": "v170"
  },
  "propostas_rm": {
-  "commit": "e3b2f7b",
+  "commit": "ae9b192",
   "data": "2026-11-19",
-  "versao": "v61"
+  "versao": "v62"
  },
  "recibos_rm": {
-  "commit": "a479305",
+  "commit": "32b6e29",
   "data": "2026-11-19",
-  "versao": "v311"
+  "versao": "v312"
  },
  "rm_contas": {
-  "commit": "6d0d485",
+  "commit": "12870cc",
   "data": "2026-11-19",
-  "versao": "v85"
+  "versao": "v86"
  }
 }

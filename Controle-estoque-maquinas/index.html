@@ -3116,7 +3116,7 @@ const DB_NODE = "maquinas_rm";
    visivel, nenhum de nos dois tinha como saber se o aparelho estava rodando o
    que foi publicado ou uma copia velha do cache do app instalado. Diagnostico
    por adivinhacao custa mais caro que um rodape. */
-const APP_VER='v52';
+const APP_VER='v53';
 const STORE_KEY = "rm_maquinas_v1";
 
 const CORES = [
@@ -7693,6 +7693,45 @@ if ('serviceWorker' in navigator) {
     var r = ev.reason;
     relatar((r && r.message) || String(r), 'promessa sem catch', r && r.stack);
   });
+})();
+/* ===== DETECTOR DE TRAVAS (PADRAO_RM 1a) =====
+   A trava de uso não dá erro: dá repetição. Excluir 25 recibos um por um,
+   confirmar 30 pagamentos linha a linha. Aqui cada clique em botão vira uma
+   ASSINATURA -- o nome do botão (o title/aria-label primeiro, que descreve a
+   ação, e não o texto, que pode ser um nome de pessoa), os atributos data-*
+   SEM os valores e a aba aberta -- e a mesma assinatura 8 vezes em 5 minutos
+   vai para a Central como "possível trava". Sai só isso: nenhum valor,
+   nenhum campo, nenhum nome de registro. Navegação (abas, fechar, cancelar)
+   e caixas de marcar não contam. */
+(function () {
+  if (window.parent === window || window.__rmTravas) return; window.__rmTravas = 1;
+  var LIMITE = 8, JANELA = 5 * 60000, vistos = {}, avisados = {};
+  function versao() { try { return typeof APP_VER !== 'undefined' ? String(APP_VER).slice(0, 12) : ''; } catch (e) { return ''; } }
+  function limpa(t) { return String(t || '').replace(/\s+/g, ' ').trim().replace(/\d+([.,]\d+)*/g, '#').replace(/R\$\s*#/g, 'R$ #').slice(0, 60); }
+  function aba() {
+    var a = document.querySelector('.vtab.on,.aba.on,.tab.active,.tab.on,[role=tab][aria-selected="true"],.view-tab.on,.st-tab.active');
+    var s = document.querySelector('.stab.on,.subtab.on,.sub-tab.on');
+    return limpa([a && a.textContent, s && s.textContent].filter(Boolean).join(' › ')).slice(0, 60);
+  }
+  document.addEventListener('click', function (ev) {
+    try {
+      var el = ev.target && ev.target.closest && ev.target.closest('button,[role=button],a.btn,a.btn-sm,label.btn,label.btn-act,.ia');
+      if (!el || el.disabled) return;
+      if (el.closest('[role=tablist],.tabs,.vtabs,.subtabs,.abas,nav,.rm-topbar') || el.matches('[role=tab],.vtab,.tab,.aba,.stab,.st-tab,.x,[data-close]')) return;
+      var dados = [].slice.call(el.attributes).map(function (a) { return a.name; }).filter(function (n) { return /^data-/.test(n) && !/^data-(label|tip|tooltip|i)$/.test(n); }).sort().join(' ');
+      var nome = limpa(el.getAttribute('title') || el.getAttribute('aria-label') || el.textContent);
+      if (!nome && !dados) return;
+      if (/^(fechar|cancelar|voltar|ok|sim|não|nao|✕|×|limpar sele[çc][ãa]o|anterior|pr[óo]xim[oa]|[-+−‹›<>«»←→↑↓])$/i.test(nome)) return;
+      var chave = aba() + '|' + nome + '|' + dados, agora = Date.now();
+      var L = (vistos[chave] = (vistos[chave] || []).filter(function (t) { return agora - t < JANELA; }));
+      L.push(agora);
+      if (L.length >= LIMITE && (!avisados[chave] || L.length >= avisados[chave] * 2)) {
+        avisados[chave] = L.length;
+        window.parent.postMessage({ rm: 'trava', ver: versao(), aba: aba(), acao: nome || dados, dados: dados.slice(0, 80), n: L.length,
+          minutos: Math.max(1, Math.round((agora - L[0]) / 60000)) }, '*');
+      }
+    } catch (e) { }
+  }, true);
 })();
 </script>
 <script>
