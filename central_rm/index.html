@@ -4880,7 +4880,7 @@ try { var _e = localStorage.getItem('rm_estilo_ultimo'); if (_e === 'viva' || _e
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js" crossorigin="anonymous"></script>
 
 <script>/* versão publicada (PADRAO_RM.md §3): sobe a cada publicação, junto com o CACHE do sw.js */
-const APP_VER='v184';
+const APP_VER='v185';
 </script>
 <script>
   /* ===== LOGIN (Firebase Authentication) =====
@@ -6222,7 +6222,8 @@ const APP_VER='v184';
   var _atividade  = RM_PERSIST.ler('atividade', []);   // [{quando, sistema, texto}]
   var _erros      = RM_PERSIST.ler('erros', {});       // assinatura -> {sistema, msg, onde, n, primeiro, ultimo}
   var _errosVistos= RM_PERSIST.ler('erros_vistos', 0); // timestamp da última visita à aba
-  var _travas     = RM_PERSIST.ler('travas', {});      // sistema|aba|ação -> {sistema, aba, acao, vezes, maior, n, primeiro, ultimo, ver, dispensada}
+  var _travas     = RM_PERSIST.ler('travas', {});
+  var _uso        = RM_PERSIST.ler('uso', {});         // mês|sistema|pasta -> {mes, sistema, caminho, n, bytes, maior, ultimo}      // sistema|aba|ação -> {sistema, aba, acao, vezes, maior, n, primeiro, ultimo, ver, dispensada}
   var _assistAba  = 'registrar';
 
   function contarRegistros(v) {
@@ -6406,16 +6407,17 @@ const APP_VER='v184';
     if (_errosOuvindo || !isAdminUser() || !window.firebase || !firebase.database) return;
     _errosOuvindo = true;
     try {
-      firebase.database().ref(NO_ERROS).orderByChild('ultimo').limitToLast(60).on('value', function (snap) {
+      firebase.database().ref(NO_ERROS).orderByChild('ultimo').limitToLast(250).on('value', function (snap) {
         var v = snap.val() || {};
         Object.keys(v).forEach(function (k) {
           var c = v[k]; if (!c || !c.chave || !c.msg) return;
           if (c.tipo === 'trava') { juntaTrava(c); return; }
+          if (c.tipo === 'uso') { juntaUso(c); return; }
           var l = _erros[c.chave] || {};
           _erros[c.chave] = Object.assign({}, l, c, { n: Math.max(c.n || 0, l.n || 0), ultimo: Math.max(c.ultimo || 0, l.ultimo || 0),
             primeiro: Math.min(c.primeiro || Date.now(), l.primeiro || Date.now()) });
         });
-        RM_PERSIST.gravar('erros', _erros); RM_PERSIST.gravar('travas', _travas); atualizarAssistBadge(); refreshAssistIfOpen();
+        RM_PERSIST.gravar('erros', _erros); RM_PERSIST.gravar('travas', _travas); RM_PERSIST.gravar('uso', _uso); atualizarAssistBadge(); refreshAssistIfOpen();
       }, function () { _errosOuvindo = false; });
     } catch (x) { _errosOuvindo = false; }
   }
@@ -6493,6 +6495,81 @@ const APP_VER='v184';
         + '<button class="btn-ghost-sm" data-trava="' + escHtml(k) + '" onclick="dispensarTrava(this.dataset.trava)">Já resolvi</button></div>';
     }).join('');
   }
+  /* ---------------- download da nuvem (quem baixa quanto) ----------------
+     Novembro de 2026: o plano gratuito do Firebase (10 GB de download por
+     mês) estourou com o banco inteiro tendo 139 MB. Cada sistema (bloco
+     comum relata-erro.html) e a própria Central medem a PRIMEIRA leitura de
+     cada pasta ao abrir -- é o que o Firebase cobra como download -- e aqui
+     soma por mês, sistema e pasta. Vai para o nó central_erros (tipo 'uso',
+     dentro da regra que já existe) para juntar todos os aparelhos; a Saúde
+     mostra as pastas que mais pesam. Só tamanho e caminho, nenhum dado. */
+  function mesAtual() { return new Date().toISOString().slice(0, 7); }
+  function registrarUso(sistema, caminho, bytes) {
+    caminho = String(caminho || '?').slice(0, 60); bytes = Math.max(0, Math.min(Number(bytes) || 0, 5e8));
+    var mes = mesAtual(), chave = 'uso|' + mes + '|' + sistema + '|' + caminho;
+    var u = _uso[chave] || { mes: mes, sistema: sistema, caminho: caminho, n: 0, bytes: 0, maior: 0 };
+    u.n++; u.bytes += bytes; u.maior = Math.max(u.maior || 0, bytes); u.ultimo = Date.now();
+    _uso[chave] = u;
+    Object.keys(_uso).forEach(function (k) { if (_uso[k].mes < mes) delete _uso[k]; });   // só o mês corrente
+    RM_PERSIST.gravar('uso', _uso);
+    enviaUsoNuvem(chave, sistema, caminho, bytes, mes);
+  }
+  window.rmRegistrarUso = registrarUso;
+  function enviaUsoNuvem(chave, sistema, caminho, bytes, mes) {
+    try {
+      if (!window.firebase || !firebase.auth || !firebase.auth().currentUser) return;
+      firebase.database().ref(NO_ERROS + '/' + chaveNuvemErro(chave)).transaction(function (cur) {
+        cur = cur || { chave: chave, tipo: 'uso', mes: mes, sistema: sistema, caminho: caminho, n: 0, bytes: 0, maior: 0 };
+        cur.n = (cur.n || 0) + 1; cur.bytes = (cur.bytes || 0) + bytes; cur.maior = Math.max(cur.maior || 0, bytes); cur.ultimo = Date.now();
+        cur.msg = (sistema + ' leu ' + caminho).slice(0, 300);
+        return cur;
+      }).catch(function () { });
+    } catch (x) { }
+  }
+  function juntaUso(c) {
+    if (!c.mes || c.mes < mesAtual()) return;
+    var l = _uso[c.chave] || {};
+    /* a nuvem já soma todos os aparelhos (este também): vale o maior */
+    _uso[c.chave] = { mes: c.mes, sistema: c.sistema, caminho: c.caminho, n: Math.max(c.n || 0, l.n || 0), bytes: Math.max(c.bytes || 0, l.bytes || 0),
+      maior: Math.max(c.maior || 0, l.maior || 0), ultimo: Math.max(c.ultimo || 0, l.ultimo || 0) };
+  }
+  function mb(b) { return b >= 1e9 ? (b / 1e9).toFixed(2).replace('.', ',') + ' GB' : b >= 1e6 ? (b / 1e6).toFixed(1).replace('.', ',') + ' MB' : Math.max(1, Math.round(b / 1e3)) + ' KB'; }
+  function htmlUso() {
+    var mes = mesAtual(), ks = Object.keys(_uso).filter(function (k) { return _uso[k].mes === mes; });
+    if (!ks.length) return '<div class="al-group">Download da nuvem neste mês</div><div class="al-vazio">Ainda medindo: aparece conforme os sistemas são abertos.</div>';
+    ks.sort(function (a, b) { return _uso[b].bytes - _uso[a].bytes; });
+    var total = ks.reduce(function (s, k) { return s + _uso[k].bytes; }, 0);
+    /* por pasta, somando quem leu (a mesma pasta lida pela Central e pelo sistema) */
+    var porPasta = {};
+    ks.forEach(function (k) { var u = _uso[k]; var p = porPasta[u.caminho] || (porPasta[u.caminho] = { bytes: 0, n: 0, quem: {} }); p.bytes += u.bytes; p.n += u.n; p.quem[u.sistema] = (p.quem[u.sistema] || 0) + u.bytes; });
+    var pastas = Object.keys(porPasta).sort(function (a, b) { return porPasta[b].bytes - porPasta[a].bytes; }).slice(0, 12);
+    return '<div class="al-group">Download da nuvem neste mês</div>'
+      + '<div class="al-s" style="padding:2px 2px 10px;line-height:1.5">Medido desde que esta medição entrou (' + mb(total) + ' até agora). O plano gratuito dá 10 GB por mês. '
+      + 'Conta a primeira leitura de cada pasta ao abrir um sistema, somando todos os aparelhos.</div>'
+      + pastas.map(function (c) {
+          var p = porPasta[c], quem = Object.keys(p.quem).sort(function (a, b) { return p.quem[b] - p.quem[a]; });
+          return '<div class="al-item"><span class="al-marca" style="color:var(--text-muted)">' + Math.round(p.bytes / Math.max(total, 1) * 100) + '%</span>'
+            + '<div class="al-body"><div class="al-t">' + escHtml(c) + ' · ' + mb(p.bytes) + '</div>'
+            + '<div class="al-s">' + escHtml(p.n + (p.n === 1 ? ' leitura' : ' leituras') + ' · cada uma ~' + mb(p.bytes / Math.max(p.n, 1)) + ' · '
+              + quem.map(function (q) { return q + ' ' + mb(p.quem[q]); }).join(', ')) + '</div></div></div>';
+        }).join('');
+  }
+  /* as leituras da própria Central entram no mesmo medidor (mesmo truque do
+     bloco comum: uma cópia da mesma leitura, que o Firebase não baixa de novo) */
+  (function medeCentral(n) {
+    var Q = null; try { Q = window.firebase && firebase.database && firebase.database.Query && firebase.database.Query.prototype; } catch (e) { }
+    if (!Q) { if ((n || 0) < 90) setTimeout(function () { medeCentral((n || 0) + 1); }, 1000); return; }
+    if (Q.__rmUsoCentral) return; Q.__rmUsoCentral = 1;
+    var vistos = {}, on = Q.on, once = Q.once, get = Q.get;
+    function mede(q) {
+      var c; try { var r = q.ref || q; c = decodeURIComponent(String(r.toString()).replace(/^https?:\/\/[^/]+\/?/, '').split('?')[0]).split('/').filter(Boolean).slice(0, 2).join('/') || '(raiz)'; } catch (e) { return; }
+      if (/^\.info/.test(c) || vistos[c]) return; vistos[c] = 1;
+      try { once.call(q.ref || q, 'value').then(function (s) { var b = 0; try { b = JSON.stringify(s.val()).length; } catch (e) { } registrarUso('Central', c, b); }).catch(function () { }); } catch (e) { }
+    }
+    Q.on = function (ev) { if (ev === 'value' || ev === 'child_added') mede(this); return on.apply(this, arguments); };
+    Q.once = function (ev) { if (ev === 'value' || ev === 'child_added') mede(this); return once.apply(this, arguments); };
+    if (get) Q.get = function () { mede(this); return get.apply(this, arguments); };
+  })();
   function errosNovos() {
     return Object.keys(_erros).filter(function (k) { return _erros[k].ultimo > _errosVistos && !erroDeVersaoAntiga(_erros[k]); }).length;
   }
@@ -6582,6 +6659,7 @@ const APP_VER='v184';
      sistemas) */
   window.addEventListener('message', function (ev) {
     var m = ev.data;
+    if (m && typeof m === 'object' && m.rm === 'uso') return registrarUso(String(sistemaDaJanela(ev.source) || 'Sistema').slice(0, 40), m.caminho, m.bytes);
     if (m && typeof m === 'object' && m.rm === 'trava') return registrarTrava(String(sistemaDaJanela(ev.source) || m.sistema || 'Sistema').slice(0, 40), m);
     if (!m || typeof m !== 'object' || m.rm !== 'erro') return;
     registrarErro(String(sistemaDaJanela(ev.source) || m.sistema || 'Sistema').slice(0, 40), m.msg, m.onde, m.pilha, m.ver);
@@ -6940,7 +7018,8 @@ const APP_VER='v184';
     el.innerHTML = '<div class="al-group">Como a Central está rodando</div>' + ambiente
       + '<div class="al-group">Sistemas</div>' + sistemas
       + copias
-      + '<div class="al-group">Erros</div>' + barraErros + listaErros;
+      + '<div class="al-group">Erros</div>' + barraErros + listaErros
+      + htmlUso();
   }
   function refreshAssistIfOpen() {
     var ov = document.getElementById('assist-overlay');

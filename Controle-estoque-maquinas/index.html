@@ -3116,7 +3116,7 @@ const DB_NODE = "maquinas_rm";
    visivel, nenhum de nos dois tinha como saber se o aparelho estava rodando o
    que foi publicado ou uma copia velha do cache do app instalado. Diagnostico
    por adivinhacao custa mais caro que um rodape. */
-const APP_VER='v53';
+const APP_VER='v54';
 const STORE_KEY = "rm_maquinas_v1";
 
 const CORES = [
@@ -7732,6 +7732,41 @@ if ('serviceWorker' in navigator) {
       }
     } catch (e) { }
   }, true);
+})();
+/* ===== MEDIDOR DE DOWNLOAD DA NUVEM =====
+   O plano gratuito do Firebase dá 10 GB de download por mês e em novembro de
+   2026 estourou. Para saber QUEM baixa quanto: na primeira leitura de cada
+   pasta (on/once/get de 'value' ou 'child_added'), pede uma cópia da mesma
+   leitura com o once original -- o Firebase entrega a mesma sincronização,
+   sem baixar de novo -- mede o tamanho em texto (≈ bytes) e avisa a Central
+   ({rm:'uso'}). Não embrulha o callback de ninguém (o off() continua igual).
+   Só sai o caminho (dois níveis) e o tamanho, nenhum dado. */
+(function () {
+  if (window.parent === window || window.__rmUsoNuvem) return; window.__rmUsoNuvem = 1;
+  var vistos = {}, tentativas = 0;
+  function caminho(q) {
+    try { var r = q.ref || q; var u = decodeURIComponent(String(r.toString()).replace(/^https?:\/\/[^/]+\/?/, '').split('?')[0]);
+      return u.split('/').filter(Boolean).slice(0, 2).join('/') || '(raiz)'; } catch (e) { return '?'; }
+  }
+  function mede(q, onceOrig) {
+    var c = caminho(q); if (c === '?' || /^\.info/.test(c) || vistos[c]) return; vistos[c] = 1;
+    try {
+      onceOrig.call(q.ref || q, 'value').then(function (s) {
+        var b = 0; try { b = JSON.stringify(s.val()).length; } catch (e) { }
+        window.parent.postMessage({ rm: 'uso', caminho: c.slice(0, 60), bytes: b }, '*');
+      }).catch(function () { });
+    } catch (e) { }
+  }
+  function liga() {
+    var Q = null; try { Q = window.firebase && firebase.database && firebase.database.Query && firebase.database.Query.prototype; } catch (e) { }
+    if (!Q) { if (++tentativas < 90) setTimeout(liga, 1000); return; }
+    if (Q.__rmUso) return; Q.__rmUso = 1;
+    var on = Q.on, once = Q.once, get = Q.get;
+    Q.on = function (ev) { if (ev === 'value' || ev === 'child_added') mede(this, once); return on.apply(this, arguments); };
+    Q.once = function (ev) { if (ev === 'value' || ev === 'child_added') mede(this, once); return once.apply(this, arguments); };
+    if (get) Q.get = function () { mede(this, once); return get.apply(this, arguments); };
+  }
+  liga();
 })();
 </script>
 <script>

@@ -6354,7 +6354,17 @@ function logoRM(){
    documento daqui tem a propria folha de estilo, e assim o timbrado sai igual
    em todos sem depender de nenhuma delas. Antes era um cabecalho antigo
    ("RM ESTRUTURAS / Construindo com solidez"), sem CNPJ nem endereco. */
+/* O tipo e a nota do papel sao TEXTO (levam nome de obra e de cliente):
+   sempre escapados aqui. Antes um nome como <img onerror=...> rodava como
+   codigo no relatorio (simulador de ataque, etapa 2). Entidade que ja vem
+   pronta (&amp;) e lida antes, para nao sair dobrada. */
+function textoPapel(s){
+  let t=String(s==null?'':s);
+  if(/&[#a-z0-9]+;/i.test(t)){ const ta=document.createElement('textarea'); ta.innerHTML=t; t=ta.value; }
+  return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
 function cabecalhoPDF(tipo){
+  tipo=textoPapel(tipo);
   const src=(typeof LOGO==='string'&&LOGO)||logoRM(), E=RM_EMPRESA, c='<div style="padding-left:14px;border-left:1px solid #e1e4e8">';
   return '<div class="rm-timbre" style="display:flex;justify-content:space-between;align-items:center;gap:24px;'
     +'padding:0 0 11px;margin:0 0 '+(tipo?'10px':'16px')+';border-bottom:2px solid #F24619;-webkit-print-color-adjust:exact;print-color-adjust:exact">'
@@ -6394,6 +6404,7 @@ function papelariaCSS(){
     +'body{padding-bottom:16mm!important;-webkit-box-decoration-break:clone;box-decoration-break:clone}';
 }
 function papelariaHTML(nota){
+  nota=textoPapel(nota);
   return '<div class="rm-pe"><div class="lin"><div>51 99789-7879 \u00b7 @rm.estruturas</div>'
     +'<div class="c">www.rmestruturas.com.br</div><div class="d"><img src="'+LOGO_SIMBOLO+'" alt=""></div></div>'
     +(nota?'<div class="pe-nota">'+nota+'</div>':'')+'</div>'
@@ -10725,7 +10736,7 @@ function applyImport(){
    publicacao, e ha uma prova automatica que falha se um subir sem o outro.
    Assim o numero na tela e' o mesmo do arquivo que o aparelho guardou, e
    dizer "estou na v15" passa a significar alguma coisa. */
-const APP_VER='v170';
+const APP_VER='v171';
 (function(){ try{ const p=document.getElementById('verPill'); if(p)p.textContent=APP_VER; }catch(e){} })();
 /* Versao nova assumiu com a pagina aberta: avisa, em vez de recarregar por
    conta propria e jogar fora um orcamento pela metade. */
@@ -15765,6 +15776,41 @@ function orcDocHTML(modo,valores,fora){
       }
     } catch (e) { }
   }, true);
+})();
+/* ===== MEDIDOR DE DOWNLOAD DA NUVEM =====
+   O plano gratuito do Firebase dá 10 GB de download por mês e em novembro de
+   2026 estourou. Para saber QUEM baixa quanto: na primeira leitura de cada
+   pasta (on/once/get de 'value' ou 'child_added'), pede uma cópia da mesma
+   leitura com o once original -- o Firebase entrega a mesma sincronização,
+   sem baixar de novo -- mede o tamanho em texto (≈ bytes) e avisa a Central
+   ({rm:'uso'}). Não embrulha o callback de ninguém (o off() continua igual).
+   Só sai o caminho (dois níveis) e o tamanho, nenhum dado. */
+(function () {
+  if (window.parent === window || window.__rmUsoNuvem) return; window.__rmUsoNuvem = 1;
+  var vistos = {}, tentativas = 0;
+  function caminho(q) {
+    try { var r = q.ref || q; var u = decodeURIComponent(String(r.toString()).replace(/^https?:\/\/[^/]+\/?/, '').split('?')[0]);
+      return u.split('/').filter(Boolean).slice(0, 2).join('/') || '(raiz)'; } catch (e) { return '?'; }
+  }
+  function mede(q, onceOrig) {
+    var c = caminho(q); if (c === '?' || /^\.info/.test(c) || vistos[c]) return; vistos[c] = 1;
+    try {
+      onceOrig.call(q.ref || q, 'value').then(function (s) {
+        var b = 0; try { b = JSON.stringify(s.val()).length; } catch (e) { }
+        window.parent.postMessage({ rm: 'uso', caminho: c.slice(0, 60), bytes: b }, '*');
+      }).catch(function () { });
+    } catch (e) { }
+  }
+  function liga() {
+    var Q = null; try { Q = window.firebase && firebase.database && firebase.database.Query && firebase.database.Query.prototype; } catch (e) { }
+    if (!Q) { if (++tentativas < 90) setTimeout(liga, 1000); return; }
+    if (Q.__rmUso) return; Q.__rmUso = 1;
+    var on = Q.on, once = Q.once, get = Q.get;
+    Q.on = function (ev) { if (ev === 'value' || ev === 'child_added') mede(this, once); return on.apply(this, arguments); };
+    Q.once = function (ev) { if (ev === 'value' || ev === 'child_added') mede(this, once); return once.apply(this, arguments); };
+    if (get) Q.get = function () { mede(this, once); return get.apply(this, arguments); };
+  }
+  liga();
 })();
 </script>
 <script>
