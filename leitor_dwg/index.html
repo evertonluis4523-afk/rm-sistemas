@@ -4252,7 +4252,7 @@ window.RMGL=(function(){
   function vista(box, geo, cam) {
     return three().then(T => {
       let V = box._rmgl;
-      if (!V || V.morto || !box.contains(V.cv)) { if (V && V.R) try { V.R.dispose(); } catch (e) {} V = box._rmgl = criaVista(T, box, cam); }
+      if (!V || V.morto || !box.contains(V.cv)) { if (V && V.R) descartaVista(V); V = box._rmgl = criaVista(T, box, cam); }
       if (V.geo !== geo) montaVista(V, geo);
       V.externa = cam;
       if (cam.az !== V.alvo.az || cam.el !== V.alvo.el || (cam.zoom || 1) !== V.alvo.zoom) {
@@ -4337,10 +4337,21 @@ window.RMGL=(function(){
     infoVista(V);
     return V;
   }
+  /* O mapa de reflexo (PMREM) é calculado UMA vez por luz e guardado; antes
+     era refeito a cada troca, e a textura do céu de origem ficava na memória.
+     (Teste do dono, novembro de 2026: os painéis de estúdio nos reflexos
+     deixaram o aço quase branco, na tela e no papel -- ficaram de fora.) */
+  function ambiente(T, pm, a, b) {
+    const sky = ceu(T, a, b);
+    try { return pm.fromEquirectangular(sky); } finally { sky.dispose(); }
+  }
   function iluminaVista(V) {
     const T = V.T, est = window.RM3D ? RM3D.estilo() : 'escuro', St = window.RM3D ? RM3D.S() : { f0: '#2b323a', f1: '#13171b' }, cl = est === 'claro', L = LUZ_EST[V.luz] || LUZ_EST.dia;
+    if (V.cena.background && V.cena.background.dispose) V.cena.background.dispose();
     V.cena.background = ceu(T, St.f0, St.f1);
-    if (V.env) V.env.dispose(); V.env = V.pm.fromEquirectangular(ceu(T, L.env[0], L.env[1])); V.cena.environment = V.env.texture;
+    V.ambientes = V.ambientes || new Map();
+    if (!V.ambientes.has(V.luz)) V.ambientes.set(V.luz, ambiente(T, V.pm, L.env[0], L.env[1]));
+    V.cena.environment = V.ambientes.get(V.luz).texture;
     const s = Math.max(V.tam.x, V.tam.y, V.tam.z, .5);
     V.cena.fog = new T.Fog(new T.Color(St.f1), Math.max(V.tam.x, V.tam.z) * 3, Math.max(V.tam.x, V.tam.z) * 9);
     V.sol.color.set(L.sol); V.sol.intensity = L.f; V.hemi.intensity = L.h; V.apoio.intensity = L.ap; V.R.toneMappingExposure = cl ? 1 : 1.05;
@@ -4484,7 +4495,17 @@ window.RMGL=(function(){
   function descartaVista(V) {
     if (V.morto) return; V.morto = true; cancelAnimationFrame(V.raf); try { V.obs && V.obs.disconnect(); } catch (e) {}
     V.cena.traverse(o => { if (o.isInstancedMesh) o.dispose(); if (o.geometry) o.geometry.dispose(); });
-    if (V.env) V.env.dispose(); try { V.pm.dispose(); V.R.dispose(); } catch (e) {}
+    /* tudo que a vista criou: mapas de reflexo, céu, materiais e texturas,
+       e o contexto WebGL devolvido ao navegador (ele limita quantos existem
+       ao mesmo tempo: abrir e fechar o 3D várias vezes acabava sem 3D) */
+    try {
+      if (V.ambientes) V.ambientes.forEach(rt => rt.dispose());
+      if (V.cena.background && V.cena.background.dispose) V.cena.background.dispose();
+      const mats = new Set(Object.values(V.M || {}).concat([V.piso && V.piso.material, V.sel && V.sel.material]).filter(Boolean)), texs = new Set();
+      mats.forEach(m => { Object.values(m).forEach(v => { if (v && v.isTexture) texs.add(v); }); m.dispose(); });
+      texs.forEach(t => t.dispose());
+      V.pm.dispose(); V.R.dispose(); V.R.forceContextLoss();
+    } catch (e) {}
   }
   function materiais(T){const rg=texRuido(T,180,60),tx=texXadrez(T);
     return {u:new T.MeshStandardMaterial({color:0xa7b0b9,metalness:.45,roughness:.48,roughnessMap:rg,envMapIntensity:1.4,side:T.DoubleSide}),
@@ -4526,7 +4547,7 @@ window.RMGL=(function(){
       if(!PAP){const cv=document.createElement('canvas');const R=new T.WebGLRenderer({canvas:cv,antialias:true,preserveDrawingBuffer:true,alpha:false});
         R.toneMapping=T.ACESFilmicToneMapping;R.outputColorSpace=T.SRGBColorSpace;R.shadowMap.enabled=false;
         const cena=new T.Scene();cena.background=new T.Color(0xffffff);const pm=new T.PMREMGenerator(R);
-        cena.environment=pm.fromEquirectangular(ceu(T,'#9fb6cf','#eef2f6')).texture;
+        cena.environment=ambiente(T,pm,'#9fb6cf','#eef2f6').texture;pm.dispose();
         cena.add(new T.HemisphereLight(0xf2f5f8,0x8a8784,1.1));const luz=new T.DirectionalLight(0xffffff,2.2);cena.add(luz);cena.add(luz.target);
         PAP={R,cena,luz,cam:new T.PerspectiveCamera(32,1,.05,2000),M:materiais(T),geo:null,grupo:null,cv};}
       if(PAP.geo!==geo){if(PAP.grupo){PAP.cena.remove(PAP.grupo);PAP.grupo.traverse(o=>{if(o.geometry)o.geometry.dispose();});}
@@ -4558,12 +4579,23 @@ window.RMGL=(function(){
   function corRGB(css){const m=String(css||'').match(/rgba?\(\s*([\d.]+)\s*,\s*([\d.]+)\s*,\s*([\d.]+)(?:\s*,\s*([\d.]+))?/);
     if(m)return [m[1]/255,m[2]/255,m[3]/255,m[4]==null?1:+m[4]];const h=String(css||'').match(/^#([0-9a-f]{6})$/i);
     if(h){const n=parseInt(h[1],16);return [(n>>16&255)/255,(n>>8&255)/255,(n&255)/255,1];}return [.7,.73,.76,1];}
+  /* a mesma peça de novo (o papel redesenha várias vezes): não refaz a
+     geometria. Compara cor, tipo e cada ponto. */
+  function mesmaCamada(cache,polys,up,o){
+    if(!cache || cache.up!==up || cache.arestas!==!!o.arestas || cache.papel!==!!o.papel || cache.faces.length!==polys.length)return false;
+    for(let i=0;i<polys.length;i++){
+      const a=cache.faces[i],b=polys[i];
+      if(a.cor!==b.cor || a.rel!==!!b.rel || a.cum!==!!b.cum || a.p.length!==(b.p||[]).length)return false;
+      for(let j=0;j<a.p.length;j++){const p=a.p[j],q=b.p[j];if(p[0]!==q[0]||p[1]!==q[1]||p[2]!==q[2])return false;}
+    }
+    return true;
+  }
   function camada(polys,f,W,H,k,o){
     const T=TT;o=o||{};if(!T||!polys||!polys.length||!suporta())return null;
     try{
       if(!CAM){const cv=document.createElement('canvas'),R=new T.WebGLRenderer({canvas:cv,antialias:true,alpha:true,preserveDrawingBuffer:true});
         R.setClearColor(0x000000,0);R.shadowMap.enabled=true;R.shadowMap.type=T.PCFSoftShadowMap;R.toneMapping=T.ACESFilmicToneMapping;R.outputColorSpace=T.SRGBColorSpace;
-        const cena=new T.Scene(),pm=new T.PMREMGenerator(R);cena.environment=pm.fromEquirectangular(ceu(T,'#7f9bb8','#e6ecf1')).texture;
+        const cena=new T.Scene(),pm=new T.PMREMGenerator(R);cena.environment=ambiente(T,pm,'#7f9bb8','#e6ecf1').texture;pm.dispose();
         const hemi=new T.HemisphereLight(0xeef3f8,0x6b6762,.75),sol=new T.DirectionalLight(0xfff6ea,1.7);sol.castShadow=true;sol.shadow.mapSize.set(2048,2048);sol.shadow.bias=-0.0006;sol.shadow.normalBias=0.03;sol.shadow.radius=4;
         cena.add(hemi);cena.add(sol);cena.add(sol.target);
         const base={vertexColors:true,metalness:.3,roughness:.5,envMapIntensity:.8,side:T.DoubleSide,polygonOffset:true};
@@ -4574,9 +4606,13 @@ window.RMGL=(function(){
         const cam=new T.OrthographicCamera();cam.matrixAutoUpdate=false;
         CAM={cv,R,cena,hemi,sol,mat,piso,cam,malhas:[]};}
       const C=CAM,up=o.up==null?2:o.up,h=[0,1,2].filter(i=>i!==up);
+      let mn,mx;
+      const mudou=!mesmaCamada(C.cache,polys,up,o);
+      if(mudou){
+      C.cache=null;
       C.malhas.forEach(m=>{C.cena.remove(m);m.geometry.dispose();});C.malhas=[];
       /* geometria: cada polígono em triângulos (pode ser côncavo) */
-      const B={p:{pos:[],cor:[]},rel:{pos:[],cor:[]},cum:{pos:[],cor:[]}},mn=[1e18,1e18,1e18],mx=[-1e18,-1e18,-1e18];
+      const B={p:{pos:[],cor:[]},rel:{pos:[],cor:[]},cum:{pos:[],cor:[]}};mn=[1e18,1e18,1e18];mx=[-1e18,-1e18,-1e18];
       polys.forEach(x=>{const P=x.p;if(!P||P.length<3)return;const A=B[x.cum?'cum':x.rel?'rel':'p'],c=corRGB(x.cor);
         P.forEach(q=>{for(let i=0;i<3;i++){if(q[i]<mn[i])mn[i]=q[i];if(q[i]>mx[i])mx[i]=q[i];}});
         let tri;if(P.length===3)tri=[[0,1,2]];else if(P.length===4)tri=[[0,1,2],[0,2,3]];else{
@@ -4592,13 +4628,15 @@ window.RMGL=(function(){
            um pouco para trás (polygonOffset), então a linha não pisca */
         if(o.arestas&&k2==='p'){if(!C.linha)C.linha=new T.LineBasicMaterial({color:0x1c2128,transparent:true,opacity:.75});
           const ls=new T.LineSegments(new T.EdgesGeometry(g,25),C.linha);ls.frustumCulled=false;C.cena.add(ls);C.malhas.push(ls);}});
+      C.cache={mn,mx,up,arestas:!!o.arestas,papel:!!o.papel,faces:polys.map(x=>({cor:x.cor,rel:!!x.rel,cum:!!x.cum,p:(x.p||[]).map(p=>[p[0],p[1],p[2]])}))};
+      }else{mn=C.cache.mn;mx=C.cache.mx;}
       /* piso na cota mais baixa, com folga */
       const cen=[0,1,2].map(i=>(mn[i]+mx[i])/2),tam=Math.max(mx[h[0]]-mn[h[0]],mx[h[1]]-mn[h[1]],(mx[up]-mn[up])*.8,1),ext=tam*.72;
       const pz=mn[up]-Math.max(1,tam*.002),Pp=(a,b)=>{const q=[0,0,0];q[h[0]]=a;q[h[1]]=b;q[up]=pz;return q;};
       const cs=[Pp(cen[h[0]]-ext,cen[h[1]]-ext),Pp(cen[h[0]]+ext,cen[h[1]]-ext),Pp(cen[h[0]]+ext,cen[h[1]]+ext),Pp(cen[h[0]]-ext,cen[h[1]]+ext)];
-      const pg=new T.BufferGeometry();pg.setAttribute('position',new T.Float32BufferAttribute([].concat(cs[0],cs[1],cs[2],cs[0],cs[2],cs[3]),3));
+      if(mudou){const pg=new T.BufferGeometry();pg.setAttribute('position',new T.Float32BufferAttribute([].concat(cs[0],cs[1],cs[2],cs[0],cs[2],cs[3]),3));
       pg.setAttribute('uv',new T.Float32BufferAttribute([0,0,1,0,1,1,0,0,1,1,0,1],2));pg.computeVertexNormals();
-      C.piso.geometry.dispose();C.piso.geometry=pg;C.piso.material.color.set(window.RM3D&&RM3D.estilo()==='claro'?0xd3d8dd:window.RM3D&&RM3D.estilo()==='blueprint'?0x2a4a6e:0x7d8186);C.piso.visible=!o.papel&&!o.semPiso;C.piso.frustumCulled=false;
+      C.piso.geometry.dispose();C.piso.geometry=pg;}C.piso.material.color.set(window.RM3D&&RM3D.estilo()==='claro'?0xd3d8dd:window.RM3D&&RM3D.estilo()==='blueprint'?0x2a4a6e:0x7d8186);C.piso.visible=!o.papel&&!o.semPiso;C.piso.frustumCulled=false;
       /* câmera: a projeção do desenho, em forma de matriz */
       const L=1000,O=f(cen),ex=[0,1,2].map(i=>{const q=cen.slice();q[i]+=L;const r=f(q);return [(r[0]-O[0])/L,(r[1]-O[1])/L,(r[2]-O[2])/L];});
       let dmin=1e18,dmax=-1e18;[mn,mx,cs[0],cs[1],cs[2],cs[3]].forEach(q=>{});
@@ -4621,7 +4659,8 @@ window.RMGL=(function(){
       C.sol.position.set(...cen.map((c0,i)=>c0+dir[i]/nd*tam*3));C.sol.target.position.set(...cen);C.sol.castShadow=!o.papel;
       const S=tam*1.8;Object.assign(C.sol.shadow.camera,{left:-S,right:S,top:S,bottom:-S,near:1,far:tam*8});C.sol.shadow.camera.updateProjectionMatrix();
       C.hemi.position.set(...dir);C.hemi.intensity=(o.papel?.9:.6)*(o.arestas?1.6:1);
-      C.R.setPixelRatio(k||1);C.R.setSize(Math.max(1,Math.round(W)),Math.max(1,Math.round(H)),false);
+      if(C.k!==(k||1)||C.w!==W||C.h!==H){C.k=k||1;C.w=W;C.h=H;
+        C.R.setPixelRatio(C.k);C.R.setSize(Math.max(1,Math.round(W)),Math.max(1,Math.round(H)),false);}
       C.R.render(C.cena,C.cam);
       C.cv._espelho=C.espelho;return C.cv;
     }catch(e){try{console.warn('motor 3D:',e&&e.message);}catch(_){}return null;}
@@ -32298,7 +32337,7 @@ if('serviceWorker' in navigator && location.protocol.startsWith('http')){
 }
 </script>
 <script>/* versão publicada (PADRAO_RM.md §3): sobe a cada publicação, junto com o CACHE do sw.js */
-const APP_VER='v308';
+const APP_VER='v309';
 </script>
 <script id="rmVersaoBloco">
 /* ===== SELO DE VERSÃO — igual em todos os sistemas (PADRAO_RM.md §3) =====
