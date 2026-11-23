@@ -29034,6 +29034,8 @@ html[data-theme="escuro"] .log-det>summary.err{color:var(--red)}.log-det>summary
     return pares.every(p=>p.dest.pedido<=p.src.faixa.pedido)?pares:null;
   }
   function calculaCoberturaPlanta(){
+    /* antes de qualquer conta (prévia, 3D, ficha): as águas na mesma montagem */
+    if(COB.leitura==='sketchup'&&cobAlinhaAguas()){COB.confirmada=false;salvaCob();}
     const erros=[],avisos=[],util=inteiro(COB.util),e=Math.max(1,inteiro(COB.estruturas)||1),incAgr=Math.max(1,inteiro(COB.agrupamento)||10);
     const blocosAtivos=COB.blocos.filter(b=>b.ativo!==false);
     if(!util)erros.push('Informe a largura útil da telha.');
@@ -29525,9 +29527,19 @@ html[data-theme="escuro"] .log-det>summary.err{color:var(--red)}.log-det>summary
       chamadas+=
         '<g class="face-call"><title>'+h(nome)+'</title><rect x="'+lx+'" y="'+(ly-15).toFixed(1)+'" width="206" height="30" rx="7"/><circle cx="'+(lx+15)+'" cy="'+ly.toFixed(1)+'" r="9" class="marca '+cor+'"/><text x="'+(lx+15)+'" y="'+(ly+3.3).toFixed(1)+'" class="num">'+(bi+1)+'</text><text x="'+(lx+31)+'" y="'+(ly+3.5).toFixed(1)+'" class="call-name">'+h(curto)+'</text></g>';
     });
+    /* ONDE É A FRENTE NA PRÉVIA. A prévia pode sair girada 90°, e sem
+       escrever FRENTE e FUNDOS nas pontas não dava para saber para onde a
+       seta "fundos → frente" devia apontar. */
+    let pontas='';
+    { const F=COB_FRENTE[COB.frente];
+      if(F){const v=V([F[0],F[1],0]),dx=v[0],dy=-v[1],L=ox,R=ox+(x1-x0)*sc,T=oy,B=oy+(y1-y0)*sc,yb=Math.min(B+13,313).toFixed(1),cx=((L+R)/2).toFixed(1);
+        const t=(x,y,anc,txt,cls)=>'<text x="'+x+'" y="'+y+'" text-anchor="'+anc+'" class="ponta-obra '+cls+'" font-size="10.5" font-weight="800" letter-spacing=".06em" fill="'+(cls==='fr'?'#D53309':'#5b6570')+'">'+txt+'</text>';
+        if(Math.abs(dx)>=Math.abs(dy)){const fd=dx>0;pontas=t((fd?R:L).toFixed(1),yb,fd?'end':'start',fd?'FRENTE ▶':'◀ FRENTE','fr')+t((fd?L:R).toFixed(1),yb,fd?'start':'end',fd?'◀ FUNDOS':'FUNDOS ▶','fu');}
+        else{const fb=dy>0;pontas=t(cx,fb?yb:(T-6).toFixed(1),'middle',fb?'FRENTE ▼':'FRENTE ▲','fr')+t(cx,fb?(T-6).toFixed(1):yb,'middle',fb?'FUNDOS ▲':'FUNDOS ▼','fu');}}
+    }
     return '<svg viewBox="0 0 900 330" role="img" aria-label="Cobertura importada do SketchUp em posição real"><defs><marker id="cobSeqArr" markerUnits="userSpaceOnUse" markerWidth="13" markerHeight="10" refX="12" refY="5" orient="auto"><path d="M0 0L13 5L0 10Z" fill="#F24619"/></marker><marker id="cobFaceArr" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0L8 4L0 8Z" fill="#69737d"/></marker></defs><style>'+ 
       ''+'.face{stroke:'+C.traco+';stroke-width:2}.face.a{fill:rgba(242,70,25,.14)}.face.b{fill:rgba(77,131,173,.14)}.face.c{fill:rgba(201,138,30,.14)}.face.d{fill:rgba(74,138,95,.14)}'+'.furo{fill:'+C.fundo+';stroke:#b42318;stroke-width:1.5;stroke-dasharray:4 3}.telha{stroke-width:1}.telha.a{stroke:#d84a22}.telha.b{stroke:#4d83ad}.telha.c{stroke:#c98a1e}.telha.d{stroke:#4a8a5f}.marca.a{fill:#F24619}.marca.b{fill:#4d83ad}.marca.c{fill:#c98a1e}.marca.d{fill:#4a8a5f}.num{font:700 10px Satoshi,Arial,sans-serif;fill:#fff;text-anchor:middle}'+'.call-line{fill:none;stroke:'+C.fraco+';stroke-width:1.2}'+'.face-call rect{fill:'+C.fundo+';stroke:'+C.borda+';stroke-width:1}'+'.call-name{font:700 9.5px Satoshi,Arial,sans-serif;fill:'+C.texto+'}.seq{stroke:#F24619;stroke-width:2.5;stroke-dasharray:6 4}.edge{cursor:pointer;outline:none}'+'.edge circle{fill:#747d86;stroke:'+C.fundo+';stroke-width:2}.edge.start circle{fill:#F24619}.edge:hover circle,.edge:focus circle{stroke:#16191d;stroke-width:3}'+'.edge-letter{font:800 10px Satoshi,Arial,sans-serif;fill:#fff;text-anchor:middle}'+'.edge-label{font:800 9px Satoshi,Arial,sans-serif;fill:'+C.texto+';text-anchor:middle;paint-order:stroke;stroke:'+C.fundo+';stroke-width:3px;stroke-linejoin:round}.edge.start .edge-label{fill:#D53309}'+'.leg{font:10px Satoshi,Arial,sans-serif;fill:'+C.fraco+'}</style>'+chamadas+corpo+
-      '<text x="24" y="321" class="leg">Nomes dos grupos indicados pelas setas · a cor mostra para que lado a água escoa'+(girar?' · prévia girada 90° para melhor leitura':'')+'</text></svg>';
+      pontas+'<text x="24" y="327" class="leg">Nomes dos grupos indicados pelas setas · a cor mostra para que lado a água escoa'+(girar?' · prévia girada 90° para melhor leitura':'')+'</text></svg>';
   }
   function svgPreview(r){
     if(COB.leitura==='sketchup')return svgPreviewSketchup(r);
@@ -29668,15 +29680,44 @@ html[data-theme="escuro"] .log-det>summary.err{color:var(--red)}.log-det>summary
      frente-fundos começa nos fundos e vai para a frente. O ⇄ de uma água (ou
      o clique na borda A/B da prévia) continua valendo para aquela água,
      até a frente ser escolhida de novo. Teste leitor-cobertura-frente-manda. */
-  function cobSentidoPelaFrente(forca){
-    const F=COB_FRENTE[COB.frente];if(!F)return false;let mudou=false;
-    (COB.blocos||[]).forEach(b=>{
-      if(!b||!b.medida3d)return;
-      if(forca)delete b.sentidoManual;else if(b.sentidoManual)return;
-      const d=cobDirMundo(b,1),c=d[0]*F[0]+d[1]*F[1];if(Math.abs(c)<.7)return;
-      const quer=c>0?'ltr':'rtl';if(b.sentido!==quer){b.sentido=quer;mudou=true;}
+  /* AS ÁGUAS NUNCA MONTAM UMA PARA CADA LADO. "Frente definida e setas de
+     ambos os lados direcionando para o mesmo lado": com a frente escolhida,
+     toda água que anda ao longo da frente-fundos segue a MESMA montagem da
+     obra (COB.montFrente: 'frente' = frente → fundos, o padrão pedido pelo
+     Everton; 'fundos' = fundos → frente); o ⇄ de qualquer água troca a montagem da obra inteira. Sem a
+     frente, as águas paralelas seguem a primeira, e o ⇄ vira todas juntas.
+     Teste leitor-cobertura-frente-manda. */
+  function cobQuerPelaFrente(b){
+    const F=COB_FRENTE[COB.frente];if(!F||!b||!b.medida3d)return '';
+    const d=cobDirMundo(b,1),c=d[0]*F[0]+d[1]*F[1];if(Math.abs(c)<.7)return '';
+    const praFrente=COB.montFrente==='fundos';
+    return (c>0)===praFrente?'ltr':'rtl';
+  }
+  function cobAlinhaAguas(ref){
+    let mudou=false;const bs=(COB.blocos||[]).filter(b=>b&&b.medida3d);
+    bs.forEach(b=>{const q=cobQuerPelaFrente(b);if(q&&b.sentido!==q){b.sentido=q;mudou=true;}});
+    /* as que não seguem a frente (sem frente, ou de lado): cada uma segue a
+       primeira paralela a ela (ou a de referência, quando houver) */
+    const livres=bs.filter(b=>!cobQuerPelaFrente(b)),feitas=[];
+    const ordem=ref&&livres.includes(ref)?[ref,...livres.filter(b=>b!==ref)]:livres;
+    ordem.forEach(b=>{
+      const d=cobDirMundo(b,cobSentidoFace(b)==='rtl'?-1:1);
+      const guia=feitas.find(g=>{const e=cobDirMundo(g,1);return Math.abs(e[0]*d[0]+e[1]*d[1])>=.7;});
+      if(guia){const e=cobDirMundo(guia,cobSentidoFace(guia)==='rtl'?-1:1),u=cobDirMundo(b,1),q=(u[0]*e[0]+u[1]*e[1])>0?'ltr':'rtl';if(b.sentido!==q){b.sentido=q;mudou=true;}}
+      feitas.push(b);
     });
     return mudou;
+  }
+  function cobTrocaSentido(b,novo){
+    if(!b)return;
+    if(cobQuerPelaFrente(b)){if(novo!==cobSentidoFace(b))COB.montFrente=COB.montFrente==='fundos'?'frente':'fundos';}
+    else b.sentido=novo;
+    cobAlinhaAguas(b);marcaPendente();
+  }
+  function cobRotuloSentido(b){
+    const q=cobQuerPelaFrente(b);
+    if(q)return COB.montFrente==='fundos'?'fundos → frente':'frente → fundos';
+    return cobSentidoFace(b)==='rtl'?'B → A':'A → B';
   }
   function cobFrenteHTML(){
     const bl=(COB.blocos||[]).filter(b=>b.poligono&&b.poligono.length>2);if(!bl.length||COB.leitura==='corte')return '';
@@ -29689,7 +29730,7 @@ html[data-theme="escuro"] .log-det>summary.err{color:var(--red)}.log-det>summary
         +'<text x="'+X(cx).toFixed(1)+'" y="'+(Y(cy)+3).toFixed(1)+'" font-size="9" font-weight="700" text-anchor="middle">'+h(bl[i].nome).slice(0,14)+'</text>';});
     const opos={'-y':'+y','+y':'-y','-x':'+x','+x':'-x'}[COB.frente];
     const bt=(k,cls)=>'<button type="button" class="cob-fr-b '+cls+(COB.frente===k?' on':'')+(opos===k?' fundos':'')+'" data-cob-frente="'+k+'" title="A frente da obra fica deste lado">'+(COB.frente===k?'FRENTE':opos===k?'fundos':'frente aqui?')+'</button>';
-    return '<div class="cob-frente"><div class="cob-fr-t"><b>Frente da obra</b><span>'+(COB.frente?'as águas que andam ao longo da obra montam dos fundos para a frente (⇄ inverte só uma água); na folha, cada água sai como está no 3D'
+    return '<div class="cob-frente"><div class="cob-fr-t"><b>Frente da obra</b><span>'+(COB.frente?'todas as águas montam '+(COB.montFrente==='fundos'?'dos fundos para a frente':'da frente para os fundos')+' (⇄ troca todas juntas); na folha, cada água sai como está no 3D'
       :'clique no lado da frente: a folha passa a dizer fundos → frente ou frente → fundos junto da seta')+'</span></div>'
       +'<div class="cob-fr-g">'+bt('+y','t')+bt('-x','l')+'<svg viewBox="0 0 220 140" aria-label="Planta da cobertura vista de cima">'+g+'</svg>'+bt('+x','r')+bt('-y','b')+'</div></div>';
   }
@@ -29705,7 +29746,6 @@ html[data-theme="escuro"] .log-det>summary.err{color:var(--red)}.log-det>summary
   function pintaBlocos(){
     const box=document.getElementById('cobBlocos');if(!box)return;
     /* obra importada ou aberta com a frente já escolhida: as águas seguem a frente */
-    if(cobSentidoPelaFrente(false)){COB.confirmada=false;salvaCob();}
     /* O nome do bloco e' o "Destino" do pedido, o titulo no DXF e a
        sequencia de montagem -- e' ele que o fabricante le. So' que vem
        pronto do SketchUp, com o nome que a arquiteta deu ao grupo. Renomear
@@ -29742,7 +29782,7 @@ html[data-theme="escuro"] .log-det>summary.err{color:var(--red)}.log-det>summary
           '<span class="tl-f-d"><b>'+dec(b.inclinacao,1)+'</b>%</span>'+
           ((b.furos||[]).length?'<span class="tl-f-d" title="Recortes / vãos internos preservados">'+b.furos.length+(b.furos.length>1?' vãos':' vão')+'</span>':'')+
           telhaFace(i)+ajuste(i)+
-          '<button type="button" class="btn ghost" data-cob-inverter="'+i+'" title="Inverte o sentido da montagem desta face">'+(sentido==='rtl'?'B → A':'A → B')+' ⇄</button>'+
+          '<button type="button" class="btn ghost" data-cob-inverter="'+i+'" title="Inverte a montagem de todas as águas juntas">'+cobRotuloSentido(COB.blocos[i])+' ⇄</button>'+
           excluir(i)+
           (b.aviso?'<div class="cob-erro">'+h(b.aviso)+'</div>':'')+'</div>';
       }
@@ -29784,7 +29824,7 @@ html[data-theme="escuro"] .log-det>summary.err{color:var(--red)}.log-det>summary
     }));
     box.querySelectorAll('[data-cob-frente]').forEach(s=>s.addEventListener('click',()=>{
       const k=s.dataset.cobFrente;COB.frente=COB.frente===k?'':k;
-      if(cobSentidoPelaFrente(true)){marcaPendente();return;}
+      if(cobAlinhaAguas()){marcaPendente();return;}
       salvaCob();pintaBlocos();
     }));
     box.querySelectorAll('[data-cob-ajo]').forEach(s=>s.addEventListener('change',()=>{
@@ -29809,7 +29849,7 @@ html[data-theme="escuro"] .log-det>summary.err{color:var(--red)}.log-det>summary
       marcaPendente();
     }));
     box.querySelectorAll('[data-cob-inverter]').forEach(s=>s.addEventListener('click',()=>{
-      const b=COB.blocos[+s.dataset.cobInverter];if(!b)return;b.sentido=cobSentidoFace(b)==='rtl'?'ltr':'rtl';b.sentidoManual=true;marcaPendente();
+      const b=COB.blocos[+s.dataset.cobInverter];if(!b)return;cobTrocaSentido(b,cobSentidoFace(b)==='rtl'?'ltr':'rtl');
     }));
   }
 
@@ -29837,7 +29877,7 @@ html[data-theme="escuro"] .log-det>summary.err{color:var(--red)}.log-det>summary
     if(planta)pintaBlocos();
     const pv=document.getElementById('cobSvg');if(pv){
       pv.innerHTML=svgPreview(r);
-      const defineBorda=el=>{const p=String(el.dataset.cobFaceDir||'').split(':'),b=COB.blocos[+p[0]];if(!b)return;b.sentido=p[1]==='rtl'?'rtl':'ltr';b.sentidoManual=true;marcaPendente();};
+      const defineBorda=el=>{const p=String(el.dataset.cobFaceDir||'').split(':'),b=COB.blocos[+p[0]];if(!b)return;cobTrocaSentido(b,p[1]==='rtl'?'rtl':'ltr');};
       pv.querySelectorAll('[data-cob-face-dir]').forEach(el=>{
         el.addEventListener('click',()=>defineBorda(el));
         el.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();defineBorda(el);}});
@@ -32412,7 +32452,7 @@ if('serviceWorker' in navigator && location.protocol.startsWith('http')){
 }
 </script>
 <script>/* versão publicada (PADRAO_RM.md §3): sobe a cada publicação, junto com o CACHE do sw.js */
-const APP_VER='v317';
+const APP_VER='v318';
 </script>
 <script id="rmVersaoBloco">
 /* ===== SELO DE VERSÃO — igual em todos os sistemas (PADRAO_RM.md §3) =====
