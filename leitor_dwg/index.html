@@ -15096,7 +15096,7 @@ function telhaFichaHTML(){
     const W=1000,m=34,EXTRA=40;
     const s=Math.min((W-2*m)/Math.max(1,x1-x0),(longa?280:430)/Math.max(1,yTop-yBase)), H=Math.round((yTop-yBase)*s+2*m+30+EXTRA);
     const ox=(W-(x1-x0)*s)/2, X=x=>ox+(x-x0)*s, Y=y=>H-m-22-EXTRA-(y-yBase)*s, r1=v=>Math.round(v*10)/10;
-    let g='';
+    let g='';const baixo=[];let linhasBaixo=0;
     ts.forEach(t=>{
       const a=r1(X(t.x0)),b=r1(X(t.x1)),pe=r1(Y(t.pe)),ya=r1(Y(t.yA)),yb=r1(Y(t.yB)),alto=Math.min(ya,yb);
       const cor=t.porta&&!t.abaixo?'#dbe8f5':t.queda>0?'#fde5d6':'#eceef1';
@@ -15114,7 +15114,14 @@ function telhaFichaHTML(){
       g+='<text x="'+cx+'" y="'+cy+'" font-size="'+fMed+'" font-weight="700" fill="#141414" text-anchor="middle" dominant-baseline="middle" transform="rotate(-90 '+cx+' '+cy+')">'+txt+'</text>';
       /* o código no pé de cada telha; a estreita leva só o número, embaixo */
       if(temCod)g+='<text x="'+cx+'" y="'+r1(pe-6)+'" font-size="'+fCod+'" font-weight="800" fill="#141414" text-anchor="middle">'+t.cod+'</text>';
-      else{const noAlto=t.pe-yBase>50;g+='<text x="'+cx+'" y="'+r1(noAlto?pe+11:Y(yBase)+12)+'" font-size="'+r1(Math.max(6.5,Math.min(9,w*.45)))+'" font-weight="700" text-anchor="middle" fill="#141414">'+curto(t.cod)+'</text>';}
+      /* "poderia ter colocado o A- ao lado do número já que deslocou pra
+         baixo": embaixo do pé vai o código inteiro (A-01), com a letra que
+         cabe na largura da telha; só a telha estreitíssima fica com o número */
+      else{const noAlto=t.pe-yBase>50,fs=r1(Math.max(7,Math.min(9,(w-1.5)/(t.cod.length*.62)))),tw=t.cod.length*.62*fs,y0=noAlto?pe+11:Y(yBase)+12;
+        /* a etiqueta pode passar da largura da telha; se encostar na da vizinha (também embaixo), desce uma linha */
+        let ln=0;while(baixo.some(o=>o.ln===ln&&Math.abs(o.y-y0)<1&&o.x0<cx+tw/2+2&&cx-tw/2<o.x1+2))ln++;
+        baixo.push({x0:cx-tw/2,x1:cx+tw/2,y:y0,ln});if(!noAlto)linhasBaixo=Math.max(linhasBaixo,ln);
+        g+='<text x="'+cx+'" y="'+r1(y0+ln*9)+'" font-size="'+fs+'" font-weight="700" text-anchor="middle" fill="#141414">'+t.cod+'</text>';}
     });
     (f.vergas||[]).forEach(v=>{const pe=v.pe!=null?Math.max(v.pe,yBase):yBase;
       if(Math.min(v.x1,x1)-Math.max(v.x0,x0)<=1)return;
@@ -15135,7 +15142,7 @@ function telhaFichaHTML(){
     /* cotas para marcar na terça: onde começa cada telha, do canto esquerdo */
     /* abaixo do código das telhas estreitas (que vai embaixo do pé): o título
        "MARCAR NA TERÇA" cobria o "01" e o "04" */
-    const yc=r1(Y(yBase)+(ts.some(t=>X(t.x1)-X(t.x0)<24||Y(t.pe)-Y(Math.max(t.yA,t.yB))<34)?32:24));
+    const yc=r1(Y(yBase)+(ts.some(t=>X(t.x1)-X(t.x0)<24||Y(t.pe)-Y(Math.max(t.yA,t.yB))<34)?32+linhasBaixo*9:24));
     const ini=[...new Set(ts.map(t=>Math.round(t.x0)).concat([Math.round(x1)]))].sort((a,b)=>a-b);
     const marcas=[];ini.forEach(v=>{const px=X(v);if(marcas.length&&px-X(marcas[marcas.length-1])<20){if(v===Math.round(x1))marcas[marcas.length-1]=v;return;}marcas.push(v);});
     g+='<line x1="'+r1(X(x0))+'" y1="'+yc+'" x2="'+r1(X(x1))+'" y2="'+yc+'" stroke="#141414" stroke-width=".8"/>'
@@ -32378,7 +32385,7 @@ if('serviceWorker' in navigator && location.protocol.startsWith('http')){
 }
 </script>
 <script>/* versão publicada (PADRAO_RM.md §3): sobe a cada publicação, junto com o CACHE do sw.js */
-const APP_VER='v314';
+const APP_VER='v315';
 </script>
 <script id="rmVersaoBloco">
 /* ===== SELO DE VERSÃO — igual em todos os sistemas (PADRAO_RM.md §3) =====
