@@ -29655,6 +29655,24 @@ html[data-theme="escuro"] .log-det>summary.err{color:var(--red)}.log-det>summary
        deixa apenas a seta direcionando por onde começar") */
     return Math.abs(c)>=.7?(c>0?'fundos → frente':'frente → fundos'):'';
   }
+  /* "Se está ajustado no sistema dos fundos para a frente, porque na
+     primeira imagem a seta está indo para um lado e a outra para outro?":
+     escolher a frente só mudava o texto; o sentido de cada água continuava o
+     do botão A → B / B → A dela, e as duas águas de uma cumeeira saíam
+     opostas. Agora a frente MANDA: toda água que anda ao longo da
+     frente-fundos começa nos fundos e vai para a frente. O ⇄ de uma água (ou
+     o clique na borda A/B da prévia) continua valendo para aquela água,
+     até a frente ser escolhida de novo. Teste leitor-cobertura-frente-manda. */
+  function cobSentidoPelaFrente(forca){
+    const F=COB_FRENTE[COB.frente];if(!F)return false;let mudou=false;
+    (COB.blocos||[]).forEach(b=>{
+      if(!b||!b.medida3d)return;
+      if(forca)delete b.sentidoManual;else if(b.sentidoManual)return;
+      const d=cobDirMundo(b,1),c=d[0]*F[0]+d[1]*F[1];if(Math.abs(c)<.7)return;
+      const quer=c>0?'ltr':'rtl';if(b.sentido!==quer){b.sentido=quer;mudou=true;}
+    });
+    return mudou;
+  }
   function cobFrenteHTML(){
     const bl=(COB.blocos||[]).filter(b=>b.poligono&&b.poligono.length>2);if(!bl.length||COB.leitura==='corte')return '';
     const contorno=b=>{const sk=b.sketchup;return sk&&Array.isArray(sk.worldOuter)&&sk.worldOuter.length>2?sk.worldOuter.map(p=>({x:+p[0],y:+p[1]})):b.poligono;};
@@ -29666,7 +29684,7 @@ html[data-theme="escuro"] .log-det>summary.err{color:var(--red)}.log-det>summary
         +'<text x="'+X(cx).toFixed(1)+'" y="'+(Y(cy)+3).toFixed(1)+'" font-size="9" font-weight="700" text-anchor="middle">'+h(bl[i].nome).slice(0,14)+'</text>';});
     const opos={'-y':'+y','+y':'-y','-x':'+x','+x':'-x'}[COB.frente];
     const bt=(k,cls)=>'<button type="button" class="cob-fr-b '+cls+(COB.frente===k?' on':'')+(opos===k?' fundos':'')+'" data-cob-frente="'+k+'" title="A frente da obra fica deste lado">'+(COB.frente===k?'FRENTE':opos===k?'fundos':'frente aqui?')+'</button>';
-    return '<div class="cob-frente"><div class="cob-fr-t"><b>Frente da obra</b><span>'+(COB.frente?'cada água sai na folha como está no 3D; a seta diz por onde começar e, na água que corre para a frente, fundos → frente'
+    return '<div class="cob-frente"><div class="cob-fr-t"><b>Frente da obra</b><span>'+(COB.frente?'as águas que andam ao longo da obra montam dos fundos para a frente (⇄ inverte só uma água); na folha, cada água sai como está no 3D'
       :'clique no lado da frente: a folha passa a dizer fundos → frente ou frente → fundos junto da seta')+'</span></div>'
       +'<div class="cob-fr-g">'+bt('+y','t')+bt('-x','l')+'<svg viewBox="0 0 220 140" aria-label="Planta da cobertura vista de cima">'+g+'</svg>'+bt('+x','r')+bt('-y','b')+'</div></div>';
   }
@@ -29681,6 +29699,8 @@ html[data-theme="escuro"] .log-det>summary.err{color:var(--red)}.log-det>summary
   }
   function pintaBlocos(){
     const box=document.getElementById('cobBlocos');if(!box)return;
+    /* obra importada ou aberta com a frente já escolhida: as águas seguem a frente */
+    if(cobSentidoPelaFrente(false)){COB.confirmada=false;salvaCob();}
     /* O nome do bloco e' o "Destino" do pedido, o titulo no DXF e a
        sequencia de montagem -- e' ele que o fabricante le. So' que vem
        pronto do SketchUp, com o nome que a arquiteta deu ao grupo. Renomear
@@ -29758,7 +29778,9 @@ html[data-theme="escuro"] .log-det>summary.err{color:var(--red)}.log-det>summary
       const b=COB.blocos[+s.dataset.cobAj];if(!b)return;b.ajuste=Math.round(num(s.value));marcaPendente();
     }));
     box.querySelectorAll('[data-cob-frente]').forEach(s=>s.addEventListener('click',()=>{
-      const k=s.dataset.cobFrente;COB.frente=COB.frente===k?'':k;salvaCob();pintaBlocos();
+      const k=s.dataset.cobFrente;COB.frente=COB.frente===k?'':k;
+      if(cobSentidoPelaFrente(true)){marcaPendente();return;}
+      salvaCob();pintaBlocos();
     }));
     box.querySelectorAll('[data-cob-ajo]').forEach(s=>s.addEventListener('change',()=>{
       const b=COB.blocos[+s.dataset.cobAjo];if(!b)return;
@@ -29782,7 +29804,7 @@ html[data-theme="escuro"] .log-det>summary.err{color:var(--red)}.log-det>summary
       marcaPendente();
     }));
     box.querySelectorAll('[data-cob-inverter]').forEach(s=>s.addEventListener('click',()=>{
-      const b=COB.blocos[+s.dataset.cobInverter];if(!b)return;b.sentido=cobSentidoFace(b)==='rtl'?'ltr':'rtl';marcaPendente();
+      const b=COB.blocos[+s.dataset.cobInverter];if(!b)return;b.sentido=cobSentidoFace(b)==='rtl'?'ltr':'rtl';b.sentidoManual=true;marcaPendente();
     }));
   }
 
@@ -29810,7 +29832,7 @@ html[data-theme="escuro"] .log-det>summary.err{color:var(--red)}.log-det>summary
     if(planta)pintaBlocos();
     const pv=document.getElementById('cobSvg');if(pv){
       pv.innerHTML=svgPreview(r);
-      const defineBorda=el=>{const p=String(el.dataset.cobFaceDir||'').split(':'),b=COB.blocos[+p[0]];if(!b)return;b.sentido=p[1]==='rtl'?'rtl':'ltr';marcaPendente();};
+      const defineBorda=el=>{const p=String(el.dataset.cobFaceDir||'').split(':'),b=COB.blocos[+p[0]];if(!b)return;b.sentido=p[1]==='rtl'?'rtl':'ltr';b.sentidoManual=true;marcaPendente();};
       pv.querySelectorAll('[data-cob-face-dir]').forEach(el=>{
         el.addEventListener('click',()=>defineBorda(el));
         el.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();defineBorda(el);}});
@@ -32385,7 +32407,7 @@ if('serviceWorker' in navigator && location.protocol.startsWith('http')){
 }
 </script>
 <script>/* versão publicada (PADRAO_RM.md §3): sobe a cada publicação, junto com o CACHE do sw.js */
-const APP_VER='v315';
+const APP_VER='v316';
 </script>
 <script id="rmVersaoBloco">
 /* ===== SELO DE VERSÃO — igual em todos os sistemas (PADRAO_RM.md §3) =====
