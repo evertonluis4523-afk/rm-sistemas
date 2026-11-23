@@ -4880,7 +4880,7 @@ try { var _e = localStorage.getItem('rm_estilo_ultimo'); if (_e === 'viva' || _e
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js" crossorigin="anonymous"></script>
 
 <script>/* versão publicada (PADRAO_RM.md §3): sobe a cada publicação, junto com o CACHE do sw.js */
-const APP_VER='v185';
+const APP_VER='v186';
 </script>
 <script>
   /* ===== LOGIN (Firebase Authentication) =====
@@ -6560,15 +6560,26 @@ const APP_VER='v185';
     var Q = null; try { Q = window.firebase && firebase.database && firebase.database.Query && firebase.database.Query.prototype; } catch (e) { }
     if (!Q) { if ((n || 0) < 90) setTimeout(function () { medeCentral((n || 0) + 1); }, 1000); return; }
     if (Q.__rmUsoCentral) return; Q.__rmUsoCentral = 1;
-    var vistos = {}, on = Q.on, once = Q.once, get = Q.get;
-    function mede(q) {
-      var c; try { var r = q.ref || q; c = decodeURIComponent(String(r.toString()).replace(/^https?:\/\/[^/]+\/?/, '').split('?')[0]).split('/').filter(Boolean).slice(0, 2).join('/') || '(raiz)'; } catch (e) { return; }
-      if (/^\.info/.test(c) || vistos[c]) return; vistos[c] = 1;
-      try { once.call(q.ref || q, 'value').then(function (s) { var b = 0; try { b = JSON.stringify(s.val()).length; } catch (e) { } registrarUso('Central', c, b); }).catch(function () { }); } catch (e) { }
-    }
-    Q.on = function (ev) { if (ev === 'value' || ev === 'child_added') mede(this); return on.apply(this, arguments); };
-    Q.once = function (ev) { if (ev === 'value' || ev === 'child_added') mede(this); return once.apply(this, arguments); };
-    if (get) Q.get = function () { mede(this); return get.apply(this, arguments); };
+    /* on: a primeira vez (depois o Firebase manda só o que muda). once/get:
+       TODA vez, medindo o que voltou -- a cópia de 2 em 2 horas lê de novo e
+       a primeira versão do medidor não via isso. Pasta já ouvida por um on
+       vem do cache e não conta. */
+    var ouvindo = {}, on = Q.on, once = Q.once, get = Q.get;
+    function pasta(q) { try { var r = q.ref || q; return decodeURIComponent(String(r.toString()).replace(/^https?:\/\/[^/]+\/?/, '').split('?')[0]).split('/').filter(Boolean).slice(0, 2).join('/') || '(raiz)'; } catch (e) { return null; } }
+    function tam(s) { try { return JSON.stringify(s.val()).length; } catch (e) { return 0; } }
+    Q.on = function (ev) {
+      var c = pasta(this);
+      if ((ev === 'value' || ev === 'child_added') && c && !/^\.info/.test(c) && !ouvindo[c]) { ouvindo[c] = 1;
+        try { once.call(this.ref || this, 'value').then(function (s) { registrarUso('Central', c, tam(s)); }).catch(function () { }); } catch (e) { } }
+      return on.apply(this, arguments);
+    };
+    function porLeitura(f) { return function (ev) {
+      var p = f.apply(this, arguments), c = pasta(this);
+      if (c && !/^\.info/.test(c) && !ouvindo[c] && (f === get || ev === 'value' || ev === 'child_added') && p && p.then)
+        p.then(function (s) { if (s && s.val) registrarUso('Central', c, tam(s)); }, function () { });
+      return p; }; }
+    Q.once = porLeitura(once);
+    if (get) Q.get = porLeitura(get);
   })();
   function errosNovos() {
     return Object.keys(_erros).filter(function (k) { return _erros[k].ultimo > _errosVistos && !erroDeVersaoAntiga(_erros[k]); }).length;
@@ -7720,6 +7731,40 @@ const APP_VER='v185';
     return { dados: fora, faltaram: faltaram };
   }
 
+  /* OS ANEXOS SO QUANDO MUDAM (novembro de 2026). A copia de duas em duas
+     horas lia o banco INTEIRO, imagens das propostas e notas incluidas
+     (~135 MB), umas 6 vezes por dia: uns 20 GB por mes, o dobro do limite
+     gratuito do Firebase, que estourou. Agora cada copia pede so' a LISTA de
+     nomes dos anexos (?shallow=true, poucos KB) e baixa o conteudo quando a
+     lista mudou ou quando a ultima copia completa tem mais de uma semana
+     (cobre imagem editada no mesmo lugar). Anexos fora da copia: o programa
+     mantem o arquivo de anexos anterior (main.js so' grava anexos novos).
+     Copia pedida no botao continua completa. */
+  const ANEXOS_COMPLETA_A_CADA = 7 * 24 * 60 * 60 * 1000;
+  async function assinaturaChavesAnexos() {
+    try {
+      const u = firebase.auth().currentUser; if (!u) return null;
+      const tk = await u.getIdToken(), base = firebase.app().options.databaseURL, out = {};
+      for (const no of NOS_ANEXOS) {
+        const r = await fetch(base + '/' + no.split('/').map(encodeURIComponent).join('/') + '.json?shallow=true&auth=' + encodeURIComponent(tk));
+        if (!r.ok) return null;
+        const j = await r.json();
+        out[no] = j && typeof j === 'object' ? Object.keys(j).sort().join(',') : '';
+      }
+      return assinatura(JSON.stringify(out));
+    } catch (e) { return null; }
+  }
+  function estadoAnexos() { try { return JSON.parse(localStorage.getItem('rm_backup_anexos') || '{}') || {}; } catch (e) { return {}; } }
+  async function precisaLerAnexos(automatico) {
+    const est = estadoAnexos(), idade = Date.now() - (est.em || 0);
+    if (!automatico) return { ler: true, chaves: await assinaturaChavesAnexos() };
+    const chaves = await assinaturaChavesAnexos();
+    /* sem a lista (sem rede, recusa): no maximo uma copia completa por dia */
+    if (!chaves) return { ler: idade > 24 * 60 * 60 * 1000, chaves: null };
+    return { ler: chaves !== est.chaves || idade > ANEXOS_COMPLETA_A_CADA, chaves: chaves };
+  }
+  window.rmPrecisaLerAnexos = precisaLerAnexos;
+
   let backupEmCurso = false;
   async function fazerBackup(automatico) {
     if (backupEmCurso || !window.rmDesktop || !window.rmDesktop.backupGravar) return null;
@@ -7740,7 +7785,8 @@ const APP_VER='v185';
         try { await window.rmDesktop.backupFalhou(motivo); } catch (e) {}
         return { ok: false, erro: motivo };
       }
-      const a = await lerNos(NOS_ANEXOS);
+      const pa = await precisaLerAnexos(automatico);
+      const a = pa.ler ? await lerNos(NOS_ANEXOS) : { dados: {}, faltaram: [] };
       const corpoDados = JSON.stringify({
         gerado: new Date().toISOString(), por: (window.RM_USER && RM_USER.email) || '',
         nos: Object.keys(d.dados), faltaram: d.faltaram, dados: d.dados });
@@ -7761,6 +7807,9 @@ const APP_VER='v185';
          foi salvo. O backup automatico e calado de proposito: aparecer todo
          dia dizendo "deu certo" so ensina a ignorar o aviso. */
       if (r && !r.ok) console.warn('backup:', r.erro);
+      if (r && r.ok && pa.ler && temAnexo && !a.faltaram.length) {
+        try { localStorage.setItem('rm_backup_anexos', JSON.stringify({ chaves: pa.chaves, em: Date.now() })); } catch (e) { }
+      }
       return Object.assign({}, r, { nos: Object.keys(d.dados).length, faltaram: d.faltaram });
     } catch (e) {
       const motivo = String((e && e.message) || e);
