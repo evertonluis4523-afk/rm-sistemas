@@ -22,6 +22,17 @@
   "versao": "1.4.0"
  },
  {
+  "arquivo": "leitor_dwg/COTAR_BARRAS.lsp",
+  "data": "2026-11-23",
+  "instalar": "AutoCAD › APPLOAD, carregue o arquivo e ponha em Conteúdo da inicialização (Startup Suite).",
+  "nome": "COTAR_BARRAS",
+  "sistema": "leitor_dwg",
+  "tamanho": 9413,
+  "tipo": "AutoCAD",
+  "uso": "Cota no AutoCAD cada barra selecionada (cota alinhada), sem os suportes de terça, com a letra no tamanho do desenho (comando COTARBARRAS; RMCBVER mostra a versão).",
+  "versao": "1.1"
+ },
+ {
   "arquivo": "leitor_dwg/RM-TELHA.lsp",
   "data": "2026-08-26",
   "instalar": "AutoCAD › APPLOAD, carregue o arquivo e ponha em Conteúdo da inicialização (Startup Suite).",
