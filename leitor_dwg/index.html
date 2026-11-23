@@ -4634,6 +4634,11 @@ window.RMGL=(function(){
       const cen=[0,1,2].map(i=>(mn[i]+mx[i])/2),tam=Math.max(mx[h[0]]-mn[h[0]],mx[h[1]]-mn[h[1]],(mx[up]-mn[up])*.8,1),ext=tam*.72;
       const pz=mn[up]-Math.max(1,tam*.002),Pp=(a,b)=>{const q=[0,0,0];q[h[0]]=a;q[h[1]]=b;q[up]=pz;return q;};
       const cs=[Pp(cen[h[0]]-ext,cen[h[1]]-ext),Pp(cen[h[0]]+ext,cen[h[1]]-ext),Pp(cen[h[0]]+ext,cen[h[1]]+ext),Pp(cen[h[0]]-ext,cen[h[1]]+ext)];
+      /* ARRASTANDO (o.leve): sem sombra e com 60% dos pixels -- girar a peça
+         redesenha tudo a cada quadro e a sombra recalculada pesava ~20%.
+         Ao soltar, quem chama desenha de novo cheio, com sombra. */
+      const leve=!!o.leve;
+      C.malhas.forEach(m=>{if(m.isMesh)m.castShadow=!o.papel&&!leve;});
       if(mudou){const pg=new T.BufferGeometry();pg.setAttribute('position',new T.Float32BufferAttribute([].concat(cs[0],cs[1],cs[2],cs[0],cs[2],cs[3]),3));
       pg.setAttribute('uv',new T.Float32BufferAttribute([0,0,1,0,1,1,0,0,1,1,0,1],2));pg.computeVertexNormals();
       C.piso.geometry.dispose();C.piso.geometry=pg;}C.piso.material.color.set(window.RM3D&&RM3D.estilo()==='claro'?0xd3d8dd:window.RM3D&&RM3D.estilo()==='blueprint'?0x2a4a6e:0x7d8186);C.piso.visible=!o.papel&&!o.semPiso;C.piso.frustumCulled=false;
@@ -4656,13 +4661,14 @@ window.RMGL=(function(){
       const vd=[0,1,2].map(i=>ex[i][2]),sd=[0,0,0];sd[up]=1;sd[h[0]]=-vd[h[0]]*.0;sd[h[1]]=0;
       const vis=[0,0,0];vis[h[0]]=vd[h[0]];vis[h[1]]=vd[h[1]];const nv=Math.hypot(vis[0],vis[1],vis[2])||1;
       const fr=o.arestas?1.1:.55,dir=[0,1,2].map(i=>(i===up?1:0)+fr*vis[i]/nv+(i===h[0]?.25:0)),nd=Math.hypot(...dir);
-      C.sol.position.set(...cen.map((c0,i)=>c0+dir[i]/nd*tam*3));C.sol.target.position.set(...cen);C.sol.castShadow=!o.papel;
+      C.sol.position.set(...cen.map((c0,i)=>c0+dir[i]/nd*tam*3));C.sol.target.position.set(...cen);C.sol.castShadow=!o.papel&&!leve;
       const S=tam*1.8;Object.assign(C.sol.shadow.camera,{left:-S,right:S,top:S,bottom:-S,near:1,far:tam*8});C.sol.shadow.camera.updateProjectionMatrix();
       C.hemi.position.set(...dir);C.hemi.intensity=(o.papel?.9:.6)*(o.arestas?1.6:1);
-      if(C.k!==(k||1)||C.w!==W||C.h!==H){C.k=k||1;C.w=W;C.h=H;
+      const kk=(k||1)*(leve?.6:1);
+      if(C.k!==kk||C.w!==W||C.h!==H){C.k=kk;C.w=W;C.h=H;
         C.R.setPixelRatio(C.k);C.R.setSize(Math.max(1,Math.round(W)),Math.max(1,Math.round(H)),false);}
       C.R.render(C.cena,C.cam);
-      C.cv._espelho=C.espelho;return C.cv;
+      C.cv._espelho=C.espelho;C.cv._leve=leve;return C.cv;
     }catch(e){try{console.warn('motor 3D:',e&&e.message);}catch(_){}return null;}
   }
   return {suporta,ativo,motor,define,botao,vista,papel,camada,three,pronto:()=>!!TT};
@@ -12028,7 +12034,7 @@ function rmGLFonte(){const a=document.getElementById('rmThreeSrc'),b=document.ge
 function det3dRGBA(hex,a){const h=hex.replace('#',''),n=parseInt(h.length===3?h[0]+h[0]+h[1]+h[1]+h[2]+h[2]:h,16);return 'rgba('+(n>>16&255)+','+(n>>8&255)+','+(n&255)+','+a+')';}
 function det3dGL(polys,d,X,Y,w,h,E){
   const m=Math.min(d.I.alma||100,d.E.alma||100);
-  return RMGL.camada(polys,q=>{const v=det3dGira(q,d);return [X(v),Y(v),v[2]];},w,h,1,{up:1,semPiso:true,arestas:E.esc*m>=8});
+  return RMGL.camada(polys,q=>{const v=det3dGira(q,d);return [X(v),Y(v),v[2]];},w,h,1,{up:1,semPiso:true,arestas:E.esc*m>=8,leve:!!D3.arrastando});
 }
 function det3dLista(){
   const el=document.getElementById('d3lista'); if(!el||!D3.dados)return;
@@ -15476,7 +15482,7 @@ function tlh3dDesenha(){
   {const o=tlh3dGira([0,0,0]),e=v=>{const g=tlh3dGira(v);return [g[0]-o[0],-(g[1]-o[1]),g[2]-o[2]];};
    RM3D.gizmo(ctx,w,h,{X:e([1000,0,0]),Y:e(TLH.origem==='sketchup'?[0,0,-1000]:[0,0,1000]),Z:e([0,1000,0])},dpr,document.getElementById('tl3bar'));
    RM3D.ultimo.fechamento={estilo:RM3D.estilo(),grade,escala:RM3D.escala(ctx,w,h,E.esc,dpr)};}
-  if(GL){const im=RMGL.camada(GL,v=>{const g=tlh3dGira(v);return [X(g),Y(g),g[2]];},w,h,1,{up:1,semPiso:T3.pitch<-0.01||!!T3.papel,papel:!!T3.papel});
+  if(GL){const im=RMGL.camada(GL,v=>{const g=tlh3dGira(v);return [X(g),Y(g),g[2]];},w,h,1,{up:1,semPiso:T3.pitch<-0.01||!!T3.papel,papel:!!T3.papel,leve:!!T3.arrastando&&!T3.papel});
     ctx.save();ctx.setTransform(1,0,0,1,0,0);ctx.globalCompositeOperation='destination-over';
     if(im){if(im._espelho){ctx.translate(0,h);ctx.scale(1,-1);}ctx.drawImage(im,0,0,w,h);}
     ctx.restore();ctx.save();ctx.globalCompositeOperation='destination-over';if(T3.papel)papelBranco();else RM3D.fundo(ctx,w,h);ctx.restore();
@@ -32337,7 +32343,7 @@ if('serviceWorker' in navigator && location.protocol.startsWith('http')){
 }
 </script>
 <script>/* versão publicada (PADRAO_RM.md §3): sobe a cada publicação, junto com o CACHE do sw.js */
-const APP_VER='v309';
+const APP_VER='v310';
 </script>
 <script id="rmVersaoBloco">
 /* ===== SELO DE VERSÃO — igual em todos os sistemas (PADRAO_RM.md §3) =====
