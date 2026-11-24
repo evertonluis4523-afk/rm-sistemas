@@ -29373,7 +29373,7 @@ html[data-theme="escuro"] .log-det>summary.err{color:var(--red)}.log-det>summary
     const metrosBrutos=todas.reduce((s,x)=>s+metroDe(x),0)*e;
     const metros=compradas.reduce((s,x)=>s+metroDe(x),0)*e;
     const areaDe=xs=>xs.reduce((s,x)=>s+metroDe(x)*(x.util||util)/1000,0)*e;
-    const areaPedidoBruta=areaDe(todas),areaPedido=areaDe(compradas);
+    const areaPedidoBruta=areaDe(todas),areaPedido=areaDe(compradas),areaPedidoTermica=areaDe(compradas.filter(x=>x.termica));
     const economiaArea=Math.max(0,areaPedidoBruta-areaPedido),economiaMetros=Math.max(0,metrosBrutos-metros);
     /* A telha estreita da agua recuada nao e sobra nem engano: e o recorte
        que mantem a onda casada com o gomo do capote. Quem confere precisa
@@ -29401,7 +29401,7 @@ html[data-theme="escuro"] .log-det>summary.err{color:var(--red)}.log-det>summary
     const modelo=modeloAtual();if(modelo&&modelo.nota)avisos.push(modelo.nota+'. O valor pode ser corrigido no cadastro de telhas.');
     return {ok:true,modo:'planta',erros,avisos,aguas,blocos,faixas:todas.length,lista,todas,reusos,reusosLargura,e,
       pecas:compradas.reduce((s,x)=>s+x.partes*e,0),pecasBrutas:todas.reduce((s,x)=>s+x.partes*e,0),
-      metros,metrosBrutos,economiaMetros,areaPedido,areaPedidoBruta,economiaArea,areaCoberta,
+      metros,metrosBrutos,economiaMetros,areaPedido,areaPedidoTermica,areaPedidoBruta,economiaArea,areaCoberta,
       perdaDiagonal,sobreposicao:Math.max(0,areaPedido-areaCoberta),
       perdaAdicional:Math.max(0,areaPedido-areaCoberta-perdaDiagonal),sobraLateral:0};
   }
@@ -30501,6 +30501,19 @@ html[data-theme="escuro"] .log-det>summary.err{color:var(--red)}.log-det>summary
      cobertura ficou sem: a mesma conta (m² de telha pedida x taxa da casa),
      com a taxa propria da cobertura, editavel e gravada com o resto. */
   function cobParafusos(r){return Math.ceil(Math.max(0,num(r&&r.areaPedido))*Math.max(0,num(COB.parafM2)));}
+  /* O PARAFUSO DEPENDE DA TELHA DE CADA GRUPO: "nessa obra vai 2 telhas,
+     térmica e simples (térmica é o parafuso brocante 4" e na telha simples o
+     parafuso brocante 3/4, na cumeeira o mesmo 3/4), mas na somatória aparece
+     apenas o parafuso de costura e fixação". A área comprada de cada tipo
+     (a telha escolhida em cada grupo) vira a sua linha. Teste
+     leitor-cobertura-parafuso-por-telha. */
+  const COB_PARAF={termica:'Parafuso brocante 4"',simples:'Parafuso brocante 3/4',cumeeira:'Parafuso brocante 3/4'};
+  function cobParafusosPorTipo(r){
+    const tx=Math.max(0,num(COB.parafM2)),a=Math.max(0,num(r&&r.areaPedido));
+    const at=r&&r.areaPedidoTermica!=null?Math.max(0,num(r.areaPedidoTermica)):(COB.termica?a:0),as=Math.max(0,a-at);
+    return [{tipo:'termica',item:COB_PARAF.termica,uso:'Fixação das telhas térmicas',area:at,qtd:Math.ceil(at*tx-1e-9)},
+            {tipo:'simples',item:COB_PARAF.simples,uso:'Fixação das telhas simples',area:as,qtd:Math.ceil(as*tx-1e-9)}].filter(x=>x.qtd>0);
+  }
   /* PARAFUSO DA CUMEEIRA: brocante 3/4, no mesmo padrão da telha (a taxa
      por m²), sobre a área da cumeeira -- peças × largura útil × as abas
      (uma de cada lado nas duas águas). A ficha mostrava a linha sem número. */
@@ -30512,14 +30525,14 @@ html[data-theme="escuro"] .log-det>summary.err{color:var(--red)}.log-det>summary
   function cobAcessHTML(r,impresso){
     const q=cobParafusos(r),tx=String(num(COB.parafM2)).replace('.',',');
     const cum=cobCumeeiras(r),qc=cobParafusosCumeeira(cum),ac=cobAreaCumeeira(cum);
-    if(impresso)return q?'<div class="cob-cum"><div class="cob-cum-d"><b>Parafusos de costura e fixação: '+q+'</b> · '+tx+' por m² de telha · taxa da casa, confira'+
+    if(impresso)return q?'<div class="cob-cum"><div class="cob-cum-d">'+cobParafusosPorTipo(r).map(p=>'<b>'+h(p.item)+' ('+(p.tipo==='termica'?'telha térmica':'telha simples')+'): '+p.qtd+'</b>').join(' · ')+' · '+tx+' por m² de telha · taxa da casa, confira'+
       (qc?'<br><b>Parafuso brocante 3/4 da cumeeira: '+qc+'</b> · '+tx+' por m² de cumeeira ('+dec(ac,1)+' m²)':'')+'</div></div>':'';
     return '<details class="tl-det" open><summary>Acessórios <small>parafusos da cobertura</small></summary><div class="tl-det-corpo">'+
       '<div class="tl-campos" style="margin-bottom:8px"><div class="fld"><label>Parafusos por m²</label>'+
         '<input data-cob-paraf type="number" min="0" step="0.5" value="'+num(COB.parafM2)+'" title="Taxa da casa: parafusos por m² de telha pedida"></div></div>'+
       '<table class="ct-t"><thead><tr><th>Item</th><th class="n">Qtd</th><th>Observação</th></tr></thead><tbody>'+
-        '<tr><td><b>Parafusos de costura e fixação</b></td><td class="n"><b>'+q+'</b></td><td class="ct-org">'+tx+' por m² de telha ('+dec(r.areaPedido,1)+' m²) — taxa da casa, confira</td></tr>'+
-        (qc?'<tr><td><b>Parafuso brocante 3/4 da cumeeira</b></td><td class="n"><b>'+qc+'</b></td><td class="ct-org">'+tx+' por m² de cumeeira ('+dec(ac,1)+' m²: peças × largura útil × abas)</td></tr>':'')+
+        cobParafusosPorTipo(r).map(p=>'<tr><td><b>'+h(p.item)+'</b> <small>'+(p.tipo==='termica'?'telha térmica':'telha simples')+'</small></td><td class="n"><b>'+p.qtd+'</b></td><td class="ct-org">'+tx+' por m² de telha '+(p.tipo==='termica'?'térmica':'simples')+' ('+dec(p.area,1)+' m²) — taxa da casa, confira</td></tr>').join('')+
+        (qc?'<tr><td><b>'+h(COB_PARAF.cumeeira)+' da cumeeira</b></td><td class="n"><b>'+qc+'</b></td><td class="ct-org">'+tx+' por m² de cumeeira ('+dec(ac,1)+' m²: peças × largura útil × abas)</td></tr>':'')+
       '</tbody></table><div class="hint">Vão para o Orçamento junto com as telhas, como item avulso sem preço.</div></div></details>';
   }
   function cumHTML(c,impresso){
@@ -30662,8 +30675,8 @@ html[data-theme="escuro"] .log-det>summary.err{color:var(--red)}.log-det>summary
     if(cum&&cum.rufo&&cum.rufo.pecas)avulsos.push({nome:'Rufo de topo (aba '+RUFO_ABA+' mm sobre a telha · '+dec(cum.rufo.metros,2)+' m · sobreposição '+cum.rufo.sobrepoe+' mm)',
       tamanho:cum.rufo.pecas+' × '+cum.rufo.peca+' mm',qtd:cum.rufo.pecas});
     const paraf=cobParafusos(r),parafCum=cobParafusosCumeeira(cum);
-    if(paraf)avulsos.push({nome:'Parafusos de costura e fixação ('+String(num(COB.parafM2)).replace('.',',')+' por m² de telha — taxa da casa, confira)',tamanho:'',qtd:paraf});
-    if(parafCum)avulsos.push({nome:'Parafuso brocante 3/4 da cumeeira ('+String(num(COB.parafM2)).replace('.',',')+' por m² de cumeeira)',tamanho:'',qtd:parafCum});
+    if(paraf)cobParafusosPorTipo(r).forEach(p=>avulsos.push({nome:p.item+' — '+(p.tipo==='termica'?'telha térmica':'telha simples')+' ('+String(num(COB.parafM2)).replace('.',',')+' por m² de telha — taxa da casa, confira)',tamanho:'',qtd:p.qtd}));
+    if(parafCum)avulsos.push({nome:COB_PARAF.cumeeira+' da cumeeira ('+String(num(COB.parafM2)).replace('.',',')+' por m² de cumeeira)',tamanho:'',qtd:parafCum});
     if(orcExportarTelhas(linhas,nomeObra(),'cobertura','',avulsos)){
       if(b){b.textContent='Arquivo gerado ✓';setTimeout(()=>b.textContent='Importar p/ Orçamento RM',1800);}
     }
@@ -31807,9 +31820,8 @@ html[data-theme="escuro"] .log-det>summary.err{color:var(--red)}.log-det>summary
   /* parafusos, fechamento de onda e rufo: material da empresa, só na ficha */
   function cobFichaAcessorios(r,cum){
     const L=[],paraf=cobParafusos(r),e=Math.max(1,(r&&r.e)||1);
-    if(COB.termica)L.push({item:'Parafuso brocante 4"',uso:'Fixação das telhas térmicas',qtd:paraf});
-    else L.push({item:'Parafuso brocante 3/4',uso:'Fixação das telhas simples',qtd:paraf});
-    if(cum&&cum.pecas){L.push({item:'Parafuso brocante 3/4',uso:'Fixação das cumeeiras',qtd:cobParafusosCumeeira(cum)});
+    if(paraf)cobParafusosPorTipo(r).forEach(p=>L.push({item:p.item,uso:p.uso,qtd:p.qtd}));
+    if(cum&&cum.pecas){L.push({item:COB_PARAF.cumeeira,uso:'Fixação das cumeeiras',qtd:cobParafusosCumeeira(cum)});
       const onda=(r.todas||[]).filter(x=>x.tocaCumeeira&&!x.reusoLarguraDe&&!x.reusoDe).length*e;
       if(onda)L.push({item:'Fechamento de onda '+cum.tipo,uso:'na cumeeira, 1 por telha',qtd:onda,un:'pç'});
       if(cum.rufo&&cum.rufo.pecas)L.push({item:'Rufo de topo (aba '+RUFO_ABA+' mm)',uso:'peças de '+mm(cum.rufo.peca)+' mm',qtd:cum.rufo.pecas,un:'pç'});}
@@ -32623,7 +32635,7 @@ if('serviceWorker' in navigator && location.protocol.startsWith('http')){
 }
 </script>
 <script>/* versão publicada (PADRAO_RM.md §3): sobe a cada publicação, junto com o CACHE do sw.js */
-const APP_VER='v321';
+const APP_VER='v322';
 </script>
 <script id="rmVersaoBloco">
 /* ===== SELO DE VERSÃO — igual em todos os sistemas (PADRAO_RM.md §3) =====
