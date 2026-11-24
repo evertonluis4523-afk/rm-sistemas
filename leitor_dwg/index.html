@@ -13158,6 +13158,106 @@ function tlhFaceElevacao(nome,outers,furosMundo,frame,area){
    nomes de verdade diferentes nunca se juntam, mesmo no mesmo plano -- se
    ela separou, era de proposito. Sem nome nenhum, fica o do maior painel. */
 const TLH_FOLGA_PILAR=400;
+/* ---- FACHADA QUE DOBRA (testeira, platibanda) ----
+   "Olhando pelo PDF nem parece que tem a frente (onde tem a porta abaixo)":
+   na fachada do EVERALDO os dois trechos retos (mesmo plano, 10,9 m um do
+   outro) viravam UMA parede de 22 m com uma "porta 10.900 × 1.500" -- o
+   recuo do meio, por onde a fachada passa pelas diagonais e pela frente.
+   Vão de verdade é buraco na parede; aqui a fachada DOBRA: nas duas pontas
+   do intervalo chega uma outra parede, de outra direção. Teste
+   leitor-fachada-continua. */
+const TLH_ENCOSTA=250;
+function tlhPontasPlanta(f){
+  const e=f.sketchup.eixo,pts=(f.sketchup.contornos?f.sketchup.contornos.flat():f.sketchup.worldOuter),u=pts.map(p=>tlhVDot(p,e));
+  const a=pts[u.indexOf(Math.min(...u))],b=pts[u.indexOf(Math.max(...u))];return [[a[0],a[1]],[b[0],b[1]]];
+}
+const tlhDist2=(p,q)=>Math.hypot(p[0]-q[0],p[1]-q[1]);
+function tlhDobraEntre(faces,i,j){
+  const A=tlhPontasPlanta(faces[i]),B=tlhPontasPlanta(faces[j]),n=faces[i].sketchup.normal;
+  /* as pontas de dentro: a de A mais perto de B e vice-versa */
+  let pa=A[0],pb=B[0],d=Infinity;A.forEach(p=>B.forEach(q=>{const x=tlhDist2(p,q);if(x<d){d=x;pa=p;pb=q;}}));
+  if(d<=TLH_FOLGA_PILAR)return false;
+  const chega=(p,k)=>faces.some((g,m)=>m!==i&&m!==j&&Math.abs(tlhVDot(g.sketchup.normal,n))<.995&&tlhPontasPlanta(g).some(q=>tlhDist2(p,q)<TLH_ENCOSTA));
+  return chega(pa)&&chega(pb);
+}
+/* A FACHADA EM SEQUÊNCIA. Quando as paredes formam UMA linha aberta (cada
+   uma encostada em no máximo duas, ponta com ponta), é uma fachada: sai na
+   ordem em que se anda por ela, da esquerda para a direita de quem olha da
+   rua, cada trecho visto de fora (o lado da rua), com nome de fachada --
+   RETORNO nas pontas que voltam para a rua, CANTO nas diagonais e FACHADA
+   ESQ./CENTRO/DIR. nos trechos de frente. A rua é o lado para onde vão os
+   retornos; sem retorno, o lado para onde olha a maior parte das faces. */
+function tlhFachadaContinua(faces){
+  /* galpão (FRENTE, LATERAL, FUNDOS em U) continua como sempre: só vira
+     fachada sem nomes próprios e com canto em diagonal ou 5+ trechos */
+  if(faces.length<3||faces.some(f=>!tlhNomeGenerico(f.nome)))return faces;
+  const P=faces.map(tlhPontasPlanta),viz=faces.map(()=>[]);
+  for(let i=0;i<faces.length;i++)for(let j=i+1;j<faces.length;j++){
+    let liga=null;P[i].forEach((p,a)=>P[j].forEach((q,b)=>{if(tlhDist2(p,q)<TLH_ENCOSTA)liga=[a,b];}));
+    if(liga){viz[i].push({j,a:liga[0],b:liga[1]});viz[j].push({j:i,a:liga[1],b:liga[0]});}
+  }
+  if(viz.some(v=>v.length>2||!v.length))return faces;
+  const pontas=viz.map((v,i)=>v.length===1?i:-1).filter(i=>i>=0);if(pontas.length!==2)return faces;
+  /* caminho de uma ponta à outra; precisa passar por todas */
+  const ordem=[pontas[0]],visto=new Set(ordem);
+  while(ordem.length<faces.length){const v=viz[ordem[ordem.length-1]].find(x=>!visto.has(x.j));if(!v)break;ordem.push(v.j);visto.add(v.j);}
+  if(ordem.length!==faces.length)return faces;
+  {const dd=i=>{const [a,b]=P[i],L=tlhDist2(a,b)||1;return [(b[0]-a[0])/L,(b[1]-a[1])/L];};
+   const diag=faces.some((_,i)=>faces.some((_,k)=>{const c=Math.abs(dd(i)[0]*dd(k)[0]+dd(i)[1]*dd(k)[1]);return c>.17&&c<.98;}));
+   if(!diag&&faces.length<5)return faces;}
+  /* direção principal: a que soma mais comprimento */
+  const dir=i=>{const [a,b]=P[i],L=tlhDist2(a,b)||1;return [(b[0]-a[0])/L,(b[1]-a[1])/L];},comp=i=>tlhDist2(P[i][0],P[i][1]);
+  let principal=null,melhor=-1;faces.forEach((_,i)=>{const d=dir(i);let soma=0;faces.forEach((_,k)=>{const e=dir(k);if(Math.abs(d[0]*e[0]+d[1]*e[1])>.98)soma+=comp(k);});if(soma>melhor){melhor=soma;principal=d;}});
+  const perp=[-principal[1],principal[0]],par=i=>Math.abs(dir(i)[0]*principal[0]+dir(i)[1]*principal[1])>.98,perpend=i=>Math.abs(dir(i)[0]*principal[0]+dir(i)[1]*principal[1])<.17;
+  /* a rua: para onde vão os retornos (da ponta que encosta para a solta) */
+  let rua=0;[ordem[0],ordem[ordem.length-1]].forEach(i=>{if(!perpend(i))return;const v=viz[i][0],presa=P[i][v.a],solta=P[i][1-v.a];
+    rua+=(solta[0]-presa[0])*perp[0]+(solta[1]-presa[1])*perp[1];});
+  if(Math.abs(rua)<1)faces.forEach((f,i)=>{rua+=(f.sketchup.normal[0]*perp[0]+f.sketchup.normal[1]*perp[1])*comp(i);});
+  const S=rua>=0?perp:[-perp[0],-perp[1]];
+  /* direita de quem olha da rua (de frente para a fachada, olhando contra S) */
+  const dirRua=[-S[1],S[0]];   /* (−S) × z: a direita de quem está na rua olhando a fachada */
+  const posD=p=>p[0]*dirRua[0]+p[1]*dirRua[1];
+  const esqPrimeiro=posD(P[ordem[0]][1-viz[ordem[0]][0].a])<=posD(P[ordem[ordem.length-1]][1-viz[ordem[ordem.length-1]][0].a]);
+  if(!esqPrimeiro)ordem.reverse();
+  /* cada trecho visto de fora: o MESMO lado da chapa em toda a sequência (a
+     pele que se vê da rua continua pelas dobras); o giro sai de um trecho
+     de frente, e o eixo vai da esquerda para a direita */
+  const tAnda=(i,k)=>{let a=P[i][0],b=P[i][1];const ant=ordem[k-1],prox=ordem[k+1];
+    if(ant!=null){if(Math.min(...P[ant].map(q=>tlhDist2(b,q)))<Math.min(...P[ant].map(q=>tlhDist2(a,q)))){const t=a;a=b;b=t;}}
+    else if(prox!=null){if(Math.min(...P[prox].map(q=>tlhDist2(a,q)))<Math.min(...P[prox].map(q=>tlhDist2(b,q)))){const t=a;a=b;b=t;}}
+    const t=[b[0]-a[0],b[1]-a[1]],L=Math.hypot(t[0],t[1])||1;return [t[0]/L,t[1]/L];};
+  const kRef=ordem.findIndex(i=>par(i)),tr=tAnda(ordem[kRef],kRef),giro=((-tr[1])*S[0]+tr[0]*S[1])>=0?1:-1;
+  const novas=ordem.map((i,k)=>{
+    const f=faces[i],d=dir(i);let n=[-d[1],d[0]];
+    /* o lado de fora acompanha a sequência: o mesmo giro que, num trecho de frente, aponta para a rua */
+    const prox=ordem[k+1]!=null?ordem[k+1]:null,ant=ordem[k-1]!=null?ordem[k-1]:null;
+    const ini=ant!=null?P[i].reduce((m,p)=>Math.min(m,Math.min(...P[ant].map(q=>tlhDist2(p,q)))),Infinity):0;
+    let a=P[i][0],b=P[i][1];
+    if(ant!=null){const da=Math.min(...P[ant].map(q=>tlhDist2(a,q))),db=Math.min(...P[ant].map(q=>tlhDist2(b,q)));if(db<da){const t=a;a=b;b=t;}}
+    else if(prox!=null){const da=Math.min(...P[prox].map(q=>tlhDist2(a,q))),db=Math.min(...P[prox].map(q=>tlhDist2(b,q)));if(da<db){const t=a;a=b;b=t;}}
+    const t=[b[0]-a[0],b[1]-a[1]],L=Math.hypot(t[0],t[1])||1,tu=[t[0]/L,t[1]/L];
+    /* andando da esquerda para a direita (vista da rua), o lado de fora fica à esquerda do sentido de caminhada (t × z = direita; fora = −direita) */
+    n=[-tu[1]*giro,tu[0]*giro];
+    const eixo3=[tu[0],tu[1],0],n3=[n[0],n[1],0],vert=[0,0,1];
+    const todos=f.sketchup.contornos||[f.sketchup.worldOuter];
+    const pts=todos.flat(),u=pts.map(p=>tlhVDot(p,eixo3)),v=pts.map(p=>p[2]);
+    const kk=u.indexOf(Math.min(...u)),origem=[pts[kk][0],pts[kk][1],Math.min(...v)];
+    const nova=tlhFaceElevacao(f.nome,todos,f.sketchup.worldHoles||[],{normal:n3,eixo:eixo3,vertical:vert,origem},f.area3d);
+    if(!nova)return f;
+    ['paineis','chaveSkp','caminho'].forEach(c=>{if(f[c]!=null)nova[c]=f[c];});
+    nova.trechoTipo=par(i)?'FACHADA':perpend(i)?'RETORNO':'CANTO';nova.fachadaPos=k;
+    return nova;
+  });
+  /* nomes (só os genéricos): esquerda/direita pela posição na sequência */
+  const meio=(novas.length-1)/2,lado=k=>k<meio-.01?'ESQ.':k>meio+.01?'DIR.':'';
+  const frentes=novas.filter(f=>f.trechoTipo==='FACHADA');
+  novas.forEach((f,k)=>{if(!tlhNomeGenerico(f.nome))return;f.caminho=f.caminho||f.nome;
+    if(f.trechoTipo==='FACHADA'){const q=frentes.indexOf(f),n=frentes.length;
+      f.nome='FACHADA'+(n===1?'':n===2?(q?' DIR.':' ESQ.'):n===3?[' ESQ.',' CENTRO',' DIR.'][q]:' '+(q+1));}
+    else f.nome=f.trechoTipo+(lado(k)?' '+lado(k):'');});
+  novas.fachada={rua:S,direita:dirRua};
+  return novas;
+}
 const tlhNomeGenerico=n=>/^(agrupar|agrupamento|group|grupo|componente|component|face)\s*#?\s*\d*$/i.test(String(n||'').split(/\s*\/\s*/).pop().replace(/\s*·\s*\d+$/,'').trim());
 function tlhJuntaParedes(faces){
   if(faces.length<2)return faces;
@@ -13170,6 +13270,7 @@ function tlhJuntaParedes(faces){
     if(Math.abs(tlhVDot(na,b.sketchup.normal))<.995)continue;
     if(Math.abs(tlhVDot(tlhVSub(centros[j],centros[i]),na))>150)continue;
     const ri=raiz(i),rj=raiz(j);if(ri===rj)continue;
+    if(tlhDobraEntre(faces,i,j))continue;
     const ni=nomesDe.get(ri),nj=nomesDe.get(rj);
     if(ni.size&&nj.size&&[...nj].some(n=>!ni.has(n)))continue;
     pai[rj]=ri;nomesDe.set(ri,new Set([...ni,...nj]));
@@ -13202,7 +13303,7 @@ function tlhJuntaParedes(faces){
     nova.paineis=mb.map(f=>f.nome);nova.chaveSkp=mb.map(f=>f.chaveSkp||f.nome).join(' + ');nova.caminho=mb.map(f=>f.caminho||f.nome).join(' + ');
     out.push(nova);
   });
-  return tlhNomeiaParedes(out);
+  return tlhNomeiaParedes(tlhFachadaContinua(out));
 }
 /* "Agrupar#103" nao diz qual parede e'. Parede sem nome de verdade ganha um
    pela posicao no galpao: a que fica DENTRO da caixa da obra e' INTERNO; das
@@ -14905,6 +15006,10 @@ function telhaCodigos(){
   faces.forEach((f,fi)=>{
     f.ordem=f.telhas.slice().sort((a,b)=>a.x0-b.x0||(a.abaixo?1:0)-(b.abaixo?1:0));
     f.letra=tlhLetra(fi);
+    /* "Identifica com as cores segundo o 3D": a cor de cada parede é a do 3D
+       (posição dela em TLH.faces) -- na planta, na ordem de montagem, na
+       separação e na folha da parede. Teste leitor-fachada-continua. */
+    f.cor='rgb('+tlhCorParede(Math.max(0,TLH.faces.indexOf(f))).join(',')+')';
     f.ordem.forEach((t,i)=>{t.cod=f.letra+'-'+String(i+1).padStart(2,'0');});
   });
   return {faces,chapas};
@@ -14917,6 +15022,46 @@ function telhaCodigos(){
    e uma folha por parede/água com o código no pé de cada telha e as cotas
    para marcar na terça. O fabricante entrega as telhas misturadas: quem
    separa e escreve o código é a equipe, na obra. */
+/* A PLANTA DA FACHADA (vista de cima), no lugar do 3D: a rua embaixo, cada
+   trecho com a letra dele, a seta da montagem de A até o último e onde
+   começa. Quem olha a folha fica na mesma posição de quem está na rua. */
+function tlhPlantaFachada(faces){
+  if(!faces||faces.length<3||!faces.every(f=>Number.isInteger(f.fachadaPos)&&f.sketchup))return '';
+  const fs=faces.slice().sort((a,b)=>a.fachadaPos-b.fachadaPos);
+  /* rua e direita: do trecho de frente (normal = lado de fora, eixo = esquerda → direita) */
+  const ref=fs.find(f=>f.trechoTipo==='FACHADA')||fs[0],S=[ref.sketchup.normal[0],ref.sketchup.normal[1]],R=[ref.sketchup.eixo[0],ref.sketchup.eixo[1]];
+  const seg=fs.map(f=>{const p=tlhPontasPlanta(f).map(q=>[q[0]*R[0]+q[1]*R[1],q[0]*S[0]+q[1]*S[1]]);   /* y cresce para a rua (para baixo na folha) */
+    /* na ordem da montagem (da esquerda para a direita) */
+    return p[0][0]<=p[1][0]||Math.abs(p[0][0]-p[1][0])<1?p:[p[1],p[0]];});
+  /* os retornos: a ponta solta é a de fora */
+  const pts=seg.flat(),xs=pts.map(p=>p[0]),ys=pts.map(p=>p[1]),x0=Math.min(...xs),x1=Math.max(...xs),y0=Math.min(...ys),y1=Math.max(...ys);
+  const W=760,H=520,m=70,sc=Math.min((W-2*m)/Math.max(1,x1-x0),(H-2*m-90)/Math.max(1,y1-y0));
+  const X=x=>m+(W-2*m-(x1-x0)*sc)/2+(x-x0)*sc,Y=y=>m+40+(H-2*m-90-(y1-y0)*sc)/2+(y-y0)*sc,r1=v=>Math.round(v*10)/10,n0=v=>Math.round(v).toLocaleString('pt-BR');
+  const cor=['#D53309','#2f6db0','#1f8a5b','#8a4fb5','#c7871b','#0f7c8c','#b0346f','#5b6570'];
+  let g='';
+  /* a ordem: liga as pontas para achar a sequência contínua */
+  const ord=[];let ultimo=null;
+  seg.forEach((p,i)=>{let a=p[0],b=p[1];if(ultimo&&Math.hypot(b[0]-ultimo[0],b[1]-ultimo[1])<Math.hypot(a[0]-ultimo[0],a[1]-ultimo[1])){const t=a;a=b;b=t;}ord.push([a,b]);ultimo=b;});
+  if(Math.hypot(ord[0][0][0]-ord[1][0][0],ord[0][0][1]-ord[1][0][1])<Math.hypot(ord[0][1][0]-ord[1][0][0],ord[0][1][1]-ord[1][0][1])){const t=ord[0][0];ord[0][0]=ord[0][1];ord[0][1]=t;}
+  ord.forEach(([a,b],i)=>{const f=fs[i],c=f.cor||cor[i%cor.length],mx=(X(a[0])+X(b[0]))/2,my=(Y(a[1])+Y(b[1]))/2;
+    const dx=X(b[0])-X(a[0]),dy=Y(b[1])-Y(a[1]),L=Math.hypot(dx,dy)||1,nx=-dy/L,ny=dx/L;
+    /* a letra do lado de dentro (para cima / para o meio) e a medida do lado da rua; no retorno, a letra para fora */
+    const cxm=(X(x0)+X(x1))/2,vert=Math.abs(dx)<Math.abs(dy);
+    const sgn=vert?((mx<cxm?-1:1)*(nx>=0?1:-1)):(ny<=0?1:-1),lx=mx+nx*sgn*24,ly=my+ny*sgn*24;
+    g+='<line x1="'+r1(X(a[0]))+'" y1="'+r1(Y(a[1]))+'" x2="'+r1(X(b[0]))+'" y2="'+r1(Y(b[1]))+'" stroke="'+c+'" stroke-width="9" stroke-linecap="round"/>'
+      +'<circle cx="'+r1(lx)+'" cy="'+r1(ly)+'" r="13" fill="'+c+'"/><text x="'+r1(lx)+'" y="'+r1(ly+5)+'" font-size="15" font-weight="800" fill="#fff" text-anchor="middle">'+f.letra+'</text>'
+      +'<text x="'+r1(mx-nx*sgn*(vert?30:20))+'" y="'+r1(my-ny*sgn*20+4)+'" font-size="10.5" font-weight="700" fill="#141414" text-anchor="middle">'+n0(f.xFim-f.xIni)+'</text>';});
+  /* a seta da montagem, por dentro (atrás da fachada), de A ao último */
+  const seq=ord.map(([a,b])=>[(X(a[0])+X(b[0]))/2,(Y(a[1])+Y(b[1]))/2-52]);
+  g+='<polyline points="'+seq.map(p=>r1(p[0])+','+r1(p[1])).join(' ')+'" fill="none" stroke="#D53309" stroke-width="2" stroke-dasharray="6 4" marker-end="url(#tlhPlSeta)"/>';
+  const A0=ord[0][0];
+  g+='<circle cx="'+r1(X(A0[0]))+'" cy="'+r1(Y(A0[1]))+'" r="7" fill="#fff" stroke="#D53309" stroke-width="3"/>'
+    +'<text x="'+r1(X(A0[0])-4)+'" y="'+r1(Y(A0[1])+26)+'" font-size="12" font-weight="800" fill="#D53309" text-anchor="start">▲ COMECE AQUI ('+fs[0].letra+'-01)</text>';
+  g+='<line x1="'+m+'" y1="'+(H-34)+'" x2="'+(W-m)+'" y2="'+(H-34)+'" stroke="#9aa3ad" stroke-width="1.5" stroke-dasharray="10 6"/>'
+    +'<text x="'+(W/2)+'" y="'+(H-12)+'" font-size="15" font-weight="800" letter-spacing="3" fill="#5b6570" text-anchor="middle">RUA · LADO DE FORA</text>'
+    +'<text x="'+(W/2)+'" y="30" font-size="12" font-weight="700" fill="#5b6570" text-anchor="middle">planta vista de cima · montagem da esquerda para a direita, de quem olha da rua</text>';
+  return '<svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="Planta da fachada"><defs><marker id="tlhPlSeta" markerWidth="12" markerHeight="10" refX="11" refY="5" orient="auto"><path d="M0 0L12 5L0 10Z" fill="#D53309"/></marker></defs>'+g+'</svg>';
+}
 function tmfCss(){
   return '<style>.tmf{font-family:Arial,Helvetica,sans-serif;color:#141414;box-sizing:border-box;width:281mm;height:176mm;border:.35mm solid #141414;padding:5mm 7mm 3mm;display:grid;grid-template-rows:auto 1fr auto;gap:2.5mm;overflow:hidden;break-after:page;page-break-after:always;background:#fff}'
     +'.tmf:last-child{break-after:auto;page-break-after:auto}.tmf *{box-sizing:border-box}'
@@ -14945,7 +15090,7 @@ function tmfCss(){
     +'.tmf-seq span small{font-weight:400;color:#555;margin-left:1mm;font-size:7.5pt}.tmf-seq span.x{border-color:#D53309;color:#D53309}.tmf-seq span.top{background:#141414;color:#fff;border-color:#141414}.tmf-seq span.top small{color:#ddd}'
     +'.tmf-cortes{display:grid;grid-template-columns:repeat(8,1fr);gap:2mm}.tmf-corte{border:.2mm solid #d9dce1;border-radius:2mm;padding:1.2mm 1.5mm;text-align:center;font-size:7.5pt;color:#555;break-inside:avoid}'
     +'.tmf-corte b{font-size:9pt;color:#141414}.tmf .tmf-corte svg{width:100%;height:auto;max-height:44mm;margin:1mm 0}'
-    +'.tmf-fix td:last-child{text-align:right}</style>';
+    +'.tmf-fix td:last-child{text-align:right}.tmf-cor{display:inline-block;width:3.2mm;height:3.2mm;border-radius:50%;margin-right:1.6mm;vertical-align:-.4mm}.tmf-tit-cor{display:inline-block;width:5mm;height:5mm;border-radius:1mm;margin-right:2mm;vertical-align:-.6mm}</style>';
 }
 function tmfTopo(logo,obra,dataBr,t,l1,l2){
   return '<div class="tmf-top"><div class="tmf-tx"><div class="t">'+t+'</div>'+l1+'<div class="tmf-tx2">'+(l2||'')+'</div></div>'
@@ -14955,9 +15100,9 @@ function tmfTopo(logo,obra,dataBr,t,l1,l2){
 function tmfResumo(o){
   const n0=v=>Math.round(v).toLocaleString('pt-BR');
   return '<article class="tmf tmf-resumo">'+o.topo
-    +'<div class="tmf-res'+(o.img?'':' so')+'">'+(o.img?'<div class="tmf-3d"><img src="'+o.img+'" alt="'+escapeAttr(o.alt||'Montagem em 3D')+'"></div>':'')
+    +'<div class="tmf-res'+(o.img||o.planta?'':' so')+'">'+(o.planta?'<div class="tmf-3d">'+o.planta+'</div>':o.img?'<div class="tmf-3d"><img src="'+o.img+'" alt="'+escapeAttr(o.alt||'Montagem em 3D')+'"></div>':'')
     +'<div class="tmf-col"><div><h5>Ordem de montagem</h5><table class="tmf-ord"><thead><tr><th></th><th>'+o.col+'</th><th class="r">Telhas</th><th class="r">Chapas</th><th class="r">✂ na obra</th><th class="r">Folha</th></tr></thead><tbody>'
-    +o.linhas.map(l=>'<tr data-ordem="'+l.n+'"><td class="tmf-n">'+l.n+'</td><td><b>'+escapeHtml(l.nome)+'</b>'+(l.sub?'<span class="tmf-sub">'+escapeHtml(l.sub)+'</span>':'')+'</td>'
+    +o.linhas.map(l=>'<tr data-ordem="'+l.n+'"'+(o.linhas.length>6?' style="line-height:1.05"':'')+'><td class="tmf-n">'+l.n+'</td><td>'+(l.cor?'<i class="tmf-cor" style="background:'+l.cor+'"></i>':'')+'<b>'+escapeHtml(l.nome)+'</b>'+(l.sub?'<span class="tmf-sub">'+escapeHtml(l.sub)+'</span>':'')+'</td>'
       +'<td class="r">'+n0(l.telhas)+'</td><td class="r">'+n0(l.chapas)+'</td><td class="r">'+(l.cortes||'—')+'</td><td class="r">'+l.folha+'</td></tr>').join('')
     +'</tbody></table></div>'
     +'<div><h5>Antes de subir</h5><ul class="tmf-chk">'+o.chk.map(c=>'<li><span class="tmf-ok"></span><span>'+c+'</span></li>').join('')+'</ul></div>'
@@ -14983,7 +15128,7 @@ function tmfCorteSVG(chapa,util,partes){
 /* a pilha de cada parede/água: na ordem de montagem, a primeira por cima */
 function tmfPilha(p){
   const n0=v=>Math.round(v).toLocaleString('pt-BR');
-  return '<div class="tmf-pilha" data-pilha="'+escapeAttr(p.letra)+'" data-chapas="'+p.chapas+'"><div class="h"><b><em>'+escapeHtml(p.letra)+'</em>'+escapeHtml(p.nome)+'</b><span>de cima para baixo · '+p.chapas+' chapa'+(p.chapas>1?'s':'')+'</span></div>'
+  return '<div class="tmf-pilha" data-pilha="'+escapeAttr(p.letra)+'" data-chapas="'+p.chapas+'"><div class="h"><b>'+(p.cor?'<i class="tmf-cor" style="background:'+p.cor+'"></i>':'')+'<em>'+escapeHtml(p.letra)+'</em>'+escapeHtml(p.nome)+'</b><span>de cima para baixo · '+p.chapas+' chapa'+(p.chapas>1?'s':'')+'</span></div>'
     +'<div class="tmf-seq">'+p.itens.map((it,i)=>'<span class="'+(i===0?'top':'')+(it.x?' x':'')+'">'+escapeHtml(it.cod)+(it.x?' ✂':'')+'<small>'+n0(it.mm)+(it.partes>1?' ×'+it.partes:'')+'</small></span>').join('')+'</div></div>';
 }
 /* altura estimada (mm) de cada bloco, para a separação ir para outra folha
@@ -15064,7 +15209,7 @@ function telhaFichaHTML(){
     });
     f.pilhaChapas=itens.reduce((a,it)=>a+it.partes,0)*e;
     f.pilhaCortes=itens.filter(it=>it.x).length;
-    return {letra:f.letra,nome:'Parede '+f.letra+' · '+String(f.nome),itens,chapas:f.pilhaChapas};
+    return {letra:f.letra,cor:f.cor,nome:'Parede '+f.letra+' · '+String(f.nome),itens,chapas:f.pilhaChapas};
   });
   if((TLH.avulsos||[]).length){
     const itens=TLH.avulsos.map(a=>{const d=tlhDivide(a.mm);return {cod:(a.rot||'avulso')+' ×'+(a.qtd*e),mm:d.medida,partes:d.partes*a.qtd*e,x:false};});
@@ -15158,14 +15303,14 @@ function telhaFichaHTML(){
     const linha=t=>'<tr><td class="tmf-c">'+t.cod+'</td><td class="r"><b>'+n0(t.mm)+'</b></td>'+largTd(t)+'<td>'+corteTxt(t)+'</td><td class="tmf-ob">'+obs(t)+'</td><td><span class="tmf-ok"></span></td></tr>';
     const lista=longa?ts.map(t=>{const u=t.util||util,c=t.larg<u-2;return '<div class="tmf-l"><span>'+t.cod+'</span><b>'+n0(t.mm)+'</b><i'+(c?' class="lg"':'')+'>'+n0(c?t.larg:u)+'</i><span class="tmf-ob">'+[t.queda>0?corteTxt(t):'',obs(t)].filter(Boolean).join(' · ')+'</span><span class="tmf-ok"></span></div>';}).join('')
       :'<table><thead><tr><th>Cód.</th><th class="r">Compr.</th><th class="r">Larg.</th><th>Corte</th><th>Obs.</th><th></th></tr></thead><tbody>'+ts.map(linha).join('')+'</tbody></table>';
-    return '<article class="tmf" data-parede="'+f.letra+'">'+topo('PAREDE '+f.letra+' · '+escapeHtml(String(f.nome).toUpperCase())+(parte?' ('+parte+'/'+partes+')':''),
+    return '<article class="tmf" data-parede="'+f.letra+'">'+topo((f.cor?'<i class="tmf-tit-cor" style="background:'+f.cor+'"></i>':'')+'PAREDE '+f.letra+' · '+escapeHtml(String(f.nome).toUpperCase())+(parte?' ('+parte+'/'+partes+')':''),
         (parte?'<b>'+ts[0].cod+' a '+ts[ts.length-1].cod+'</b> · <b>'+ts.length+'</b> de '+f.ordem.length+' telhas · <span>trecho</span> <b>'+n0(x0-f.xIni)+' a '+n0(x1-f.xIni)+' mm</b>'
           :'<b>'+ts.length+'</b> telhas · <span>altura</span> <b>'+n0(yTop-yBase)+' mm</b> · <span>comprimento</span> <b>'+n0(x1-x0)+' mm</b>')
           /* FACHADA: além da seta, a orientação escrita (vista de fora) --
              Teste leitor-cobertura-folha-montagem */
           +' · <span>montagem</span> <b>'+((!f.topoReto&&f.cume>x0&&f.cume<x1)?'do centro para os lados':'esquerda → direita')+'</b>'
           +' · <span>ordem</span> <b>'+(fi+1)+' de '+faces.length+'</b>'+vezes,'')
-      +'<div class="tmf-corpo'+(longa?' longa':'')+'"><div><h5>Vista de fora</h5>'+svg+leg+'</div><div style="min-height:0;overflow:hidden"><h5>Telhas desta parede · na ordem</h5><div class="tmf-lst">'+lista+'</div></div></div>'
+      +'<div class="tmf-corpo'+(longa?' longa':'')+'"><div'+(f.cor?' style="border-left:1.6mm solid '+f.cor+';padding-left:2.5mm"':'')+'><h5>Vista de fora</h5>'+svg+leg+'</div><div style="min-height:0;overflow:hidden"><h5>Telhas desta parede · na ordem</h5><div class="tmf-lst">'+lista+'</div></div></div>'
       +peTxt+'</article>';
   };
   /* Parede com mais de 36 telhas não cabe numa folha (nem o desenho fica
@@ -15185,11 +15330,11 @@ function telhaFichaHTML(){
   const aberturas=f=>{const m=new Map();(f.vergas||[]).forEach(v=>{const pe=v.pe!=null?v.pe:f.baseY,porta=pe<=f.baseY+1;
       const k=(porta?'porta':'janela')+'|'+n0(v.x1-v.x0)+' × '+n0(v.y-pe);m.set(k,(m.get(k)||0)+1);});
     return [...m].map(([k,q])=>{const [t,md]=k.split('|');return (q>1?q+' '+t+'s':t)+' '+md;}).join(' · ');};
-  const linhas=faces.map((f,i)=>{const l={n:i+1,nome:f.letra+' · '+f.nome,sub:aberturas(f),telhas:f.ordem.length*e,chapas:f.pilhaChapas,cortes:f.pilhaCortes*e,folha:String(pag+1)+(porParede[i].length>1?'–'+(pag+porParede[i].length):'')};pag+=porParede[i].length;return l;});
+  const linhas=faces.map((f,i)=>{const l={n:i+1,cor:f.cor,nome:f.letra+' · '+f.nome,sub:aberturas(f),telhas:f.ordem.length*e,chapas:f.pilhaChapas,cortes:f.pilhaCortes*e,folha:String(pag+1)+(porParede[i].length>1?'–'+(pag+porParede[i].length):'')};pag+=porParede[i].length;return l;});
   const nCortes=cortes.length*e;
-  const img3d=tlh3dImagem();
-  const resumo=tmfResumo({img:img3d,alt:'Fechamento em 3D, com as paredes no lugar',col:'Parede',linhas,
-    topo:topo('FECHAMENTO · MONTAGEM EM 3D E RESUMO','<b>'+faces.reduce((s,f)=>s+f.ordem.length,0)*e+'</b> telhas de <b>'+totalQtd+'</b> chapas · <b>'+faces.length+'</b> parede(s) · '+escapeHtml(rot)+' · útil <b>'+n0(util)+'</b> mm'+vezes,''),
+  const planta=tlhPlantaFachada(faces),img3d=planta?'':tlh3dImagem();
+  const resumo=tmfResumo({img:img3d,planta,alt:'Fechamento em 3D, com as paredes no lugar',col:planta?'Trecho':'Parede',linhas,
+    topo:topo(planta?'FACHADA · PLANTA E ORDEM DE MONTAGEM':'FECHAMENTO · MONTAGEM EM 3D E RESUMO','<b>'+faces.reduce((s,f)=>s+f.ordem.length,0)*e+'</b> telhas de <b>'+totalQtd+'</b> chapas · <b>'+faces.length+'</b> parede(s) · '+escapeHtml(rot)+' · útil <b>'+n0(util)+'</b> mm'+vezes,''),
     chk:['Telhas separadas por parede e contadas: <b>'+totalQtd+' chapas</b> (folha 2).','Terças no prumo e alinhadas.',
       'Marcar na terça o início de cada telha (cotas embaixo do desenho de cada parede).']
       .concat(nCortes?['Cortar no chão, antes de subir, as <b>'+nCortes+' chapa'+(nCortes>1?'s':'')+' ✂</b> (folha 2).']:[])
@@ -15406,7 +15551,7 @@ function tlh3dRotulosNaTela(){
 /* O modulo e' <script type="module">: fora dele nada aqui existe, nem para
    o proprio navegador escrever no console. Publica so' a leitura de tela,
    sem nenhuma escrita -- o mesmo espirito do window.rmCobertura ali embaixo. */
-window.rmFechamento3D={rotulosNaTela:()=>tlh3dRotulosNaTela()};
+window.rmFechamento3D={rotulosNaTela:()=>tlh3dRotulosNaTela(),paredes:()=>TLH.sketchupFaces||[],duplas:()=>TLH.sketchupDuplas||[]};
 /* UM DESENHO POR QUADRO, NAO UM POR EVENTO.
    O pointermove chamava tlh3dDesenha() direto. Mouse de 500 Hz manda 500
    eventos por segundo, e cada um redesenhava a cena inteira antes de o
@@ -32472,7 +32617,7 @@ if('serviceWorker' in navigator && location.protocol.startsWith('http')){
 }
 </script>
 <script>/* versão publicada (PADRAO_RM.md §3): sobe a cada publicação, junto com o CACHE do sw.js */
-const APP_VER='v319';
+const APP_VER='v320';
 </script>
 <script id="rmVersaoBloco">
 /* ===== SELO DE VERSÃO — igual em todos os sistemas (PADRAO_RM.md §3) =====
