@@ -25171,7 +25171,7 @@ window.__mcadTeste={D,OP,V,abre,texto:t=>texto(t),cmd:()=>cmd,dobraNaPeca:d=>dob
 'use strict';
 const KEY='rm_pln_corte_v1';
 const FORMATOS=[[3000,1200],[3000,1500],[2000,1000]];
-const PADRAO={formato:'auto',L:3000,W:1200,gap:5,margem:5,giro:true,proc:'plasmaLaser',rkg:{}};
+const PADRAO={formato:'auto',L:3000,W:1200,gap:5,margem:5,giro:true,nomes:true,proc:'plasmaLaser',rkg:{}};
 let CFG={...PADRAO};
 try{const o=JSON.parse(localStorage.getItem(KEY)||'null');if(o&&typeof o==='object')CFG={...PADRAO,...o,rkg:{...(o.rkg||{})}};}catch(e){}
 const grava=()=>{try{localStorage.setItem(KEY,JSON.stringify(CFG));}catch(e){}};
@@ -25348,7 +25348,7 @@ function legendaHTML(P){
 /* ---- arquivos ---- */
 const asc=t=>String(t).normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/°/g,'%%d').replace(/[^\x20-\x7E]/g,' ');
 const segArq=s=>String(s||'').normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^A-Za-z0-9,_-]+/g,'_').replace(/^_+|_+$/g,'').slice(0,60);
-function entsChapa(l,ch,oy,titulo){
+function entsChapa(l,ch,oy,titulo,nomes){
   const N=(c,v)=>dxfN(c,v),n=v=>(Math.round(v*100)/100).toFixed(2);
   let e='';
   const poli=(lay,vs)=>{e+=N(0,'LWPOLYLINE')+N(8,lay)+N(90,vs.length)+N(70,1);vs.forEach(v=>{e+=N(10,n(v.x))+N(20,n(v.y+oy));});};
@@ -25360,7 +25360,9 @@ function entsChapa(l,ch,oy,titulo){
     poli('CORTE',G.cont);
     G.furos.forEach(f=>{if(f.r!=null)e+=N(0,'CIRCLE')+N(8,'CORTE')+N(10,n(f.x))+N(20,n(f.y+oy))+N(30,'0.0')+N(40,n(f.r));else poli('CORTE',f.pts);});
     G.dob.forEach(g=>{e+=N(0,'LINE')+N(8,'DOBRA')+N(10,n(g[0].x))+N(20,n(g[0].y+oy))+N(30,'0.0')+N(11,n(g[1].x))+N(21,n(g[1].y+oy))+N(31,'0.0');});
-    /* Identificação: o número da lista, e o nome se couber na largura. */
+    /* Identificação: o número da lista, e o nome se couber na largura. Sai
+       só com a caixa "Nome das peças no DXF" marcada. */
+    if(!nomes)return;
     const h=Math.max(2.5,Math.min(8,q.h*0.25)),nome=String(q.it.n)+' '+String(pecaNome(q.it.n));
     const cabe=Math.floor((q.w-4)/(h*0.62));
     txt(q.x+2,q.y+2,h,cabe>=nome.length?nome:String(q.it.n));
@@ -25375,8 +25377,8 @@ function arquivos(P){
   P.lotes.forEach(l=>l.chapas.forEach(ch=>{i++;
     const tit='CHAPA '+i+' - #'+plnNum(l.esp,2)+' '+l.pm.dxf+' - '+l.W+' x '+l.L+' MM';
     files.push({name:'Chapa_'+String(i).padStart(2,'0')+'_'+segArq(l.pm.dxf)+'_'+plnNum(l.esp,2)+'mm_'+l.W+'x'+l.L+'.dxf',
-      data:rmDxf2000(entsChapa(l,ch,0,''),{minx:'0',miny:'0',maxx:String(l.L),maxy:String(l.W)},CAMADAS,PLN_DXF_ESTILO,4)});
-    todos+=entsChapa(l,ch,oy,tit);maxL=Math.max(maxL,l.L);oy+=l.W+150;
+      data:rmDxf2000(entsChapa(l,ch,0,'',P.cfg.nomes!==false),{minx:'0',miny:'0',maxx:String(l.L),maxy:String(l.W)},CAMADAS,PLN_DXF_ESTILO,4)});
+    todos+=entsChapa(l,ch,oy,tit,P.cfg.nomes!==false);maxL=Math.max(maxL,l.L);oy+=l.W+150;
   }));
   if(i>1)files.push({name:'Plano_completo_'+i+'_chapas.dxf',data:rmDxf2000(todos,{minx:'0',miny:'0',maxx:String(maxL),maxy:String(Math.max(1,oy-130))},CAMADAS,PLN_DXF_ESTILO,4)});
   const cell=v=>'"'+String(v??'').replace(/"/g,'""')+'"';
@@ -25387,7 +25389,7 @@ function arquivos(P){
   files.push({name:'LEIA-ME.txt',data:asc('RM ESTRUTURAS - PLANO DE CORTE (PLANIFICACAO)')+'\r\n'+
     (String(PLN.obra||'').trim()?asc('Obra: '+PLN.obra.trim())+'\r\n':'')+
     'UNIDADES: milimetros. Escala 1:1. Um DXF por chapa, no tamanho indicado no nome.\r\n'+
-    'CAMADAS: CORTE = contorno e furos (cortar). DOBRA = linhas de dobra (nao cortar). COTAS = numero da peca (nao cortar). CHAPA-REFERENCIA = borda da chapa, so referencia (nao cortar).\r\n'+
+    'CAMADAS: CORTE = contorno e furos (cortar). DOBRA = linhas de dobra (nao cortar). '+(c.nomes!==false?'COTAS = numero e nome da peca (nao cortar). ':'')+'CHAPA-REFERENCIA = borda da chapa, so referencia (nao cortar).\r\n'+
     'Folga entre pecas: '+plnNum(c.gap,1)+' mm. Margem da borda: '+plnNum(c.margem,1)+' mm. Giro de 90 graus: '+(c.giro?'permitido':'nao')+'.\r\n'+
     'Sem compensacao de kerf, sem entradas e sem ordem de corte: configurar no CAM.\r\n'+
     P.lotes.map(l=>asc(l.pm.rot)+' #'+plnNum(l.esp,2)+' mm: '+l.chapas.length+' chapa(s) '+l.W+' x '+l.L+' mm, '+l.itens.length+' pecas, aproveitamento '+plnNum(l.aprov,1)+'%.').join('\r\n')+'\r\n'+
@@ -25440,12 +25442,13 @@ painel.innerHTML='<h3>Plano de corte na chapa</h3><div class="pc-cfg">'+
   '<div class="fld"><label for="pcMargem">Margem da borda (mm)</label><input id="pcMargem" inputmode="decimal"></div>'+
   '<div class="fld"><label for="pcProc">Preço pela tabela</label><select id="pcProc"><option value="plasmaLaser">Plasma / laser</option><option value="cutBend">Corte e dobra</option></select></div>'+
   '<label class="pc-chk"><input type="checkbox" id="pcGiro"> Girar peças 90° para aproveitar</label>'+
+  '<label class="pc-chk"><input type="checkbox" id="pcNomes"> Nome das peças no DXF</label>'+
   '</div><div id="pcRes"></div>'+
   '<div class="btnrow" style="margin-top:12px"><button type="button" class="btn primary" id="pcZip">⬇ Arquivos de corte (ZIP)</button><button type="button" class="btn" id="pcPdf">Plano de corte (PDF)</button></div>';
 const hint=btDxf.closest('.btnrow').nextElementSibling;
 (hint&&hint.classList.contains('hint')?hint:btDxf.closest('.btnrow')).after(painel);
 const preenche=()=>{plnEl('pcFormato').value=CFG.formato;plnEl('pcW').value=plnNum(CFG.W,0);plnEl('pcL').value=plnNum(CFG.L,0);
-  plnEl('pcGap').value=plnNum(CFG.gap,1).replace(/,0$/,'');plnEl('pcMargem').value=plnNum(CFG.margem,1).replace(/,0$/,'');plnEl('pcProc').value=CFG.proc;plnEl('pcGiro').checked=!!CFG.giro;
+  plnEl('pcGap').value=plnNum(CFG.gap,1).replace(/,0$/,'');plnEl('pcMargem').value=plnNum(CFG.margem,1).replace(/,0$/,'');plnEl('pcProc').value=CFG.proc;plnEl('pcGiro').checked=!!CFG.giro;plnEl('pcNomes').checked=CFG.nomes!==false;
   painel.querySelectorAll('.pc-outro').forEach(e=>{e.style.display=CFG.formato==='outro'?'':'none';});};
 /* As peças são as mesmas do "Exportar" da lista: completa, selecionadas ou a da tela. */
 function pecasEscolhidas(){
@@ -25483,6 +25486,7 @@ painel.addEventListener('change',e=>{const t=e.target;
   if(t.id==='pcFormato'){CFG.formato=t.value;preenche();}
   else if(t.id==='pcProc')CFG.proc=t.value;
   else if(t.id==='pcGiro')CFG.giro=t.checked;
+  else if(t.id==='pcNomes')CFG.nomes=t.checked;
   else return;
   grava();atualiza();});
 document.addEventListener('change',e=>{if(e.target&&(e.target.id==='pwScope'||e.target.dataset&&e.target.dataset.pwCheck!=null))agenda();});
@@ -33033,7 +33037,7 @@ if('serviceWorker' in navigator && location.protocol.startsWith('http')){
 }
 </script>
 <script>/* versão publicada (PADRAO_RM.md §3): sobe a cada publicação, junto com o CACHE do sw.js */
-const APP_VER='v326';
+const APP_VER='v327';
 </script>
 <script id="rmVersaoBloco">
 /* ===== SELO DE VERSÃO — igual em todos os sistemas (PADRAO_RM.md §3) =====
