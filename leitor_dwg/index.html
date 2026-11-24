@@ -19569,6 +19569,9 @@ function rmChapasFactory(){
   return {number,round,maybe,profile,options,lotKey,widthsFor,rowKey,splitLimit,divide,makePlan,scanPlan,finance,labelFor,marking,engravingStats,toWorld,cutSegments,dxf,validatePlan,zip,retalhos};
 }
 const RMChapas=rmChapasFactory();
+/* O plano de corte da Planificação mora noutro <script type=module>: sem isto
+   ele não enxerga o compactador e o botão do ZIP não fazia nada. */
+window.RMChapas=RMChapas;
 
 /* RM CHAPAS - integração aditiva com o relatório, sem alterar o detalhamento. */
 const CP_KEY='rm_chapas_parceiro_v1';
@@ -25485,15 +25488,16 @@ painel.addEventListener('change',e=>{const t=e.target;
 document.addEventListener('change',e=>{if(e.target&&(e.target.id==='pwScope'||e.target.dataset&&e.target.dataset.pwCheck!=null))agenda();});
 const lista0=plnPintaLista;plnPintaLista=function(){const r=lista0.apply(this,arguments);agenda();return r;};
 const nomeBase=()=>('Plano de corte '+(String(PLN.obra||'').trim()?String(PLN.obra).trim()+' ':'')).replace(/[\\/:*?"<>|]+/g,'-').trim().slice(0,70);
-plnEl('pcZip').addEventListener('click',()=>{
+plnEl('pcZip').addEventListener('click',()=>{try{baixaZip();}catch(err){alert('Não foi possível gerar os arquivos: '+rmErroPt(err));}});
+function baixaZip(){
   atualiza();const P=ULT;if(!P){alert('Monte o plano antes: confira a lista de peças.');return;}
   if(P.erros.length){alert('Arquivo bloqueado:\n'+P.erros.join('\n'));return;}
   if(!P.tot.chapas){alert('Nenhuma peça para cortar.');return;}
-  const files=arquivos(P),blob=new Blob([RMChapas.zip(files)],{type:'application/zip'}),a=document.createElement('a');
+  const files=arquivos(P),blob=new Blob([window.RMChapas.zip(files)],{type:'application/zip'}),a=document.createElement('a');
   a.href=URL.createObjectURL(blob);a.download=nomeBase()+'.zip';document.body.appendChild(a);a.click();
   setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},800);
   plnLog('Planificação: plano de corte com '+P.tot.chapas+' chapa(s) e '+P.tot.pecas+' peça(s) gerado.','ok');
-});
+}
 plnEl('pcPdf').addEventListener('click',()=>{
   atualiza();const P=ULT;if(!P||!P.tot.chapas){alert('Nenhuma peça para o plano.');return;}
   const pa=document.getElementById('printArea');if(!pa)return;
@@ -33029,7 +33033,7 @@ if('serviceWorker' in navigator && location.protocol.startsWith('http')){
 }
 </script>
 <script>/* versão publicada (PADRAO_RM.md §3): sobe a cada publicação, junto com o CACHE do sw.js */
-const APP_VER='v325';
+const APP_VER='v326';
 </script>
 <script id="rmVersaoBloco">
 /* ===== SELO DE VERSÃO — igual em todos os sistemas (PADRAO_RM.md §3) =====

@@ -25,7 +25,7 @@
   "versao": "v77"
  },
  "central_rm": {
-  "commit": "735aad5",
+  "commit": "7b64d11",
   "data": "2026-11-24",
   "versao": "v188"
  },
@@ -45,10 +45,10 @@
   "versao": "v126"
  },
  "leitor_dwg": {
-  "commit": "fa33050",
+  "commit": "e7484c3",
   "data": "2026-11-24",
   "extensao": "1.4.0",
-  "versao": "v325"
+  "versao": "v326"
  },
  "orcamento-rm": {
   "commit": "bcddb57",
