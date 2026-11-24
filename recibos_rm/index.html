@@ -1934,6 +1934,8 @@ table.list.fv-tab th,table.list.fv-tab td{padding-left:7px;padding-right:7px}tab
 .form-grid .f.ex-acoes{align-self:end}
 .form-grid .seg,.filters .seg{height:var(--rm-ctl,38px);padding:2px;box-sizing:border-box;align-self:flex-end}
 .form-grid .seg button,.filters .seg button{padding:0 8px}
+#ponteBox .ponte-assoc{max-width:300px;width:100%;font-weight:650}
+#ponteBox .rowact{justify-content:flex-end;align-items:center}
 .t-dica{margin-top:8px;font-size:12.5px;color:var(--gray);font-weight:560;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
 .t-nome{background:none;border:0;padding:0;font:inherit;color:inherit;cursor:pointer;text-align:left;text-decoration:underline;text-decoration-color:var(--line);text-underline-offset:3px}
 .t-nome:hover{color:var(--red);text-decoration-color:currentColor}
@@ -9802,7 +9804,7 @@ $('#btnTGerar').onclick=buildPrintTerc;
    o mesmo caminho de qualquer recibo de terceiro (histórico, contrato da obra).
    Cada sistema grava só o que é seu no pedido:
      Contas:  fornecedor, valor, venc, documento, obs, pessoaId, contaPago, contaDataPag, contaExcluida
-     Recibos: movId, numeroRecibo, emitidoEm, reciboPago, reciboDataPag
+     Recibos: movId, numeroRecibo, emitidoEm, reciboPago, reciboDataPag, tercId, dispensado
    A baixa anda só de pendente para pago, nos dois sentidos: pagou no Contas,
    o recibo fica confirmado aqui; confirmou aqui, a conta fica paga lá.
    Desfazer um pagamento não volta para o outro lado (é decisão de cada um).
@@ -9811,6 +9813,9 @@ const PONTE_NO='contas_recibos';
 const PONTE={pedidos:{},ok:false,ligada:false,tercJ:null};
 const ponteNorm=x=>String(x||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();
 function ponteTerceiroDe(p){
+  /* tercId: a associação feita AQUI (escolhida na lista ou cadastrada sozinha)
+     vale mais que a sugestão do Contas (pessoaId) e que o nome. */
+  if(p&&p.tercId){const t=state.terceiros.find(x=>x.id===p.tercId);if(t)return t;}
   if(p&&p.pessoaId){const t=state.terceiros.find(x=>x.id===p.pessoaId);if(t)return t;}
   const n=ponteNorm(p&&p.fornecedor);return n?state.terceiros.find(t=>ponteNorm(t.nome)===n)||null:null;
 }
@@ -9830,9 +9835,26 @@ function pontePublicaTerceiros(){
   const j=JSON.stringify(m);if(j===PONTE.tercJ)return;PONTE.tercJ=j;
   fb.db.ref(PONTE_NO+'/terceiros').set(m).catch(()=>{PONTE.tercJ=null;});
 }
+/* TERCEIRO QUE NÃO ESTÁ NO CADASTRO É CADASTRADO SOZINHO, com o nome que
+   veio do Contas (o CPF/CNPJ se completa depois, pelo aviso da linha). O id
+   sai do nome: dois aparelhos abertos cadastram o MESMO terceiro, não dois.
+   O pedido guarda o tercId, então o nome no Contas pode ser outro. */
+function ponteIdDoNome(n){let h=5381;const x=ponteNorm(n);for(let i=0;i<x.length;i++)h=((h<<5)+h+x.charCodeAt(i))>>>0;return 'tc'+h.toString(36);}
+function ponteAutoCadastra(upd){
+  let novos=0;
+  pontePendentes().forEach(p=>{
+    let t=ponteTerceiroDe(p);
+    if(!t){const nome=String(p.fornecedor||'').trim();if(!nome)return;const id=ponteIdDoNome(nome);
+      t=state.terceiros.find(x=>x.id===id);
+      if(!t){t={id,nome,docTipo:'CNPJ',doc:'',servico:'',obs:'',metodo:'banco',pix:'',dadosBanc:'',contratos:[],valorContratado:0,ord:state.terceiros.length,origem:'contas'};state.terceiros.push(t);novos++;}}
+    if(p.tercId!==t.id){upd[p.contaId+'/tercId']=t.id;PONTE.pedidos[p.contaId].tercId=t.id;}
+  });
+  return novos;
+}
 function ponteConcilia(){
   if(!PONTE.ok||!dadosCarregados)return;
   const upd={};let mudou=false;
+  if(ponteAutoCadastra(upd)){mudou=true;setTimeout(pontePublicaTerceiros,0);}
   movLista().forEach(m=>{
     if(!m||!m.contaId)return;const p=PONTE.pedidos[m.contaId];if(!p)return;
     if(p.contaPago&&m.status==='pendente'){
@@ -9847,7 +9869,7 @@ function ponteConcilia(){
 }
 function pontePendentes(){
   return Object.keys(PONTE.pedidos||{}).map(id=>Object.assign({contaId:id},PONTE.pedidos[id]))
-    .filter(p=>p&&!p.contaExcluida&&!p.movId&&!ponteMovDa(p.contaId))
+    .filter(p=>p&&!p.contaExcluida&&!p.dispensado&&!p.movId&&!ponteMovDa(p.contaId))
     .sort((a,b)=>String(a.venc||'').localeCompare(String(b.venc||'')));
 }
 function ponteNaLista(id){tDraftInit();return tDraft.linhas.some(l=>l.contaId===id);}
@@ -9862,18 +9884,32 @@ function renderPonte(){
   const L=PONTE.ok?pontePendentes():[];
   box.hidden=!L.length;if(!L.length){box.innerHTML='';return;}
   const prontos=L.filter(p=>ponteTerceiroDe(p)&&!ponteNaLista(p.contaId));
+  const opts=[...state.terceiros].sort((a,b)=>String(a.nome).localeCompare(String(b.nome),'pt-BR'));
   box.innerHTML='<div class="section-lab">Do Contas a Pagar <span class="sub" style="margin-left:6px;letter-spacing:0;text-transform:none">'+L.length+' · R$ '+fmtBRL(L.reduce((s,p)=>s+(Number(p.valor)||0),0))+'</span><span class="ln"></span>'+
     (prontos.length>1?'<button type="button" class="btn-mini" id="pontePoeTodos">＋ Pôr todos no recibo ('+prontos.length+')</button>':'')+'</div>'+
-    '<div class="tbl-wrap"><table class="list cartao-mob"><thead><tr><th>Terceiro</th><th style="width:100px">Vencimento</th><th>NF / Observação</th><th class="r">Valor</th><th class="r">Ação</th></tr></thead><tbody>'+
-    L.map(p=>{const t=ponteTerceiroDe(p),na=ponteNaLista(p.contaId);
-      return '<tr><td><div class="forn">'+esc(titlePt(t?t.nome:p.fornecedor||''))+'</div><div class="sub">'+(t?esc(t.servico||''):'<span style="color:var(--red)">não está no cadastro de terceiros</span>')+(p.contaPago?' · <b>paga no Contas</b>':'')+'</div></td>'+
+    '<div class="tbl-wrap"><table class="list cartao-mob"><thead><tr><th>Terceiro (cadastro do Recibos)</th><th style="width:100px">Vencimento</th><th>NF / Observação</th><th class="r">Valor</th><th class="r">Ações</th></tr></thead><tbody>'+
+    L.map(p=>{const t=ponteTerceiroDe(p),na=ponteNaLista(p.contaId),id=esc(p.contaId);
+      const outroNome=t&&ponteNorm(t.nome)!==ponteNorm(p.fornecedor);
+      return '<tr><td><select class="ponte-assoc" data-ponteassoc="'+id+'" aria-label="Terceiro associado">'+
+          opts.map(o=>'<option value="'+esc(o.id)+'"'+(t&&o.id===t.id?' selected':'')+'>'+esc(titlePt(o.nome||''))+'</option>').join('')+'</select>'+
+          '<div class="sub">'+(outroNome?'no Contas: '+esc(titlePt(p.fornecedor||''))+' · ':'')+
+          (t&&!t.doc?'<button type="button" class="t-nome" data-pontedoc="'+esc(t.id)+'" style="color:var(--red)">sem CPF/CNPJ — completar</button>':esc(t&&t.servico||''))+
+          (p.contaPago?' · <b>paga no Contas</b>':'')+'</div></td>'+
         '<td class="sub" data-label="Vencimento">'+(fmtDate(p.venc)||'—')+'</td>'+
         '<td data-label="NF / Observação">'+esc(p.documento||'—')+(p.obs?'<div class="sub">'+esc(p.obs)+'</div>':'')+'</td>'+
         '<td class="r val" data-label="Valor">R$ '+fmtBRL(p.valor)+'</td>'+
-        '<td class="r" data-label="Ação">'+(na?'<span class="sub">na lista abaixo</span>':t?'<button type="button" class="btn-mini" data-pontepoe="'+esc(p.contaId)+'">＋ Pôr no recibo</button>':'<button type="button" class="btn-mini" data-pontecad="'+esc(p.contaId)+'">＋ Cadastrar terceiro</button>')+'</td></tr>';}).join('')+
+        '<td class="r" data-label="Ações"><div class="rowact">'+(na?'<span class="sub">na lista abaixo</span>':'<button type="button" class="btn-mini" data-pontepoe="'+id+'"'+(t?'':' disabled')+'>＋ Pôr no recibo</button>')+
+          '<button type="button" class="ia" data-pontedel="'+id+'" title="Excluir da lista (não gera recibo desta conta)">✕</button></div></td></tr>';}).join('')+
     '</tbody></table></div>';
   box.querySelectorAll('[data-pontepoe]').forEach(b=>b.onclick=()=>{if(pontePoe(b.dataset.pontepoe)){renderTercLanc();toast('Conta posta na lista de pagamentos. Confira a obra e emita.','ok');}});
-  box.querySelectorAll('[data-pontecad]').forEach(b=>b.onclick=()=>{const p=PONTE.pedidos[b.dataset.pontecad]||{};tercAddAoSalvar=false;openTerc(null);$('#tmNome').value=p.fornecedor||'';});
+  box.querySelectorAll('[data-pontedoc]').forEach(b=>b.onclick=()=>{tercAddAoSalvar=false;openTerc(b.dataset.pontedoc);});
+  box.querySelectorAll('[data-ponteassoc]').forEach(sel=>sel.onchange=()=>{const id=sel.dataset.ponteassoc,p=PONTE.pedidos[id];if(!p)return;
+    p.tercId=sel.value;fb.db.ref(PONTE_NO+'/pedidos/'+id).update({tercId:sel.value}).catch(()=>{});
+    tDraftInit();tDraft.linhas.forEach(l=>{if(l.contaId===id)l.tid=sel.value;});saveTDraft();renderTercLanc();});
+  box.querySelectorAll('[data-pontedel]').forEach(b=>b.onclick=()=>{const id=b.dataset.pontedel,p=PONTE.pedidos[id];if(!p)return;
+    if(!confirm('Tirar a conta de '+titlePt(p.fornecedor||'')+' (R$ '+fmtBRL(p.valor)+') desta lista? Ela não gera recibo; no Contas a Pagar ela continua.'))return;
+    p.dispensado=true;fb.db.ref(PONTE_NO+'/pedidos/'+id).update({dispensado:true,dispensadoEm:Date.now()}).catch(()=>{});
+    tDraftInit();tDraft.linhas=tDraft.linhas.filter(l=>l.contaId!==id);saveTDraft();renderTercLanc();toast('Conta tirada da lista.','ok');});
   const tb=$('#pontePoeTodos');if(tb)tb.onclick=()=>{let n=0;prontos.forEach(p=>{if(pontePoe(p.contaId))n++;});renderTercLanc();toast(n+' conta(s) postas na lista de pagamentos.','ok');};
 }
 (function(){const r0=renderTercLanc;renderTercLanc=function(){const r=r0.apply(this,arguments);try{renderPonte();}catch(e){}return r;};})();
@@ -18961,7 +18997,7 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape'){if(fecharSemPerder(
    juntos a cada publicacao, e ha uma prova automatica que falha se um subir
    sem o outro. Assim o numero na tela e o mesmo do arquivo que o aparelho
    guardou, e dizer "estou na v81" passa a significar alguma coisa. */
-const APP_VER='v316';
+const APP_VER='v317';
 (function(){var p=document.getElementById('verPill'); if(p)p.textContent=APP_VER;})();
 
 if('serviceWorker' in navigator){
