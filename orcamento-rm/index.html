@@ -3017,6 +3017,8 @@ function nomeArquivoSeguro(s,limite){
 .cnm-vals{display:inline-flex;align-items:center;gap:14px;flex-wrap:wrap}
 .cnm-tt .cnm-in{width:124px;font-weight:800}
 .cnm-ar .cnm-in{width:74px}
+.cnm-final{display:inline-block;min-width:128px;text-align:right;font-size:13px;font-weight:700;white-space:nowrap;font-variant-numeric:tabular-nums}
+.cnm-final.off{visibility:hidden}
 .cnm-acr{display:inline-flex;align-items:center;gap:5px;font-size:12.5px;font-weight:700;color:var(--muted,#6b7280);cursor:pointer;white-space:nowrap}
 /* o valor que saiu calculado: mais apagado, mas pode ser digitado por cima */
 .cnm-in.calc{background:#f6f7f9;color:#5f6670;font-weight:600;border-style:dashed}
@@ -10736,7 +10738,7 @@ function applyImport(){
    publicacao, e ha uma prova automatica que falha se um subir sem o outro.
    Assim o numero na tela e' o mesmo do arquivo que o aparelho guardou, e
    dizer "estou na v15" passa a significar alguma coisa. */
-const APP_VER='v173';
+const APP_VER='v174';
 (function(){ try{ const p=document.getElementById('verPill'); if(p)p.textContent=APP_VER; }catch(e){} })();
 /* Versao nova assumiu com a pagina aberta: avisa, em vez de recarregar por
    conta propria e jogar fora um orcamento pela metade. */
@@ -12185,6 +12187,13 @@ function cnmSomaItens(s){ return cnmLista(s&&s.itens).reduce((a,i)=>a+cnmItemTot
    a tabela mudar depois. */
 function cnmAreaCom(s,m2){ const a=cnmNum(s&&s.area); return a>0?a:m2; }
 function cnmAcrFat(s){ return s&&s.acr?1+cnmNum(s.acrPct)/100:1; }
+/* O +10% é sobre o VALOR TOTAL do serviço, como na aba Orçamento: o R$/m² e o
+   total digitados são o valor sem acréscimo; o total final (com os 10%) sai
+   ao lado do Total e é ele que vai para o resumo e para o documento.
+   Teste orcamento-chave-acrescimo-no-total. */
+function cnmBaseCom(s,m2){ const a=cnmAreaCom(s,m2);
+  return Math.round((s&&s.modo==='item'?cnmSomaItens(s):s&&s.modo==='total'?cnmNum(s.total):cnmNum(s&&s.rm2)*a)*100)/100; }
+function cnmBase(s){ return cnmBaseCom(s,cnmM2()); }
 function cnmSubCom(s,m2){ const a=cnmAreaCom(s,m2);
   return Math.round((s&&s.modo==='item'?cnmSomaItens(s):s&&s.modo==='total'?cnmNum(s.total):cnmNum(s&&s.rm2)*a)*cnmAcrFat(s)*100)/100; }
 function cnmRm2Com(s,m2){ const a=cnmAreaCom(s,m2); return s&&s.modo==='item'?(a>0?cnmSomaItens(s)/a:0):s&&s.modo==='total'?(a>0?cnmNum(s.total)/a:0):cnmNum(s&&s.rm2); }
@@ -12490,11 +12499,12 @@ function cnmCartao(s){
     +'<span class="cnm-vals">'
     +'<label class="cnm-rm2 cnm-ar" title="Área deste serviço. Vazio = a metragem da obra"><span>m²</span>'
     +'<input class="cnm-in num" data-cnmarea="'+s.id+'" inputmode="decimal" placeholder="'+escapeAttr(cnmM2()>0?num(cnmM2(),2).replace(/,00$/,''):'obra')+'" value="'+escapeAttr(s.area==null?'':s.area)+'"></label>'
-    +(cnmAcrCat()>0||s.acr?'<label class="cnm-acr" title="Somar o acréscimo da tabela SERVIÇOS neste serviço"><input type="checkbox" data-cnmacr="'+s.id+'"'+(s.acr?' checked':'')+'> +'+num(s.acr?cnmNum(s.acrPct):cnmAcrCat(),0)+'%</label>':'')
     +'<label class="cnm-rm2" title="'+(porItem?'R$/m² calculado pela soma dos itens':'Valor deste serviço por m² da obra — o total sai calculado')+'"><span>R$</span>'
     +'<input class="cnm-in num'+(porTotal?' calc':'')+(porItem?' calc':'')+'"'+(porItem?' readonly tabindex="-1"':'')+' data-cnmrm2="'+s.id+'" inputmode="decimal" placeholder="0,00" value="'+escapeAttr(porItem||porTotal?cnmCalcTxt(cnmRm2(s)):(s.rm2==null?'':s.rm2))+'"><span>/m²</span></label>'
     +'<label class="cnm-rm2 cnm-tt" title="'+(porItem?'Soma dos itens abaixo':'Valor total deste serviço — o R$/m² sai calculado')+'"><span>Total R$</span>'
-    +'<input class="cnm-in num'+(porTotal?'':' calc')+'"'+(porItem?' readonly tabindex="-1"':'')+' data-cnmtot="'+s.id+'" inputmode="decimal" placeholder="0,00" value="'+escapeAttr(porTotal?(s.total==null?'':s.total):cnmCalcTxt(cnmSub(s)))+'"></label>'
+    +'<input class="cnm-in num'+(porTotal?'':' calc')+'"'+(porItem?' readonly tabindex="-1"':'')+' data-cnmtot="'+s.id+'" inputmode="decimal" placeholder="0,00" value="'+escapeAttr(porTotal?(s.total==null?'':s.total):cnmCalcTxt(cnmBase(s)))+'"></label>'
+    +(cnmAcrCat()>0||s.acr?'<label class="cnm-acr" title="Somar o acréscimo da tabela SERVIÇOS sobre o total deste serviço"><input type="checkbox" data-cnmacr="'+s.id+'"'+(s.acr?' checked':'')+'> +'+num(s.acr?cnmNum(s.acrPct):cnmAcrCat(),0)+'%</label>'
+      +'<span class="cnm-final'+(s.acr?'':' off')+'" data-cnmfin="'+s.id+'" title="Total do serviço com o acréscimo">= '+brl(cnmSub(s))+'</span>':'')
     +'</span></div>';
   if(s.aberto){
     h+='<div class="cnm-srv-b">';
@@ -12526,7 +12536,8 @@ function cnmResumo(){
     const a=document.querySelector('[data-cnmrm2="'+s.id+'"]'), b=document.querySelector('[data-cnmtot="'+s.id+'"]');
     const porTotal=s.modo==='total', porItem=s.modo==='item';
     if(a&&document.activeElement!==a&&(porTotal||porItem)) a.value=cnmCalcTxt(cnmRm2(s));
-    if(b&&document.activeElement!==b&&!porTotal) b.value=cnmCalcTxt(cnmSub(s));
+    if(b&&document.activeElement!==b&&!porTotal) b.value=cnmCalcTxt(cnmBase(s));
+    const f=document.querySelector('[data-cnmfin="'+s.id+'"]'); if(f){ f.textContent='= '+brl(cnmSub(s)); f.classList.toggle('off',!s.acr); }
     if(a) a.classList.toggle('calc',porTotal||porItem); if(b) b.classList.toggle('calc',!porTotal);
   });
   r.innerHTML='<div class="cnm-tot"><div class="k">Total da obra</div><div class="v">'+brl(tot)+'</div>'
@@ -12647,7 +12658,7 @@ function cnmPDF(){
   let corpo='';
   servs.forEach(s=>{
     corpo+='<div class="sv"><div class="sv-h rmd-grupo"><b>'+escapeAttr(s.nome||'Serviço')+'</b>'
-      +'<span>'+(cnmRm2(s)>0?brl(cnmRm2(s))+'/m²'+(cnmNum(s.area)>0?' × '+num(cnmNum(s.area),2)+' m²':'')+(s.acr?' + '+num(cnmNum(s.acrPct),0)+'%':'')+' · ':'')+'<b>'+brl(cnmSub(s))+'</b></span></div>'
+      +'<span>'+(cnmRm2(s)>0?brl(cnmRm2(s))+'/m²'+(cnmNum(s.area)>0?' × '+num(cnmNum(s.area),2)+' m²':'')+' · ':'')+(s.acr?brl(cnmBase(s))+' + '+num(cnmNum(s.acrPct),0)+'% · ':'')+'<b>'+brl(cnmSub(s))+'</b></span></div>'
       +(s.itens.length?'<table><thead><tr><th class="l">Item / descrição</th><th class="l" style="width:22mm">Unid.</th><th style="width:22mm">Qtd.</th>'
         +(s.modo==='item'?'<th style="width:28mm">Valor unit.</th><th style="width:28mm">Total</th>':'')+'</tr></thead><tbody>'
         +s.itens.map(i=>'<tr><td class="l">'+escapeAttr(i.desc||'—')+'</td><td class="l">'+escapeAttr(i.un||'')+'</td><td>'+qtd(i.qtd)+'</td>'
@@ -12673,7 +12684,7 @@ function cnmPDF(){
     +'</div>'+corpo
     +'<div class="rmd-sec">Resumo da obra</div>'
     +'<table class="res"><thead><tr><th class="l">Serviço</th><th>R$/m²</th><th>Valor</th></tr></thead><tbody>'
-    +servs.map(s=>'<tr><td class="l">'+escapeAttr(s.nome||'Serviço')+(cnmNum(s.area)>0?' · '+num(cnmNum(s.area),2)+' m²':'')+'</td><td>'+brl(cnmRm2(s))+'</td><td>'+brl(cnmSub(s))+'</td></tr>').join('')
+    +servs.map(s=>'<tr><td class="l">'+escapeAttr(s.nome||'Serviço')+(cnmNum(s.area)>0?' · '+num(cnmNum(s.area),2)+' m²':'')+'</td><td>'+brl(cnmAreaCom(s,m2)>0?cnmSub(s)/cnmAreaCom(s,m2):cnmRm2(s))+'</td><td>'+brl(cnmSub(s))+'</td></tr>').join('')
     +'<tr class="tot rmd-tot"><td class="l">Total da obra</td><td>'+(m2>0?brl(tot/m2):'—')+'</td><td>'+brl(tot)+'</td></tr></tbody></table>'
     +'</body></html>';
   esqEntregaPDF(html,nomeArquivoSeguro('RM_Chave_na_mao_'+(S.obra||S.cliente||'obra')+'.pdf'));
