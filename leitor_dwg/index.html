@@ -5877,9 +5877,13 @@ let CELL=0.013; // tamanho da célula como fração do desenho (sensibilidade)
    o verde mudar de tom, e não obriga ninguém a decorar um código ACI. */
 function quadrosDoDesenho(){
   const tol=Math.max(0.5,3/(unitF||10));
+  /* a classe de cada linha é calculada UMA vez: este laço e os de baixo a
+     pediam de novo para cada quadro, e num DWG de 25 mil linhas isso somava
+     segundos com a tela parada */
+  const CLS=SEG.map(g=>detClasse(g.cor,g.layer));QCLS=CLS;
   const cand=[];
   SEG.forEach((sg,i)=>{
-    if(detClasse(sg.cor,sg.layer))return;              // linha de peça não é moldura
+    if(CLS[i])return;                                   // linha de peça não é moldura
     const dx=Math.abs(sg.b.x-sg.a.x),dy=Math.abs(sg.b.y-sg.a.y);
     if(Math.max(dx,dy)<=tol)return;                    // ponto
     if(Math.min(dx,dy)>tol)return;                     // só lados ortogonais
@@ -5889,11 +5893,31 @@ function quadrosDoDesenho(){
   // une lados que se encontram nos cantos
   const pai={};cand.forEach(i=>pai[i]=i);
   const raiz=i=>{while(pai[i]!==i){pai[i]=pai[pai[i]];i=pai[i];}return i;};
-  for(let a=0;a<cand.length;a++)for(let b=a+1;b<cand.length;b++){
-    const A=SEG[cand[a]],B=SEG[cand[b]];
-    const encosta=[A.a,A.b].some(p=>[B.a,B.b].some(q=>Math.hypot(p.x-q.x,p.y-q.y)<=tol));
+  /* ÍNDICE POR REGIÃO. Comparar cada linha com todas as outras travava o
+     arquivo completo da produção (25 mil linhas, ~40 s de tela parada): agora
+     cada ponta só é comparada com as linhas que passam perto dela. */
+  let gx0=Infinity,gy0=Infinity,gx1=-Infinity,gy1=-Infinity;
+  cand.forEach(i=>{const g=SEG[i];gx0=Math.min(gx0,g.a.x,g.b.x);gy0=Math.min(gy0,g.a.y,g.b.y);gx1=Math.max(gx1,g.a.x,g.b.x);gy1=Math.max(gy1,g.a.y,g.b.y);});
+  const cel=Math.max(tol*4,Math.max(gx1-gx0,gy1-gy0)/256),grade=new Map();
+  const ck=(x,y)=>Math.floor((x-gx0)/cel)+','+Math.floor((y-gy0)/cel);
+  cand.forEach((i,k)=>{const g=SEG[i];
+    const x0=Math.floor((Math.min(g.a.x,g.b.x)-tol-gx0)/cel),x1=Math.floor((Math.max(g.a.x,g.b.x)+tol-gx0)/cel);
+    const y0=Math.floor((Math.min(g.a.y,g.b.y)-tol-gy0)/cel),y1=Math.floor((Math.max(g.a.y,g.b.y)+tol-gy0)/cel);
+    for(let x=x0;x<=x1;x++)for(let y=y0;y<=y1;y++){const kk=x+','+y;let L=grade.get(kk);if(!L)grade.set(kk,L=[]);L.push(k);}});
+  const viz=new Set();
+  cand.forEach((i,a)=>{const A=SEG[i];viz.clear();
+    [A.a,A.b].forEach(p=>(grade.get(ck(p.x,p.y))||[]).forEach(b=>{if(b!==a)viz.add(b);}));
+    viz.forEach(b=>{
+    const B=SEG[cand[b]];
+    /* encosta pelo canto OU em "T": a linha que divide o quadro termina no
+       MEIO do lado dele, não num canto -- sem isto ela ficava de fora da
+       moldura e o quadro não se dividia (quadroCelulas). */
+    const naLinha=(p,S)=>{const dx=S.b.x-S.a.x,dy=S.b.y-S.a.y,L2=dx*dx+dy*dy;if(!L2)return Math.hypot(p.x-S.a.x,p.y-S.a.y)<=tol;
+      const u=Math.max(0,Math.min(1,((p.x-S.a.x)*dx+(p.y-S.a.y)*dy)/L2));return Math.hypot(p.x-S.a.x-u*dx,p.y-S.a.y-u*dy)<=tol;};
+    const encosta=[A.a,A.b].some(p=>naLinha(p,B))||[B.a,B.b].some(p=>naLinha(p,A));
     if(encosta&&raiz(cand[a])!==raiz(cand[b]))pai[raiz(cand[a])]=raiz(cand[b]);
-  }
+    });
+  });
   const gr={};cand.forEach(i=>{const r=raiz(i);(gr[r]=gr[r]||[]).push(i);});
   const caixas=[];
   Object.values(gr).forEach(idxs=>{
@@ -5913,6 +5937,8 @@ function quadrosDoDesenho(){
     const lados=(cobre(0,'y',bb.mxy,bb.w)?1:0)+(cobre(0,'y',bb.mny,bb.w)?1:0)+
                 (cobre(0,'x',bb.mnx,bb.h)?1:0)+(cobre(0,'x',bb.mxx,bb.h)?1:0);
     if(lados<3)return;
+    const cel=quadroCelulas(idxs,bb,tol);
+    if(cel){cel.forEach(c=>caixas.push(Object.assign(c,{idxs})));return;}
     caixas.push({mnx:bb.mnx,mxx:bb.mxx,mny:bb.mny,mxy:bb.mxy,idxs});
   });
   // moldura de prancha engole tudo: se um quadro contém outro, o de fora sai
@@ -5926,16 +5952,60 @@ function quadrosDoDesenho(){
      base para apoiar as tercas -- tem um banzo e nada mais, e era reprovada
      aqui. Sem quadro registrado, a linha dela caia depois por "fora de
      quadro" e a peca sumia do desenho, da lista e do orcamento em silencio. */
+  /* o quadro sem nenhuma linha de peça fica guardado: a ficha escrita nele
+     não está "fora do quadro" -- o quadro dela é que está sem a estrutura
+     desenhada, e o aviso tem de dizer isso */
+  QUADROS_VAZIOS=[];
   return internos.filter(c=>{
     let bz=0,it=0;
-    SEG.forEach(sg=>{
-      const k=detClasse(sg.cor,sg.layer);if(!k)return;
+    SEG.forEach((sg,i)=>{
+      const k=CLS[i];if(!k)return;
       const x=(sg.a.x+sg.b.x)/2,y=(sg.a.y+sg.b.y)/2;
       if(x<c.mnx||x>c.mxx||y<c.mny||y>c.mxy)return;
       if(k==='banzo')bz++;else it++;});
     c.banzos=bz;c.internos=it;
+    if(!bz&&!it)QUADROS_VAZIOS.push(c);
     return bz>=1;
   });
+}
+/* QUADRO DIVIDIDO EM CÉLULAS. Uma prancha com vários quadros desenhados
+   lado a lado ou empilhados, com LINHAS SOLTAS que dividem um retângulo maior
+   (a faixa de baixo com duas tesouras separadas por uma linha no meio, três
+   treliças em colunas), virava UM quadro só: todas as linhas se encostam, e
+   só a primeira ficha casava -- as outras ficavam "fora do quadro". Agora o
+   retângulo é cortado pelas linhas que o atravessam: cada célula fechada é um
+   quadro. Só divide quando há DUAS OU MAIS estruturas na moldura (um quadro
+   com uma tabelinha dentro continua inteiro, como antes) e nunca por uma
+   linha que corte uma peça da estrutura. Teste leitor-quadros-divididos. */
+let QCLS=null,QUADROS_VAZIOS=[];
+function quadroCelulas(idxs,bb,tol){
+  const V=[],H=[];
+  idxs.forEach(i=>{const g=SEG[i],dx=Math.abs(g.b.x-g.a.x),dy=Math.abs(g.b.y-g.a.y);
+    if(dx<=tol)V.push({x:(g.a.x+g.b.x)/2,a:Math.min(g.a.y,g.b.y),b:Math.max(g.a.y,g.b.y)});
+    else if(dy<=tol)H.push({y:(g.a.y+g.b.y)/2,a:Math.min(g.a.x,g.b.x),b:Math.max(g.a.x,g.b.x)});});
+  const uniq=v=>{v.sort((p,q)=>p-q);const o=[];v.forEach(x=>{if(!o.length||x-o[o.length-1]>tol)o.push(x);});return o;};
+  const Xs=uniq(V.map(v=>v.x)),Ys=uniq(H.map(h=>h.y));
+  if(Xs.length<2||Ys.length<2||(Xs.length===2&&Ys.length===2))return null;
+  const cobre=(L,k,c,a,b)=>{let iv=L.filter(l=>Math.abs(l[k]-c)<=tol).map(l=>[Math.max(l.a,a),Math.min(l.b,b)]).filter(p=>p[1]>p[0]).sort((p,q)=>p[0]-q[0]);
+    let t=0,fim=a;iv.forEach(([p,q])=>{if(q>fim){t+=q-Math.max(p,fim);fim=q;}});return t>=(b-a)*0.9;};
+  const pecas=[],banzos=[];SEG.forEach((g,i)=>{const k=QCLS?QCLS[i]:detClasse(g.cor,g.layer);if(!k)return;pecas.push(g);if(k==='banzo')banzos.push(g);});
+  const corta=(eixo,c,a,b)=>pecas.some(g=>{
+    const u0=eixo==='x'?g.a.x:g.a.y,u1=eixo==='x'?g.b.x:g.b.y,v0=eixo==='x'?g.a.y:g.a.x,v1=eixo==='x'?g.b.y:g.b.x;
+    if(Math.min(u0,u1)>=c-tol||Math.max(u0,u1)<=c+tol)return false;
+    const v=v0+(v1-v0)*(c-u0)/(u1-u0);return v>a&&v<b;});
+  const nx=Xs.length-1,ny=Ys.length-1,pai=[];for(let k=0;k<nx*ny;k++)pai[k]=k;
+  const raiz=k=>{while(pai[k]!==k){pai[k]=pai[pai[k]];k=pai[k];}return k;},une=(p,q)=>{p=raiz(p);q=raiz(q);if(p!==q)pai[p]=q;};
+  for(let i=0;i<nx;i++)for(let j=0;j<ny;j++){
+    if(i+1<nx&&(!cobre(V,'x',Xs[i+1],Ys[j],Ys[j+1])||corta('x',Xs[i+1],Ys[j],Ys[j+1])))une(i*ny+j,(i+1)*ny+j);
+    if(j+1<ny&&(!cobre(H,'y',Ys[j+1],Xs[i],Xs[i+1])||corta('y',Ys[j+1],Xs[i],Xs[i+1])))une(i*ny+j,i*ny+j+1);
+  }
+  const reg={};
+  for(let i=0;i<nx;i++)for(let j=0;j<ny;j++){const r=raiz(i*ny+j),q=reg[r]||(reg[r]={mnx:Infinity,mxx:-Infinity,mny:Infinity,mxy:-Infinity});
+    q.mnx=Math.min(q.mnx,Xs[i]);q.mxx=Math.max(q.mxx,Xs[i+1]);q.mny=Math.min(q.mny,Ys[j]);q.mxy=Math.max(q.mxy,Ys[j+1]);}
+  const cel=Object.values(reg).filter(q=>q.mxx-q.mnx>tol*4&&q.mxy-q.mny>tol*4);
+  if(cel.length<2)return null;
+  const comBanzo=cel.filter(q=>banzos.some(g=>pontoNoQuadro({x:(g.a.x+g.b.x)/2,y:(g.a.y+g.b.y)/2},q))).length;
+  return comBanzo>=2?cel:null;
 }
 function pontoNoQuadro(p,q){return p&&q&&p.x>=q.mnx&&p.x<=q.mxx&&p.y>=q.mny&&p.y<=q.mxy;}
 
@@ -6153,6 +6223,7 @@ function cluster(){
      O agrupamento por contato cuida do que ficou fora de qualquer quadro, e a
      grade de proximidade, do resto do desenho (telhas, vistas, cotas). */
   const quadros=quadrosDoDesenho();
+  DET_PARTES=[];DET_REF_IDX=new Set();
   const estrComps=[],quadroDe=[];
   const consumidos=new Set();
   quadros.forEach(q=>{
@@ -6161,6 +6232,37 @@ function cluster(){
       if(!detClasse(sg.cor,sg.layer))return;
       if(pontoNoQuadro({x:(sg.a.x+sg.b.x)/2,y:(sg.a.y+sg.b.y)/2},q)){ids.push(i);consumidos.add(i);}
     });
+    /* MOLDURA COM VÁRIAS FICHAS: não é o quadro de UMA estrutura. O que está
+       dentro dela é separado pelo contato das peças (como num desenho sem
+       quadros) e cada ficha se liga à sua -- em vez de tudo virar uma
+       estrutura só e as outras fichas ficarem "fora do quadro".
+       Teste leitor-quadros-divididos. */
+    const nFichas=(FICHAS||[]).filter(f=>fichaRole(f)&&f.tx&&pontoNoQuadro(f.tx,q)).length;
+    if(nFichas>=2&&ids.length){
+      const dentro=new Set(ids),fora=new Set();SEG.forEach((sg,i)=>{if(!dentro.has(i))fora.add(i);});
+      componentesEstruturais(fora,{simples:true}).forEach(x=>estrComps.push(x));
+      return;
+    }
+    /* DESENHO SÓ DE REFERÊNCIA. Um quadro com a ficha e DOIS desenhos que
+       não se tocam (a tesoura inteira, de referência de montagem, e a meia
+       tesoura que é fabricada) somava os dois na compra. Cada desenho do
+       quadro ganha na Conferência o botão "só referência": o marcado sai da
+       estrutura (compra, corte, orçamento) e fica cinza na tela. A escolha é
+       lembrada pela ficha e pelo lugar do desenho. Teste leitor-so-referencia. */
+    const fq=nFichas===1?(FICHAS||[]).find(f=>fichaRole(f)&&f.tx&&pontoNoQuadro(f.tx,q)):null;
+    if(fq&&ids.length>1){
+      const dentro=new Set(ids),fora=new Set();SEG.forEach((sg,i)=>{if(!dentro.has(i))fora.add(i);});
+      const partes=componentesEstruturais(fora,{simples:true});
+      if(partes.length>=2){
+        const reg={ficha:fichaChave(fq),nome:fq.nome,partes:[]};
+        partes.sort((a,b)=>bbox(b).w*bbox(b).h-bbox(a).w*bbox(a).h).forEach(pt=>{const bb=bbox(pt);
+          const key=reg.ficha+'|'+[bb.mnx,bb.mny,bb.mxx,bb.mxy].map(Math.round).join(',');
+          const ref=DET_REF.has(key);reg.partes.push({key,ref,w:bb.w,h:bb.h,n:pt.length});
+          if(ref)pt.forEach(i=>{DET_REF_IDX.add(i);});});
+        DET_PARTES.push(reg);
+        if(reg.partes.some(x=>!x.ref)){for(let k=ids.length-1;k>=0;k--)if(DET_REF_IDX.has(ids[k]))ids.splice(k,1);}
+      }
+    }
     /* O quadro e' a palavra do desenhista: o que ele cercou, conta. Exigir
        quatro segmentos coloridos aqui matava a tesoura de UM MEMBRO SO -- o
        banzo superior sozinho, que vez ou outra vai para a obra assim, so ele
@@ -6355,6 +6457,7 @@ function detLeituraLinhas(){
   const MAXT=4000;let testes=0;
   SEG.forEach((g,i)=>{
     if(lin.has(i))return;
+    if(DET_REF_IDX.has(i)){const m=meio(g);lin.set(i,{est:'ign',fi:fichaPorPonto(m),mot:'só referência de montagem'});return;}
     const cls=detClasse(g.cor,g.layer),m=meio(g);
     if(!cls){
       /* linha sem a cor de peça, mas presa à estrutura pelas duas pontas: o
@@ -6398,10 +6501,13 @@ function detLeituraLinhas(){
    não há o que sugerir. */
 let QA_OK=false;
 function quadrosAutomaticos(){
-  if(!SEG.length||!CL.length||CL.some(c=>c.quadro))return [];
+  if(!SEG.length||!CL.length)return [];
   const out=[];
+  /* vale por ficha: a que já está no quadro desenhado da sua estrutura não
+     ganha outro; as demais (desenho sem quadros, ou várias fichas numa
+     moldura só) ganham o quadro automático. */
   FICHAS.forEach((f,fi)=>{
-    const c=CL[f.cluster];if(!c||!fichaRole(f)||!f.tx)return;
+    const c=CL[f.cluster];if(!c||!fichaRole(f)||!f.tx||f.linkStatus==='quadro')return;
     const bb=bbox(c.idxs),tam=Math.max(bb.w,bb.h);
     const h=f.txH>0?f.txH:Math.max(tam*0.012,50/(unitF||10));
     const linhas=(f.txLinhas&&f.txLinhas.length)?f.txLinhas:[f.nome];
@@ -6542,6 +6648,10 @@ function renderConferir(){
         '<span class="conf-med">vão '+m2(bbP.w)+' m · altura '+m2(bbP.h)+' m · '+nB+' de banzo · '+nI+' internas</span>'+
         '<button type="button" class="conf-ir" data-excl="'+fi+'" title="Tirar esta estrutura da leitura: sai da compra, do detalhamento e do orçamento (dá para voltar)">✕ excluir</button>'+
         '<button type="button" class="conf-ir" data-conf-f="'+fi+'" title="Ir para a ficha">ficha ›</button></div>'+
+        (()=>{const reg=DET_PARTES.find(r=>f.tx&&r.ficha===fichaChave(f));if(!reg)return '';
+          return '<div class="conf-partes"><span>Este quadro tem '+reg.partes.length+' desenhos separados — o que for só referência de montagem não entra na compra:</span>'+
+            reg.partes.map((pt,k)=>'<button type="button" class="conf-parte'+(pt.ref?' ref':'')+'" data-ref-key="'+escapeHtml(pt.key)+'" aria-pressed="'+(pt.ref?'true':'false')+'">'+
+              'Desenho '+(k+1)+' · vão '+m2(pt.w)+' m · '+(pt.ref?'só referência':'entra na compra')+'</button>').join('')+'</div>';})()+
         (simplesF.includes(f)?'<div class="conf-notas">Perfil simples: só a linha, sem interna — os '+Math.min(2,(f.profiles||[]).length)+' perfis da ficha pela mesma linha ('+m2(bbP.w)+' m de vão).</div>':'')+
         '<svg class="conf-est" viewBox="0 0 '+Wv+' '+H+'" style="aspect-ratio:'+Wv+'/'+H+'" preserveAspectRatio="xMidYMid meet" role="img" aria-label="'+escapeHtml(f.nome)+'">'+d.o+'</svg>'+
         (av.length?'<ol class="conf-lista">'+av.slice(0,MAXL).map(a=>'<li class="'+a.grav+'"><span class="conf-n">'+a.num+'</span>'+escapeHtml(a.txt)+' <span class="conf-xy">'+xy(a.p)+'</span></li>').join('')+
@@ -6619,6 +6729,7 @@ function renderConferir(){
     '<div class="conf-modo" role="group" aria-label="Como mostrar"><button type="button" data-conf-modo="est" class="'+(CONF_MODO!=='tudo'?'on':'')+'">Por estrutura</button><button type="button" data-conf-modo="tudo" class="'+(CONF_MODO==='tudo'?'on':'')+'">Desenho inteiro</button></div></div>'+
     corpo+(CONF_MODO==='tudo'?'<div class="conf-leg">'+leg+'</div>':'');
   el.querySelectorAll('[data-excl]').forEach(b=>b.addEventListener('click',e=>{e.stopPropagation();alternaExclusao(+b.dataset.excl);}));
+  el.querySelectorAll('[data-ref-key]').forEach(b=>b.addEventListener('click',e=>{e.stopPropagation();alternaReferencia(b.dataset.refKey);}));
   const qaOk=el.querySelector('[data-qa-ok]');if(qaOk)qaOk.addEventListener('click',()=>{QA_OK=true;renderConferir();});
   const pb=el.querySelector('[data-ponta-banzo]');if(pb)pb.addEventListener('change',()=>{PONTA_BANZO=pb.checked;cluster();renderAll();});
   const qaDxf=el.querySelector('[data-qa-dxf]');if(qaDxf)qaDxf.addEventListener('click',baixarDxfPadronizado);
@@ -6761,6 +6872,14 @@ function vincPct(score){return Math.max(0,Math.min(100,Math.round(score/VINC_CER
    orçamento com um clique, e volta com outro. A chave é o nome da ficha e
    o ponto do texto dela, que não mudam quando o desenho é relido. */
 const EXCL=new Set();
+const DET_REF_LS='rm_det_ref_v1';
+const DET_REF=new Set((()=>{try{return JSON.parse(localStorage.getItem(DET_REF_LS)||'[]');}catch(_){return [];}})());
+let DET_PARTES=[],DET_REF_IDX=new Set();
+function alternaReferencia(key){
+  if(DET_REF.has(key))DET_REF.delete(key);else DET_REF.add(key);
+  try{localStorage.setItem(DET_REF_LS,JSON.stringify([...DET_REF].slice(-500)));}catch(_){}
+  cluster();renderAll();
+}
 function fichaChave(f){return f.nome+'|'+Math.round(f.tx.x)+'|'+Math.round(f.tx.y);}
 function aplicaExclusoes(){
   FICHAS.forEach(f=>{
@@ -6776,7 +6895,7 @@ function alternaExclusao(fi){
   cluster();renderAll();
 }
 function autoLinkFichas(){
-  FICHAS.forEach(f=>{f.cluster=-1;f.banzoMM=0;f.intMM=0;f.intLens=[];f.banzoLens=[];
+  FICHAS.forEach(f=>{f.cluster=-1;f.banzoMM=0;f.intMM=0;f.intLens=[];f.banzoLens=[];f.quadroVazio=false;
     f.linkStatus=fichaRole(f)?'nao-medida':'dispensada';f.linkScore=0;});
   CL.forEach(c=>c.linkedFicha=-1);
   // 1) o que você apontou à mão manda, e ninguém mais usa aquela estrutura
@@ -6805,10 +6924,19 @@ function autoLinkFichas(){
      comprimento e digitado. Adivinhar aqui seria voltar ao problema que o
      quadro veio resolver. */
   const temQuadro=CL.some(c=>c.quadro);
-  const linhas=[];FICHAS.forEach((f,fi)=>{if(fichaRole(f)&&f.cluster<0)linhas.push({f,fi,role:fichaRole(f)});});
-  if(temQuadro){linhas.forEach(x=>{x.f.linkStatus='fora-quadro';x.f.linkScore=0;});}
+  let linhas=[];FICHAS.forEach((f,fi)=>{if(fichaRole(f)&&f.cluster<0)linhas.push({f,fi,role:fichaRole(f)});});
+  /* QUADRO COM DUAS OU MAIS FICHAS DENTRO é moldura de prancha, não quadro de
+     uma estrutura: as fichas que sobraram nele não ficam "fora do quadro" --
+     o sistema liga cada uma à sua estrutura como num desenho sem quadros (a
+     divisão automática). Só a ficha que está fora de TODO quadro continua
+     pedindo o quadro ou o comprimento à mão. Teste leitor-quadros-divididos. */
+  const molduras=CL.filter(c=>c.quadro).map(c=>c.quadro);
+  const naMoldura=x=>molduras.some(q=>pontoNoQuadro(x.f.tx,q));
+  if(temQuadro){linhas.filter(x=>!naMoldura(x)).forEach(x=>{x.f.linkStatus='fora-quadro';x.f.linkScore=0;
+      x.f.quadroVazio=QUADROS_VAZIOS.some(q=>pontoNoQuadro(x.f.tx,q));});
+    linhas=linhas.filter(naMoldura);}
   const cols=CL.filter(c=>!reservados.has(c.id));
-  if(!temQuadro&&linhas.length&&cols.length){
+  if(linhas.length&&cols.length){
     const all=bbox([...Array(SEG.length).keys()]),diag=Math.hypot(all.w,all.h)||1;
     /* perfil simples: a ficha mais perto dele, se ele for também o candidato
        (estrutura ou perfil simples) mais perto dela */
@@ -7236,7 +7364,7 @@ function renderFichas(){
     const manualMed=!okCluster&&fichaTemMedidaManual(f), okMed=okCluster||manualMed;
     const stCor=(!mede||f.linkStatus==='excluida')?'var(--muted)':(!okMed?'var(--red)':(f.linkStatus==='conferir'?'var(--warn)':'var(--ok)'));
     // (quadro e manual caem no verde: os dois vêm de uma declaração, não de um palpite)
-    const stTxt=!mede?'':f.linkStatus==='excluida'?'EXCLUÍDA DA LEITURA':(!okMed?(f.linkStatus==='fora-quadro'?'FORA DO QUADRO':'NÃO MEDIDA'):(manualMed?'COMPRIMENTO MANUAL'
+    const stTxt=!mede?'':f.linkStatus==='excluida'?'EXCLUÍDA DA LEITURA':(!okMed?(f.linkStatus==='fora-quadro'?(f.quadroVazio?'QUADRO SEM ESTRUTURA':'FORA DO QUADRO'):'NÃO MEDIDA'):(manualMed?'COMPRIMENTO MANUAL'
       :(f.linkStatus==='manual'?'VÍNCULO MANUAL'
        :(f.linkStatus==='quadro'?'QUADRO DO DESENHO'
         :(f.linkStatus==='conferir'?'CONFERIR VÍNCULO':'MEDIDA AUTOMÁTICA')))));
@@ -7337,7 +7465,9 @@ function renderFichas(){
         (f.linkStatus==='quadro'?' · ficha dentro do quadro desta estrutura'
          :(f.linkStatus==='manual'?' · apontada por você':' · confiança '+Math.round(f.linkScore||0))))
        :(manualMed?'Comprimentos informados à mão — o desenho não é consultado para esta ficha.'
-        :(f.linkStatus==='fora-quadro'
+        :(f.linkStatus==='fora-quadro'&&f.quadroVazio
+          ?'O quadro desta ficha não tem a estrutura desenhada: nenhuma linha de banzo ou interna dentro dele. Desenhe a estrutura no quadro, digite os comprimentos em ajustes, ou escolha a estrutura aqui.'
+        :f.linkStatus==='fora-quadro'
           ?'A ficha não está dentro de nenhum quadro: mova-a para dentro do quadro da estrutura, digite os comprimentos em ajustes, ou escolha a estrutura aqui.'
           :'Esta ficha não recebeu comprimento. Digite os comprimentos em ajustes ou escolha a estrutura aqui.')))+
       '</span></div>';
@@ -7730,9 +7860,10 @@ function compute(){
     '. A contagem abre uma barra de '+(barra/1000).toLocaleString('pt-BR')+' m para cada uma, e ela não cabe. '+
     'Ajuste a barra em Ajustes, ou compre essas peças já cortadas.</div>':'';
   const naoMed=fichasNaoMedidas();
-  const fora=naoMed.filter(f=>f.linkStatus==='fora-quadro');
+  const fora=naoMed.filter(f=>f.linkStatus==='fora-quadro'&&!f.quadroVazio),vazio=naoMed.filter(f=>f.quadroVazio);
   const avisoMed=naoMed.length?'<div style="padding:10px 12px;margin-bottom:10px;border:1px solid var(--red);border-radius:8px;background:#fff5f4;color:var(--red)"><b>Lista incompleta — '+naoMed.length+' ficha(s) sem medida:</b> '+naoMed.map(f=>escapeHtml(f.nome)).join(', ')+'. Ficaram zeradas, sem herdar comprimento de outra estrutura.'+
-    (fora.length?' '+(fora.length===naoMed.length?'Todas estão':fora.length+' estão')+' fora de qualquer quadro do desenho.':'')+'</div>':'';
+    (fora.length?' '+(fora.length===naoMed.length?'Todas estão':fora.length+' estão')+' fora de qualquer quadro do desenho.':'')+
+    (vazio.length?' '+vazio.map(f=>escapeHtml(f.nome)).join(', ')+': o quadro não tem a estrutura desenhada.':'')+'</div>':'';
   if(!list.length){elResult.innerHTML=avisoLongas+avisoMed+'<span class="muted">Vincule ao menos uma tesoura/pilar a um grupo do desenho, ou confira as fichas.</span>';}
   else{
     const temPreco=PRECOS.ok&&(Object.keys(PRECOS.rkg).length>0||PRECOS.laminados.length>0);
@@ -17888,7 +18019,7 @@ function dadosRelatorioCorte(){
     utilM:totUtil/1000
   };
   const compraBase=cuCompraBasePorFuncao(barra,det);
-  const vinculoErros=fichasNaoMedidas().map(f=>'Ficha '+f.nome+(f.linkStatus==='fora-quadro'?' fora de qualquer quadro':' sem medida'));
+  const vinculoErros=fichasNaoMedidas().map(f=>'Ficha '+f.nome+(f.linkStatus==='fora-quadro'?(f.quadroVazio?' num quadro sem a estrutura desenhada':' fora de qualquer quadro'):' sem medida'));
   (det.semFicha||[]).forEach(x=>vinculoErros.push('Estrutura '+(x.cluster>=0?'E'+(x.cluster+1):x.letra)+' desenhada sem ficha'));
   return {barra,grupos,economia,compraBase,vinculoErros:[...new Set(vinculoErros)],
           fonte:usaDetalhamento?'detalhamento':'eixo',erroDetalhamento:det.erro||''};
@@ -20856,6 +20987,8 @@ window.__leitorTeste={
   banzoCorrigido:()=>BANZO_CORRIGIDO.map(b=>({x:b.p.x,y:b.p.y,cor:b.cor,para:b.para,ponta:!!b.ponta})),
   forma:()=>({modo:FORMA.modo,estruturas:FORMA.estruturas,corrigidas:FORMA.corrigidas}),
   quadrosAuto:()=>quadrosAutomaticos(),
+  refIdx:()=>[...DET_REF_IDX],
+  quadros:()=>quadrosDoDesenho().map(q=>({mnx:q.mnx,mxx:q.mxx,mny:q.mny,mxy:q.mxy,banzos:q.banzos})),
   letras:fi=>letrasDaFicha(fi),
   excluir:fi=>alternaExclusao(fi),
   dxfPadronizado:()=>dxfPadronizado(),
@@ -28488,6 +28621,10 @@ window.rmOrigemRM = window.rmOrigemRM || (function () {
 #pane-det .conf-n{flex:none;display:inline-grid;place-items:center;width:20px;height:20px;border-radius:50%;border:2px solid #e5484d;color:#e5484d;font-weight:800;font-size:11px;background:#fff}
 #pane-det .conf-lista li.atencao .conf-n{border-color:#bf8700;color:#bf8700}
 #pane-det .conf-xy{font-family:var(--mono);font-size:11.5px;color:var(--muted)}
+#pane-det .conf-partes{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:6px;font-size:12px;color:var(--muted)}
+#pane-det .conf-partes>span{flex-basis:100%}
+#pane-det .conf-parte{border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:7px;padding:4px 10px;font:inherit;font-size:12px;font-weight:600;cursor:pointer}
+#pane-det .conf-parte.ref{border-style:dashed;color:var(--muted);text-decoration:line-through}
 #pane-det .conf-notas{margin-top:6px;font-size:12px;color:#8a6100;background:#fff8e6;border:1px solid #f1dfae;border-radius:7px;padding:5px 9px}
 #pane-det .conf-ign{margin-top:6px;font-size:11.5px;color:var(--muted)}
 #pane-det .modelo-rm{margin-top:8px;display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px;font-size:12px}
@@ -33037,7 +33174,7 @@ if('serviceWorker' in navigator && location.protocol.startsWith('http')){
 }
 </script>
 <script>/* versão publicada (PADRAO_RM.md §3): sobe a cada publicação, junto com o CACHE do sw.js */
-const APP_VER='v327';
+const APP_VER='v328';
 </script>
 <script id="rmVersaoBloco">
 /* ===== SELO DE VERSÃO — igual em todos os sistemas (PADRAO_RM.md §3) =====
