@@ -2216,6 +2216,10 @@ var RM_FONTE="@font-face{font-family:'Satoshi';src:url(data:font/woff2;base64,d0
   .wa-msg { resize:vertical; min-height:110px; font:inherit; line-height:1.45; }
   .wa-prev { font-size:13px; line-height:1.5; padding:10px 12px; border-radius:10px; border:1px solid var(--divider); margin:4px 0 10px; max-height:30vh; overflow:auto; word-break:break-word; }
   .wa-guarda { display:flex; gap:6px; align-items:center; font-size:12.5px; color: var(--text-muted); margin-bottom:10px; }
+  .wa-pix .form-input { margin:-4px 0 10px; font-family:var(--mono, monospace); }
+  .wa-prev .wa-prev-2 { margin-top:8px; padding-top:8px; border-top:1px dashed var(--divider); font-family:var(--mono, monospace); }
+  .wa-prev .wa-prev-2 small { display:block; font-family:inherit; font-size:11px; color:var(--text-muted); margin-bottom:2px; }
+  .wa-etapa2 { font-size:12.5px; padding:8px 10px; border-radius:9px; border:1px solid var(--rm-laranja); border-left-width:3px; margin-bottom:10px; }
   .lembrete-row2 { display:flex; gap:10px; }
   .lembrete-row2 .form-row { flex:1; }
   /* NO CELULAR: os campos lado a lado passavam da largura da janela (o
@@ -4348,12 +4352,17 @@ try { var _e = localStorage.getItem('rm_estilo_ultimo'); if (_e === 'viva' || _e
     <div class="form-row"><textarea class="form-input wa-msg" id="wa-msg" rows="6" oninput="waAtualizaPrev()" aria-label="Texto da mensagem"></textarea></div>
     <label class="lembrete-lbl">Como chega</label>
     <div class="wa-prev" id="wa-prev"></div>
+    <div class="wa-pix">
+      <label class="wa-guarda"><input type="checkbox" id="wa-pix-on" onchange="waPixMostra()"> Enviar a chave Pix em mensagem separada (para a pessoa copiar só a chave)</label>
+      <input class="form-input" id="wa-pix" placeholder="chave Pix: CPF, CNPJ, e-mail, telefone ou aleatória" autocomplete="off" oninput="waAtualizaPrev()" aria-label="Chave Pix" hidden>
+    </div>
     <label class="wa-guarda"><input type="checkbox" id="wa-guardar" checked> Guardar este texto neste compromisso</label>
+    <div class="wa-etapa2" id="wa-etapa2" hidden>1ª mensagem aberta no WhatsApp. Envie-a lá e depois clique em <b>Abrir 2ª mensagem</b>: ela leva só a chave Pix.</div>
     <div class="lembrete-actions">
       <button class="btn-ghost-sm" type="button" onclick="waPadrao()" title="Volta à mensagem montada pelo sistema">Texto padrão</button>
       <span style="flex:1"></span>
       <button class="btn-ghost-sm" type="button" onclick="waFechar()">Cancelar</button>
-      <button class="btn-add" type="button" onclick="waEnviar()">Abrir no WhatsApp</button>
+      <button class="btn-add" type="button" id="wa-enviar" onclick="waEnviar()">Abrir no WhatsApp</button>
     </div>
   </div>
 </div>
@@ -4880,7 +4889,7 @@ try { var _e = localStorage.getItem('rm_estilo_ultimo'); if (_e === 'viva' || _e
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js" crossorigin="anonymous"></script>
 
 <script>/* versão publicada (PADRAO_RM.md §3): sobe a cada publicação, junto com o CACHE do sw.js */
-const APP_VER='v190';
+const APP_VER='v191';
 </script>
 <script>
   /* ===== LOGIN (Firebase Authentication) =====
@@ -5457,7 +5466,7 @@ const APP_VER='v190';
      ============================================================ */
   let _lembretesRef = null, _lembretes = {}, activeNative = null;
   let editingLembreteId = null, showPastLembretes = false;
-  let _contatos = {}, _meuTel = '';
+  let _contatos = {}, _meuTel = '', _pixChave = '';
   function agendaPath(uid){ return 'central_lembretes/' + uid; }
   function contatosPath(){ return agendaPath(auth.currentUser.uid) + '/__contatos'; }
 
@@ -5518,7 +5527,10 @@ const APP_VER='v190';
   }
   function waAtualizaPrev(){
     const t = document.getElementById('wa-msg'), p = document.getElementById('wa-prev');
-    if (t && p) p.innerHTML = waPrevHTML(t.value) || '<span style="color:var(--text-muted)">mensagem vazia</span>';
+    if (!t || !p) return;
+    const k = waPixAtiva();
+    p.innerHTML = (waPrevHTML(waTexto1(t.value)) || '<span style="color:var(--text-muted)">mensagem vazia</span>')
+      + (k ? '<div class="wa-prev-2"><small>2ª mensagem — só a chave, para copiar</small>' + escHtml(k) + '</div>' : '');
   }
   function waEditor(id, destino){
     const it = _lembretes[id]; if (!it) return;
@@ -5526,13 +5538,32 @@ const APP_VER='v190';
     document.getElementById('wa-msg').value = it.waMsg || waTexto(it);
     document.getElementById('wa-dest').innerHTML = waDestinos(destino);
     document.getElementById('wa-guardar').checked = true;
+    document.getElementById('wa-pix-on').checked = !!it.waPix;
+    document.getElementById('wa-pix').value = _pixChave || '';
+    _waEtapa = 1; waPixMostra(true);
     const em = document.getElementById('wa-emojis');
     if (em && !em.children.length) em.innerHTML = WA_EMOJIS.map(e => '<button type="button" title="Inserir ' + e + '" onclick="waEmoji(\'' + e + '\')">' + e + '</button>').join('');
     waAtualizaPrev();
     document.getElementById('wa-overlay').classList.add('open');
     setTimeout(() => document.getElementById('wa-msg').focus(), 30);
   }
-  function waFechar(){ document.getElementById('wa-overlay').classList.remove('open'); _waId = null; }
+  function waFechar(){ document.getElementById('wa-overlay').classList.remove('open'); _waId = null; _waEtapa = 1; _waNum = ''; }
+  /* CHAVE PIX EM MENSAGEM SEPARADA. No WhatsApp, "Copiar" leva a mensagem
+     inteira: com a chave no meio do texto, quem recebe não tinha como copiar
+     só ela (CPF, CNPJ e chave aleatória nem viram link). Agora a chave vai
+     sozinha numa 2ª mensagem -- tocar e copiar leva exatamente a chave. O
+     wa.me só abre UMA mensagem por vez, então são dois passos: abre a 1ª,
+     ela é enviada, e o botão abre a 2ª. A chave fica salva na conta
+     (__pix, junto do __meuTel). Teste central-agenda-pix-separado. */
+  let _waEtapa = 1, _waNum = '';
+  function waPixAtiva(){ const on = document.getElementById('wa-pix-on'), f = document.getElementById('wa-pix');
+    return on && on.checked && f ? f.value.trim() : ''; }
+  function waTexto1(txt){ return waPixAtiva() && !/chave pix/i.test(txt) ? String(txt).replace(/\s+$/, '') + '\n\nA chave Pix vai na próxima mensagem.' : txt; }
+  function waPixMostra(soPinta){ const on = document.getElementById('wa-pix-on').checked, f = document.getElementById('wa-pix');
+    f.hidden = !on; if (on && !soPinta) { if (!f.value) f.value = _pixChave || ''; setTimeout(() => f.focus(), 20); }
+    document.getElementById('wa-etapa2').hidden = _waEtapa !== 2;
+    document.getElementById('wa-enviar').textContent = _waEtapa === 2 ? 'Abrir 2ª mensagem (chave Pix)' : 'Abrir no WhatsApp';
+    waAtualizaPrev(); }
   /* grifo: envolve a seleção com o marcador; sem seleção, põe o par e o
      cursor no meio */
   function waGrifo(m){
@@ -5555,7 +5586,13 @@ const APP_VER='v190';
   }
   function waEnviar(){
     const it = _lembretes[_waId]; if (!it) return;
+    if (_waEtapa === 2) {
+      const k = waPixAtiva(); if (k) window.open('https://wa.me/' + _waNum + '?text=' + encodeURIComponent(k), '_blank');
+      waFechar(); return;
+    }
     const txt = document.getElementById('wa-msg').value.trim();
+    const pix = waPixAtiva();
+    if (document.getElementById('wa-pix-on').checked && !pix) { alert('Informe a chave Pix ou desmarque a opção.'); return; }
     if (!txt) { alert('A mensagem est\u00e1 vazia.'); return; }
     const d = document.getElementById('wa-dest').value;
     let num = '';
@@ -5564,10 +5601,13 @@ const APP_VER='v190';
     if (auth.currentUser) {
       const guardar = document.getElementById('wa-guardar').checked && txt !== waTexto(it);
       try { db.ref(agendaPath(auth.currentUser.uid) + '/' + _waId + '/waMsg').set(guardar ? txt : null); } catch (_) {}
+      try { db.ref(agendaPath(auth.currentUser.uid) + '/' + _waId + '/waPix').set(pix ? true : null); } catch (_) {}
+      if (pix && pix !== _pixChave) { try { db.ref(agendaPath(auth.currentUser.uid) + '/__pix').set(pix); } catch (_) {} _pixChave = pix; }
     }
     /* window.open cai no setWindowOpenHandler do Electron, que manda para o
        WhatsApp instalado; no navegador abre o WhatsApp Web. */
-    window.open('https://wa.me/' + num + '?text=' + encodeURIComponent(txt), '_blank');
+    window.open('https://wa.me/' + num + '?text=' + encodeURIComponent(waTexto1(txt)), '_blank');
+    if (pix) { _waEtapa = 2; _waNum = num; waPixMostra(true); return; }
     waFechar();
   }
 
@@ -5672,6 +5712,7 @@ const APP_VER='v190';
       const bruto = snap.val() || {};
       _contatos = bruto.__contatos || {};
       _meuTel = bruto.__meuTel || '';
+      _pixChave = bruto.__pix || '';
       _lembretes = {};
       // tudo que comeca com "__" e configuracao guardada no mesmo no, nao compromisso
       Object.keys(bruto).forEach(k => { if (k.slice(0, 2) !== '__') _lembretes[k] = bruto[k]; });
@@ -5685,7 +5726,7 @@ const APP_VER='v190';
   }
   function stopAgendaWatch(){
     if (_lembretesRef) { _lembretesRef.off(); _lembretesRef = null; }
-    _lembretes = {}; _contatos = {}; _meuTel = ''; editingLembreteId = null; showPastLembretes = false;
+    _lembretes = {}; _contatos = {}; _meuTel = ''; _pixChave = ''; editingLembreteId = null; showPastLembretes = false;
     renderAgendaBadge();
     renderDashAgendaCard();
     renderAgendaDock();
