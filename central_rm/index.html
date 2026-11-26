@@ -33,8 +33,8 @@
    estilo e fonte) -- num aparelho lento ele pinta no meio, e pintava a tela
    toda BRANCA no escuro. Aqui o fundo ja nasce na cor do tom; o corpo
    desliga isto assim que aplica o tema (ver "O TEMA VALE ANTES DA PORTA"). */
-try{ if(localStorage.getItem('rm_tema')==='escuro'){ var _rmTom=localStorage.getItem('rm_tom'); if(_rmTom==='jarvis'&&localStorage.getItem('rm_jarvis_dono')!=='1') _rmTom='forte';
-  document.documentElement.style.background=_rmTom==='suave'?'#2a2b2e':_rmTom==='nitido'?'#1c1d1f':_rmTom==='jarvis'?'#04121c':'#0f0f0f';
+try{ if(localStorage.getItem('rm_tema')==='escuro'){ var _rmTom=localStorage.getItem('rm_tom'); if((_rmTom==='jarvis'||_rmTom==='operi')&&localStorage.getItem('rm_jarvis_dono')!=='1') _rmTom='forte';
+  document.documentElement.style.background=_rmTom==='suave'?'#2a2b2e':_rmTom==='nitido'?'#1c1d1f':_rmTom==='jarvis'?'#04121c':_rmTom==='operi'?'#17212B':'#0f0f0f';
   /* o corpo nasce "claro" (atributo fixo) e o navegador pode pinta-lo antes
      do script que o vira: escondido ate la */
   var _rmCedo=document.createElement('style'); _rmCedo.id='rm-cedo';
@@ -3997,7 +3997,7 @@ try { var _e = localStorage.getItem('rm_estilo_ultimo'); if (_e === 'viva' || _e
     var t=localStorage.getItem('rm_tema');
     if(t!=='claro'&&t!=='escuro') t=(t==='grafite')?'escuro':'claro';
     document.body.setAttribute('data-theme',t);
-    var tm=localStorage.getItem('rm_tom');if(tm==='jarvis'&&localStorage.getItem('rm_jarvis_dono')!=='1')tm='forte';document.body.setAttribute('data-tom',tm==='suave'||tm==='nitido'||tm==='jarvis'?tm:'forte');
+    var tm=localStorage.getItem('rm_tom');if((tm==='jarvis'||tm==='operi')&&localStorage.getItem('rm_jarvis_dono')!=='1')tm='forte';document.body.setAttribute('data-tom',tm==='suave'||tm==='nitido'||tm==='jarvis'||tm==='operi'?tm:'forte');
   }catch(e){}
   /* Sem animacao na largada: o corpo tem "transition: background .3s" e
      nasce claro; num aparelho lento o fundo ANIMAVA do claro ao escuro -- o
@@ -4556,6 +4556,10 @@ try { var _e = localStorage.getItem('rm_estilo_ultimo'); if (_e === 'viva' || _e
               <div class="theme-preview"><div class="tp-side" style="background:#03101a"></div><div class="tp-main" style="background:#072030;box-shadow:inset 0 0 0 1px rgba(34,227,255,.45)"></div></div>
               <div class="theme-name">Jarvis</div>
             </div>
+            <div class="theme-chip" data-theme-chip="operi" onclick="setTheme('operi')">
+              <div class="theme-preview"><div class="tp-side" style="background:#141D26"></div><div class="tp-main" style="background:#17212B;box-shadow:inset 0 -3px 0 #E8780C"></div></div>
+              <div class="theme-name">Operi</div>
+            </div>
           </div>
         </div>
         <!-- só aparece com o tema Jarvis ligado (regra no bloco de estilo do Jarvis) -->
@@ -4889,7 +4893,7 @@ try { var _e = localStorage.getItem('rm_estilo_ultimo'); if (_e === 'viva' || _e
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js" crossorigin="anonymous"></script>
 
 <script>/* versão publicada (PADRAO_RM.md §3): sobe a cada publicação, junto com o CACHE do sw.js */
-const APP_VER='v192';
+const APP_VER='v193';
 </script>
 <script>
   /* ===== LOGIN (Firebase Authentication) =====
@@ -9614,13 +9618,74 @@ const APP_VER='v192';
   /* O JARVIS É SÓ DO DONO (o mesmo login de "Meus resultados"): para os
      outros a opção some e a escolha vira o escuro. A chave rm_jarvis_dono
      avisa o bloco comum de tema dos sistemas. Teste tema-jarvis-so-dono. */
+  /* O TEMA OPERI (só do dono, como o Jarvis): a marca com que o dono vende
+     os módulos. Cores no bloco de estilo "TEMA OPERI"; aqui o logo. O da RM
+     NUNCA sai do lugar: o da Operi entra ao lado, escondido no próprio
+     elemento, e só a folha de TELA troca um pelo outro -- impresso e PDF
+     continuam RM. O mesmo pacote de desenhos do tema comum (tema.html).
+     Teste central-tema-operi. */
+  var OPERI={
+    logo:'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzODciIGhlaWdodD0iMTQ1IiB2aWV3Qm94PSIwIDAgMzg3IDE0NSI+PHBhdGggZmlsbD0iI0ZGRkZGRiIgZD0iTTMwLjQ2LDIyLjM3IEE0Ny44NCw0Ny44NCAwIDEgMSAyMi4zNywzMC40NiBMMzcuMjcsNDUuMzYgQTI3LjA0LDI3LjA0IDAgMSAwIDQ1LjM2LDM3LjI3IFoiLz48cGF0aCBmaWxsPSIjRTg3ODBDIiBkPSJNMjguMDEsMjQuMzMgTDI0LjMzLDI4LjAxIEwzOS4wNCw0Mi43MiBMNDIuNzIsMzkuMDQgWiIvPjxwYXRoIGZpbGw9IiNGRkZGRkYiIGQ9Ik0xMjcuMDUxOTk5OTk5OTk5OTkgMTI5LjhWMzcuMDQ4SDE0Mi44VjU0LjE2MDAwMDAwMDAwMDAwNFExNDMuNjY4IDUxLjQzMiAxNDQuOTA4MDAwMDAwMDAwMDIgNDkuMlExNDguNjI4IDQyLjEzMiAxNTQuOTUyIDM4LjU5OFExNjEuMjc2IDM1LjA2NDAwMDAwMDAwMDAxIDE2OS4yMTIgMzUuMDY0MDAwMDAwMDAwMDFRMTc2LjI4IDM1LjA2NDAwMDAwMDAwMDAxIDE4Mi4wNDYgMzcuNjY4MDAwMDAwMDAwMDA2UTE4Ny44MTIgNDAuMjcyMDAwMDAwMDAwMDA2IDE5MS45NjYgNDQuOTIyMDAwMDAwMDAwMDA0UTE5Ni4xMiA0OS41NzIgMTk4LjI5IDU1LjgzNFEyMDAuNDU5OTk5OTk5OTk5OTggNjIuMDk2MDAwMDAwMDAwMDA0IDIwMC40NTk5OTk5OTk5OTk5OCA2OS41MzZWNzIuMzg4UTIwMC40NTk5OTk5OTk5OTk5OCA3OS43MDQwMDAwMDAwMDAwMSAxOTguMzUxOTk5OTk5OTk5OTggODYuMDlRMTk2LjI0NCA5Mi40NzYgMTkyLjIxNCA5Ny4xODhRMTg4LjE4NCAxMDEuOSAxODIuNDE4IDEwNC41NjZRMTc2LjY1MiAxMDcuMjMyIDE2OS4yMTIgMTA3LjIzMlExNjEuNTI0IDEwNy4yMzIgMTU1LjMyNCAxMDQuMTMyUTE1MC4yNCAxMDEuNTI4IDE0Ni44OTIgOTYuNjkyMDAwMDAwMDAwMDFWMTI5LjhaTTE2My42MzIgOTAuNjE2UTE2OC43MTYgOTAuNjE2IDE3Mi40OTggODguMTM2UTE3Ni4yOCA4NS42NTYgMTc4LjM4OCA4MS4xOTIwMDAwMDAwMDAwMVExODAuNDk2IDc2LjcyODAwMDAwMDAwMDAxIDE4MC40OTYgNzAuOVExODAuNDk2IDY1LjA3MiAxNzguMzg4IDYwLjczMlExNzYuMjggNTYuMzkyIDE3Mi41NiA1My45NzQwMDAwMDAwMDAwMDRRMTY4Ljg0IDUxLjU1NiAxNjMuNjMyIDUxLjU1NlExNTkuMTY4IDUxLjU1NiAxNTUuMiA1My42NjRRMTUxLjIzMiA1NS43NzIgMTQ4LjgxNDAwMDAwMDAwMDAyIDU5LjY3OFExNDYuMzk2MDAwMDAwMDAwMDIgNjMuNTg0IDE0Ni4zOTYwMDAwMDAwMDAwMiA2OS4xNjRWNzMuNzUyUTE0Ni4zOTYwMDAwMDAwMDAwMiA3OS4wODQgMTQ4LjkzOCA4Mi44NjZRMTUxLjQ4IDg2LjY0OCAxNTUuNDQ3OTk5OTk5OTk5OTggODguNjMyUTE1OS40MTYgOTAuNjE2IDE2My42MzIgOTAuNjE2Wk0yNDQuMTA4IDEwNy4zNTZRMjM1LjQyODAwMDAwMDAwMDAzIDEwNy4zNTYgMjI4Ljc5NDAwMDAwMDAwMDA0IDEwNC4zOFEyMjIuMTYwMDAwMDAwMDAwMDMgMTAxLjQwNCAyMTcuNzU4MDAwMDAwMDAwMDQgOTYuMzgyUTIxMy4zNTYwMDAwMDAwMDAwMiA5MS4zNiAyMTEuMDYyIDg1LjA5OFEyMDguNzY4MDAwMDAwMDAwMDMgNzguODM2IDIwOC43NjgwMDAwMDAwMDAwMyA3Mi4yNjQwMDAwMDAwMDAwMVY2OS43ODM5OTk5OTk5OTk5OVEyMDguNzY4MDAwMDAwMDAwMDMgNjIuOTY0IDIxMS4wNjIgNTYuNzAyUTIxMy4zNTYwMDAwMDAwMDAwMiA1MC40NCAyMTcuNjk2MDAwMDAwMDAwMDMgNDUuNDhRMjIyLjAzNiA0MC41MTk5OTk5OTk5OTk5OTYgMjI4LjU0NiAzNy42MDZRMjM1LjA1NiAzNC42OTIwMDAwMDAwMDAwMSAyNDMuMzY0MDAwMDAwMDAwMDMgMzQuNjkyMDAwMDAwMDAwMDFRMjU0LjI3NiAzNC42OTIwMDAwMDAwMDAwMSAyNjEuNzc4IDM5LjU5UTI2OS4yODAwMDAwMDAwMDAwMyA0NC40ODggMjczLjI0ODAwMDAwMDAwMDA1IDUyLjM2MTk5OTk5OTk5OTk5NVEyNzcuMjE2IDYwLjIzNiAyNzcuMjE2IDY5LjUzNlY3Ni4yMzJIMjI3LjQ5MjAwMDAwMDAwMDAyUTIyNy45ODgwMDAwMDAwMDAwMyA3OS4yMDggMjI4Ljk4MDAwMDAwMDAwMDAyIDgxLjY4OFEyMzAuNzE2IDg2LjI3NiAyMzQuNDM2IDg4Ljc1NlEyMzguMTU2IDkxLjIzNiAyNDQuMTA4IDkxLjIzNlEyNDkuNTY0MDAwMDAwMDAwMDIgOTEuMjM2IDI1My4wMzYwMDAwMDAwMDAwMyA4OS4xMjhRMjU2LjUwODAwMDAwMDAwMDA0IDg3LjAyIDI1Ny43NDgwMDAwMDAwMDAwNSA4My45MkgyNzUuOTc2UTI3NC40ODggOTAuNzQgMjcwLjE0OCA5Ni4wNzJRMjY1LjgwOCAxMDEuNDA0IDI1OS4yMzYgMTA0LjM4UTI1Mi42NjQwMDAwMDAwMDAwMiAxMDcuMzU2IDI0NC4xMDggMTA3LjM1NlpNMjI3Ljc0IDY0Ljk0ODAwMDAwMDAwMDAxSDI1OC4zNjhRMjU3Ljg3MiA2Mi4wOTYwMDAwMDAwMDAwMDQgMjU3LjAwNCA1OS43NFEyNTUuMjY4MDAwMDAwMDAwMDMgNTUuNCAyNTEuODU4IDUzLjEwNTk5OTk5OTk5OTk5NVEyNDguNDQ4IDUwLjgxMiAyNDMuMzY0MDAwMDAwMDAwMDMgNTAuODEyUTIzOC4xNTYgNTAuODEyIDIzNC41NiA1My4xNjhRMjMwLjk2NDAwMDAwMDAwMDAzIDU1LjUyNCAyMjkuMTA0IDYwLjExMlEyMjguMTEyMDAwMDAwMDAwMDIgNjIuMjIgMjI3Ljc0IDY0Ljk0ODAwMDAwMDAwMDAxWk0yODkuMTIgMTA1LjBWMzcuMDQ4SDMwNC44NjhWNjAuMTEyUTMwNS44NiA1MC4wNjggMzEwLjU3MiA0My45OTJRMzE2Ljc3MiAzNi4xODAwMDAwMDAwMDAwMSAzMjguNDI4IDM2LjE4MDAwMDAwMDAwMDAxSDMzMS4wMzJWNTMuMjkySDMyNi4wNzJRMzE3Ljg4OCA1My4yOTIgMzEzLjQyNCA1Ny42OTRRMzA4Ljk2IDYyLjA5NjAwMDAwMDAwMDAwNCAzMDguOTYgNzAuNDA0VjEwNS4wWk0zNDkuNTA4IDEwNS4wVjUxLjY4SDM0MC40NTU5OTk5OTk5OTk5NlYzNy4wNDhIMzY5LjM0Nzk5OTk5OTk5OTk2VjEwNS4wWk0zNTcuMTk1OTk5OTk5OTk5OTcgMzAuMzUyMDAwMDAwMDAwMDA0UTM1MS42MTYgMzAuMzUyMDAwMDAwMDAwMDA0IDM0OC45NSAyNy40MzgwMDAwMDAwMDAwMDJRMzQ2LjI4NCAyNC41MjQgMzQ2LjI4NCAxOS45OTc5OTk5OTk5OTk5OThRMzQ2LjI4NCAxNS40NzE5OTk5OTk5OTk5OTQgMzQ4Ljk1IDEyLjU1OFEzNTEuNjE2IDkuNjQ0MDAwMDAwMDAwMDA1IDM1Ny4xOTU5OTk5OTk5OTk5NyA5LjY0NDAwMDAwMDAwMDAwNVEzNjIuNzc1OTk5OTk5OTk5OTUgOS42NDQwMDAwMDAwMDAwMDUgMzY1LjQ0MTk5OTk5OTk5OTk1IDEyLjU1OFEzNjguMTA3OTk5OTk5OTk5OTUgMTUuNDcxOTk5OTk5OTk5OTk0IDM2OC4xMDc5OTk5OTk5OTk5NSAxOS45OTc5OTk5OTk5OTk5OThRMzY4LjEwNzk5OTk5OTk5OTk1IDI0LjUyNCAzNjUuNDQxOTk5OTk5OTk5OTUgMjcuNDM4MDAwMDAwMDAwMDAyUTM2Mi43NzU5OTk5OTk5OTk5NSAzMC4zNTIwMDAwMDAwMDAwMDQgMzU3LjE5NTk5OTk5OTk5OTk3IDMwLjM1MjAwMDAwMDAwMDAwNFoiLz48L3N2Zz4K',
+    simbolo:'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIiB2aWV3Qm94PSIwIDAgMTAwIDEwMCI+PHBhdGggZmlsbD0iI0ZGRkZGRiIgZD0iTTIxLjYwLDEzLjgyIEE0Ni4wMCw0Ni4wMCAwIDEgMSAxMy44MiwyMS42MCBMMjguMTQsMzUuOTIgQTI2LjAwLDI2LjAwIDAgMSAwIDM1LjkyLDI4LjE0IFoiLz48cGF0aCBmaWxsPSIjRTg3ODBDIiBkPSJNMTkuMjQsMTUuNzEgTDE1LjcxLDE5LjI0IEwyOS44NSwzMy4zOCBMMzMuMzgsMjkuODUgWiIvPjwvc3ZnPgo=',
+    icone:'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzMiIgaGVpZ2h0PSIzMiIgdmlld0JveD0iMCAwIDMyIDMyIj48cGF0aCBmaWxsPSIjRTg3ODBDIiBkPSJNOC4wNiwyLjg1IEExNS4zNiwxNS4zNiAwIDEgMSAyLjg1LDguMDYgTDkuNzAsMTQuOTAgQTYuNDAsNi40MCAwIDEgMCAxNC45MCw5LjcwIFoiLz48L3N2Zz4K',
+    forma:'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIiB2aWV3Qm94PSIwIDAgMTAwIDEwMCI+PHBhdGggZmlsbD0iIzAwMCIgZD0iTTIxLjYwLDEzLjgyIEE0Ni4wMCw0Ni4wMCAwIDEgMSAxMy44MiwyMS42MCBMMjguMTQsMzUuOTIgQTI2LjAwLDI2LjAwIDAgMSAwIDM1LjkyLDI4LjE0IFoiLz48cGF0aCBmaWxsPSIjMDAwIiBkPSJNMTkuMjQsMTUuNzEgTDE1LjcxLDE5LjI0IEwyOS44NSwzMy4zOCBMMzMuMzgsMjkuODUgWiIvPjwvc3ZnPgo=',
+    larga:'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9Ii0xNzYgMCA3NDAgMTQ1Ij48cGF0aCBmaWxsPSIjMDAwIiBkPSJNMzAuNDYsMjIuMzcgQTQ3Ljg0LDQ3Ljg0IDAgMSAxIDIyLjM3LDMwLjQ2IEwzNy4yNyw0NS4zNiBBMjcuMDQsMjcuMDQgMCAxIDAgNDUuMzYsMzcuMjcgWiIvPjxwYXRoIGZpbGw9IiMwMDAiIGQ9Ik0yOC4wMSwyNC4zMyBMMjQuMzMsMjguMDEgTDM5LjA0LDQyLjcyIEw0Mi43MiwzOS4wNCBaIi8+PHBhdGggZmlsbD0iIzAwMCIgZD0iTTEyNy4wNTE5OTk5OTk5OTk5OSAxMjkuOFYzNy4wNDhIMTQyLjhWNTQuMTYwMDAwMDAwMDAwMDA0UTE0My42NjggNTEuNDMyIDE0NC45MDgwMDAwMDAwMDAwMiA0OS4yUTE0OC42MjggNDIuMTMyIDE1NC45NTIgMzguNTk4UTE2MS4yNzYgMzUuMDY0MDAwMDAwMDAwMDEgMTY5LjIxMiAzNS4wNjQwMDAwMDAwMDAwMVExNzYuMjggMzUuMDY0MDAwMDAwMDAwMDEgMTgyLjA0NiAzNy42NjgwMDAwMDAwMDAwMDZRMTg3LjgxMiA0MC4yNzIwMDAwMDAwMDAwMDYgMTkxLjk2NiA0NC45MjIwMDAwMDAwMDAwMDRRMTk2LjEyIDQ5LjU3MiAxOTguMjkgNTUuODM0UTIwMC40NTk5OTk5OTk5OTk5OCA2Mi4wOTYwMDAwMDAwMDAwMDQgMjAwLjQ1OTk5OTk5OTk5OTk4IDY5LjUzNlY3Mi4zODhRMjAwLjQ1OTk5OTk5OTk5OTk4IDc5LjcwNDAwMDAwMDAwMDAxIDE5OC4zNTE5OTk5OTk5OTk5OCA4Ni4wOVExOTYuMjQ0IDkyLjQ3NiAxOTIuMjE0IDk3LjE4OFExODguMTg0IDEwMS45IDE4Mi40MTggMTA0LjU2NlExNzYuNjUyIDEwNy4yMzIgMTY5LjIxMiAxMDcuMjMyUTE2MS41MjQgMTA3LjIzMiAxNTUuMzI0IDEwNC4xMzJRMTUwLjI0IDEwMS41MjggMTQ2Ljg5MiA5Ni42OTIwMDAwMDAwMDAwMVYxMjkuOFpNMTYzLjYzMiA5MC42MTZRMTY4LjcxNiA5MC42MTYgMTcyLjQ5OCA4OC4xMzZRMTc2LjI4IDg1LjY1NiAxNzguMzg4IDgxLjE5MjAwMDAwMDAwMDAxUTE4MC40OTYgNzYuNzI4MDAwMDAwMDAwMDEgMTgwLjQ5NiA3MC45UTE4MC40OTYgNjUuMDcyIDE3OC4zODggNjAuNzMyUTE3Ni4yOCA1Ni4zOTIgMTcyLjU2IDUzLjk3NDAwMDAwMDAwMDAwNFExNjguODQgNTEuNTU2IDE2My42MzIgNTEuNTU2UTE1OS4xNjggNTEuNTU2IDE1NS4yIDUzLjY2NFExNTEuMjMyIDU1Ljc3MiAxNDguODE0MDAwMDAwMDAwMDIgNTkuNjc4UTE0Ni4zOTYwMDAwMDAwMDAwMiA2My41ODQgMTQ2LjM5NjAwMDAwMDAwMDAyIDY5LjE2NFY3My43NTJRMTQ2LjM5NjAwMDAwMDAwMDAyIDc5LjA4NCAxNDguOTM4IDgyLjg2NlExNTEuNDggODYuNjQ4IDE1NS40NDc5OTk5OTk5OTk5OCA4OC42MzJRMTU5LjQxNiA5MC42MTYgMTYzLjYzMiA5MC42MTZaTTI0NC4xMDggMTA3LjM1NlEyMzUuNDI4MDAwMDAwMDAwMDMgMTA3LjM1NiAyMjguNzk0MDAwMDAwMDAwMDQgMTA0LjM4UTIyMi4xNjAwMDAwMDAwMDAwMyAxMDEuNDA0IDIxNy43NTgwMDAwMDAwMDAwNCA5Ni4zODJRMjEzLjM1NjAwMDAwMDAwMDAyIDkxLjM2IDIxMS4wNjIgODUuMDk4UTIwOC43NjgwMDAwMDAwMDAwMyA3OC44MzYgMjA4Ljc2ODAwMDAwMDAwMDAzIDcyLjI2NDAwMDAwMDAwMDAxVjY5Ljc4Mzk5OTk5OTk5OTk5UTIwOC43NjgwMDAwMDAwMDAwMyA2Mi45NjQgMjExLjA2MiA1Ni43MDJRMjEzLjM1NjAwMDAwMDAwMDAyIDUwLjQ0IDIxNy42OTYwMDAwMDAwMDAwMyA0NS40OFEyMjIuMDM2IDQwLjUxOTk5OTk5OTk5OTk5NiAyMjguNTQ2IDM3LjYwNlEyMzUuMDU2IDM0LjY5MjAwMDAwMDAwMDAxIDI0My4zNjQwMDAwMDAwMDAwMyAzNC42OTIwMDAwMDAwMDAwMVEyNTQuMjc2IDM0LjY5MjAwMDAwMDAwMDAxIDI2MS43NzggMzkuNTlRMjY5LjI4MDAwMDAwMDAwMDAzIDQ0LjQ4OCAyNzMuMjQ4MDAwMDAwMDAwMDUgNTIuMzYxOTk5OTk5OTk5OTk1UTI3Ny4yMTYgNjAuMjM2IDI3Ny4yMTYgNjkuNTM2Vjc2LjIzMkgyMjcuNDkyMDAwMDAwMDAwMDJRMjI3Ljk4ODAwMDAwMDAwMDAzIDc5LjIwOCAyMjguOTgwMDAwMDAwMDAwMDIgODEuNjg4UTIzMC43MTYgODYuMjc2IDIzNC40MzYgODguNzU2UTIzOC4xNTYgOTEuMjM2IDI0NC4xMDggOTEuMjM2UTI0OS41NjQwMDAwMDAwMDAwMiA5MS4yMzYgMjUzLjAzNjAwMDAwMDAwMDAzIDg5LjEyOFEyNTYuNTA4MDAwMDAwMDAwMDQgODcuMDIgMjU3Ljc0ODAwMDAwMDAwMDA1IDgzLjkySDI3NS45NzZRMjc0LjQ4OCA5MC43NCAyNzAuMTQ4IDk2LjA3MlEyNjUuODA4IDEwMS40MDQgMjU5LjIzNiAxMDQuMzhRMjUyLjY2NDAwMDAwMDAwMDAyIDEwNy4zNTYgMjQ0LjEwOCAxMDcuMzU2Wk0yMjcuNzQgNjQuOTQ4MDAwMDAwMDAwMDFIMjU4LjM2OFEyNTcuODcyIDYyLjA5NjAwMDAwMDAwMDAwNCAyNTcuMDA0IDU5Ljc0UTI1NS4yNjgwMDAwMDAwMDAwMyA1NS40IDI1MS44NTggNTMuMTA1OTk5OTk5OTk5OTk1UTI0OC40NDggNTAuODEyIDI0My4zNjQwMDAwMDAwMDAwMyA1MC44MTJRMjM4LjE1NiA1MC44MTIgMjM0LjU2IDUzLjE2OFEyMzAuOTY0MDAwMDAwMDAwMDMgNTUuNTI0IDIyOS4xMDQgNjAuMTEyUTIyOC4xMTIwMDAwMDAwMDAwMiA2Mi4yMiAyMjcuNzQgNjQuOTQ4MDAwMDAwMDAwMDFaTTI4OS4xMiAxMDUuMFYzNy4wNDhIMzA0Ljg2OFY2MC4xMTJRMzA1Ljg2IDUwLjA2OCAzMTAuNTcyIDQzLjk5MlEzMTYuNzcyIDM2LjE4MDAwMDAwMDAwMDAxIDMyOC40MjggMzYuMTgwMDAwMDAwMDAwMDFIMzMxLjAzMlY1My4yOTJIMzI2LjA3MlEzMTcuODg4IDUzLjI5MiAzMTMuNDI0IDU3LjY5NFEzMDguOTYgNjIuMDk2MDAwMDAwMDAwMDA0IDMwOC45NiA3MC40MDRWMTA1LjBaTTM0OS41MDggMTA1LjBWNTEuNjhIMzQwLjQ1NTk5OTk5OTk5OTk2VjM3LjA0OEgzNjkuMzQ3OTk5OTk5OTk5OTZWMTA1LjBaTTM1Ny4xOTU5OTk5OTk5OTk5NyAzMC4zNTIwMDAwMDAwMDAwMDRRMzUxLjYxNiAzMC4zNTIwMDAwMDAwMDAwMDQgMzQ4Ljk1IDI3LjQzODAwMDAwMDAwMDAwMlEzNDYuMjg0IDI0LjUyNCAzNDYuMjg0IDE5Ljk5Nzk5OTk5OTk5OTk5OFEzNDYuMjg0IDE1LjQ3MTk5OTk5OTk5OTk5NCAzNDguOTUgMTIuNTU4UTM1MS42MTYgOS42NDQwMDAwMDAwMDAwMDUgMzU3LjE5NTk5OTk5OTk5OTk3IDkuNjQ0MDAwMDAwMDAwMDA1UTM2Mi43NzU5OTk5OTk5OTk5NSA5LjY0NDAwMDAwMDAwMDAwNSAzNjUuNDQxOTk5OTk5OTk5OTUgMTIuNTU4UTM2OC4xMDc5OTk5OTk5OTk5NSAxNS40NzE5OTk5OTk5OTk5OTQgMzY4LjEwNzk5OTk5OTk5OTk1IDE5Ljk5Nzk5OTk5OTk5OTk5OFEzNjguMTA3OTk5OTk5OTk5OTUgMjQuNTI0IDM2NS40NDE5OTk5OTk5OTk5NSAyNy40MzgwMDAwMDAwMDAwMDJRMzYyLjc3NTk5OTk5OTk5OTk1IDMwLjM1MjAwMDAwMDAwMDAwNCAzNTcuMTk1OTk5OTk5OTk5OTcgMzAuMzUyMDAwMDAwMDAwMDA0WiIvPjwvc3ZnPg==',
+    canto:'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzMjAiIGhlaWdodD0iMzIwIiB2aWV3Qm94PSIwIDAgMzIwIDMyMCI+PGRlZnM+PHJhZGlhbEdyYWRpZW50IGlkPSJmIiBjeD0iMzIwIiBjeT0iMzIwIiByPSIzMjAiIGdyYWRpZW50VW5pdHM9InVzZXJTcGFjZU9uVXNlIj48c3RvcCBvZmZzZXQ9IjAiIHN0b3AtY29sb3I9IiNmZmYiLz48c3RvcCBvZmZzZXQ9Ii4yNSIgc3RvcC1jb2xvcj0iI2ZmZiIgc3RvcC1vcGFjaXR5PSIuOTUiLz48c3RvcCBvZmZzZXQ9Ii40NSIgc3RvcC1jb2xvcj0iI2ZmZiIgc3RvcC1vcGFjaXR5PSIuNyIvPjxzdG9wIG9mZnNldD0iLjY1IiBzdG9wLWNvbG9yPSIjZmZmIiBzdG9wLW9wYWNpdHk9Ii4zNSIvPjxzdG9wIG9mZnNldD0iLjg1IiBzdG9wLWNvbG9yPSIjZmZmIiBzdG9wLW9wYWNpdHk9Ii4wOCIvPjxzdG9wIG9mZnNldD0iMSIgc3RvcC1jb2xvcj0iI2ZmZiIgc3RvcC1vcGFjaXR5PSIwIi8+PC9yYWRpYWxHcmFkaWVudD48bWFzayBpZD0iZyIgbWFza1VuaXRzPSJ1c2VyU3BhY2VPblVzZSIgeD0iMCIgeT0iMCIgd2lkdGg9IjMyMCIgaGVpZ2h0PSIzMjAiPjxyZWN0IHdpZHRoPSIzMjAiIGhlaWdodD0iMzIwIiBmaWxsPSJ1cmwoI2YpIi8+PHBhdGggdHJhbnNmb3JtPSJ0cmFuc2xhdGUoMTg2IDE3OCkgc2NhbGUoMS4wNSkiIGQ9Ik0yMS42MCwxMy44MiBBNDYuMDAsNDYuMDAgMCAxIDEgMTMuODIsMjEuNjAgTDI4LjE0LDM1LjkyIEEyNi4wMCwyNi4wMCAwIDEgMCAzNS45MiwyOC4xNCBaIiBmaWxsPSIjMDAwIiBzdHJva2U9IiMwMDAiIHN0cm9rZS13aWR0aD0iNSIvPjwvbWFzaz48L2RlZnM+PHBhdGggZD0iTTIuMyAwVjMyME0xOS45IDBWMzIwTTM3LjQgMFYzMjBNNTUuMCAwVjMyME03Mi41IDBWMzIwTTkwLjEgMFYzMjBNMTA3LjYgMFYzMjBNMTI1LjIgMFYzMjBNMTQyLjcgMFYzMjBNMTYwLjMgMFYzMjBNMTc3LjggMFYzMjBNMTk1LjQgMFYzMjBNMjEyLjkgMFYzMjBNMjMwLjUgMFYzMjBNMjQ4LjAgMFYzMjBNMjY1LjUgMFYzMjBNMjgzLjEgMFYzMjBNMzAwLjYgMFYzMjBNMzE4LjIgMFYzMjBNMCAxNi4zTDMyMCAtMTY4LjRNMCAzNi42TDMyMCAtMTQ4LjJNMCA1Ni45TDMyMCAtMTI3LjlNMCA3Ny4xTDMyMCAtMTA3LjZNMCA5Ny40TDMyMCAtODcuNE0wIDExNy42TDMyMCAtNjcuMU0wIDEzNy45TDMyMCAtNDYuOU0wIDE1OC4yTDMyMCAtMjYuNk0wIDMxNy42TDMyMCA1MDIuM00wIDE3OC40TDMyMCAtNi4zTTAgMjk3LjNMMzIwIDQ4Mi4xTTAgMTk4LjdMMzIwIDEzLjlNMCAyNzcuMEwzMjAgNDYxLjhNMCAyMTkuMEwzMjAgMzQuMk0wIDI1Ni44TDMyMCA0NDEuNU0wIDIzOS4yTDMyMCA1NC41TTAgMjM2LjVMMzIwIDQyMS4zTTAgMjU5LjVMMzIwIDc0LjdNMCAyMTYuM0wzMjAgNDAxLjBNMCAyNzkuN0wzMjAgOTUuME0wIDE5Ni4wTDMyMCAzODAuOE0wIDMwMC4wTDMyMCAxMTUuMk0wIDE3NS43TDMyMCAzNjAuNU0wIDMyMC4zTDMyMCAxMzUuNU0wIDE1NS41TDMyMCAzNDAuMk0wIDM0MC41TDMyMCAxNTUuOE0wIDEzNS4yTDMyMCAzMjAuME0wIDM2MC44TDMyMCAxNzYuME0wIDExNC45TDMyMCAyOTkuN00wIDM4MS4xTDMyMCAxOTYuM00wIDk0LjdMMzIwIDI3OS40TTAgNDAxLjNMMzIwIDIxNi42TTAgNzQuNEwzMjAgMjU5LjJNMCA0MjEuNkwzMjAgMjM2LjhNMCA1NC4yTDMyMCAyMzguOU0wIDQ0MS44TDMyMCAyNTcuMU0wIDMzLjlMMzIwIDIxOC43TTAgNDYyLjFMMzIwIDI3Ny4zTTAgMTMuNkwzMjAgMTk4LjRNMCA0ODIuNEwzMjAgMjk3LjZNMCAtNi42TDMyMCAxNzguMU0wIDUwMi42TDMyMCAzMTcuOU0wIC0yNi45TDMyMCAxNTcuOU0wIC00Ny4yTDMyMCAxMzcuNk0wIC02Ny40TDMyMCAxMTcuM00wIC04Ny43TDMyMCA5Ny4xTTAgLTEwNy45TDMyMCA3Ni44TTAgLTEyOC4yTDMyMCA1Ni42TTAgLTE0OC41TDMyMCAzNi4zTTAgLTE2OC43TDMyMCAxNi4wIiBmaWxsPSJub25lIiBzdHJva2U9IiMwMDAiIHN0cm9rZS1vcGFjaXR5PSIwLjI2IiBtYXNrPSJ1cmwoI2cpIi8+PHBhdGggdHJhbnNmb3JtPSJ0cmFuc2xhdGUoMTg2IDE3OCkgc2NhbGUoMS4wNSkiIGQ9Ik0yMS42MCwxMy44MiBBNDYuMDAsNDYuMDAgMCAxIDEgMTMuODIsMjEuNjAgTDI4LjE0LDM1LjkyIEEyNi4wMCwyNi4wMCAwIDEgMCAzNS45MiwyOC4xNCBaIiBmaWxsPSIjMDAwIiBmaWxsLW9wYWNpdHk9IjAuMTYiIHN0cm9rZT0iIzAwMCIgc3Ryb2tlLW9wYWNpdHk9IjAuNSIgc3Ryb2tlLXdpZHRoPSIwLjgiLz48cGF0aCB0cmFuc2Zvcm09InRyYW5zbGF0ZSgxODYgMTc4KSBzY2FsZSgxLjA1KSIgZD0iTTE5LjI0LDE1LjcxIEwxNS43MSwxOS4yNCBMMjkuODUsMzMuMzggTDMzLjM4LDI5Ljg1IFoiIGZpbGw9IiMwMDAiIGZpbGwtb3BhY2l0eT0iMC41NSIvPjwvc3ZnPg=='
+  };
+  /* o nome da empresa na porta e no rodapé do menu: só a tela, e volta ao sair do tema */
+  const OPERI_TEXTOS = [['.lock-title', /RM Estruturas Pr[ée]-Fabricadas/i, 'Operi'], ['.lock-foot', /RM Estruturas/i, 'Operi'], ['#footer-info', /RM ESTRUTURAS/i, 'OPERI']];
+  function textosOperi(on){
+    OPERI_TEXTOS.forEach(([sel, de, para]) => document.querySelectorAll(sel).forEach(el => {
+      if (on) { if (de.test(el.textContent)) { el.dataset.rmTexto = el.textContent; el.textContent = el.textContent.replace(de, para); el.dataset.operiTexto = el.textContent; } }
+      else if (el.dataset.rmTexto && el.textContent === el.dataset.operiTexto) { el.textContent = el.dataset.rmTexto; delete el.dataset.rmTexto; delete el.dataset.operiTexto; }
+    }));
+  }
+  function centralOperi(on){
+    textosOperi(on);
+    if (!on) { const f = document.getElementById('rm-operi-icone'); if (f) { f.remove(); document.querySelectorAll('link[data-rm-icone]').forEach(l => { l.rel = l.getAttribute('data-rm-icone'); l.removeAttribute('data-rm-icone'); }); } return; }
+    document.querySelectorAll('.logo-area svg,.topbar svg,.dash-marca svg,#lock-screen svg').forEach(n => {
+      const vb = n.getAttribute('viewBox') || '';
+      if (!/157\.967|109\.488/.test(vb) || n.classList.contains('rm-marca-rm')) return;
+      const im = document.createElement('img');
+      im.className = 'rm-operi'; im.alt = 'Operi';
+      const inteiro = /805\.51/.test(vb);
+      im.src = inteiro ? OPERI.logo : OPERI.simbolo;
+      n.classList.add('rm-marca-rm');
+      n.parentNode.insertBefore(im, n.nextSibling);
+    });
+    if (!document.getElementById('rm-operi-wm')) {   /* a marca d'água do fundo, só na tela */
+      const e = document.createElement('style'); e.id = 'rm-operi-wm';
+      e.textContent = '@media screen{body[data-tom="operi"]{--wm-forma:url("' + OPERI.forma + '");--wm-logo:url("' + OPERI.larga + '")}}';
+      document.head.appendChild(e);
+    }
+    if (!document.getElementById('rm-operi-icone')) {
+      document.querySelectorAll('link[rel~="icon"]').forEach(l => { l.setAttribute('data-rm-icone', l.rel); l.rel = 'rm-icone-guardado'; });
+      const f = document.createElement('link'); f.id = 'rm-operi-icone'; f.rel = 'icon'; f.href = OPERI.icone; document.head.appendChild(f);
+    }
+  }
+  /* o painel e o login se redesenham depois: um vigia leve põe o logo da
+     Operi no que nascer (só com o tema ligado) */
+  let _operiVigia = null;
+  function vigiaOperi(){
+    if (_operiVigia) return;
+    let t = null;
+    _operiVigia = new MutationObserver(() => {
+      if (document.body.getAttribute('data-tom') !== 'operi') return;
+      clearTimeout(t); t = setTimeout(() => { if (document.body.getAttribute('data-tom') === 'operi') centralOperi(true); }, 150);
+    });
+    _operiVigia.observe(document.body, { childList: true, subtree: true });
+  }
+  (function(){
+    const liga = () => { if (document.body && document.body.getAttribute('data-tom') === 'operi') centralOperi(true); vigiaOperi(); };
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', liga); else liga();
+  })();
   function podeJarvis(){
     const em = String((typeof CURRENT_EMAIL !== 'undefined' && CURRENT_EMAIL) || '').toLowerCase();
     return !!em && typeof CENTRAL_ACCESS !== 'undefined' && CENTRAL_ACCESS[em] === null;
   }
   function temaValido(t){
-    if (t === 'jarvis' && !podeJarvis()) return 'escuro';
-    if (t === 'claro' || t === 'escuro' || t === 'suave' || t === 'nitido' || t === 'jarvis') return t;
+    if ((t === 'jarvis' || t === 'operi') && !podeJarvis()) return 'escuro';
+    if (t === 'claro' || t === 'escuro' || t === 'suave' || t === 'nitido' || t === 'jarvis' || t === 'operi') return t;
     return (t === 'grafite') ? 'escuro' : 'claro';
   }
   /* a escolha comum aos sistemas: rm_tema diz claro/escuro, rm_tom a intensidade */
@@ -9628,15 +9693,16 @@ const APP_VER='v192';
     const t = localStorage.getItem('rm_tema');
     if (!t) return null;
     const tom = localStorage.getItem('rm_tom');
-    return (t === 'escuro' && (tom === 'suave' || tom === 'nitido' || tom === 'jarvis')) ? tom : t;
+    return (t === 'escuro' && (tom === 'suave' || tom === 'nitido' || tom === 'jarvis' || tom === 'operi')) ? tom : t;
   }
   function setTheme(t) {
     t = temaValido(t);
     const dono = podeJarvis();
     try { if (dono) localStorage.setItem('rm_jarvis_dono', '1'); else localStorage.removeItem('rm_jarvis_dono'); } catch (e) {}
-    document.querySelectorAll('[data-theme-chip="jarvis"]').forEach(c => { c.style.display = dono ? '' : 'none'; });
+    document.querySelectorAll('[data-theme-chip="jarvis"],[data-theme-chip="operi"]').forEach(c => { c.style.display = dono ? '' : 'none'; });
     document.body.setAttribute('data-theme', t === 'claro' ? 'claro' : 'escuro');
-    document.body.setAttribute('data-tom', t === 'suave' || t === 'nitido' || t === 'jarvis' ? t : 'forte');
+    document.body.setAttribute('data-tom', t === 'suave' || t === 'nitido' || t === 'jarvis' || t === 'operi' ? t : 'forte');
+    centralOperi(t === 'operi');
     localStorage.setItem(prefKey('rm_theme'), t);
     document.querySelectorAll('[data-theme-chip]').forEach(c =>
       c.classList.toggle('active', c.getAttribute('data-theme-chip') === t));
@@ -9651,7 +9717,7 @@ const APP_VER='v192';
      so espelha a escolha na chave comum e avisa quem esta dentro do quadro,
      que e como o aplicativo do Electron abre os sistemas. */
   function espalhaTema(t){
-    const tema = t === 'claro' ? 'claro' : 'escuro', tom = t === 'suave' || t === 'nitido' || t === 'jarvis' ? t : 'forte';
+    const tema = t === 'claro' ? 'claro' : 'escuro', tom = t === 'suave' || t === 'nitido' || t === 'jarvis' || t === 'operi' ? t : 'forte';
     try{ localStorage.setItem('rm_tema', tema); localStorage.setItem('rm_tom', tom); }catch(e){}
     try{ const q=document.querySelectorAll('iframe');
          for(let i=0;i<q.length;i++) q[i].contentWindow &&
@@ -9662,7 +9728,7 @@ const APP_VER='v192';
   function temaAtual(){
     const b = document.body;
     return b.getAttribute('data-theme') !== 'escuro' ? 'claro'
-         : (['suave', 'nitido', 'jarvis'].includes(b.getAttribute('data-tom')) ? b.getAttribute('data-tom') : 'escuro');
+         : (['suave', 'nitido', 'jarvis', 'operi'].includes(b.getAttribute('data-tom')) ? b.getAttribute('data-tom') : 'escuro');
   }
   function recebeTema(t){
     t = temaValido(t);
@@ -9676,7 +9742,7 @@ const APP_VER='v192';
     const m = e.data; if (!m || m.rm !== 'tema') return;
     /* sistema em versao velha nao manda o tom: mantem o que estiver */
     const tom = m.tom || document.body.getAttribute('data-tom') || 'forte';
-    recebeTema(m.tema === 'escuro' ? (tom === 'suave' || tom === 'nitido' || tom === 'jarvis' ? tom : 'escuro') : 'claro');
+    recebeTema(m.tema === 'escuro' ? (tom === 'suave' || tom === 'nitido' || tom === 'jarvis' || tom === 'operi' ? tom : 'escuro') : 'claro');
   });
 
   function addSystem() {
@@ -16687,6 +16753,40 @@ html.rm-janela .logo-area{-webkit-app-region:drag}
    então tudo que já pergunta por "escuro" continua valendo.
    Movimento: some com "reduzir movimento", fica fora do celular e do papel,
    e para enquanto um sistema está aberto por cima. Teste central-tema-jarvis. */
+/* ===== TEMA OPERI (só do dono) =====
+   A marca com que o dono vende os módulos: um escuro em grafite-aço, o
+   #17212B do logo, nunca o preto da RM. Laranja Operi (#E8780C) no acento;
+   o botão cheio num laranja fechado (#B45309) que segura 5:1 com a letra
+   branca. Só a TELA: o impresso segue RM. Teste central-tema-operi. */
+body[data-theme="escuro"][data-tom="operi"]{
+  --bg:#17212B; --sidebar:#141D26; --sidebar-border:#2A3744;
+  --card:#1E2A36; --card-hover:#253240;
+  --rm-laranja:#E8780C; --rm-marca-txt:#F0913A; --rm-erro:#F47C97;
+  --accent-fill:#B45309; --accent-fill-2:#92400E; --accent-glow:rgba(232,120,12,0.20);
+  --text:#E9EEF3; --text-muted:#A9B4BF; --text-dim:#B5BFCA; --divider:#2E3B48;
+  --active-bg:rgba(232,120,12,.16);
+}
+body[data-theme="escuro"][data-tom="operi"] #lock-screen{
+  --lk-fundo:#17212B; --lk-cartao:rgba(30,42,54,.86); --lk-borda:rgba(233,238,243,.12);
+  --lk-nota:#A9B4BF; --lk-pe:#A9B4BF; --lk-campo:rgba(233,238,243,.06); --lk-campo-borda:rgba(233,238,243,.16);
+  --lk-brilho:rgba(232,120,12,.14); --lk-brilho2:rgba(70,110,150,.22); --lk-campo-foco:rgba(233,238,243,.08);
+}
+img.rm-operi{display:none}
+@media screen{
+  body[data-tom="operi"] .rm-marca-rm{display:none!important}
+  body[data-tom="operi"] img.rm-operi{display:block!important;width:auto;max-width:100%}
+  body[data-tom="operi"] .logo-area img.rm-operi{height:30px;margin:0 auto}
+  body[data-tom="operi"] .topbar img.rm-operi{height:15px;flex-shrink:0}
+  body[data-tom="operi"] .dash-marca img.rm-operi{width:44px;height:auto}
+  body[data-tom="operi"] #lock-screen img.rm-operi{height:52px;margin:0 auto}
+  body[data-tom="operi"] .topbar{border-bottom-color:rgba(232,120,12,.35)}
+  body[data-tom="operi"] .lock-input:focus{border-color:#E8780C;box-shadow:0 0 0 3px rgba(232,120,12,.22)}
+  body[data-tom="operi"] .lock-btn{background:#B45309;box-shadow:0 8px 20px rgba(180,83,9,.32)}
+  body[data-tom="operi"] .lock-btn:hover:not(:disabled){box-shadow:0 10px 26px rgba(180,83,9,.42)}
+  body[data-tom="operi"] .lock-lembrar input:checked + .ll-caixa{background:#B45309;border-color:#B45309}
+  body[data-tom="operi"] .lock-lembrar input:focus-visible + .ll-caixa{box-shadow:0 0 0 3px rgba(232,120,12,.3)}
+  body[data-tom="operi"] .dash-marca img.rm-operi{width:44px;height:auto}
+}
 body[data-theme="escuro"][data-tom="jarvis"]{
   --bg:#04121c; --sidebar:#03101a; --sidebar-border:#0f3343;
   --card:#072030; --card-hover:#0a2a3d;
