@@ -4893,7 +4893,7 @@ try { var _e = localStorage.getItem('rm_estilo_ultimo'); if (_e === 'viva' || _e
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js" crossorigin="anonymous"></script>
 
 <script>/* versão publicada (PADRAO_RM.md §3): sobe a cada publicação, junto com o CACHE do sw.js */
-const APP_VER='v193';
+const APP_VER='v194';
 </script>
 <script>
   /* ===== LOGIN (Firebase Authentication) =====
@@ -7708,6 +7708,7 @@ const APP_VER='v193';
     const ifr = layer.querySelector('iframe'); if (!ifr) return;
     ifr.addEventListener('load', () => layer.classList.add('loaded'), { once: true });
     ifr.addEventListener('load', () => enviaContaAoQuadro(ifr));   /* a cada carga, inclusive recarregar */
+    ifr.addEventListener('load', () => enviaTemaAoQuadro(ifr));
     setTimeout(() => layer.classList.add('loaded'), 6000);   // nunca prende no spinner
 
     const alvo = sis.url;
@@ -9721,8 +9722,19 @@ const APP_VER='v193';
     try{ localStorage.setItem('rm_tema', tema); localStorage.setItem('rm_tom', tom); }catch(e){}
     try{ const q=document.querySelectorAll('iframe');
          for(let i=0;i<q.length;i++) q[i].contentWindow &&
-           q[i].contentWindow.postMessage({rm:'tema',tema:tema,tom:tom},'*');
+           q[i].contentWindow.postMessage({rm:'tema',tema:tema,tom:tom,dono:podeJarvis()},'*');
     }catch(e){}
+  }
+  /* O TEMA VAI JUNTO COM O SISTEMA QUE ABRE. No programa instalado a Central
+     mora num arquivo (file:) e os sistemas no site: endereços diferentes, que
+     NÃO dividem o localStorage. O tema e o aviso de dono (Jarvis e Operi só
+     do dono) não chegavam -- o sistema abria no escuro comum mesmo com o
+     Operi escolhido aqui. A cada carga do quadro, a Central manda os dois.
+     Teste central-tema-chega-ao-sistema. */
+  function enviaTemaAoQuadro(ifr){
+    const t = temaAtual(), tema = t === 'claro' ? 'claro' : 'escuro';
+    const tom = t === 'suave' || t === 'nitido' || t === 'jarvis' || t === 'operi' ? t : 'forte';
+    try { ifr.contentWindow && ifr.contentWindow.postMessage({ rm: 'tema', tema, tom, dono: podeJarvis() }, '*'); } catch (_) {}
   }
   /* e o caminho de volta: um sistema mudou o tema por dentro */
   function temaAtual(){

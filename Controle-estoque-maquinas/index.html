@@ -1122,6 +1122,13 @@ window.rmTemaAlterna=function(){
 window.addEventListener('storage',function(e){ if(e.key===CHAVE||e.key===CHAVE_TOM) pinta(lido(),tomLido()); });
 window.addEventListener('message',function(e){
   var m=e.data; if(!m||m.rm!=='tema') return;
+  /* O AVISO DE DONO VEM DA CENTRAL QUE ABRIU O SISTEMA. No programa
+     instalado ela mora noutro endereço e não divide o localStorage: sem isto
+     o Jarvis e o Operi nunca ligavam dentro dela. Só de quem está em volta
+     (o quadro pai), e só muda o visual. Teste central-tema-chega-ao-sistema. */
+  if(typeof m.dono==='boolean' && e.source && e.source===window.parent && window.parent!==window){
+    try{ if(m.dono) localStorage.setItem('rm_jarvis_dono','1'); else localStorage.removeItem('rm_jarvis_dono'); }catch(x){}
+  }
   /* quem nao manda o tom (versao velha) nao mexe nele */
   var tom=(m.tom==='suave'||m.tom==='forte'||m.tom==='nitido'||m.tom==='jarvis'||m.tom==='operi')?m.tom:tomLido();
   try{ localStorage.setItem(CHAVE,m.tema==='escuro'?'escuro':'claro'); localStorage.setItem(CHAVE_TOM,tom); }catch(x){}
@@ -3204,7 +3211,7 @@ const DB_NODE = "maquinas_rm";
    visivel, nenhum de nos dois tinha como saber se o aparelho estava rodando o
    que foi publicado ou uma copia velha do cache do app instalado. Diagnostico
    por adivinhacao custa mais caro que um rodape. */
-const APP_VER='v57';
+const APP_VER='v58';
 const STORE_KEY = "rm_maquinas_v1";
 
 const CORES = [
