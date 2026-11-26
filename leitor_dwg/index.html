@@ -1815,6 +1815,10 @@ else poe();
   #printArea .lf-len{font-variant-numeric:tabular-nums;font-weight:700;font-size:14px;white-space:nowrap}
   #printArea .lf-qtd{font-variant-numeric:tabular-nums;font-weight:700}
   #printArea .lf-cod{font-size:12px;color:var(--ink);font-weight:600}
+  #printArea .lf-mk{display:inline-block;white-space:nowrap;margin:0 8px 1px 0;font-family:var(--mono,monospace);font-size:11.5px}
+  #printArea .lf-cc .lf-mk{font-size:13px;font-weight:700}
+  #printArea .lf-onde{font-size:11px;color:var(--muted,#6c7480)}
+  #printArea .lf-marca-nota{font-size:12px;margin:8px 0 4px;color:#1d2127}
   #printArea .rc-erro{background:#fdecea;border:1.5px solid #B3123C;border-radius:8px;padding:12px 14px;margin:14px 0;font-size:14px;color:#7b1d16;font-weight:505}
   /* Amarelo e' "confira", vermelho e' "nao corte". Misturar os dois faz o
      vermelho perder o peso justamente quando ele for verdadeiro. */
@@ -17788,13 +17792,44 @@ function htmlListaFornecedor(d,opt){
      ("O pedido para o fabricante está gerando espaçamento em branco"). Numa
      tabela única a quebra é linha a linha e o cabeçalho se repete na página
      seguinte. A leitura continua coluna a coluna, de cima para baixo. */
+  /* MARCAR NA PEÇA: a etiqueta inteira da prancha de montagem, como o laser
+     grava -- estrutura, posição, tipo e comprimento ("A P3 D 248") -- e
+     quantas peças levam cada uma. Só "P2, P3" não servia a quem escreve a
+     caneta no metal: não dizia de que estrutura (o P recomeça em cada uma)
+     nem quantas peças de cada posição. Teste leitor-pedido-marcacao. */
+  const SIGLA={diagonal:'D',dinf:'DI',dsup:'DS',vertical:'V',bsup:'BS',binf:'BI',outros:''};
+  const rotulos=x=>{
+    const sig=SIGLA[x.fam]||'',ent=new Map();
+    (x.marcas||[]).forEach(m=>(m.pos||[]).forEach(v=>{if(v==null)return;
+      const pos=/^P\d/i.test(String(v))?String(v).toUpperCase():/^\d+$/.test(String(v))?'P'+v:String(v),k=(m.letra||'')+'|'+pos;
+      const e=ent.get(k)||{letra:m.letra||'',pos,n:0};e.n+=(m.porPos||0)*(m.estrut||0);ent.set(k,e);}));
+    if(!ent.size)return null;
+    const L=[...ent.values()].sort((a,b)=>a.letra.localeCompare(b.letra)||(parseInt(a.pos.slice(1),10)||0)-(parseInt(b.pos.slice(1),10)||0));
+    const soma=L.reduce((t,e)=>t+Math.round(e.n),0),contaFecha=soma===x.qty&&L.every(e=>Math.abs(e.n-Math.round(e.n))<1e-6);
+    return L.map(e=>(contaFecha&&L.length>1?Math.round(e.n)+'× ':'')+[e.letra,e.pos,sig,String(Math.round(x.len))].filter(Boolean).join(' '));
+  };
+  /* CÓDIGO CURTO (padrão, para a caneta): peça igual leva código igual -- o
+     tipo e o comprimento ("D 1290"), que é o fim da chamada da prancha de
+     montagem. Quem corta escreve o mesmo nas 8 peças iguais; quem monta acha
+     "D 1290" na prancha. As posições ficam em "Onde vai", só para conferir.
+     CÓDIGO COMPLETO (laser): a etiqueta inteira de cada posição, com a
+     quantidade de cada uma. Teste leitor-pedido-marcacao. */
+  const curto=((opt&&opt.marca)||'curta')!=='completa';
+  const onde=x=>{const porL={};(x.marcas||[]).forEach(m=>{const a=porL[m.letra||'']||(porL[m.letra||'']=[]);
+      (m.pos||[]).forEach(v=>{if(v==null)return;const p=/^P\d/i.test(String(v))?String(v).toUpperCase():/^\d+$/.test(String(v))?'P'+v:String(v);if(a.indexOf(p)<0)a.push(p);});});
+    return Object.keys(porL).filter(k=>porL[k].length).sort().map(k=>(k?k+': ':'')+porL[k].sort((a,b)=>(parseInt(a.slice(1),10)||0)-(parseInt(b.slice(1),10)||0)).join(', ')).join(' · ');};
+  const codCurto=x=>[SIGLA[x.fam]||'',String(Math.round(x.len))].filter(Boolean).join(' ');
   const celulas=(x,sep)=>{const s=sep?' data-sep="1"':'';
-    return x?('<td class="n lf-len"'+s+'>'+nb(x.len)+'</td><td class="n lf-qtd">'+nb(x.qty)+'</td>'+
-      '<td class="lf-cod">'+escapeHtml(juntaMarcas(x.marcas,'pos')||x.cods.join(', ')||'—')+'</td>')
-    :'<td'+s+'></td><td></td><td></td>';};
+    if(!x)return '<td'+s+'></td><td></td><td></td>'+(curto?'<td></td>':'');
+    if(curto)return '<td class="n lf-len"'+s+'>'+nb(x.len)+'</td><td class="n lf-qtd">'+nb(x.qty)+'</td>'+
+      '<td class="lf-cod lf-cc"><span class="lf-mk">'+escapeHtml(codCurto(x))+'</span></td>'+
+      '<td class="lf-onde">'+escapeHtml(onde(x)||x.cods.join(', ')||'—')+'</td>';
+    const r=rotulos(x);
+    return '<td class="n lf-len"'+s+'>'+nb(x.len)+'</td><td class="n lf-qtd">'+nb(x.qty)+'</td>'+
+      '<td class="lf-cod">'+(r?r.map(t=>'<span class="lf-mk">'+escapeHtml(t)+'</span>').join(' '):escapeHtml(juntaMarcas(x.marcas,'pos')||x.cods.join(', ')||'—'))+'</td>';};
   const tabela=(itens,n)=>{
     const cols=emColunas(itens,n),linhas=cols[0]?cols[0].length:0;
-    const cab=sep=>'<th class="n"'+(sep?' data-sep="1"':'')+'>Comp.</th><th class="n">Qtd</th><th>Peças (P)</th>';
+    const cab=sep=>'<th class="n"'+(sep?' data-sep="1"':'')+'>Comp.</th><th class="n">Qtd</th><th>Marcar na peça</th>'+(curto?'<th>Onde vai</th>':'');
     let corpo='';
     for(let i=0;i<linhas;i++)corpo+='<tr>'+cols.map((c,k)=>celulas(c[i],k>0)).join('')+'</tr>';
     return '<table class="lf-t" style="--lf-n:'+cols.length+'"><thead><tr>'+cols.map((c,k)=>cab(k>0)).join('')+
@@ -17867,6 +17902,8 @@ function htmlListaFornecedor(d,opt){
       /* sem o quadro de notas de oficina: "Essa informação não precisa sair
          no pedido para o fornecedor" -- o pedido é só a lista */
       (opt.chapas||'')+
+      '<div class="lf-marca-nota">'+(curto?'<b>Marcação:</b> escreva em cada peça o código da coluna <b>Marcar na peça</b> (tipo e comprimento em mm). Peças iguais levam o mesmo código; amarre um feixe por perfil.'
+        :'<b>Marcação:</b> cada peça leva a etiqueta da sua posição (estrutura, posição, tipo e comprimento em mm).')+'</div>'+
       corpo+
     '</div></div>';
 }
@@ -17908,7 +17945,8 @@ function dadosRelatorioCorte(){
         /* O montador nao procura vao, procura PECA. As posicoes P vao junto
            desde aqui, com a letra da estrutura, porque o P recomeca em cada
            tesoura: o P7 da A nao e o P7 da B. */
-        p.marcas.push({letra:s.letra,pos:(pc.posicoes||[]).slice(),vaos:(pc.paineis||[]).slice()});
+        p.marcas.push({letra:s.letra,pos:(pc.posicoes||[]).slice(),vaos:(pc.paineis||[]).slice(),
+          porPos:(pc.posicoes&&pc.posicoes.length)?(Number(pc.qtdPorEstrutura)||0)/pc.posicoes.length:0,estrut:Number(s.qtdEstrut)||0});
       });
     });
   }else{
@@ -18584,7 +18622,7 @@ document.getElementById('cutReport').addEventListener('click',gerarRelatorioCort
    inferior, nos pedaços do plano de emenda (barra cheia + resto) que o
    detalhamento já calcula. Na coluna P vai a linha inteira e a parte, para
    quem recebe saber que os dois pedaços formam um banzo só. */
-const LF_BANZOS_KEY='rm_lf_banzos';
+const LF_BANZOS_KEY='rm_lf_banzos',LF_MARCA_KEY='rm_lf_marca';
 function lfComBanzos(d,secoes){
   const grupos=d.grupos.map(g=>({...g,lista:g.lista.slice()}));
   const nb=v=>Math.round(v).toLocaleString('pt-BR');
@@ -18657,17 +18695,22 @@ function lfPedido(modo){
      botões delas no detalhamento. */
   const detS=detSecoesCache(), secoes=(detS&&detS.secoes)||[];
   let comBanzos=false;try{comBanzos=localStorage.getItem(LF_BANZOS_KEY)==='1';}catch(_){}
+  let marca='curta';try{if(localStorage.getItem(LF_MARCA_KEY)==='completa')marca='completa';}catch(_){}
   const chapas=modo==='chapas'?lfResumoChapas(d0):'';
   const monta=()=>{
     const d=comBanzos?lfComBanzos(d0,secoes):d0;
-    pa.innerHTML=(modo==='barras'?htmlPedidoBarras(d0):htmlListaFornecedor(d,{chapas}))+
+    pa.innerHTML=(modo==='barras'?htmlPedidoBarras(d0):htmlListaFornecedor(d,{chapas,marca}))+
       '<div class="lf-botoes" style="margin-top:12px">'+(modo==='barras'?'':'<label class="lf-opc" style="display:inline-flex;align-items:center;gap:6px;margin-right:12px">'+
-      '<input type="checkbox" id="lfBanzos"'+(comBanzos?' checked':'')+'> Incluir banzos (superior e inferior)</label>')+
+      '<input type="checkbox" id="lfBanzos"'+(comBanzos?' checked':'')+'> Incluir banzos (superior e inferior)</label>'+
+      '<label class="lf-opc" style="display:inline-flex;align-items:center;gap:6px;margin-right:12px">Marcação '+
+      '<select id="lfMarca"><option value="curta"'+(marca==='curta'?' selected':'')+'>código curto (caneta)</option><option value="completa"'+(marca==='completa'?' selected':'')+'>código completo (laser)</option></select></label>')+
       '<button class="btn" id="lfPrint">Imprimir / PDF</button> '+
       '<button class="btn ghost" id="lfClose">Fechar</button></div>';
     liga();
   };
   const liga=()=>{
+  const sm=document.getElementById('lfMarca');
+  if(sm)sm.addEventListener('change',e=>{marca=e.target.value==='completa'?'completa':'curta';try{localStorage.setItem(LF_MARCA_KEY,marca);}catch(_){}monta();});
   const cb=document.getElementById('lfBanzos');
   if(cb)cb.addEventListener('change',e=>{
     comBanzos=e.target.checked;try{localStorage.setItem(LF_BANZOS_KEY,comBanzos?'1':'0');}catch(_){}
@@ -33174,7 +33217,7 @@ if('serviceWorker' in navigator && location.protocol.startsWith('http')){
 }
 </script>
 <script>/* versão publicada (PADRAO_RM.md §3): sobe a cada publicação, junto com o CACHE do sw.js */
-const APP_VER='v328';
+const APP_VER='v329';
 </script>
 <script id="rmVersaoBloco">
 /* ===== SELO DE VERSÃO — igual em todos os sistemas (PADRAO_RM.md §3) =====

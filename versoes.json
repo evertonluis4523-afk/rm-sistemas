@@ -25,8 +25,8 @@
   "versao": "v77"
  },
  "central_rm": {
-  "commit": "2e549ff",
-  "data": "2026-11-25",
+  "commit": "1ec36d1",
+  "data": "2026-11-26",
   "versao": "v191"
  },
  "controle_cheques": {
@@ -45,10 +45,10 @@
   "versao": "v126"
  },
  "leitor_dwg": {
-  "commit": "130584b",
-  "data": "2026-11-25",
+  "commit": "c42dccd",
+  "data": "2026-11-26",
   "extensao": "1.4.0",
-  "versao": "v328"
+  "versao": "v329"
  },
  "orcamento-rm": {
   "commit": "f9a9067",
