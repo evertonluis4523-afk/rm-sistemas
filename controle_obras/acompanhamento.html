@@ -382,11 +382,62 @@ h2::before{content:'';width:18px;height:3px;border-radius:2px;background:var(--l
     $('peData').textContent=(em?'Atualizado em '+em.toLocaleDateString('pt-BR')+' às '+em.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}):'')+(d.expira?' · link válido até '+new Date(d.expira).toLocaleDateString('pt-BR'):'');
     document.title=(d.nome||'Obra')+(conta?' — Relatório da obra':' — Acompanhamento');
   }
+  /* ANEXO: O QUE O ARQUIVO E' DE VERDADE (seguranca, nov/2026). O tipo do
+     anexo vinha do proprio arquivo: um .html com o nome trocado para .pdf
+     entrava e, ao abrir, virava uma pagina rodando DENTRO do sistema, com o
+     login de quem abriu. Agora quem decide sao os primeiros bytes -- no envio
+     e na hora de abrir, o que protege tambem o anexo guardado antes: PDF e
+     foto abrem na tela, XML abre como texto puro e o resto so' baixa.
+     Teste anexo-nao-vira-pagina. */
+  var ANEXO_TIPOS = {
+    pdf: { abre: 'pdf', mime: 'application/pdf', ext: 'pdf' },
+    jpg: { abre: 'img', mime: 'image/jpeg', ext: 'jpg' },
+    png: { abre: 'img', mime: 'image/png', ext: 'png' },
+    gif: { abre: 'img', mime: 'image/gif', ext: 'gif' },
+    webp: { abre: 'img', mime: 'image/webp', ext: 'webp' },
+    bmp: { abre: 'img', mime: 'image/bmp', ext: 'bmp' },
+    heic: { abre: '', mime: 'image/heic', ext: 'heic' },
+    xml: { abre: 'txt', mime: 'application/xml', ext: 'xml' }
+  };
+  function anexoQualE(b) {
+    if (!b || !b.length) return '';
+    function tem(s, o) { o = o || 0; if (b.length < o + s.length) return false;
+      for (var i = 0; i < s.length; i++) if (b[o + i] !== s.charCodeAt(i)) return false; return true; }
+    if (tem('\xFF\xD8\xFF')) return 'jpg';
+    if (tem('\x89PNG\r\n\x1A\n')) return 'png';
+    if (tem('GIF87a') || tem('GIF89a')) return 'gif';
+    if (tem('RIFF') && tem('WEBP', 8)) return 'webp';
+    if (tem('BM') && b.length > 26 && b[14] >= 12 && b[15] === 0) return 'bmp';
+    if (tem('ftyp', 4) && /^(heic|heix|hevc|hevx|heim|heis|mif1|msf1)$/.test(String.fromCharCode(b[8], b[9], b[10], b[11]))) return 'heic';
+    var cab = '', n = Math.min(b.length, 1024);
+    for (var i = 0; i < n; i++) cab += String.fromCharCode(b[i]);
+    if (cab.indexOf('%PDF-') >= 0) return 'pdf';
+    var t = '';
+    try { t = new TextDecoder('utf-8').decode(b.subarray(0, Math.min(b.length, 4 << 20))); } catch (e) { return ''; }
+    t = t.replace(/^﻿/, '').replace(/^\s+/, '');
+    if (t.charAt(0) === '<' && !/<\s*\/?\s*(script|html|body|head|iframe|frame|object|embed|svg|meta|link|style|form|img|a)\b|xhtml|<!doctype\s+html|javascript:/i.test(t)) return 'xml';
+    return '';
+  }
+  /* "data:...;base64,XXXX" -> bytes; qualquer outra coisa (endereco, texto) -> null */
+  function anexoBytes(u) {
+    var s = String(u || ''), m = /^data:[^,]*;base64,/i.exec(s);
+    if (!m) return null;
+    var b64 = s.slice(m[0].length).replace(/\s+/g, '');
+    if (/[^A-Za-z0-9+/=]/.test(b64)) return null;
+    try { var bin = atob(b64), n = bin.length, a = new Uint8Array(n); while (n--) a[n] = bin.charCodeAt(n); return a; }
+    catch (e) { return null; }
+  }
+  /* o anexo pronto para abrir: o tipo sai dos bytes, nunca do que foi guardado */
+  function anexoSeguro(b) {
+    var k = anexoQualE(b), t = ANEXO_TIPOS[k];
+    var mime = t ? (t.abre === 'txt' ? 'text/plain;charset=utf-8' : t.mime) : 'application/octet-stream';
+    return { k: k, abre: t ? t.abre : '', mime: t ? t.mime : '', ext: t ? t.ext : '', blob: new Blob([b], { type: mime }) };
+  }
   function arquivo(n){
     if(cache[n.fid]) return Promise.resolve(cache[n.fid]);
     var p=fonte?Promise.resolve((fonte.arq||{})[n.fid]):db.ref('obras_link_arq/'+cod+'/'+n.fid).once('value').then(function(s){return s.val();});
-    return p.then(function(a){ if(!a||!a.dados) throw new Error('sem');
-      return fetch(a.dados).then(function(r){return r.blob();}).then(function(b){ var o={url:URL.createObjectURL(b),nome:a.nome||('NF '+(n.nf||'')+'.pdf'),tipo:a.tipo||b.type}; cache[n.fid]=o; return o; }); });
+    return p.then(function(a){ var b=a&&anexoBytes(a.dados); if(!b) throw new Error('sem');
+      var seg=anexoSeguro(b), o={url:URL.createObjectURL(seg.blob),nome:a.nome||('NF '+(n.nf||'')+'.'+(seg.ext||'pdf')),tipo:seg.mime,abre:seg.abre}; cache[n.fid]=o; return o; });
   }
   document.addEventListener('click',function(e){
     var bv=e.target.closest('[data-ver]'), bb=e.target.closest('[data-baixar]');
@@ -396,8 +447,9 @@ h2::before{content:'';width:18px;height:3px;border-radius:2px;background:var(--l
     var img=/^image\//.test(n.tipo||''), w=(bv&&!img)?window.open('','_blank'):null;
     bt.disabled=true; bt.textContent='Carregando…';
     arquivo(n).then(function(a){
-      if(bb){ var l=document.createElement('a'); l.href=a.url; l.download=a.nome; document.body.appendChild(l); l.click(); l.remove(); }
-      else if(/^image\//.test(a.tipo)){ $('vtit').textContent=a.nome; $('vcorpo').innerHTML='<img alt="" src="'+a.url+'">'; $('vov').classList.add('on'); }
+      /* o que nao e' PDF, foto nem XML so' baixa: nunca abre como pagina (anexoSeguro) */
+      if(bb||!a.abre){ if(w) w.close(); var l=document.createElement('a'); l.href=a.url; l.download=a.nome; document.body.appendChild(l); l.click(); l.remove(); }
+      else if(a.abre==='img'){ if(w) w.close(); $('vtit').textContent=a.nome; $('vcorpo').innerHTML='<img alt="" src="'+a.url+'">'; $('vov').classList.add('on'); }
       else if(w){ w.location.href=a.url; }
       else location.href=a.url;
     }).catch(function(){ if(w) w.close(); alert('Não foi possível abrir esta nota agora. Tente de novo em instantes.'); })

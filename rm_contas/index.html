@@ -3190,8 +3190,58 @@ const MAX_ANEXO = 8*1024*1024; // 8 MB por arquivo
 const ANEXOS_NO = 'contas_pagar_anexos';
 function nuvemAnexos(){ return (useFirebase && fb && fb.db) ? fb.db : null; }
 function blobParaDataURL(blob){ return new Promise((ok,erro)=>{ const r=new FileReader(); r.onload=()=>ok(r.result); r.onerror=()=>erro(r.error); r.readAsDataURL(blob); }); }
-function dataURLParaBlob(u){ const p=String(u).split(','), tipo=((p[0].match(/:(.*?);/)||[])[1])||'application/octet-stream', bin=atob(p[1]||''), a=new Uint8Array(bin.length);
-  for(let i=0;i<bin.length;i++) a[i]=bin.charCodeAt(i); return new Blob([a],{type:tipo}); }
+/* ANEXO: O QUE O ARQUIVO E' DE VERDADE (seguranca, nov/2026). O tipo do
+   anexo vinha do proprio arquivo: um .html com o nome trocado para .pdf
+   entrava e, ao abrir, virava uma pagina rodando DENTRO do sistema, com o
+   login de quem abriu. Agora quem decide sao os primeiros bytes -- no envio
+   e na hora de abrir, o que protege tambem o anexo guardado antes: PDF e
+   foto abrem na tela, XML abre como texto puro e o resto so' baixa.
+   Teste anexo-nao-vira-pagina. */
+var ANEXO_TIPOS = {
+  pdf: { abre: 'pdf', mime: 'application/pdf', ext: 'pdf' },
+  jpg: { abre: 'img', mime: 'image/jpeg', ext: 'jpg' },
+  png: { abre: 'img', mime: 'image/png', ext: 'png' },
+  gif: { abre: 'img', mime: 'image/gif', ext: 'gif' },
+  webp: { abre: 'img', mime: 'image/webp', ext: 'webp' },
+  bmp: { abre: 'img', mime: 'image/bmp', ext: 'bmp' },
+  heic: { abre: '', mime: 'image/heic', ext: 'heic' },
+  xml: { abre: 'txt', mime: 'application/xml', ext: 'xml' }
+};
+function anexoQualE(b) {
+  if (!b || !b.length) return '';
+  function tem(s, o) { o = o || 0; if (b.length < o + s.length) return false;
+    for (var i = 0; i < s.length; i++) if (b[o + i] !== s.charCodeAt(i)) return false; return true; }
+  if (tem('\xFF\xD8\xFF')) return 'jpg';
+  if (tem('\x89PNG\r\n\x1A\n')) return 'png';
+  if (tem('GIF87a') || tem('GIF89a')) return 'gif';
+  if (tem('RIFF') && tem('WEBP', 8)) return 'webp';
+  if (tem('BM') && b.length > 26 && b[14] >= 12 && b[15] === 0) return 'bmp';
+  if (tem('ftyp', 4) && /^(heic|heix|hevc|hevx|heim|heis|mif1|msf1)$/.test(String.fromCharCode(b[8], b[9], b[10], b[11]))) return 'heic';
+  var cab = '', n = Math.min(b.length, 1024);
+  for (var i = 0; i < n; i++) cab += String.fromCharCode(b[i]);
+  if (cab.indexOf('%PDF-') >= 0) return 'pdf';
+  var t = '';
+  try { t = new TextDecoder('utf-8').decode(b.subarray(0, Math.min(b.length, 4 << 20))); } catch (e) { return ''; }
+  t = t.replace(/^﻿/, '').replace(/^\s+/, '');
+  if (t.charAt(0) === '<' && !/<\s*\/?\s*(script|html|body|head|iframe|frame|object|embed|svg|meta|link|style|form|img|a)\b|xhtml|<!doctype\s+html|javascript:/i.test(t)) return 'xml';
+  return '';
+}
+/* "data:...;base64,XXXX" -> bytes; qualquer outra coisa (endereco, texto) -> null */
+function anexoBytes(u) {
+  var s = String(u || ''), m = /^data:[^,]*;base64,/i.exec(s);
+  if (!m) return null;
+  var b64 = s.slice(m[0].length).replace(/\s+/g, '');
+  if (/[^A-Za-z0-9+/=]/.test(b64)) return null;
+  try { var bin = atob(b64), n = bin.length, a = new Uint8Array(n); while (n--) a[n] = bin.charCodeAt(n); return a; }
+  catch (e) { return null; }
+}
+/* o anexo pronto para abrir: o tipo sai dos bytes, nunca do que foi guardado */
+function anexoSeguro(b) {
+  var k = anexoQualE(b), t = ANEXO_TIPOS[k];
+  var mime = t ? (t.abre === 'txt' ? 'text/plain;charset=utf-8' : t.mime) : 'application/octet-stream';
+  return { k: k, abre: t ? t.abre : '', mime: t ? t.mime : '', ext: t ? t.ext : '', blob: new Blob([b], { type: mime }) };
+}
+function dataURLParaBlob(u){ const b=anexoBytes(u); if(!b) throw new Error('anexo inválido'); return anexoSeguro(b).blob; }
 /* sobe o arquivo e marca as contas que usam a chave; devolve true se subiu */
 async function anexoSobe(key, blob, meta){
   const db=nuvemAnexos(); if(!db||!key||!blob) return false;
@@ -3221,12 +3271,16 @@ async function subirAnexosPendentes(){
 }
 function fmtSize(b){ b=Number(b)||0; return b<1024?b+' B' : b<1048576?(b/1024).toFixed(0)+' KB' : (b/1048576).toFixed(1)+' MB'; }
 
-function onPickAnexo(e){
+async function onPickAnexo(e){
   const f=e.target.files && e.target.files[0];
   e.target.value='';
   if(!f)return;
   if(f.size>MAX_ANEXO){ toast('Arquivo muito grande (máx. 8 MB).','err'); return; }
-  pendingAnexo={blob:f,nome:f.name,tipo:f.type,tam:f.size};
+  /* so' entra PDF, foto ou XML, reconhecidos pelos bytes (anexoSeguro) */
+  let b=null; try{ b=new Uint8Array(await f.arrayBuffer()); }catch(err){ toast('Não consegui ler o arquivo.','err'); return; }
+  const t=ANEXO_TIPOS[anexoQualE(b)];
+  if(!t){ toast('Este arquivo não é PDF, foto nem XML da nota e não foi anexado.','err'); return; }
+  pendingAnexo={blob:new Blob([b],{type:t.mime}),nome:f.name,tipo:t.mime,tam:f.size};
   anexoState='new';
   renderAnexoChip({nome:f.name,tam:f.size});
 }
@@ -3249,8 +3303,13 @@ async function openAnexo(key){
         if(d&&d.dados){ blob=dataURLParaBlob(d.dados); try{ await IDB.put(key,blob); }catch(e){} } }catch(e){}
     }
     if(!blob){ toast('Este anexo ainda está só no computador onde foi adicionado — ele sobe quando o Contas for aberto lá.','err'); return; }
-    const url=URL.createObjectURL(blob);
-    window.open(url,'_blank');
+    /* o tipo sai dos bytes, tambem para o anexo guardado antes: PDF e foto
+       abrem, XML abre como texto, o resto so' baixa (anexoSeguro) */
+    const seg=anexoSeguro(new Uint8Array(await blob.arrayBuffer()));
+    const url=URL.createObjectURL(seg.blob);
+    if(seg.abre) window.open(url,'_blank');
+    else{ const a=document.createElement('a'); a.href=url; a.download=nomeArquivoSeguro(((Object.values(S.contas).find(c=>c.anexoKey===key)||{}).anexoNome)||'anexo'); document.body.appendChild(a); a.click(); a.remove();
+      toast('Este arquivo não é PDF, foto nem XML — por segurança ele só foi baixado, não aberto.','err'); }
     setTimeout(()=>URL.revokeObjectURL(url),60000);
   }catch(e){ toast('Não foi possível abrir o anexo.','err'); }
 }
@@ -5361,7 +5420,7 @@ window.rmOrigemRM = window.rmOrigemRM || (function () {
 })();
 </script>
 <script>/* versão publicada (PADRAO_RM.md §3): sobe a cada publicação, junto com o CACHE do sw.js */
-const APP_VER='v91';
+const APP_VER='v92';
 </script>
 <script id="rmVersaoBloco">
 /* ===== SELO DE VERSÃO — igual em todos os sistemas (PADRAO_RM.md §3) =====

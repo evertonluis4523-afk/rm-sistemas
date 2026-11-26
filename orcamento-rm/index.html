@@ -6645,6 +6645,57 @@ function idbOpen(){ return new Promise((res,rej)=>{ try{ const r=indexedDB.open(
 function idbPut(id,val){ return idbOpen().then(db=>new Promise((res,rej)=>{ const tx=db.transaction(IDB_STORE,'readwrite'); tx.objectStore(IDB_STORE).put(val,id); tx.oncomplete=()=>res(); tx.onerror=()=>rej(tx.error); })); }
 function idbGet(id){ return idbOpen().then(db=>new Promise((res,rej)=>{ const tx=db.transaction(IDB_STORE,'readonly'); const rq=tx.objectStore(IDB_STORE).get(id); rq.onsuccess=()=>res(rq.result||null); rq.onerror=()=>rej(rq.error); })); }
 function idbDel(id){ return idbOpen().then(db=>new Promise((res)=>{ const tx=db.transaction(IDB_STORE,'readwrite'); tx.objectStore(IDB_STORE).delete(id); tx.oncomplete=()=>res(); tx.onerror=()=>res(); })).catch(()=>{}); }
+/* ANEXO: O QUE O ARQUIVO E' DE VERDADE (seguranca, nov/2026). O tipo do
+   anexo vinha do proprio arquivo: um .html com o nome trocado para .pdf
+   entrava e, ao abrir, virava uma pagina rodando DENTRO do sistema, com o
+   login de quem abriu. Agora quem decide sao os primeiros bytes -- no envio
+   e na hora de abrir, o que protege tambem o anexo guardado antes: PDF e
+   foto abrem na tela, XML abre como texto puro e o resto so' baixa.
+   Teste anexo-nao-vira-pagina. */
+var ANEXO_TIPOS = {
+  pdf: { abre: 'pdf', mime: 'application/pdf', ext: 'pdf' },
+  jpg: { abre: 'img', mime: 'image/jpeg', ext: 'jpg' },
+  png: { abre: 'img', mime: 'image/png', ext: 'png' },
+  gif: { abre: 'img', mime: 'image/gif', ext: 'gif' },
+  webp: { abre: 'img', mime: 'image/webp', ext: 'webp' },
+  bmp: { abre: 'img', mime: 'image/bmp', ext: 'bmp' },
+  heic: { abre: '', mime: 'image/heic', ext: 'heic' },
+  xml: { abre: 'txt', mime: 'application/xml', ext: 'xml' }
+};
+function anexoQualE(b) {
+  if (!b || !b.length) return '';
+  function tem(s, o) { o = o || 0; if (b.length < o + s.length) return false;
+    for (var i = 0; i < s.length; i++) if (b[o + i] !== s.charCodeAt(i)) return false; return true; }
+  if (tem('\xFF\xD8\xFF')) return 'jpg';
+  if (tem('\x89PNG\r\n\x1A\n')) return 'png';
+  if (tem('GIF87a') || tem('GIF89a')) return 'gif';
+  if (tem('RIFF') && tem('WEBP', 8)) return 'webp';
+  if (tem('BM') && b.length > 26 && b[14] >= 12 && b[15] === 0) return 'bmp';
+  if (tem('ftyp', 4) && /^(heic|heix|hevc|hevx|heim|heis|mif1|msf1)$/.test(String.fromCharCode(b[8], b[9], b[10], b[11]))) return 'heic';
+  var cab = '', n = Math.min(b.length, 1024);
+  for (var i = 0; i < n; i++) cab += String.fromCharCode(b[i]);
+  if (cab.indexOf('%PDF-') >= 0) return 'pdf';
+  var t = '';
+  try { t = new TextDecoder('utf-8').decode(b.subarray(0, Math.min(b.length, 4 << 20))); } catch (e) { return ''; }
+  t = t.replace(/^﻿/, '').replace(/^\s+/, '');
+  if (t.charAt(0) === '<' && !/<\s*\/?\s*(script|html|body|head|iframe|frame|object|embed|svg|meta|link|style|form|img|a)\b|xhtml|<!doctype\s+html|javascript:/i.test(t)) return 'xml';
+  return '';
+}
+/* o anexo pronto para abrir: o tipo sai dos bytes, nunca do que foi guardado */
+function anexoSeguro(b) {
+  var k = anexoQualE(b), t = ANEXO_TIPOS[k];
+  var mime = t ? (t.abre === 'txt' ? 'text/plain;charset=utf-8' : t.mime) : 'application/octet-stream';
+  return { k: k, abre: t ? t.abre : '', mime: t ? t.mime : '', ext: t ? t.ext : '', blob: new Blob([b], { type: mime }) };
+}
+/* abre o anexo guardado neste aparelho: PDF e foto numa aba, XML como
+   texto; o resto (planilha, um .html recebido como "orcamento.pdf"...) so'
+   baixa e nunca roda dentro do Orçamento */
+async function anexoAbre(blob,nome){
+  const seg=anexoSeguro(new Uint8Array(await blob.arrayBuffer()));
+  const url=URL.createObjectURL(seg.blob), w=seg.abre?window.open(url,'_blank'):null;
+  if(!w){ const a=document.createElement('a'); a.href=url; a.download=nomeArquivoSeguro(nome||'anexo'); document.body.appendChild(a); a.click(); a.remove(); }
+  setTimeout(()=>URL.revokeObjectURL(url),60000);
+}
 let _anexoObraId=null;
 function anexarObra(id){ _anexoObraId=id; const inp=document.getElementById('anexoFile'); if(!inp)return; inp.value=''; inp.click(); }
 function onAnexoFile(ev){
@@ -6662,9 +6713,7 @@ function abrirAnexo(id){
   const o=S.controle.find(x=>x.id===id); if(!o||!o.anexo)return;
   idbGet(o.anexo.id).then(rec=>{
     if(!rec||!rec.blob){ alert('O arquivo deste anexo está em outro aparelho — os anexos ficam salvos localmente. Reanexe aqui se precisar abri-lo neste dispositivo.'); return; }
-    const url=URL.createObjectURL(rec.blob); const w=window.open(url,'_blank');
-    if(!w){ const a=document.createElement('a'); a.href=url; a.download=nomeArquivoSeguro(o.anexo.name||'anexo'); document.body.appendChild(a); a.click(); a.remove(); }
-    setTimeout(()=>URL.revokeObjectURL(url),60000);
+    return anexoAbre(rec.blob,o.anexo.name);
   }).catch(()=>alert('Não foi possível abrir o anexo.'));
 }
 function removerAnexo(id){
@@ -9836,9 +9885,7 @@ function cobAbreAnexo(lid){
   const l=cobLinha(lid); if(!l||!l.anexo) return;
   idbGet(l.anexo.id).then(rec=>{
     if(!rec||!rec.blob){ alert('O arquivo deste pedido/nota está em outro aparelho: os anexos ficam salvos onde foram anexados. Anexe de novo aqui se precisar abrir neste.'); return; }
-    const url=URL.createObjectURL(rec.blob), w=window.open(url,'_blank');
-    if(!w){ const a=document.createElement('a'); a.href=url; a.download=nomeArquivoSeguro(l.anexo.name||'anexo'); document.body.appendChild(a); a.click(); a.remove(); }
-    setTimeout(()=>URL.revokeObjectURL(url),60000);
+    return anexoAbre(rec.blob,l.anexo.name);
   }).catch(()=>alert('Não foi possível abrir o anexo.'));
 }
 function cobTiraAnexo(lid){ const l=cobLinha(lid); if(!l||!l.anexo) return; if(!confirm('Remover o pedido/nota desta linha?')) return; const id=l.anexo.id; delete l.anexo; if(!cobAnexoEmUso(id)) idbDel(id); cobMudou(); }
@@ -10738,7 +10785,7 @@ function applyImport(){
    publicacao, e ha uma prova automatica que falha se um subir sem o outro.
    Assim o numero na tela e' o mesmo do arquivo que o aparelho guardou, e
    dizer "estou na v15" passa a significar alguma coisa. */
-const APP_VER='v174';
+const APP_VER='v175';
 (function(){ try{ const p=document.getElementById('verPill'); if(p)p.textContent=APP_VER; }catch(e){} })();
 /* Versao nova assumiu com a pagina aberta: avisa, em vez de recarregar por
    conta propria e jogar fora um orcamento pela metade. */

@@ -25,9 +25,9 @@
   "versao": "v77"
  },
  "central_rm": {
-  "commit": "1ec36d1",
+  "commit": "00bf0be",
   "data": "2026-11-26",
-  "versao": "v191"
+  "versao": "v192"
  },
  "controle_cheques": {
   "commit": "bbff0cb",
@@ -40,9 +40,9 @@
   "versao": "v94"
  },
  "controle_obras": {
-  "commit": "833d8e3",
-  "data": "2026-11-23",
-  "versao": "v126"
+  "commit": "da8a319",
+  "data": "2026-11-26",
+  "versao": "v127"
  },
  "leitor_dwg": {
   "commit": "c42dccd",
@@ -51,9 +51,9 @@
   "versao": "v329"
  },
  "orcamento-rm": {
-  "commit": "f9a9067",
-  "data": "2026-11-25",
-  "versao": "v174"
+  "commit": "067ebce",
+  "data": "2026-11-26",
+  "versao": "v175"
  },
  "propostas_rm": {
   "commit": "4ba497c",
@@ -66,8 +66,8 @@
   "versao": "v317"
  },
  "rm_contas": {
-  "commit": "9e33a15",
-  "data": "2026-11-24",
-  "versao": "v91"
+  "commit": "fa3798c",
+  "data": "2026-11-26",
+  "versao": "v92"
  }
 }

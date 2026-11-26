@@ -4889,7 +4889,7 @@ try { var _e = localStorage.getItem('rm_estilo_ultimo'); if (_e === 'viva' || _e
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js" crossorigin="anonymous"></script>
 
 <script>/* versão publicada (PADRAO_RM.md §3): sobe a cada publicação, junto com o CACHE do sw.js */
-const APP_VER='v191';
+const APP_VER='v192';
 </script>
 <script>
   /* ===== LOGIN (Firebase Authentication) =====
@@ -13144,21 +13144,68 @@ const APP_VER='v191';
   /* ------------------------------ o arquivo ------------------------------- */
   /* Baixado SO na hora de abrir ou enviar -- nunca junto da listagem. */
   function carregarArquivo(id) {
-    if (window.__docsArqTeste) return Promise.resolve(window.__docsArqTeste(id));   /* so' para os testes */
-    var d = db();
-    if (!d) return Promise.reject(new Error('sem conexão'));
-    return d.ref(NO_ARQ + '/' + id).once('value').then(function (s) {
-      var v = s.val();
-      if (!v || !v.dados) throw new Error('arquivo não encontrado');
+    var d = window.__docsArqTeste ? null : db();
+    if (!window.__docsArqTeste && !d) return Promise.reject(new Error('sem conexão'));
+    var p = window.__docsArqTeste ? Promise.resolve(window.__docsArqTeste(id))   /* so' para os testes */
+      : d.ref(NO_ARQ + '/' + id).once('value').then(function (s) { return s.val(); });
+    return p.then(function (v) {
+      var b = v && anexoBytes(v.dados);
+      if (!b) throw new Error('arquivo não encontrado');
+      /* o que o arquivo e' sai dos bytes (anexoSeguro), nao do "tipo" guardado */
+      v.seg = anexoSeguro(b); v.tipo = v.seg.mime;
       return v;
     });
   }
-  function dataURLparaBlob(u) {
-    var p = String(u).split(',');
-    var tipo = (p[0].match(/:(.*?);/) || [])[1] || 'application/octet-stream';
-    var bin = atob(p[1]), n = bin.length, arr = new Uint8Array(n);
-    while (n--) arr[n] = bin.charCodeAt(n);
-    return new Blob([arr], { type: tipo });
+  /* ANEXO: O QUE O ARQUIVO E' DE VERDADE (seguranca, nov/2026). O tipo do
+     anexo vinha do proprio arquivo: um .html com o nome trocado para .pdf
+     entrava e, ao abrir, virava uma pagina rodando DENTRO do sistema, com o
+     login de quem abriu. Agora quem decide sao os primeiros bytes -- no envio
+     e na hora de abrir, o que protege tambem o anexo guardado antes: PDF e
+     foto abrem na tela, XML abre como texto puro e o resto so' baixa.
+     Teste anexo-nao-vira-pagina. */
+  var ANEXO_TIPOS = {
+    pdf: { abre: 'pdf', mime: 'application/pdf', ext: 'pdf' },
+    jpg: { abre: 'img', mime: 'image/jpeg', ext: 'jpg' },
+    png: { abre: 'img', mime: 'image/png', ext: 'png' },
+    gif: { abre: 'img', mime: 'image/gif', ext: 'gif' },
+    webp: { abre: 'img', mime: 'image/webp', ext: 'webp' },
+    bmp: { abre: 'img', mime: 'image/bmp', ext: 'bmp' },
+    heic: { abre: '', mime: 'image/heic', ext: 'heic' },
+    xml: { abre: 'txt', mime: 'application/xml', ext: 'xml' }
+  };
+  function anexoQualE(b) {
+    if (!b || !b.length) return '';
+    function tem(s, o) { o = o || 0; if (b.length < o + s.length) return false;
+      for (var i = 0; i < s.length; i++) if (b[o + i] !== s.charCodeAt(i)) return false; return true; }
+    if (tem('\xFF\xD8\xFF')) return 'jpg';
+    if (tem('\x89PNG\r\n\x1A\n')) return 'png';
+    if (tem('GIF87a') || tem('GIF89a')) return 'gif';
+    if (tem('RIFF') && tem('WEBP', 8)) return 'webp';
+    if (tem('BM') && b.length > 26 && b[14] >= 12 && b[15] === 0) return 'bmp';
+    if (tem('ftyp', 4) && /^(heic|heix|hevc|hevx|heim|heis|mif1|msf1)$/.test(String.fromCharCode(b[8], b[9], b[10], b[11]))) return 'heic';
+    var cab = '', n = Math.min(b.length, 1024);
+    for (var i = 0; i < n; i++) cab += String.fromCharCode(b[i]);
+    if (cab.indexOf('%PDF-') >= 0) return 'pdf';
+    var t = '';
+    try { t = new TextDecoder('utf-8').decode(b.subarray(0, Math.min(b.length, 4 << 20))); } catch (e) { return ''; }
+    t = t.replace(/^﻿/, '').replace(/^\s+/, '');
+    if (t.charAt(0) === '<' && !/<\s*\/?\s*(script|html|body|head|iframe|frame|object|embed|svg|meta|link|style|form|img|a)\b|xhtml|<!doctype\s+html|javascript:/i.test(t)) return 'xml';
+    return '';
+  }
+  /* "data:...;base64,XXXX" -> bytes; qualquer outra coisa (endereco, texto) -> null */
+  function anexoBytes(u) {
+    var s = String(u || ''), m = /^data:[^,]*;base64,/i.exec(s);
+    if (!m) return null;
+    var b64 = s.slice(m[0].length).replace(/\s+/g, '');
+    if (/[^A-Za-z0-9+/=]/.test(b64)) return null;
+    try { var bin = atob(b64), n = bin.length, a = new Uint8Array(n); while (n--) a[n] = bin.charCodeAt(n); return a; }
+    catch (e) { return null; }
+  }
+  /* o anexo pronto para abrir: o tipo sai dos bytes, nunca do que foi guardado */
+  function anexoSeguro(b) {
+    var k = anexoQualE(b), t = ANEXO_TIPOS[k];
+    var mime = t ? (t.abre === 'txt' ? 'text/plain;charset=utf-8' : t.mime) : 'application/octet-stream';
+    return { k: k, abre: t ? t.abre : '', mime: t ? t.mime : '', ext: t ? t.ext : '', blob: new Blob([b], { type: mime }) };
   }
   function baixar(blob, nome) {
     var a = document.createElement('a');
@@ -13183,6 +13230,14 @@ const APP_VER='v191';
   function extensaoDe(f, arq) {
     var orig = String((f && f.nome) || (arq && arq.nome) || '');
     var m = orig.match(/\.([A-Za-z0-9]{1,5})$/);
+    /* com o arquivo na mao, a extensao e' a do que ele e': um nome terminado
+       em .html com um PDF dentro sai .pdf (anexoSeguro) */
+    var seg = arq && arq.seg;
+    if (seg) {
+      var e = m ? m[1].toLowerCase() : '';
+      if (seg.ext) return (e === seg.ext || (seg.ext === 'jpg' && /^(jpeg|jfif)$/.test(e)) || (seg.ext === 'heic' && e === 'heif')) ? e : seg.ext;
+      return /^(docx?|xlsx?|odt|ods|txt|csv|zip)$/.test(e) ? e : 'bin';
+    }
     if (m) return m[1].toLowerCase();
     var t = String((f && f.tipo) || (arq && arq.tipo) || '').split(';')[0].trim().toLowerCase();
     if (EXT_DE_TIPO[t]) return EXT_DE_TIPO[t];
@@ -13264,8 +13319,8 @@ const APP_VER='v191';
     var f = _docs[id]; if (!f) return;
     rmCompartilhar('doc:' + id, function () {
       return carregarArquivo(id).then(function (arq) {
-        var blob = dataURLparaBlob(arq.dados), nome = nomeParaEnviar(f, arq);
-        return { files: [new File([blob], nome, { type: f.tipo || arq.tipo || blob.type })], titulo: nome };
+        var blob = arq.seg.blob, nome = nomeParaEnviar(f, arq);
+        return { files: [new File([blob], nome, { type: blob.type })], titulo: nome };
       });
     }, bt, function (files) {
       baixar(files[0], files[0].name);
@@ -13295,14 +13350,21 @@ const APP_VER='v191';
     carregarArquivo(id).then(function (arq) {
       /* mesmo nome do envio: quem abre no leitor do computador e manda dali
          nao pode acabar com um "Unknown.pdf" na conversa */
-      var nome = nomeParaEnviar(f, arq);
+      var nome = nomeParaEnviar(f, arq), seg = arq.seg, blob = seg.blob;
+      /* so' PDF e foto abrem; o resto (um .html disfarcado, por exemplo)
+         apenas baixa e nunca roda dentro da Central (anexoSeguro) */
+      if (seg.abre !== 'pdf' && seg.abre !== 'img') {
+        if (aba && !aba.closed) aba.close();
+        baixar(blob, nome);
+        avisar('Este arquivo não é PDF nem foto — por segurança ele só foi baixado, não aberto', 'err');
+        return;
+      }
       if (noApp) {
-        return window.rmDesktop.abrirDocumento({ nome: nome, tipo: f.tipo || arq.tipo || '', dados: arq.dados })
+        return window.rmDesktop.abrirDocumento({ nome: nome, tipo: seg.mime, dados: 'data:' + seg.mime + ';base64,' + String(arq.dados).split(',')[1] })
           .then(function (r) {
             if (!r || !r.ok) avisar('Não consegui abrir o documento: ' + ((r && r.erro) || 'motivo desconhecido'), 'err');
           });
       }
-      var blob = dataURLparaBlob(arq.dados);
       var url = URL.createObjectURL(blob);
       if (aba && !aba.closed) { aba.location = url; }
       else { baixar(blob, nome); avisar('O navegador bloqueou a aba — o arquivo foi baixado'); }
@@ -13324,15 +13386,23 @@ const APP_VER='v191';
     var r = new FileReader();
     r.onerror = function () { avisar('Falha ao ler o arquivo', 'err'); };
     r.onload = function () {
+      /* so' entra PDF ou foto, reconhecidos pelos bytes -- o tipo que o
+         navegador informa vem do nome e engana (anexoSeguro) */
+      var k = anexoQualE(anexoBytes(r.result)), tp = ANEXO_TIPOS[k];
+      if (!tp || k === 'xml') {
+        avisar('Este arquivo não é PDF nem foto (JPG, PNG, WebP, HEIC) e não foi guardado', 'err');
+        return;
+      }
+      var dados = 'data:' + tp.mime + ';base64,' + String(r.result).split(',')[1];
       var id = novoId();
       var ficha = {
         gaveta: meta.gaveta, veiculo: meta.veiculo || '',
-        nome: padraoNome(meta.nome || file.name), tipo: file.type || '',
+        nome: padraoNome(meta.nome || file.name), tipo: tp.mime,
         validade: meta.validade || '', bytes: file.size, criadoEm: Date.now()
       };
       /* o arquivo primeiro: se a gravacao dele falhar, nao fica ficha
          apontando pra um arquivo que nao existe */
-      d.ref(NO_ARQ + '/' + id).set({ nome: ficha.nome, tipo: ficha.tipo, dados: r.result })
+      d.ref(NO_ARQ + '/' + id).set({ nome: ficha.nome, tipo: ficha.tipo, dados: dados })
         .then(function () { return d.ref(NO_FICHA + '/docs/' + id).set(ficha); })
         .then(function () { avisar('Documento guardado'); })
         .catch(function (e) { avisar('Não foi possível guardar: ' + ((e && e.message) || e), 'err'); });
@@ -13918,7 +13988,7 @@ const APP_VER='v191';
     if (bt) bt.disabled = true;
     return Promise.all(ss.map(function (f) {
       return carregarArquivo(f.id).then(function (arq) {
-        return { f: f, nome: nomeNoLote(f, arq), blob: dataURLparaBlob(arq.dados), tipo: f.tipo || arq.tipo || '' };
+        return { f: f, nome: nomeNoLote(f, arq), blob: arq.seg.blob, tipo: arq.seg.blob.type };
       });
     })).then(function (lst) {
       var usados = {};
