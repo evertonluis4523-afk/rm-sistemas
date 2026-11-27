@@ -3124,6 +3124,12 @@ tr.sal-japago>td.conf,tr.sal-japago>td.chk{opacity:1}
 .bh-rhid .sub{font-size:12px;color:var(--muted)}
 .bh-dias{display:flex;flex-wrap:wrap;gap:4px;max-width:360px}
 .bh-dia{font-size:11.5px;padding:2px 7px;border-radius:6px;border:1px solid var(--rm-perigo-suave,#f3d3c7);color:var(--rm-perigo,#8a331c);white-space:nowrap;font-variant-numeric:tabular-nums}
+.bh-limpo{display:flex;flex-direction:column;gap:10px}
+.bh-limpo label{display:flex;gap:10px;align-items:flex-start;padding:12px 14px;border:1px solid var(--line);border-radius:10px;cursor:pointer}
+.bh-limpo label:has(input:checked){border-color:var(--rm-marca,#d53309)}
+.bh-limpo label:has(input:disabled){opacity:.5;cursor:default}
+.bh-limpo input{margin-top:3px}
+.bh-limpo .sub{display:block;font-size:12px;color:var(--muted);margin-top:2px}
 .bh-atr{font-size:11.5px;color:var(--muted);margin-top:3px;white-space:nowrap}
 .rhid-conf-cards .rc-card{flex:1;min-width:110px;padding:10px 14px;border-radius:8px;text-align:center;font-size:12.5px;font-weight:700}
 .rhid-conf-cards .rc-card .rc-v{font-size:22px;font-weight:800;margin-bottom:2px}
@@ -4962,7 +4968,7 @@ if(window.RM_CELULAR) document.body.classList.add('rm-campo');
           <div class="f span4"><span class="lab">Buscar</span><input id="bhSearch" placeholder="nome do funcionário"></div>
           <div class="f span3"><span class="lab">Situação</span><select id="bhFiltro"><option value="todos">Todas</option><option value="pendente">Pendente</option><option value="recuperando">Recuperando</option><option value="quitado">Quitado</option><option value="emdia">Em dia</option></select></div>
         </div>
-        <div class="bh-rhid"><button class="btn-act dim" id="bhImportRhid">⇧ Importar cartão RHID</button><input type="file" id="bhRhidFile" accept="application/pdf,.pdf" hidden><span class="sub">O PDF de faltas e atrasos do RHID: falta e atraso de cada dia vão para H. faltadas, hora extra para H. recuperadas.</span></div>
+        <div class="bh-rhid"><button class="btn-act dim" id="bhImportRhid">⇧ Importar cartão RHID</button><input type="file" id="bhRhidFile" accept="application/pdf,.pdf" hidden><button class="btn-act dim" id="bhLimpar">Limpar mês</button><button class="btn-act dim" id="bhDesfazLimpar" hidden>↶ Desfazer limpeza</button><span class="sub">O PDF de faltas e atrasos do RHID: falta e atraso de cada dia vão para H. faltadas, hora extra para H. recuperadas.</span></div>
       </div>
       <div class="cards c3 rm-faixa rm-faixa-painel">
         <div class="card sem"><div class="k"><span class="dotk r"></span>Horas faltadas</div><div class="v" id="bhTotFaltas">0h</div></div>
@@ -5339,6 +5345,20 @@ if(window.RM_CELULAR) document.body.classList.add('rm-campo');
   </div>
 </div></div>
 
+<!-- MODAL LIMPAR O MÊS DO BANCO DE HORAS -->
+<div class="overlay" id="bhLimparModal"><div class="modal" style="max-width:560px">
+  <div class="mhead"><h2 id="bhLimparTitle">Limpar banco de horas</h2><button class="x" data-close>✕</button></div>
+  <div class="mbody">
+    <div class="bh-limpo">
+      <label><input type="radio" name="bhLimpo" value="rhid" checked><span><b>Só o que veio do cartão RHID</b><span class="sub" id="bhLimpoRhidQtd"></span><span class="sub">O que foi digitado à mão continua.</span></span></label>
+      <label><input type="radio" name="bhLimpo" value="tudo"><span><b>Tudo do mês</b><span class="sub" id="bhLimpoTudoQtd"></span><span class="sub">Inclusive o digitado à mão. Os outros meses não mudam.</span></span></label>
+    </div>
+  </div>
+  <div class="mfoot">
+    <button class="btn-act dim" data-close>Cancelar</button>
+    <button class="btn-act save" id="bhLimparOk">Limpar</button>
+  </div>
+</div></div>
 <!-- MODAL CONFERÊNCIA RHID NO BANCO DE HORAS -->
 <div class="overlay" id="bhRhidModal"><div class="modal" style="max-width:960px">
   <div class="mhead"><h2 id="bhRhidTitle">Cartão RHID no banco de horas</h2><button class="x" data-close>✕</button></div>
@@ -13364,6 +13384,7 @@ function bhSitBadge(s){if(s==='emdia')return 'atv"><span class="d"></span>Em dia
 function renderBH(){
   const ms=$('#bhMes');if(!ms.options.length)MESES.forEach((m,i)=>{const o=el('option');o.value=i;o.textContent=m.charAt(0).toUpperCase()+m.slice(1);ms.appendChild(o);});
   if($('#bhAno').value===''){const n=new Date();ms.value=n.getMonth();$('#bhAno').value=n.getFullYear();}
+  {const d=$('#bhDesfazLimpar');if(d)d.hidden=!(typeof _bhLimpoBackup!=='undefined'&&_bhLimpoBackup&&_bhLimpoBackup.k===bhKey());}
   const q=buscaTxt($('#bhSearch').value),fil=$('#bhFiltro').value;
   const all=(Array.isArray(state.employees)?state.employees:[]).filter(e=>{const s=e.status||'ativo';return s!=='desligado'&&s!=='demissao';}).slice().sort((a,b)=>(a.nome||'').localeCompare(b.nome||'','pt-BR'));
   let tF=0,tR=0,tS=0,qtdDia=0,qtdQuit=0,qtdRecup=0,qtdPend=0;
@@ -13561,7 +13582,7 @@ function bhRhidConferir(file,lido){
   $('#bhRhidModal').classList.add('open');
 }
 function bhRhidGravar(){
-  const p=_bhRhidPend;if(!p)return;_bhRhidPend=null;
+  const p=_bhRhidPend;if(!p)return;_bhRhidPend=null;_bhLimpoBackup=null;
   let nF=0,nR=0;
   p.plano.forEach(x=>{if(x.semCad)return;const rec=bhRecDe(p.comp,x.emp.id);
     rec.faltas=rec.faltas.filter(f=>f.origem!=='rhid').concat(x.faltas);
@@ -13575,6 +13596,48 @@ function bhImportarRhid(file){if(!file)return;pfLoadPdfJS(()=>pfRhidLePdf(file,{
 $('#bhImportRhid').onclick=()=>$('#bhRhidFile').click();
 $('#bhRhidFile').onchange=ev=>{const f=ev.target.files[0];ev.target.value='';if(f)bhImportarRhid(f);};
 $('#bhRhidOk').onclick=bhRhidGravar;
+/* ---------- LIMPAR O MÊS ----------
+   "Falta uma opção de limpar". Duas escolhas, porque os dois erros comuns
+   são diferentes: importou o cartão errado (apaga SÓ o que veio do RHID,
+   o digitado à mão fica) ou quer recomeçar o mês do zero (apaga tudo do
+   mês). Só o mês aberto na tela; os outros meses não mudam. Logo depois
+   aparece "Desfazer limpeza", que devolve o mês como estava, enquanto
+   aquele mês continuar aberto. Teste recibos-banco-horas-limpar. */
+var _bhLimpoBackup=null;
+function bhContaMes(k){
+  const arr=v=>Array.isArray(v)?v:(v?Object.values(v):[]),c={rhidF:0,rhidR:0,maoF:0,maoR:0};
+  Object.values(state.bancoHoras[k]||{}).forEach(p=>{if(!p)return;
+    arr(p.faltas).forEach(f=>{if(f&&f.origem==='rhid')c.rhidF++;else if(f)c.maoF++;});
+    arr(p.recuperacoes).forEach(r=>{if(r&&r.origem==='rhid')c.rhidR++;else if(r)c.maoR++;});});
+  return c;
+}
+function bhQtdTxt(f,r){return f+(f===1?' falta ou atraso':' faltas e atrasos')+' e '+r+(r===1?' hora extra/recuperação':' horas extras/recuperações');}
+function bhAbrirLimpar(){
+  const k=bhKey(),c=bhContaMes(k),pp=k.split('-'),nomeMes=MESES[Number(pp[1])-1]+' de '+pp[0];
+  if(!(c.rhidF+c.rhidR+c.maoF+c.maoR)){toast('Nada lançado em '+nomeMes,'err');return;}
+  $('#bhLimparTitle').textContent='Limpar banco de horas — '+nomeMes;
+  $('#bhLimpoRhidQtd').textContent=bhQtdTxt(c.rhidF,c.rhidR);
+  $('#bhLimpoTudoQtd').textContent=bhQtdTxt(c.rhidF+c.maoF,c.rhidR+c.maoR);
+  const temRhid=c.rhidF+c.rhidR>0,op=document.querySelector('input[name="bhLimpo"][value="rhid"]');
+  op.disabled=!temRhid;document.querySelector('input[name="bhLimpo"][value="'+(temRhid?'rhid':'tudo')+'"]').checked=true;
+  $('#bhLimparModal').classList.add('open');
+}
+function bhLimpar(){
+  const k=bhKey(),modo=(document.querySelector('input[name="bhLimpo"]:checked')||{}).value||'rhid';
+  _bhLimpoBackup={k,dados:JSON.parse(JSON.stringify(state.bancoHoras[k]||{}))};
+  if(modo==='tudo')state.bancoHoras[k]={};
+  else Object.keys(state.bancoHoras[k]||{}).forEach(id=>{const rec=bhRecDe(k,id);
+    rec.faltas=rec.faltas.filter(f=>f.origem!=='rhid');rec.recuperacoes=rec.recuperacoes.filter(r=>r.origem!=='rhid');});
+  persist();closeModal('bhLimparModal');renderBH();
+  toast(modo==='tudo'?'Mês limpo: faltas e recuperações apagadas':'Importação do RHID apagada (o digitado à mão ficou)','ok');
+}
+function bhDesfazerLimpar(){
+  const b=_bhLimpoBackup;if(!b)return;_bhLimpoBackup=null;
+  state.bancoHoras[b.k]=b.dados;persist();renderBH();toast('Limpeza desfeita','ok');
+}
+$('#bhLimpar').onclick=bhAbrirLimpar;
+$('#bhLimparOk').onclick=bhLimpar;
+$('#bhDesfazLimpar').onclick=bhDesfazerLimpar;
 /* ==================== FIM BANCO DE HORAS ==================== */
 
 /* =================== FIM RELATÓRIO =================== */
@@ -19222,7 +19285,7 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape'){if(fecharSemPerder(
    juntos a cada publicacao, e ha uma prova automatica que falha se um subir
    sem o outro. Assim o numero na tela e o mesmo do arquivo que o aparelho
    guardou, e dizer "estou na v81" passa a significar alguma coisa. */
-const APP_VER='v320';
+const APP_VER='v321';
 (function(){var p=document.getElementById('verPill'); if(p)p.textContent=APP_VER;})();
 
 if('serviceWorker' in navigator){
