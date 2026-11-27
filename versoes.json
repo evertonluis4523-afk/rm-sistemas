@@ -25,7 +25,7 @@
   "versao": "v79"
  },
  "central_rm": {
-  "commit": "74fbd69",
+  "commit": "3405961",
   "data": "2026-11-27",
   "versao": "v194"
  },
@@ -56,9 +56,9 @@
   "versao": "v177"
  },
  "propostas_rm": {
-  "commit": "d80bf4f",
+  "commit": "60b7b98",
   "data": "2026-11-27",
-  "versao": "v70"
+  "versao": "v71"
  },
  "recibos_rm": {
   "commit": "6d2e2ed",
