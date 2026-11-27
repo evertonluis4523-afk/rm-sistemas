@@ -2889,6 +2889,13 @@ body:not(.com-doc) .docs-card,body:not(.com-doc) .ed-grid{display:none}
 .l-ops{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:4px 16px;margin:-1px 0 6px 2px}
 .l-pag{grid-template-columns:62px 14px 1fr 130px 28px}
 .l-parc{grid-template-columns:1fr 1fr 110px 130px 28px}
+/* compra e venda: a letra, o tipo, o valor, quando (ou em quê) */
+.l-ccv{grid-template-columns:20px 110px 120px minmax(0,1fr) 28px 28px;margin-bottom:6px}
+.ccv-l{font-weight:700;color:var(--muted)}
+.ccv-add{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 10px}
+.ccv-ger{display:flex;flex-wrap:wrap;align-items:center;gap:6px;font-size:13px;color:var(--muted);margin:0 0 10px}
+.ccv-ger .ccv-n{width:64px}.ccv-ger .val{width:120px}.ccv-ger .ccv-ref{width:150px}
+.ini-ccv{margin-top:14px}
 .l-cnm{grid-template-columns:1fr 120px 28px}
 .l-cnm input.forte{font-weight:700}
 .l-comp{grid-template-columns:18px 1fr 28px}
@@ -3104,6 +3111,7 @@ body:not(.com-doc) .docs-card,body:not(.com-doc) .ed-grid{display:none}
   .l-pre{grid-template-columns:1fr 64px 58px 28px}
   .l-met{grid-template-columns:1fr 28px}.l-met input:nth-of-type(2){grid-column:1/2}
   .l-val{grid-template-columns:1fr 100px 28px}
+  .l-ccv{grid-template-columns:20px 1fr 1fr 28px 28px}.l-ccv input[data-p$='.quando'],.l-ccv input[data-p$='.desc']{grid-column:2/4}
 .l-socio{grid-template-columns:minmax(0,1fr) minmax(0,1fr) 28px}.l-socio input[data-p$='.papel']{grid-column:1/3}.l-val .chk{grid-column:span 1}
   .l-comp{grid-template-columns:18px 1fr 28px}.l-comp2{margin-left:0}
   .folha{padding:6mm 5mm}
@@ -3192,6 +3200,7 @@ body:not(.com-doc) .docs-card,body:not(.com-doc) .ed-grid{display:none}
       <div class="fld ini-busca"><label for="salvoBusca">Procurar</label><input id="salvoBusca" type="search" placeholder="cliente, número ou cidade" autocomplete="off"></div>
       <div class="ini-acoes">
         <button class="btn btn-ghost btn-sm" id="iniImportar" type="button" title="Lê uma proposta ou um contrato em Word (.docx) ou PDF e monta no layout novo">⇪ Importar Word ou PDF</button>
+        <button class="btn btn-ghost btn-sm" id="iniCcv" type="button" title="Contrato de compra e venda: a RM compra ou vende um bem">＋ Compra e venda</button>
         <button class="btn btn-sm ini-nova" id="iniNova" type="button">＋ Nova proposta</button>
       </div>
     </div>
@@ -3207,6 +3216,7 @@ body:not(.com-doc) .docs-card,body:not(.com-doc) .ed-grid{display:none}
       <section class="card ini-bloco"><div class="ini-h"><b>Propostas</b><span class="ini-n" id="nProp"></span></div><div class="ini-lista" id="listaProp"></div></section>
       <section class="card ini-bloco"><div class="ini-h"><b>Contratos</b><span class="ini-n" id="nCont"></span></div><div class="ini-lista" id="listaCont"></div></section>
     </div>
+    <section class="card ini-bloco ini-ccv"><div class="ini-h"><b>Contratos de compra e venda</b><span class="ini-n" id="nCcv"></span></div><div class="ini-lista" id="listaCcv"></div></section>
   </div>
 
   <div class="card docs-card no-print">
@@ -3233,6 +3243,7 @@ body:not(.com-doc) .docs-card,body:not(.com-doc) .ed-grid{display:none}
       <button class="aba on" id="abaProposta" type="button" role="tab">Proposta</button>
       <button class="aba" id="abaContrato" type="button" role="tab">Contrato</button>
       <button class="aba" id="abaImagens" type="button" role="tab">Imagens</button>
+      <button class="aba on" id="abaCcv" type="button" role="tab" hidden>Contrato de compra e venda</button>
     </div>
   </div>
 
@@ -3269,6 +3280,17 @@ body:not(.com-doc) .docs-card,body:not(.com-doc) .ed-grid{display:none}
       <button class="tipo-op" type="button" data-tipo="chave"><b>Proposta chave na mão</b><span>A obra pronta: a estrutura e os serviços (esquadrias, banheiros, elétrica, hidráulica, pintura...).</span></button>
     </div>
     <div class="mb-acoes"><button class="btn btn-ghost" id="tipoNao" type="button">Cancelar</button></div>
+  </div>
+</div>
+<!-- contrato de compra e venda novo: a RM compra ou a RM vende -->
+<div class="modal no-print" id="ccvTela" role="dialog" aria-label="Contrato de compra e venda">
+  <div class="modal-box tipo-box">
+    <div class="mb-txt"><b>Contrato de compra e venda</b></div>
+    <div class="tipo-ops">
+      <button class="tipo-op" type="button" data-ccv="compra"><b>A RM compra</b><span>A RM compra um bem de alguém (veículo, máquina...). A RM é a compradora.</span></button>
+      <button class="tipo-op" type="button" data-ccv="venda"><b>A RM vende</b><span>A RM vende um bem para alguém. A RM é a vendedora.</span></button>
+    </div>
+    <div class="mb-acoes"><button class="btn btn-ghost" id="ccvNao" type="button">Cancelar</button></div>
   </div>
 </div>
 <!-- seta de medida sobre a imagem (a altura, como a arquiteta fazia no Word) -->
@@ -3765,6 +3787,189 @@ function proximoNumero(ano) {
   Object.values(docs).forEach(d => { const m = /^(\d+)\/(\d{4})$/.exec(d && d.numero || ''); if (m && m[2] === String(ano)) max = Math.max(max, +m[1]); });
   return String(max + 1).padStart(3, '0') + '/' + ano;
 }
+/* ═══════════════════════════════════════════════════════════
+   CONTRATO DE COMPRA E VENDA
+   "Uma aba 'Contrato de compra e venda', um contrato onde compramos algo do
+   fulano X, e outra opção de venda de algo da RM para alguém X; identidade
+   visual e demais detalhes conforme o mesmo sistema." Segue o contrato de
+   compra e venda de veículo que a RM já usa: as partes no preâmbulo, a
+   cláusula 1 com o objeto, a cláusula 2 com o preço e cada pagamento numa
+   letra -- a) Entrada, b) Parcela, ... h) Permuta --, o fecho com as duas
+   testemunhas e as assinaturas, o VENDEDOR primeiro.
+
+   Mora no mesmo lugar das propostas (docs), com tipo 'ccv' e os dados em
+   d.ccv; a outra parte é o d.cliente, os mesmos campos. Não é proposta: não
+   entra na numeração (tem a sua, CV 001/2026), nem nos totais em negociação,
+   nem no resumo que vai para a Central. O papel, o PDF e o Word saem dos
+   mesmos blocos do contrato. Teste propostas-compra-e-venda.
+═══════════════════════════════════════════════════════════ */
+const CCV_LADO = { compra: 'A RM compra', venda: 'A RM vende' };
+const CCV_PAG = { entrada: 'Entrada', parcela: 'Parcela', permuta: 'Permuta', outro: 'Pagamento' };
+const CCV_FECHO = 'Por estarem assim justos e acordados, as partes firmam o presente instrumento em duas vias de igual teor, juntamente com 2 (duas) testemunhas.';
+function ehCcv(d) { return !!d && d.tipo === 'ccv'; }
+function proximoCcv(ano) {
+  let max = 0;
+  Object.values(docs).forEach(d => { const m = /^CV (\d+)\/(\d{4})$/.exec(d && d.numero || ''); if (m && m[2] === String(ano)) max = Math.max(max, +m[1]); });
+  return 'CV ' + String(max + 1).padStart(3, '0') + '/' + ano;
+}
+function ccvNovo(lado) {
+  return { lado: lado === 'venda' ? 'venda' : 'compra', bem: 'veiculo', titulo: '', data: rmDiaISO(), local: EMPRESA.sede.replace(/\/RS$/, ''),
+    obj: { desc: '', marca: '', modelo: '', ano: '', placa: '', renavam: '', chassi: '', orgao: 'DETRAN/RS', livre: true, texto: '' },
+    pag: [], ger: { n: 6, valor: 0, ref: 'da entrega' }, extra: '', fecho: CCV_FECHO,
+    test: [{ nome: '', doc: '' }, { nome: '', doc: '' }] };
+}
+function ccvNorm(c) {
+  const b = ccvNovo(c && c.lado); c = c || {};
+  const lista = v => Array.isArray(v) ? v.filter(x => x != null) : (v && typeof v === 'object' ? Object.keys(v).sort((a, z) => a - z).map(k => v[k]).filter(x => x != null) : []);
+  const o = Object.assign({}, b, c);
+  o.lado = c.lado === 'venda' ? 'venda' : 'compra';
+  o.bem = c.bem === 'outro' ? 'outro' : 'veiculo';
+  o.obj = Object.assign({}, b.obj, c.obj || {}); o.obj.livre = !(c.obj && c.obj.livre === false);
+  o.pag = lista(c.pag).map(x => ({ tipo: CCV_PAG[x.tipo] ? x.tipo : 'parcela', valor: lerValor(x.valor), quando: String(x.quando || ''), desc: String(x.desc || '') }));
+  o.ger = Object.assign({}, b.ger, c.ger || {}); o.ger.n = lerValor(o.ger.n); o.ger.valor = lerValor(o.ger.valor);
+  const t = lista(c.test); o.test = [0, 1].map(i => ({ nome: String((t[i] || {}).nome || ''), doc: String((t[i] || {}).doc || '') }));
+  ['titulo', 'data', 'local', 'extra', 'fecho'].forEach(k => { o[k] = String(o[k] == null ? '' : o[k]); });
+  return o;
+}
+function ccvTotal(d) { return centavos(((d.ccv && d.ccv.pag) || []).reduce((s, x) => s + lerValor(x.valor), 0)); }
+function ccvPapeis(d) {
+  /* a RM é empresa: a COMPRADORA ou a VENDEDORA; a outra parte, como no
+     contrato da RM, o VENDEDOR ou o COMPRADOR */
+  return d.ccv.lado === 'venda' ? { rm: 'VENDEDORA', outra: 'COMPRADOR', rmRot: 'Vendedora', outraRot: 'Comprador' } : { rm: 'COMPRADORA', outra: 'VENDEDOR', rmRot: 'Compradora', outraRot: 'Vendedor' };
+}
+function ccvTitulo(d) { return d.ccv.titulo.trim() || (d.ccv.bem === 'veiculo' ? 'Contrato de compra e venda de veículo' : 'Contrato de compra e venda'); }
+function ccvObjetoTxt(d) {
+  const o = d.ccv.obj, s = x => String(x || '').trim();
+  let t;
+  if (d.ccv.bem === 'veiculo') {
+    t = 'o veículo ' + (s(o.desc) || '—') + [s(o.marca) ? 'marca ' + s(o.marca) : '', s(o.modelo) ? 'modelo ' + s(o.modelo) : '', s(o.ano) ? 'ano ' + s(o.ano) : '',
+      s(o.placa) ? 'placa ' + s(o.placa).toUpperCase() : '', s(o.renavam) ? 'RENAVAM nº ' + s(o.renavam) : '', s(o.chassi) ? 'chassi ' + s(o.chassi).toUpperCase() : ''].filter(Boolean).map(x => ', ' + x).join('')
+      + (s(o.orgao) && (s(o.placa) || s(o.renavam)) ? ', expedidos pelo ' + s(o.orgao) : '');
+  } else t = s(o.texto) || '—';
+  return t + (o.livre ? ', livre e desembaraçado de quaisquer ônus e alienação bancária' : '') + '.';
+}
+function ccvPessoaTxt(cl) {
+  const s = x => String(x || '').trim(), nome = (s(cl.nome) || '—').toUpperCase();
+  if (clientePF(cl)) {
+    const q = [s(cl.nacionalidade), s(cl.profissao), s(cl.estadoCivil)].filter(Boolean).join(', ');
+    return nome + (q ? ', ' + q : '') + (s(cl.rg) ? ', RG nº ' + s(cl.rg) : '') + (s(cl.doc) ? ', inscrito no CPF sob o número ' + s(cl.doc) : '')
+      + (s(cl.endereco) || s(cl.cidade) ? ', residente na ' + [s(cl.endereco), s(cl.cidade) ? 'cidade de ' + s(cl.cidade) : ''].filter(Boolean).join(', ') : '');
+  }
+  return nome + (s(cl.endereco) || s(cl.cidade) ? ', estabelecida na ' + [s(cl.endereco), s(cl.cidade) ? 'cidade de ' + s(cl.cidade) : ''].filter(Boolean).join(', ') : '')
+    + (s(cl.doc) ? ', inscrita no ' + (cl.doc.replace(/\D/g, '').length > 11 ? 'CNPJ' : 'CPF') + ' ' + s(cl.doc) : '')
+    + (s(cl.rep) ? ', neste ato representada pelo senhor ' + s(cl.rep) + (s(cl.repDoc) ? ', ' + docPessoa(cl.repDoc) : '') : '');
+}
+function ccvRmTxt() {
+  const rep = String(config.rep || '').trim(), rd = String(config.repDoc || '').trim();
+  return EMPRESA.razao.toUpperCase() + ', estabelecida na ' + EMPRESA.enderecoContrato + ', inscrita no CNPJ ' + EMPRESA.cnpj
+    + (rep ? ', neste ato representada pelo senhor ' + rep + (rd ? ', ' + docPessoa(rd) : '') : '');
+}
+function ccvPagTxt(x) {
+  const v = lerValor(x.valor), q = String(x.quando || '').trim(), ds = String(x.desc || '').trim();
+  return (CCV_PAG[x.tipo] || 'Pagamento') + ' de ' + brl(v) + ' (' + extenso(v) + ')' + (ds ? (x.tipo === 'permuta' && !/^(em|de|com)\b/i.test(ds) ? ' em ' : ' ') + ds : '') + (q ? ' ' + q : '') + '.';
+}
+function blocosCcv(d) {
+  const c = d.ccv, pp = ccvPapeis(d), cl = d.cliente, bl = [], tot = ccvTotal(d), venda = c.lado === 'venda';
+  const nomeOutra = String(cl.nome || '').trim() || '—';
+  bl.push({ t: 'cab', tipo: 'Contrato', titulo: ccvTitulo(d), sub: 'Contrato nº ' + (d.numero || '') });
+  const rmParte = { rot: pp.rmRot, nome: EMPRESA.razao + ' (RM Estruturas)', linhas: ['CNPJ ' + EMPRESA.cnpj, EMPRESA.enderecoContrato, config.rep ? 'Representada por ' + config.rep + (config.repDoc ? ' · ' + docPessoa(config.repDoc) : '') : ''].filter(Boolean) };
+  const outraParte = { rot: pp.outraRot, nome: nomeOutra, linhas: [cl.doc ? docPessoa(cl.doc) : '', [cl.endereco, cl.cidade].map(x => String(x || '').trim()).filter(Boolean).join(', '),
+    cl.rep ? 'Representada por ' + cl.rep + (cl.repDoc ? ' · ' + docPessoa(cl.repDoc) : '') : ''].filter(Boolean) };
+  bl.push({ t: 'partes', a: venda ? rmParte : outraParte, b: venda ? outraParte : rmParte });
+  bl.push({ t: 'p', runs: [{ t: 'Pelo presente instrumento, de um lado, ' }, { t: ccvRmTxt(), b: true }, { t: ', doravante denominada simplesmente ' }, { t: pp.rm, b: true },
+    { t: ', e de outro lado, ' }, { t: ccvPessoaTxt(cl), b: true }, { t: ', doravante denominado simplesmente ' }, { t: pp.outra, b: true },
+    { t: ', têm entre si justo e acertado o presente CONTRATO DE COMPRA E VENDA ' + (c.bem === 'veiculo' ? 'DO VEÍCULO' : 'DO BEM') + ' A SEGUIR DESCRITO, que se regerá pelas cláusulas seguintes e pelas condições descritas.' }] });
+  bl.push({ t: 'p', antes: true, runs: [{ t: 'CLÁUSULA 1ª – ', b: true }, { t: 'O presente contrato tem como objeto ' + ccvObjetoTxt(d) }] });
+  const paga = venda ? 'O COMPRADOR pagará à VENDEDORA' : 'A COMPRADORA pagará ao VENDEDOR';
+  bl.push({ t: 'p', antes: true, runs: [{ t: 'CLÁUSULA 2ª – ', b: true }, { t: paga + ', pela compra ' + (c.bem === 'veiculo' ? 'do veículo' : 'do bem') + ' objeto deste contrato, a quantia de ' }, { t: brl(tot), b: true },
+    { t: ' (' + extenso(tot) + ')' + (c.pag.length ? ', cuja quitação se dará da seguinte forma:' : '.') }] });
+  c.pag.forEach((x, i) => bl.push({ t: 'p', ind: true, runs: [{ t: String.fromCharCode(97 + (i % 26)) + ') ', b: true }, { t: ccvPagTxt(x) }] }));
+  /* cláusulas a mais, digitadas: numeradas a partir da 3ª */
+  let n = 3;
+  String(c.extra || '').split(/\n\s*\n/).map(x => x.trim()).filter(Boolean).forEach(par => {
+    bl.push({ t: 'p', antes: true, runs: [{ t: 'CLÁUSULA ' + n + 'ª – ', b: true }].concat(runs(par.replace(/^cl[áa]usula\s+\d+ª?\s*[–-]\s*/i, '').replace(/\s*\n\s*/g, ' '))) }); n++;
+  });
+  if (c.fecho.trim()) bl.push({ t: 'p', antes: true, runs: runs(c.fecho.trim()) });
+  bl.push({ t: 'local', txt: (c.local.trim() || EMPRESA.sede) + ', ' + dataExtenso(c.data) + '.' });
+  const assOutra = { nome: pp.outraRot + ': ' + nomeOutra, linhas: [cl.doc ? docPessoa(cl.doc) : '', cl.rep ? cl.rep + (cl.repDoc ? ' · ' + docPessoa(cl.repDoc) : '') : ''].filter(Boolean) };
+  const assRm = { nome: pp.rmRot + ': ' + EMPRESA.razao, linhas: ['CNPJ ' + EMPRESA.cnpj, config.rep ? config.rep + (config.repDoc ? ' · ' + docPessoa(config.repDoc) : '') : ''].filter(Boolean) };
+  const test = c.test.map((x, i) => ({ nome: 'Testemunha ' + (i + 1), linhas: [String(x.nome || '').trim() || 'Nome:', String(x.doc || '').trim() ? docPessoa(x.doc) : 'CPF:'] }));
+  bl.push({ t: 'ass', quem: (venda ? [assRm, assOutra] : [assOutra, assRm]).concat(test) });
+  return bl;
+}
+function avisosCcv(d) {
+  const a = [], c = d.ccv;
+  if (!String(d.cliente.nome || '').trim()) a.push('Falta o nome ' + (c.lado === 'venda' ? 'do comprador.' : 'do vendedor.'));
+  if (c.bem === 'veiculo' ? !String(c.obj.desc || '').trim() : !String(c.obj.texto || '').trim()) a.push('Falta descrever o que está sendo ' + (c.lado === 'venda' ? 'vendido.' : 'comprado.'));
+  if (!ccvTotal(d)) a.push('O contrato está sem valor: acrescente a entrada, as parcelas ou a permuta.');
+  if (c.pag.some(x => !lerValor(x.valor))) a.push('Há pagamento sem valor.');
+  if (!(config.rep || '').trim()) a.push('Falta quem assina pela RM (Partes › Representante da RM).');
+  return a;
+}
+function ccvEmBranco(d) { const c = d.ccv; return !String(d.cliente.nome || '').trim() && !ccvTotal(d) && !String(c.obj.desc || '').trim() && !String(c.obj.texto || '').trim() && !String(c.obj.placa || '').trim(); }
+function fichaCcv(d) {
+  const c = d.ccv, cl = d.cliente, pp = ccvPapeis(d), o = c.obj;
+  let h = secao('Contrato', '<div class="g2">' + campo('Lado da RM', '<select data-p="ccv.lado" data-re="1">' + Object.keys(CCV_LADO).map(k => '<option value="' + k + '"' + (c.lado === k ? ' selected' : '') + '>' + CCV_LADO[k] + '</option>').join('') + '</select>')
+    + campo('Título no papel', inp('ccv.titulo', c.titulo, { ph: ccvTitulo(Object.assign({}, d, { ccv: Object.assign({}, c, { titulo: '' }) })), rot: 'Título no papel' })) + '</div>'
+    + '<div class="g2">' + campo('Data do contrato', inp('ccv.data', c.data, { type: 'date' })) + campo('Cidade da assinatura', inp('ccv.local', c.local, { ph: 'Estrela' })) + '</div>');
+  h += secao(pp.outraRot + ' (a outra parte)', campo('Nome ou razão social', inp('cliente.nome', cl.nome, { ph: 'ex.: Empresa Exemplo Ltda' }))
+    + '<div class="g2">' + campo('Pessoa', '<select data-p="cliente.tipoPessoa" data-re="1"><option value=""' + (!cl.tipoPessoa ? ' selected' : '') + '>— pelo CPF/CNPJ —</option><option value="pf"' + (cl.tipoPessoa === 'pf' ? ' selected' : '') + '>Pessoa física</option><option value="pj"' + (cl.tipoPessoa === 'pj' ? ' selected' : '') + '>Pessoa jurídica</option></select>')
+      + campo('CNPJ ou CPF', inp('cliente.doc', cl.doc)) + '</div>'
+    + (clientePF(cl) ? '<div class="g4">' + campo('Nacionalidade', inp('cliente.nacionalidade', cl.nacionalidade, { ph: 'ex.: brasileiro' })) + campo('Profissão', inp('cliente.profissao', cl.profissao, { ph: 'ex.: empresário' }))
+      + campo('Estado civil', inp('cliente.estadoCivil', cl.estadoCivil, { ph: 'ex.: casado', lista: 'dlCivil' })) + campo('RG', inp('cliente.rg', cl.rg)) + '</div>' : '')
+    + '<div class="g2">' + campo('Endereço', inp('cliente.endereco', cl.endereco, { ph: 'rua, número, bairro' })) + campo('Cidade/UF', inp('cliente.cidade', cl.cidade, { ph: 'ex.: Estrela/RS' })) + '</div>'
+    + (clientePF(cl) ? '' : '<div class="g2">' + campo('Representante', inp('cliente.rep', cl.rep)) + campo('CPF do representante', inp('cliente.repDoc', cl.repDoc)) + '</div>'));
+  h += secao('RM (' + pp.rmRot.toLowerCase() + ')', '<div class="g2">' + campo('Representante da RM', '<input data-cfg="rep" value="' + esc(config.rep || '') + '" autocomplete="off" placeholder="nome de quem assina">') + campo('Documento do representante', '<input data-cfg="repDoc" value="' + esc(config.repDoc || '') + '" autocomplete="off" placeholder="CPF">') + '</div>'
+    + '<p class="nota">O representante da RM é o mesmo dos outros contratos e fica gravado.</p>');
+  const objV = '<div class="g2">' + campo('Veículo ou máquina', inp('ccv.obj.desc', o.desc, { ph: 'ex.: trator de rodas (retroescavadeira)' })) + campo('Marca', inp('ccv.obj.marca', o.marca)) + '</div>'
+    + '<div class="g4">' + campo('Modelo', inp('ccv.obj.modelo', o.modelo)) + campo('Ano', inp('ccv.obj.ano', o.ano, { mode: 'numeric' })) + campo('Placa', inp('ccv.obj.placa', o.placa)) + campo('RENAVAM', inp('ccv.obj.renavam', o.renavam, { mode: 'numeric' })) + '</div>'
+    + '<div class="g2">' + campo('Chassi (se quiser)', inp('ccv.obj.chassi', o.chassi)) + campo('Documentos expedidos pelo', inp('ccv.obj.orgao', o.orgao, { ph: 'DETRAN/RS' })) + '</div>';
+  const objO = campo('Descrição do bem', area('ccv.obj.texto', o.texto, 3, 'Descrição do bem')) + '<p class="nota">Ex.: "a máquina de corte a plasma marca X, modelo Y, número de série Z".</p>';
+  h += secao('O que está sendo ' + (c.lado === 'venda' ? 'vendido' : 'comprado'), campo('Tipo', '<select data-p="ccv.bem" data-re="1"><option value="veiculo"' + (c.bem === 'veiculo' ? ' selected' : '') + '>Veículo ou máquina com placa</option><option value="outro"' + (c.bem === 'outro' ? ' selected' : '') + '>Outro bem</option></select>')
+    + (c.bem === 'veiculo' ? objV : objO)
+    + '<label class="chk"><input type="checkbox" data-p="ccv.obj.livre"' + (o.livre ? ' checked' : '') + '> Livre e desembaraçado de quaisquer ônus e alienação bancária</label>');
+  const linhas = c.pag.map((x, i) => '<div class="linha l-ccv">' + '<span class="ccv-l">' + String.fromCharCode(97 + (i % 26)) + ')</span>'
+    + '<select data-p="ccv.pag.' + i + '.tipo" data-re="1" aria-label="Tipo do pagamento">' + Object.keys(CCV_PAG).map(k => '<option value="' + k + '"' + (x.tipo === k ? ' selected' : '') + '>' + CCV_PAG[k] + '</option>').join('') + '</select>'
+    + inp('ccv.pag.' + i + '.valor', lerValor(x.valor) ? fmtNum(x.valor, 2) : '', { tipo: 'valor', mode: 'decimal', ph: '0,00', rot: 'Valor', cls: 'val' })
+    + inp('ccv.pag.' + i + '.' + (x.tipo === 'permuta' ? 'desc' : 'quando'), x.tipo === 'permuta' ? x.desc : x.quando, { ph: x.tipo === 'permuta' ? 'em quê (ex.: pavilhão, pilar e telhado)' : 'quando (ex.: no dia da entrega)', rot: x.tipo === 'permuta' ? 'Permuta em quê' : 'Quando' })
+    + bt('ccvUp', '↑', { i, rot: 'Subir' }) + bt('ccvDel', '✕', { i, rot: 'Excluir este pagamento', cls: 'icon-btn del' }) + '</div>').join('');
+  const g = c.ger;
+  h += secao('Preço e pagamento', (linhas || '<p class="nota">Nenhum pagamento ainda: comece pela entrada.</p>')
+    + '<div class="ccv-add">' + bt('ccvAdd', '＋ Entrada', { cls: 'btn btn-ghost btn-sm', i: 0 }) + bt('ccvAdd', '＋ Parcela', { cls: 'btn btn-ghost btn-sm', i: 1 }) + bt('ccvAdd', '＋ Permuta', { cls: 'btn btn-ghost btn-sm', i: 2 }) + '</div>'
+    + '<div class="ccv-ger"><span>Várias parcelas iguais, a cada 30 dias:</span>' + inp('ccv.ger.n', g.n, { tipo: 'num', mode: 'numeric', rot: 'Quantas parcelas', cls: 'ccv-n' }) + '<span>de R$</span>'
+    + inp('ccv.ger.valor', lerValor(g.valor) ? fmtNum(g.valor, 2) : '', { tipo: 'valor', mode: 'decimal', ph: '0,00', rot: 'Valor de cada parcela', cls: 'val' }) + inp('ccv.ger.ref', g.ref, { ph: 'da entrega', rot: 'Contando a partir', cls: 'ccv-ref' })
+    + bt('ccvGerar', 'Acrescentar', { cls: 'btn btn-ghost btn-sm' }) + '</div>'
+    + '<div class="tot-linha" data-tot="ccv">Valor do contrato <b>' + brl(ccvTotal(d)) + '</b><span>' + esc(extenso(ccvTotal(d))) + '</span></div>', { extra: brl(ccvTotal(d)) });
+  h += secao('Testemunhas', c.test.map((x, i) => '<div class="g2">' + campo('Testemunha ' + (i + 1), inp('ccv.test.' + i + '.nome', x.nome, { ph: 'nome (ou em branco, para preencher à mão)' })) + campo('CPF', inp('ccv.test.' + i + '.doc', x.doc, { mode: 'numeric' })) + '</div>').join(''), { aberta: false });
+  h += secao('Outras cláusulas e fecho', campo('Cláusulas a mais (uma por parágrafo; saem como 3ª, 4ª...)', area('ccv.extra', c.extra, 4, 'Cláusulas a mais'))
+    + '<p class="nota">Ex.: entrega, transferência do documento, multa por atraso. Deixe em branco se não precisar.</p>'
+    + campo('Fecho', area('ccv.fecho', c.fecho, 3, 'Fecho')), { aberta: false });
+  return h;
+}
+function ccvAcao(d, a, i) {
+  const c = d.ccv;
+  if (a === 'ccvAdd') {
+    const tipo = ['entrada', 'parcela', 'permuta'][i] || 'parcela', nParc = c.pag.filter(x => x.tipo === 'parcela').length;
+    c.pag.push({ tipo, valor: 0, quando: tipo === 'entrada' ? 'no dia da entrega' : tipo === 'parcela' ? 'após ' + inteiroExtenso(30 * (nParc + 1)) + ' dias ' + (c.ger.ref || 'da entrega') : '', desc: '' });
+    return true;
+  }
+  if (a === 'ccvDel') { c.pag.splice(i, 1); return true; }
+  if (a === 'ccvUp') { if (i > 0) c.pag.splice(i - 1, 0, c.pag.splice(i, 1)[0]); return true; }
+  if (a === 'ccvGerar') {
+    const n = Math.max(0, Math.min(120, Math.round(lerValor(c.ger.n)))), v = lerValor(c.ger.valor);
+    if (!n || !v) { avisoTopo('Diga quantas parcelas e o valor de cada uma.'); return false; }
+    const ja = c.pag.filter(x => x.tipo === 'parcela').length;
+    for (let k = 1; k <= n; k++) c.pag.push({ tipo: 'parcela', valor: v, quando: 'após ' + inteiroExtenso(30 * (ja + k)) + ' dias ' + (String(c.ger.ref || '').trim() || 'da entrega'), desc: '' });
+    return true;
+  }
+  return false;
+}
+function novoCcv(lado) {
+  const d = novoDoc('padrao');
+  d.tipo = 'ccv'; d.numero = proximoCcv(rmDiaISO().slice(0, 4)); d.ccv = ccvNovo(lado);
+  docs[d.id] = d; aba = 'ccv'; abrir(d.id); alterou(d, true);
+  const c = document.querySelector('#ficha [data-p="cliente.nome"]'); if (c) c.focus();
+}
 function novoDoc(tipo) {
   const m = modeloAtual(), hoje = rmDiaISO();
   return {
@@ -3828,8 +4033,9 @@ function normalizar(d) {
   o.tot = { manual: lerValor(tt.manual), pct: lerValor(tt.pct), geral: lerValor(tt.geral) };
   o.extras = lista(d.extras).map(x => ({ nome: x.nome || '', valor: lerValor(x.valor), somar: !!x.somar }));
   /* proposta anterior aos tipos: com serviços preenchidos, é de chave na mão */
-  o.tipo = d.tipo === 'chave' || d.tipo === 'padrao' ? d.tipo : (o.cnm.itens.some(x => x.nome.trim() || x.valor) ? 'chave' : 'padrao');
+  o.tipo = d.tipo === 'ccv' || d.tipo === 'chave' || d.tipo === 'padrao' ? d.tipo : (o.cnm.itens.some(x => x.nome.trim() || x.valor) ? 'chave' : 'padrao');
   o.titulo = d.titulo || '';
+  if (o.tipo === 'ccv') o.ccv = ccvNorm(d.ccv); else delete o.ccv;
   const im = d.imgs || {};
   o.imgs = { titulo: im.titulo || '', desenhista: im.desenhista || '', anexar: !!im.anexar,
     itens: lista(im.itens).filter(x => x && x.id).map(x => ({ id: String(x.id), tit: x.tit || '', desc: x.desc || '', tam: x.tam === 'inteira' ? 'inteira' : 'meia', w: lerValor(x.w) || 16, h: lerValor(x.h) || 9, nuvem: !!x.nuvem, orig: !!x.orig, cotas: cotasDe(x), recorte: recorteDe(x), realce: realceDe(x) })) };
@@ -4795,6 +5001,7 @@ function clientePF(cl) {
 }
 function fichaHTML(d) {
   SECAO_RECOLHE = false;
+  if (ehCcv(d)) return fichaCcv(d);
   if (aba === 'imagens') return fichaImagens(d);
   let h = '';
   if (aba === 'contrato' && d.contrato) {
@@ -4966,6 +5173,13 @@ function renderLista() {
   $('btnWord').innerHTML = 'Baixar Word<span class="so-pc"> ' + qual + '</span>';
   /* na aba Contrato, excluir tira só o contrato; a proposta fica */
   $('btnDel').textContent = d && d.contrato && aba === 'contrato' ? '✕ Excluir contrato' : '✕ Excluir';
+  /* compra e venda: uma aba só, sem revisão, sem tipo e sem situação de proposta */
+  const cv = ehCcv(d);
+  ['abaProposta', 'abaContrato', 'abaImagens'].forEach(id => { $(id).hidden = cv; }); $('abaCcv').hidden = !cv;
+  /* o .btn tem display próprio e passa por cima do hidden: esconde pelo estilo */
+  ['btnRev', 'btnTipo'].forEach(id => { $(id).style.display = cv ? 'none' : ''; }); $('docStatus').closest('.fld').style.display = cv ? 'none' : '';
+  if (cv) { $('docTitulo').textContent = 'Compra e venda ' + d.numero + ' · ' + (d.ccv.lado === 'venda' ? 'a RM vende' : 'a RM compra');
+    $('btnImprimir').innerHTML = 'Imprimir / PDF<span class="so-pc"> do contrato</span>'; $('btnWord').innerHTML = 'Baixar Word<span class="so-pc"> do contrato</span>'; }
 }
 /* ÍNDICE DA FICHA: um atalho por seção (abre e leva até ela), e abrir ou
    recolher tudo -- a proposta de chave na mão tem muitas seções. */
@@ -4997,8 +5211,8 @@ function renderFolha() {
   /* o documento das imagens: cada imagem já leva a marca d'água gravada; a
      da página (bloco comum) sai, para não sobrepor as duas. Na proposta com
      as imagens anexadas a da página continua -- as folhas do texto pedem. */
-  document.documentElement.classList.toggle('rm-sem-dagua', !!d && aba === 'imagens');
-  const av = d && aba !== 'imagens' ? avisos(d) : [];
+  document.documentElement.classList.toggle('rm-sem-dagua', !!d && aba === 'imagens' && !ehCcv(d));
+  const av = d && ehCcv(d) ? avisosCcv(d) : d && aba !== 'imagens' ? avisos(d) : [];
   $('avisos').innerHTML = av.map(a => '<div>⚠ ' + esc(a) + '</div>').join('');
   $('avisos').style.display = av.length ? '' : 'none';
   $('folhaPapel').classList.toggle('vazia', !d);
@@ -5013,7 +5227,7 @@ function renderFolha() {
   pedeImagens(d);
 }
 /* o que a aba aberta mostra, imprime e manda para o Word */
-function blocosDaAba(d) { return aba === 'imagens' ? blocosImagens(d) : aba === 'contrato' && d.contrato ? blocosContrato(d) : blocosProposta(d); }
+function blocosDaAba(d) { if (ehCcv(d)) return blocosCcv(d); return aba === 'imagens' ? blocosImagens(d) : aba === 'contrato' && d.contrato ? blocosContrato(d) : blocosProposta(d); }
 function redesenhar() { document.body.classList.toggle('com-doc', !!atual()); renderLista(); renderFicha(); renderFolha(); renderSalvos(); }
 
 /* ---------- salvos: propostas e contratos em dois blocos ----------
@@ -5033,6 +5247,12 @@ function salvoHTML(d, qual) {
     + '<span class="s-sit ' + (SIT_CLS[d.status] || '') + '">' + esc(STATUS[d.status] || '') + '</span>'
     + (!c && vencida(d) ? '<span class="s-sit perdida">validade vencida em ' + dataBR(vencida(d)) + '</span>' : '') + '</span></span>'
     + (total ? '<span class="s-val">' + brl(total) + '</span>' : '') + '</button>';
+}
+function salvoCcvHTML(d) {
+  const c = d.ccv, o = c.obj, oque = c.bem === 'veiculo' ? [o.desc, o.placa && String(o.placa).toUpperCase()].filter(x => String(x || '').trim()).join(' · ') : String(o.texto || '').trim().slice(0, 60);
+  return '<button type="button" class="salvo" data-abrir="' + esc(d.id) + '" data-qual="ccv"><span class="s-txt"><span class="s-nome">' + esc(d.cliente.nome || 'sem nome') + '</span>'
+    + '<span class="s-sub">' + esc([(c.lado === 'venda' ? 'A RM vende' : 'A RM compra') + ' · ' + d.numero, oque, dataBR(c.data)].filter(Boolean).join(' · ')) + '</span></span>'
+    + (ccvTotal(d) ? '<span class="s-val">' + brl(ccvTotal(d)) + '</span>' : '') + '</button>';
 }
 /* ACOMPANHAMENTO: proposta em negociação com a validade passada aparece
    como vencida (para cobrar o cliente); filtro por situação; o resumo soma
@@ -5062,7 +5282,7 @@ function renderLixeira() {
   $('nLixo').textContent = itens.length;
   $('btnLixeira').textContent = 'Lixeira' + (itens.length ? ' (' + itens.length + ')' : '');
   $('listaLixo').innerHTML = itens.length ? itens.map(x => '<div class="salvo lixo"><span class="s-txt"><span class="s-nome">' + esc(x.d.cliente.nome || 'sem cliente') + '</span><span class="s-sub">'
-    + esc((x.qual === 'contrato' ? 'Contrato da proposta ' : 'Proposta ') + numeroRev(x.d) + ' · excluído em ' + new Date(x.em).toLocaleDateString('pt-BR')) + '</span></span>'
+    + esc((x.qual === 'contrato' ? 'Contrato da proposta ' : ehCcv(x.d) ? 'Compra e venda ' : 'Proposta ') + numeroRev(x.d) + ' · excluído em ' + new Date(x.em).toLocaleDateString('pt-BR')) + '</span></span>'
     + '<span class="lixo-a"><button type="button" class="btn btn-ghost btn-sm" data-restaura="' + esc(x.d.id) + '" data-qual="' + x.qual + '">Restaurar</button><button type="button" class="btn btn-ghost btn-sm del" data-apaga="' + esc(x.d.id) + '" data-qual="' + x.qual + '">Excluir de vez</button></span></div>').join('')
     : '<div class="ini-vazio">A lixeira está vazia.</div>';
 }
@@ -5072,7 +5292,7 @@ function renderSalvos() {
   renderLixeira();
   $('lixeiraBloco').hidden = !vendoLixo;
   const q = chaveBusca($('salvoBusca').value);
-  const vivos = Object.values(docs).filter(d => d && !d.lixeira);
+  const vivosTodos = Object.values(docs).filter(d => d && !d.lixeira), ccvs = vivosTodos.filter(ehCcv), vivos = vivosTodos.filter(d => !ehCcv(d));
   const naSit = d => !filtroSit || (filtroSit === 'vencida' ? !!vencida(d) : d.status === filtroSit);
   const todos = vivos.filter(naSit).sort((a, b) => (b.alterado || 0) - (a.alterado || 0));
   const neg = vivos.filter(d => d.status === 'negociacao'), venc = vivos.filter(d => vencida(d));
@@ -5085,9 +5305,13 @@ function renderSalvos() {
   $('listaProp').innerHTML = props.length ? props.map(d => salvoHTML(d, 'proposta')).join('') : vazio(todos.length, 'Nenhuma proposta salva ainda. Clique em <b>＋ Nova proposta</b>.');
   $('listaCont').innerHTML = conts.length ? conts.map(d => salvoHTML(d, 'contrato')).join('') : vazio(todos.filter(d => d.contrato).length, 'Nenhum contrato ainda. Abra uma proposta e clique na aba <b>Contrato</b>.');
   $('nProp').textContent = props.length; $('nCont').textContent = conts.length;
+  const cvs = ccvs.filter(acha).sort((a, b) => (b.alterado || 0) - (a.alterado || 0));
+  $('listaCcv').innerHTML = cvs.length ? cvs.map(salvoCcvHTML).join('') : '<div class="ini-vazio">' + (q && ccvs.length ? 'Nada encontrado com "' + esc($('salvoBusca').value.trim()) + '".' : 'Nenhum ainda. Clique em <b>＋ Compra e venda</b>.') + '</div>';
+  $('nCcv').textContent = cvs.length;
 }
 /* proposta nova que ninguém preencheu não vira item salvo */
 function emBranco(d) {
+  if (ehCcv(d)) return ccvEmBranco(d);
   return d && !d.contrato && !String(d.cliente.nome || '').trim() && !String(d.obra.cidade || '').trim() && !String(d.descricao || '').trim()
     && d.pre.every(g => !String(g.titulo || '').trim() && g.itens.every(i => !String(i.desc || '').trim())) && !totalProposta(d);
 }
@@ -5098,7 +5322,7 @@ function fecharDoc(salvo) {
     if (fbDB && fbAuthReady) fbDB.ref(FB_NO + '/docs/' + d.id).remove().catch(() => { });
   } else if (d && mexeuDesdeQueAbriu(d)) {
     clearTimeout(tSalvar[d.id]); salvarDoc(d.id);
-    if (salvo) avisoTopo((d.contrato && aba === 'contrato' ? 'Contrato' : 'Proposta') + ' ' + (d.numero || '') + ' salva.');
+    if (salvo) avisoTopo((ehCcv(d) ? 'Contrato de compra e venda' : d.contrato && aba === 'contrato' ? 'Contrato' : 'Proposta') + ' ' + (d.numero || '') + (ehCcv(d) ? ' salvo.' : ' salva.'));
   }
   aba = 'proposta'; abrir(null);
 }
@@ -5133,7 +5357,7 @@ function atualizarResumos() {
   const d = atual(); if (!d) return;
   document.querySelectorAll('#ficha .tot-linha').forEach(el => {
     const q = el.dataset.tot || 'proposta';
-    const v = q === 'contrato' ? totalContrato(d) : q === 'cnm' ? totalCnm(d) : q === 'comp' ? totalComp(d) : totalProposta(d);
+    const v = q === 'ccv' ? ccvTotal(d) : q === 'contrato' ? totalContrato(d) : q === 'cnm' ? totalCnm(d) : q === 'comp' ? totalComp(d) : totalProposta(d);
     el.querySelector('b').textContent = brl(v); el.querySelector('span').textContent = q === 'cnm' ? notaCnm(d) : q === 'comp' ? notaComp(d) : q === 'proposta' ? notaProposta(d) : extenso(v);
   });
   const r = document.querySelector('#ficha .resumo');
@@ -5141,6 +5365,7 @@ function atualizarResumos() {
   const nd = document.querySelector('#ficha [data-desc]'); if (nd && d.contrato) nd.textContent = notaDesconto(d);
   document.querySelectorAll('#ficha .sec-x').forEach(el => {
     const t = el.closest('summary').firstChild.textContent;
+    if (ehCcv(d)) { if (t === 'Preço e pagamento') el.textContent = brl(ccvTotal(d)); return; }
     if (t === 'Valores') el.textContent = brl(totalProposta(d));
     if (t === 'Chave na mão') el.textContent = d.cnm.itens.length ? brl(totalCnm(d)) : '';
     if (t === 'Itens complementares') el.textContent = totalComp(d) ? brl(totalComp(d)) : '';
@@ -5239,6 +5464,7 @@ $('ficha').addEventListener('click', e => {
     socioDel: () => d.cliente.socios.splice(i, 1),
     extraDel: () => d.extras.splice(i, 1)
   };
+  if (/^ccv/.test(a)) { if (ccvAcao(d, a, i)) alterou(d, true); return; }
   if (a === 'imgCota') { abrirCota(d, i); return; }
   if (a === 'imgCorta') { abrirCorte(d, i); return; }
   if (a === 'iaCopia') { iaCopiar(); return; }
@@ -5279,10 +5505,10 @@ $('listaLixo').addEventListener('click', e => {
       try { d.contrato = JSON.parse(d.contratoLixeira.json); } catch (er) { return; }
       d.contratoLixeira = null; d.contrato = normalizar(Object.assign({}, d, { contrato: d.contrato })).contrato;
     } else delete d.lixeira;
-    alterou(d, false); renderSalvos(); avisoTopo((b.dataset.qual === 'contrato' ? 'Contrato' : 'Proposta') + ' ' + d.numero + ' restaurado.');
+    alterou(d, false); renderSalvos(); avisoTopo((b.dataset.qual === 'contrato' ? 'Contrato' : ehCcv(d) ? 'Contrato de compra e venda' : 'Proposta') + ' ' + d.numero + ' restaurado.');
     return;
   }
-  confirmar('Excluir de vez ' + (b.dataset.qual === 'contrato' ? 'o contrato da proposta ' : 'a proposta ') + esc(d.numero) + '? Isso não pode ser desfeito.', () => {
+  confirmar('Excluir de vez ' + (b.dataset.qual === 'contrato' ? 'o contrato da proposta ' : ehCcv(d) ? 'o contrato de compra e venda ' : 'a proposta ') + esc(d.numero) + '? Isso não pode ser desfeito.', () => {
     if (b.dataset.qual === 'contrato') { d.contratoLixeira = null; alterou(d, false); }
     else { delete docs[d.id]; delete pendentes[d.id]; guardarLocal(); if (fbDB && fbAuthReady) fbDB.ref(FB_NO + '/docs/' + d.id).remove().catch(e2 => { if (window.rmNuvemErro) rmNuvemErro('excluir a proposta', e2); }); d.imgs.itens.forEach(x => talvezApagarImagem(x.id)); }
     renderSalvos();
@@ -5290,6 +5516,9 @@ $('listaLixo').addEventListener('click', e => {
 });
 $('inicio').addEventListener('click', e => { const b = e.target.closest('[data-abrir]'); if (b) abrir(b.dataset.abrir, b.dataset.qual); });
 $('iniNova').addEventListener('click', () => $('btnNova').click());
+$('iniCcv').addEventListener('click', () => $('ccvTela').classList.add('on'));
+$('ccvNao').addEventListener('click', () => $('ccvTela').classList.remove('on'));
+$('ccvTela').addEventListener('click', e => { const b = e.target.closest('[data-ccv]'); if (b) { $('ccvTela').classList.remove('on'); novoCcv(b.dataset.ccv); } });
 $('iniImportar').addEventListener('click', () => $('arqWord').click());
 $('btnFechar').addEventListener('click', () => fecharDoc(true));
 $('docStatus').addEventListener('change', e => {
@@ -5654,6 +5883,7 @@ $('ficha').addEventListener('click', e => {
 $('btnDup').addEventListener('click', () => {
   const o = atual(); if (!o) return;
   const d = normalizar(clone(o));
+  if (ehCcv(o)) { d.id = uid(); d.numero = proximoCcv(rmDiaISO().slice(0, 4)); d.criado = Date.now(); d.ccv.data = rmDiaISO(); delete d.lixeira; docs[d.id] = d; aba = 'ccv'; abrir(d.id); alterou(d, true); avisoTopo('Cópia criada: compra e venda ' + d.numero + '.'); return; }
   d.id = uid(); d.numero = proximoNumero(rmDiaISO().slice(0, 4)); d.status = 'negociacao'; d.criado = Date.now(); d.data = rmDiaISO(); d.contrato = null;
   d.rev = 0; d.revisoes = []; delete d.lixeira; delete d.contratoLixeira;
   docs[d.id] = d; aba = 'proposta'; abrir(d.id); alterou(d, true); avisoTopo('Cópia criada: proposta ' + d.numero + '.');
@@ -5666,6 +5896,12 @@ $('btnDel').addEventListener('click', () => {
     confirmar('Excluir o contrato da proposta ' + esc(d.numero) + (d.cliente.nome ? ' de <b>' + esc(d.cliente.nome) + '</b>' : '') + '? A proposta continua salva, e o contrato fica 30 dias na lixeira.', () => {
       d.contratoLixeira = { em: Date.now(), json: JSON.stringify(d.contrato) }; d.contrato = null;
       aba = 'proposta'; alterou(d, true); redesenhar(); avisoTopo('Contrato na lixeira. A proposta ' + d.numero + ' continua salva.');
+    });
+    return;
+  }
+  if (ehCcv(d)) {
+    confirmar('Excluir o contrato de compra e venda ' + esc(d.numero) + (d.cliente.nome ? ' com <b>' + esc(d.cliente.nome) + '</b>' : '') + '? Ele fica 30 dias na lixeira, de onde dá para restaurar.', () => {
+      d.lixeira = Date.now(); alterou(d, false); aba = 'proposta'; abrir(null); avisoTopo('Contrato de compra e venda ' + d.numero + ' na lixeira.');
     });
     return;
   }
@@ -5705,6 +5941,7 @@ window.rmPapelFixo = true;
 window.rmNomePDF = function () {
   const d = atual(); if (!d) return '';
   const quem = (d.cliente.nome || 'sem cliente').trim();
+  if (ehCcv(d)) return 'Contrato de compra e venda ' + quem + ' ' + dataBR(d.ccv.data).replace(/\//g, '-');
   const data = dataBR(aba === 'contrato' && d.contrato ? d.contrato.data : d.data).replace(/\//g, '-');
   return (aba === 'imagens' ? 'Imagens ' : aba === 'contrato' && d.contrato ? 'Contrato ' : 'Proposta ') + quem + ' ' + data;
 };
@@ -5898,7 +6135,8 @@ function resumoDoc(d) {
 }
 function resumoTodos() {
   const m = {};
-  Object.values(docs).forEach(d => { if (d && d.id && !d.lixeira) { try { m[d.id] = resumoDoc(d); } catch (e) { } } });
+  /* compra e venda não é proposta: fica fora dos números da Central */
+  Object.values(docs).forEach(d => { if (d && d.id && !d.lixeira && !ehCcv(d)) { try { m[d.id] = resumoDoc(d); } catch (e) { } } });
   return m;
 }
 let tResumo = null, resumoGravado = '';
@@ -7073,7 +7311,7 @@ if ('serviceWorker' in navigator) {
 })();
 </script>
 <script>/* versão publicada (PADRAO_RM.md §3): sobe a cada publicação, junto com o CACHE do sw.js */
-const APP_VER='v67';
+const APP_VER='v68';
 </script>
 <script id="rmVersaoBloco">
 /* ===== SELO DE VERSÃO — igual em todos os sistemas (PADRAO_RM.md §3) =====
