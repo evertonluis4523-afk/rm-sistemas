@@ -25,8 +25,8 @@
   "versao": "v79"
  },
  "central_rm": {
-  "commit": "4783213",
-  "data": "2026-11-26",
+  "commit": "565b855",
+  "data": "2026-11-27",
   "versao": "v194"
  },
  "controle_cheques": {
@@ -61,9 +61,9 @@
   "versao": "v67"
  },
  "recibos_rm": {
-  "commit": "e0ca832",
-  "data": "2026-11-26",
-  "versao": "v319"
+  "commit": "ace9903",
+  "data": "2026-11-27",
+  "versao": "v320"
  },
  "rm_contas": {
   "commit": "2c7f48b",

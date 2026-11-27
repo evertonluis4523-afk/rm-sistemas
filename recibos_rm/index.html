@@ -3119,6 +3119,12 @@ tr.sal-japago>td.conf,tr.sal-japago>td.chk{opacity:1}
 .pf-fecha-cab b{font-size:14px;font-weight:505}
 .pf-rel-pend{font-size:12px;color:var(--muted);font-weight:600}.pf-rel-pend.tem{color:#b8650f}
 .rhid-conf-cards{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+/* banco de horas: botão do RHID e o resumo dos dias ao lado das horas */
+.bh-rhid{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:12px}
+.bh-rhid .sub{font-size:12px;color:var(--muted)}
+.bh-dias{display:flex;flex-wrap:wrap;gap:4px;max-width:360px}
+.bh-dia{font-size:11.5px;padding:2px 7px;border-radius:6px;border:1px solid var(--rm-perigo-suave,#f3d3c7);color:var(--rm-perigo,#8a331c);white-space:nowrap;font-variant-numeric:tabular-nums}
+.bh-atr{font-size:11.5px;color:var(--muted);margin-top:3px;white-space:nowrap}
 .rhid-conf-cards .rc-card{flex:1;min-width:110px;padding:10px 14px;border-radius:8px;text-align:center;font-size:12.5px;font-weight:700}
 .rhid-conf-cards .rc-card .rc-v{font-size:22px;font-weight:800;margin-bottom:2px}
 .rc-card.rc-ok{background:var(--rm-ativo-suave,#e4f4ea);color:var(--rm-ativo,#176334)}
@@ -4956,6 +4962,7 @@ if(window.RM_CELULAR) document.body.classList.add('rm-campo');
           <div class="f span4"><span class="lab">Buscar</span><input id="bhSearch" placeholder="nome do funcionário"></div>
           <div class="f span3"><span class="lab">Situação</span><select id="bhFiltro"><option value="todos">Todas</option><option value="pendente">Pendente</option><option value="recuperando">Recuperando</option><option value="quitado">Quitado</option><option value="emdia">Em dia</option></select></div>
         </div>
+        <div class="bh-rhid"><button class="btn-act dim" id="bhImportRhid">⇧ Importar cartão RHID</button><input type="file" id="bhRhidFile" accept="application/pdf,.pdf" hidden><span class="sub">O PDF de faltas e atrasos do RHID: falta e atraso de cada dia vão para H. faltadas, hora extra para H. recuperadas.</span></div>
       </div>
       <div class="cards c3 rm-faixa rm-faixa-painel">
         <div class="card sem"><div class="k"><span class="dotk r"></span>Horas faltadas</div><div class="v" id="bhTotFaltas">0h</div></div>
@@ -4970,7 +4977,7 @@ if(window.RM_CELULAR) document.body.classList.add('rm-campo');
       </div>
       <div class="tbl-wrap">
         <table class="list">
-          <thead><tr><th>Funcionário</th><th class="c">Faltas</th><th class="r">H. faltadas</th><th class="r">H. recuperadas</th><th class="r">Saldo</th><th class="c">%</th><th class="c">Situação</th><th class="r">Ações</th></tr></thead>
+          <thead><tr><th>Funcionário</th><th class="c">Faltas</th><th class="r">H. faltadas</th><th class="r">H. recuperadas</th><th>Dias de falta e atrasos</th><th class="r">Saldo</th><th class="c">%</th><th class="c">Situação</th><th class="r">Ações</th></tr></thead>
           <tbody id="bhBody"></tbody>
         </table>
       </div>
@@ -5332,6 +5339,24 @@ if(window.RM_CELULAR) document.body.classList.add('rm-campo');
   </div>
 </div></div>
 
+<!-- MODAL CONFERÊNCIA RHID NO BANCO DE HORAS -->
+<div class="overlay" id="bhRhidModal"><div class="modal" style="max-width:960px">
+  <div class="mhead"><h2 id="bhRhidTitle">Cartão RHID no banco de horas</h2><button class="x" data-close>✕</button></div>
+  <div class="mbody">
+    <p class="rel-note" id="bhRhidIntro"></p>
+    <div class="rhid-conf-cards" id="bhRhidCards"></div>
+    <div class="tbl-wrap" style="max-height:44vh;overflow:auto">
+      <table class="list" style="font-size:12.5px">
+        <thead><tr><th>Funcionário</th><th class="r">H. faltadas</th><th class="r">H. recuperadas</th><th>Dias de falta e atrasos</th><th>Observação</th></tr></thead>
+        <tbody id="bhRhidBody"></tbody>
+      </table>
+    </div>
+  </div>
+  <div class="mfoot">
+    <button class="btn-act dim" data-close>Cancelar</button>
+    <button class="btn-act save" id="bhRhidOk">Lançar no banco de horas</button>
+  </div>
+</div></div>
 <!-- MODAL CONFERÊNCIA RHID -->
 <div class="overlay" id="rhidConfModal"><div class="modal" style="max-width:960px">
   <div class="mhead"><h2 id="rhidConfTitle">Conferência do cartão RHID</h2><button class="x" data-close>✕</button></div>
@@ -13332,8 +13357,9 @@ function verDescontosDoMov(id){
 
 /* ==================== BANCO DE HORAS ==================== */
 function bhKey(){return $('#bhAno').value+'-'+String(parseInt($('#bhMes').value,10)+1).padStart(2,'0');}
-function getBH(empId){const k=bhKey();if(!state.bancoHoras[k])state.bancoHoras[k]={};if(!state.bancoHoras[k][empId])state.bancoHoras[k][empId]={faltas:[],recuperacoes:[]};const r=state.bancoHoras[k][empId];if(!Array.isArray(r.faltas))r.faltas=r.faltas?Object.values(r.faltas):[];if(!Array.isArray(r.recuperacoes))r.recuperacoes=r.recuperacoes?Object.values(r.recuperacoes):[];return r;}
-function bhResumo(empId){const rec=getBH(empId);const hf=roundHoras(rec.faltas.reduce((s,f)=>s+(Number(f.horas)||0),0));const hr=roundHoras(rec.recuperacoes.reduce((s,r)=>s+(Number(r.horas)||0),0));const saldo=roundHoras(Math.max(0,hf-hr));const pct=hf>0?Math.min(100,Math.round(hr/hf*100)):0;let sit='emdia';if(hf>0){if(saldo<=0)sit='quitado';else if(hr>0)sit='recuperando';else sit='pendente';}return {hf,hr,saldo,pct,sit,nf:rec.faltas.length};}
+function getBH(empId){return bhRecDe(bhKey(),empId);}
+function bhRecDe(k,empId){if(!state.bancoHoras[k])state.bancoHoras[k]={};if(!state.bancoHoras[k][empId])state.bancoHoras[k][empId]={faltas:[],recuperacoes:[]};const r=state.bancoHoras[k][empId];if(!Array.isArray(r.faltas))r.faltas=r.faltas?Object.values(r.faltas):[];if(!Array.isArray(r.recuperacoes))r.recuperacoes=r.recuperacoes?Object.values(r.recuperacoes):[];return r;}
+function bhResumo(empId){const rec=getBH(empId);const hf=roundHoras(rec.faltas.reduce((s,f)=>s+(Number(f.horas)||0),0));const hr=roundHoras(rec.recuperacoes.reduce((s,r)=>s+(Number(r.horas)||0),0));const saldo=roundHoras(Math.max(0,hf-hr));const pct=hf>0?Math.min(100,Math.round(hr/hf*100)):0;let sit='emdia';if(hf>0){if(saldo<=0)sit='quitado';else if(hr>0)sit='recuperando';else sit='pendente';}return {hf,hr,saldo,pct,sit,nf:rec.faltas.filter(f=>f.classe!=='atraso').length};}
 function bhSitBadge(s){if(s==='emdia')return 'atv"><span class="d"></span>Em dia';if(s==='quitado')return 'atv" style="background:#e0f0e8;color:#0d6e3a"><span class="d"></span>Quitado';if(s==='recuperando')return 'afa"><span class="d"></span>Recuperando';return '" style="background:var(--red-soft);color:var(--red-d)"><span class="d"></span>Pendente';}
 function renderBH(){
   const ms=$('#bhMes');if(!ms.options.length)MESES.forEach((m,i)=>{const o=el('option');o.value=i;o.textContent=m.charAt(0).toUpperCase()+m.slice(1);ms.appendChild(o);});
@@ -13350,12 +13376,13 @@ function renderBH(){
   $('#bhTotFaltas').textContent=fmtHM(tF);$('#bhTotRecup').textContent=fmtHM(tR);$('#bhTotSaldo').textContent=fmtHM(tS);
   $('#bhQtdDia').textContent=qtdDia;$('#bhQtdQuit').textContent=qtdQuit;$('#bhQtdRecup').textContent=qtdRecup;$('#bhQtdPend').textContent=qtdPend;
   const b=$('#bhBody');b.innerHTML='';
-  if(!rows.length){b.innerHTML='<tr><td colspan="8"><div class="empty"><b>Nenhum funcionário</b>Ajuste os filtros.</div></td></tr>';return;}
+  if(!rows.length){b.innerHTML='<tr><td colspan="9"><div class="empty"><b>Nenhum funcionário</b>Ajuste os filtros.</div></td></tr>';return;}
   rows.forEach(({e,r})=>{const tr=el('tr',r.sit==='pendente'?'':'');
     tr.innerHTML='<td><div class="forn">'+esc(titlePt(e.nome))+'</div>'+(e.funcao?'<div class="sub">'+esc(funcaoPadrao(e.funcao))+'</div>':'')+'</td>'+
       '<td class="c mono">'+r.nf+'</td>'+
       '<td class="r val">'+fmtHM(r.hf)+'</td>'+
       '<td class="r val">'+fmtHM(r.hr)+'</td>'+
+      '<td data-label="Dias de falta e atrasos">'+bhDiasHtml(getBH(e.id).faltas)+'</td>'+
       '<td class="r val" style="'+(r.saldo>0?'color:var(--red)':'')+'">'+fmtHM(r.saldo)+'</td>'+
       '<td class="c mono">'+r.pct+'%</td>'+
       '<td class="c"><span class="badge '+bhSitBadge(r.sit)+'</span></td>'+
@@ -13460,6 +13487,94 @@ function bhDetalhe(empId){const e=state.employees.find(x=>x.id===empId)||{};cons
   br.querySelectorAll('[data-delr]').forEach(x=>x.onclick=()=>{if(!confirm('Excluir esta recuperação?'))return;rec.recuperacoes=rec.recuperacoes.filter(r=>r.id!==x.dataset.delr);persist();bhDetalhe(empId);renderBH();});
   $('#bhDetModal').classList.add('open');
 }
+/* ---------- RESUMO AO LADO E CARTÃO RHID ----------
+   "Importar o arquivo do RHID, ler e adicionar as horas: faltas em H.
+   faltadas, horas extras em H. recuperadas, e distinguir qual o dia que
+   faltou e o tempo num resumo ao lado". O cartão é o mesmo PDF do
+   Fechamento do mês, lido dia a dia (pfRhidLePdf com porDia).
+
+   Cada dia com tempo em FALTA E ATRASO vira uma falta, de uma de três
+   classes: o dia inteiro (o tempo cobre a jornada prevista), parte do dia
+   (o cartão escreveu "Falta" em alguma marcação) ou atraso/saída
+   antecipada. O resumo mostra os dias de falta um a um e junta os atrasos
+   numa linha: doze atrasos de seis minutos não podem esconder a falta de
+   um dia inteiro.
+
+   Importar de novo o mesmo mês SUBSTITUI o que veio do RHID antes (origem
+   'rhid') e não mexe no que foi digitado à mão; um dia que já tem falta (ou
+   recuperação) digitada à mão fica com a digitada, para não contar duas
+   vezes. Nada entra sem passar pela conferência.
+   Teste recibos-banco-horas-importa-rhid. */
+const BH_SEM=['dom','seg','ter','qua','qui','sex','sáb'];
+function bhDiaCurto(iso){const p=String(iso||'').split('-');if(p.length!==3)return fmtDate(iso);const d=new Date(+p[0],+p[1]-1,+p[2],12);return BH_SEM[d.getDay()]+' '+p[2]+'/'+p[1];}
+function bhDiasHtml(faltas){
+  const ord=(faltas||[]).slice().sort((a,b)=>String(a.data||'').localeCompare(String(b.data||'')));
+  const dias=ord.filter(f=>f.classe!=='atraso'),atr=ord.filter(f=>f.classe==='atraso');
+  if(!dias.length&&!atr.length)return '<span class="bh-atr">—</span>';
+  const MAX=8,chips=dias.slice(0,MAX).map(f=>'<span class="bh-dia" title="'+esc(f.motivo||'')+'">'+esc(bhDiaCurto(f.data))+' · '+fmtHM(f.horas)+(f.tipo==='parcial'?' parcial':'')+'</span>').join('');
+  const mais=dias.length>MAX?'<span class="bh-dia">+'+(dias.length-MAX)+'</span>':'';
+  const ha=roundHoras(atr.reduce((s,f)=>s+(Number(f.horas)||0),0));
+  const la=atr.length?'<div class="bh-atr" title="'+esc(atr.map(f=>bhDiaCurto(f.data)+' '+fmtHM(f.horas)).join(' · '))+'">Atrasos: '+atr.length+(atr.length===1?' dia':' dias')+' · '+fmtHM(ha)+'</div>':'';
+  return (chips?'<div class="bh-dias">'+chips+mais+'</div>':'')+la;
+}
+/* O plano do que vai entrar, sem gravar: a conferência mostra exatamente
+   isto e o botão grava o mesmo plano. */
+function bhRhidPlano(comp,itens){
+  const plano=[],usados=new Set(),arr=v=>Array.isArray(v)?v:(v?Object.values(v):[]);
+  itens.forEach((it,n)=>{
+    const emp=(it.empId&&state.employees.find(e=>e.id===it.empId))||null;
+    if(!emp){plano.push({nome:it.nome,semCad:true,faltas:[],recups:[]});return;}
+    if(usados.has(emp.id))return;usados.add(emp.id);
+    const ant=(state.bancoHoras[comp]||{})[emp.id]||{};
+    const maoF=new Set(arr(ant.faltas).filter(f=>f.origem!=='rhid').map(f=>f.data)),maoR=new Set(arr(ant.recuperacoes).filter(f=>f.origem!=='rhid').map(f=>f.data));
+    let pulou=0;const faltas=[],recups=[],ts=Date.now();
+    (it.porDia||[]).forEach((d,i)=>{
+      if(d.falta>0){if(maoF.has(d.iso))pulou++;else{
+        const classe=d.previsto>0&&d.falta>=d.previsto?'dia':(d.marcouFalta?'meio':'atraso');
+        faltas.push({id:'f'+ts+'_'+n+'_'+i,data:d.iso,tipo:classe==='dia'?'integral':'parcial',classe,horas:roundHoras(d.falta/60),
+          motivo:classe==='dia'?'Falta (dia inteiro)':classe==='meio'?'Falta (parte do dia)':'Atraso / saída antecipada',obs:'Cartão RHID',origem:'rhid',ts});}}
+      if(d.extra>0){if(maoR.has(d.iso))pulou++;else recups.push({id:'r'+ts+'_'+n+'_'+i,data:d.iso,horas:roundHoras(d.extra/60),descricao:'Hora extra',obs:'Cartão RHID',origem:'rhid',ts});}
+    });
+    plano.push({nome:it.nome,emp,faltas,recups,pulou,trocou:arr(ant.faltas).concat(arr(ant.recuperacoes)).some(f=>f.origem==='rhid')});
+  });
+  return plano;
+}
+var _bhRhidPend=null;
+function bhRhidConferir(file,lido){
+  const comp=lido.comp||bhKey(),plano=bhRhidPlano(comp,lido.itens||[]);
+  const hs=a=>roundHoras(a.reduce((s,x)=>s+x.horas,0));
+  const ok=plano.filter(p=>!p.semCad),sem=plano.filter(p=>p.semCad),comF=ok.filter(p=>p.faltas.length);
+  const tF=roundHoras(ok.reduce((s,p)=>s+hs(p.faltas),0)),tR=roundHoras(ok.reduce((s,p)=>s+hs(p.recups),0));
+  const pp=comp.split('-'),nomeMes=MESES[Number(pp[1])-1]+' de '+pp[0];
+  $('#bhRhidTitle').textContent='Cartão RHID no banco de horas — '+nomeMes;
+  $('#bhRhidIntro').textContent=((lido.itens||[]).length===1?'1 cartão lido de ':(lido.itens||[]).length+' cartões lidos de ')+file.name+'. Falta e atraso de cada dia entram em H. faltadas; hora extra, em H. recuperadas.'
+    +(ok.some(p=>p.trocou)?' Já havia uma importação do RHID neste mês: ela é substituída por esta (o que foi digitado à mão continua).':'');
+  const card=(v,t,c)=>'<div class="rc-card '+c+'"><div class="rc-v">'+v+'</div>'+t+'</div>';
+  $('#bhRhidCards').innerHTML=card(ok.length,'funcionários','rc-ok')+card(comF.length,'com falta ou atraso',comF.length?'rc-warn':'rc-ok')
+    +card(fmtHM(tF),'H. faltadas','rc-warn')+card(fmtHM(tR),'H. recuperadas','rc-ok')+(sem.length?card(sem.length,'fora do cadastro','rc-err'):'');
+  const linhas=plano.filter(p=>p.semCad||p.faltas.length||p.recups.length||p.pulou).sort((a,b)=>(a.nome||'').localeCompare(b.nome||'','pt-BR'));
+  $('#bhRhidBody').innerHTML=linhas.length?linhas.map(p=>'<tr><td>'+esc(titlePt(p.emp?p.emp.nome:p.nome))+'</td>'
+    +(p.semCad?'<td colspan="3"></td><td class="rc-hl-err">Não achei no cadastro: não entra</td>'
+      :'<td class="r mono">'+fmtHM(hs(p.faltas))+'</td><td class="r mono">'+fmtHM(hs(p.recups))+'</td><td>'+bhDiasHtml(p.faltas)+'</td><td>'+(p.pulou?esc(p.pulou+(p.pulou===1?' dia já digitado':' dias já digitados')+' à mão: fica o digitado'):'')+'</td>')+'</tr>').join('')
+    :'<tr><td colspan="5"><div class="empty">Ninguém com falta, atraso ou hora extra neste cartão</div></td></tr>';
+  _bhRhidPend={comp,plano};
+  $('#bhRhidModal').classList.add('open');
+}
+function bhRhidGravar(){
+  const p=_bhRhidPend;if(!p)return;_bhRhidPend=null;
+  let nF=0,nR=0;
+  p.plano.forEach(x=>{if(x.semCad)return;const rec=bhRecDe(p.comp,x.emp.id);
+    rec.faltas=rec.faltas.filter(f=>f.origem!=='rhid').concat(x.faltas);
+    rec.recuperacoes=rec.recuperacoes.filter(f=>f.origem!=='rhid').concat(x.recups);
+    nF+=x.faltas.length;nR+=x.recups.length;});
+  persist();closeModal('bhRhidModal');
+  const pp=p.comp.split('-');$('#bhMes').value=String(Number(pp[1])-1);$('#bhAno').value=pp[0];renderBH();
+  toast('Banco de horas: '+nF+(nF===1?' falta ou atraso':' faltas e atrasos')+' e '+nR+(nR===1?' dia':' dias')+' de hora extra lançados','ok');
+}
+function bhImportarRhid(file){if(!file)return;pfLoadPdfJS(()=>pfRhidLePdf(file,{porDia:true}).then(r=>bhRhidConferir(file,r)).catch(e=>{console.error(e);toast('Não consegui ler este cartão-ponto do RHID','err');}));}
+$('#bhImportRhid').onclick=()=>$('#bhRhidFile').click();
+$('#bhRhidFile').onchange=ev=>{const f=ev.target.files[0];ev.target.value='';if(f)bhImportarRhid(f);};
+$('#bhRhidOk').onclick=bhRhidGravar;
 /* ==================== FIM BANCO DE HORAS ==================== */
 
 /* =================== FIM RELATÓRIO =================== */
@@ -18269,7 +18384,7 @@ function pfRhidSemana(iso){
 /* SO' A LEITURA do PDF do cartao: devolve a competencia e um item por
    funcionario, sem gravar nada. A aba PF grava o mes inteiro; a simulacao
    de rescisao usa o cartao parcial do mes da saida so' na conta dela. */
-async function pfRhidLePdf(file){
+async function pfRhidLePdf(file,opt){
   const data=new Uint8Array(await file.arrayBuffer()),doc=await pdfjsLib.getDocument({data}).promise,itens=[];
   let comp='',casados=0,semColuna=0;
   for(let p=1;p<=doc.numPages;p++){
@@ -18317,6 +18432,20 @@ async function pfRhidLePdf(file){
     /* Um repouso por semana em que houve falta, e só falta. */
     const semanas={};dias.falta.forEach(iso=>{semanas[pfRhidSemana(iso)]=true;});
     const repousoMin=Object.keys(semanas).length*PF_REPOUSO_MIN;
+    /* DIA A DIA, para o Banco de Horas (opt.porDia): o tempo da coluna FALTA
+       E ATRASO e o total de extra (DIURNA + NOTURNA) de cada linha de dia.
+       Afastamento, cárcere e atestado não caem em FALTA E ATRASO (vão para
+       DIA FALTA e ABONO), então não viram falta no banco. Só no pedido do
+       banco: o cartão gravado no Fechamento continua do mesmo tamanho.
+       Teste recibos-banco-horas-importa-rhid. */
+    let porDia=null;
+    if(opt&&opt.porDia){porDia=[];ls.forEach(l=>{
+      const m=l.text.match(/^(\d{2})\/(\d{2})\/(\d{4})\s*-\s*([A-ZÇÃÕÁÉÍÓÚ]{3})\b(.*)$/i);if(!m)return;
+      const resto=m[5]||'',falta=pfRhidMin(pfRhidValorColuna(l,xAtraso,false)),
+        extra=pfRhidMin(pfRhidValorColuna(l,xDiurna,false))+pfRhidMin(pfRhidValorColuna(l,xNoturna,false));
+      if(!falta&&!extra)return;
+      porDia.push({iso:m[3]+'-'+m[2]+'-'+m[1],sem:m[4].toUpperCase(),previsto:pfRhidPrevistoDia(resto),
+        falta,extra,marcouFalta:/\bFALTA\b/.test(pfRhidNorm(resto))});});}
     const it={nome,cpf,empId:emp?emp.id:'',pagina:p,
       diasFalta:dias.falta.length,datasFalta:dias.falta.slice(),faltaMin:min(xAtraso,false),
       diasAtestado:dias.atestado.length,atestadoMin:horas.atestado||min(xAbono,false),
@@ -18328,6 +18457,7 @@ async function pfRhidLePdf(file){
       extra100Min:min(x100D,false),extra100NotMin:min(x100N,false),
       diurnaTotMin:min(xDiurna,false),noturnaTotMin:min(xNoturna,false),
       diasFaltaColuna:Number(pfRhidValorColuna(totais,xDia,true))||0};
+    if(porDia){it.porDia=porDia;it.faltaTotMin=min(xAtraso,false);}
     /* Conferência: as faixas diurnas somadas têm de dar o total DIURNA que o
        próprio cartão imprime, e o mesmo do lado noturno. Se não fechar, algum
        rótulo mudou de nome e a coluna passou em branco -- melhor avisar do
@@ -19092,7 +19222,7 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape'){if(fecharSemPerder(
    juntos a cada publicacao, e ha uma prova automatica que falha se um subir
    sem o outro. Assim o numero na tela e o mesmo do arquivo que o aparelho
    guardou, e dizer "estou na v81" passa a significar alguma coisa. */
-const APP_VER='v319';
+const APP_VER='v320';
 (function(){var p=document.getElementById('verPill'); if(p)p.textContent=APP_VER;})();
 
 if('serviceWorker' in navigator){
