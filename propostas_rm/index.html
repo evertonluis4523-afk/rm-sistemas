@@ -2798,15 +2798,35 @@ body:not(.com-doc) #btnNova{display:none}
 @media (max-width:760px){.topbar-right .so-pc{display:none}}
 body:not(.com-doc) .docs-card,body:not(.com-doc) .ed-grid{display:none}
 .ini-topo{display:flex;gap:14px;align-items:flex-end;flex-wrap:wrap}
-.ini-tit{flex:1 1 260px}
-.ini-tit h2{margin:0;font-size:20px;font-weight:800;letter-spacing:-.01em}
-.ini-tit p{margin:2px 0 0;font-size:13px;color:var(--muted)}
 .ini-busca{min-width:240px}
 .ini-acoes{display:flex;gap:8px;flex-wrap:wrap}
 /* botões na linha de um campo têm a altura do campo (o pequeno, 32 px, ao
    lado da caixa de 38 ficava com o topo abaixo dela). Teste campos-padrao. */
 .ini-acoes .btn-sm,.docs-b .btn-sm{min-height:var(--rm-ctl,38px)}
-.ini-blocos{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;align-items:start}
+/* SALVOS EM TRÊS TELAS: abas no alto, faixa de números, filtros e a lista em colunas */
+.ini-telas{display:flex;gap:2px;flex:1 1 auto;align-self:flex-end;border-bottom:1px solid var(--line);min-width:0;overflow-x:auto}
+.ini-telas button{display:flex;align-items:center;gap:8px;background:none;border:0;border-bottom:2px solid transparent;margin-bottom:-1px;padding:10px 14px;font:inherit;font-size:15px;font-weight:700;color:var(--muted);cursor:pointer;white-space:nowrap}
+.ini-telas button:hover{color:var(--ink)}
+.ini-telas button.on{color:var(--ink);border-bottom-color:var(--red)}
+.ini-resumo.rm-faixa{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr))}
+.ini-fx{padding:12px 16px}
+.ini-fx .k{font-size:12.5px;font-weight:600;color:var(--muted)}
+.ini-fx .v{font-size:22px;font-weight:800;line-height:1.25;color:var(--ink);font-variant-numeric:tabular-nums}
+.ini-fx .s{font-size:12.5px;color:var(--muted);font-variant-numeric:tabular-nums}
+.ini-fg{display:contents}
+#inicio [data-so][hidden],#inicio .ini-fg[hidden]{display:none!important}
+.ini-cab,.ini-tab .salvo{display:grid;grid-template-columns:minmax(0,2.4fr) minmax(110px,.9fr) 110px minmax(150px,1.3fr) 140px;gap:14px;align-items:center}
+.ini-cab{padding:9px 16px;border-bottom:1px solid var(--line);font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.ini-cab .r,.ini-tab .s-val{text-align:right}
+.ini-tab .ini-lista{max-height:none}
+.salvo .s-quem{display:flex;align-items:center;gap:10px;min-width:0}
+.salvo .s-quem .rm-iniciais{flex:none}
+.salvo .s-num{font-size:13px;font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap}
+.salvo .s-num small{display:block;font-size:11.5px;font-weight:600;color:var(--muted)}
+.salvo .s-data{font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}
+.salvo .s-sits{display:flex;flex-wrap:wrap;gap:4px}
+.salvo .s-sits .s-sit{margin-left:0}
+.s-sit.compra,.s-sit.venda{background:var(--line);color:var(--ink)}
 .ini-bloco{padding:0;overflow:hidden}
 .ini-h{display:flex;align-items:center;gap:8px;padding:12px 16px;border-bottom:1px solid var(--line)}
 .ini-h b{font-size:14px;font-weight:800}
@@ -2818,7 +2838,7 @@ body:not(.com-doc) .docs-card,body:not(.com-doc) .ed-grid{display:none}
 .salvo .s-txt{flex:1;min-width:0}
 .salvo .s-nome,.salvo .s-sub{display:block}
 .salvo .s-nome{font-weight:750;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.salvo .s-sub{font-size:12.5px;color:var(--muted);margin-top:2px;line-height:1.7}
+.salvo .s-sub{font-size:12.5px;color:var(--muted);margin-top:1px;line-height:1.5;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .salvo .s-val{font-weight:750;font-size:13.5px;white-space:nowrap;font-variant-numeric:tabular-nums}
 .s-sit{display:inline-block;font-size:11.5px;font-weight:700;padding:1px 8px;border-radius:999px;background:var(--line);color:var(--muted);margin-left:6px}
 .s-sit.aprovada,.s-sit.assinado{background:rgba(31,122,69,.12);color:#1F7A45}
@@ -2838,7 +2858,6 @@ body:not(.com-doc) .docs-card,body:not(.com-doc) .ed-grid{display:none}
 .chip:hover{border-color:var(--muted)}
 .ini-resumo{display:flex;flex-wrap:wrap;gap:6px 18px;font-size:13.5px;color:var(--muted)}
 .ini-resumo b{color:var(--ink)}
-.ini-resumo .r-venc{color:#B4290A}.ini-resumo .r-venc b{color:#B4290A}
 .ini-lixo .ini-h .nota{font-size:12px}
 .salvo.lixo{cursor:default}
 .lixo-a{display:flex;gap:6px;flex:none}
@@ -2895,7 +2914,6 @@ body:not(.com-doc) .docs-card,body:not(.com-doc) .ed-grid{display:none}
 .ccv-add{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 10px}
 .ccv-ger{display:flex;flex-wrap:wrap;align-items:center;gap:6px;font-size:13px;color:var(--muted);margin:0 0 10px}
 .ccv-ger .ccv-n{width:64px}.ccv-ger .val{width:120px}.ccv-ger .ccv-ref{width:150px}
-.ini-ccv{margin-top:14px}
 .l-cnm{grid-template-columns:1fr 120px 28px}
 .l-cnm input.forte{font-weight:700}
 .l-comp{grid-template-columns:18px 1fr 28px}
@@ -3098,7 +3116,10 @@ body:not(.com-doc) .docs-card,body:not(.com-doc) .ed-grid{display:none}
   .folha-col{display:contents}
   .ed-grid #avisos{order:-1}
   .ficha-ind .fi-papel{display:inline-flex}
-  .ini-blocos{grid-template-columns:1fr}
+  .ini-cab{display:none}
+  .ini-tab .salvo{grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"q q" "n v" "s s";row-gap:6px}
+  .ini-tab .s-quem{grid-area:q}.ini-tab .s-num{grid-area:n}.ini-tab .s-val{grid-area:v}.ini-tab .s-sits{grid-area:s}
+  .ini-tab .s-data{display:none}.ini-tab .s-num small{display:inline;margin-left:6px}
   .salvo .s-sub{white-space:normal}
 }
 @media (max-width:860px){
@@ -3196,27 +3217,29 @@ body:not(.com-doc) .docs-card,body:not(.com-doc) .ed-grid{display:none}
        mexida, e começar outra exigia achar o botão de nova no meio dela. -->
   <div class="inicio no-print" id="inicio">
     <div class="ini-topo">
-      <div class="ini-tit"><h2>Salvos</h2><p>Clique numa proposta ou num contrato para abrir e editar.</p></div>
-      <div class="fld ini-busca"><label for="salvoBusca">Procurar</label><input id="salvoBusca" type="search" placeholder="cliente, número ou cidade" autocomplete="off"></div>
+      <nav class="ini-telas" role="tablist" aria-label="Telas">
+        <button type="button" role="tab" data-tela="prop" class="on">Propostas <span class="ini-n" id="nProp"></span></button>
+        <button type="button" role="tab" data-tela="cont">Contratos <span class="ini-n" id="nCont"></span></button>
+        <button type="button" role="tab" data-tela="ccv">Compra e venda <span class="ini-n" id="nCcv"></span></button>
+      </nav>
+      <div class="fld ini-busca"><label for="salvoBusca">Procurar</label><input id="salvoBusca" type="search" placeholder="nome, número ou cidade" autocomplete="off"></div>
       <div class="ini-acoes">
-        <button class="btn btn-ghost btn-sm" id="iniImportar" type="button" title="Lê uma proposta ou um contrato em Word (.docx) ou PDF e monta no layout novo">⇪ Importar Word ou PDF</button>
-        <button class="btn btn-ghost btn-sm" id="iniCcv" type="button" title="Contrato de compra e venda: a RM compra ou vende um bem">＋ Compra e venda</button>
-        <button class="btn btn-sm ini-nova" id="iniNova" type="button">＋ Nova proposta</button>
+        <button class="btn btn-ghost btn-sm" id="btnLixeira" type="button">Lixeira</button>
+        <button class="btn btn-ghost btn-sm" id="iniImportar" type="button" data-so="prop cont" title="Lê uma proposta ou um contrato em Word (.docx) ou PDF e monta no layout novo">⇪ Importar Word ou PDF</button>
+        <button class="btn btn-sm ini-nova" id="iniCcv" type="button" data-so="ccv" title="Contrato de compra e venda: a RM compra ou vende um bem">＋ Compra e venda</button>
+        <button class="btn btn-sm ini-nova" id="iniNova" type="button" data-so="prop cont">＋ Nova proposta</button>
       </div>
     </div>
-    <div class="ini-filtro" role="group" aria-label="Situação">
-      <button type="button" class="chip on" data-fsit="">Todas</button><button type="button" class="chip" data-fsit="negociacao">Em negociação</button>
-      <button type="button" class="chip" data-fsit="vencida">Validade vencida</button><button type="button" class="chip" data-fsit="aprovada">Aprovadas</button>
-      <button type="button" class="chip" data-fsit="assinado">Contrato assinado</button><button type="button" class="chip" data-fsit="perdida">Não fechou</button>
-      <span class="grow"></span><button type="button" class="chip chip-lixo" id="btnLixeira">Lixeira</button>
+    <div class="ini-resumo rm-faixa" id="iniResumo"></div>
+    <div class="ini-filtro" role="group" aria-label="Filtro">
+      <span class="ini-fg" data-so="prop"><button type="button" class="chip on" data-fsit="">Todas</button><button type="button" class="chip" data-fsit="negociacao">Em negociação</button><button type="button" class="chip" data-fsit="vencida">Validade vencida</button><button type="button" class="chip" data-fsit="aprovada">Aprovadas</button><button type="button" class="chip" data-fsit="assinado">Contrato assinado</button><button type="button" class="chip" data-fsit="perdida">Não fechou</button></span>
+      <span class="ini-fg" data-so="cont"><button type="button" class="chip on" data-fcont="">Todos</button><button type="button" class="chip" data-fcont="aguarda">Aguardando assinatura</button><button type="button" class="chip" data-fcont="assinado">Assinados</button></span>
+      <span class="ini-fg" data-so="ccv"><button type="button" class="chip on" data-fccv="">Todos</button><button type="button" class="chip" data-fccv="compra">A RM compra</button><button type="button" class="chip" data-fccv="venda">A RM vende</button></span>
     </div>
-    <div class="ini-resumo" id="iniResumo"></div>
     <section class="card ini-bloco ini-lixo" id="lixeiraBloco" hidden><div class="ini-h"><b>Lixeira</b><span class="ini-n" id="nLixo"></span><span class="grow"></span><span class="nota">Fica 30 dias; depois some de vez.</span></div><div class="ini-lista" id="listaLixo"></div></section>
-    <div class="ini-blocos">
-      <section class="card ini-bloco"><div class="ini-h"><b>Propostas</b><span class="ini-n" id="nProp"></span></div><div class="ini-lista" id="listaProp"></div></section>
-      <section class="card ini-bloco"><div class="ini-h"><b>Contratos</b><span class="ini-n" id="nCont"></span></div><div class="ini-lista" id="listaCont"></div></section>
-    </div>
-    <section class="card ini-bloco ini-ccv"><div class="ini-h"><b>Contratos de compra e venda</b><span class="ini-n" id="nCcv"></span></div><div class="ini-lista" id="listaCcv"></div></section>
+    <section class="card ini-bloco ini-tab" data-so="prop"><div class="ini-cab" aria-hidden="true"><span>Cliente</span><span>Nº</span><span>Data</span><span>Situação</span><span class="r">Valor</span></div><div class="ini-lista" id="listaProp"></div></section>
+    <section class="card ini-bloco ini-tab" data-so="cont"><div class="ini-cab" aria-hidden="true"><span>Cliente</span><span>Nº</span><span>Data</span><span>Situação</span><span class="r">Valor</span></div><div class="ini-lista" id="listaCont"></div></section>
+    <section class="card ini-bloco ini-tab" data-so="ccv"><div class="ini-cab" aria-hidden="true"><span>Outra parte · o que</span><span>Nº</span><span>Data</span><span>Situação</span><span class="r">Valor</span></div><div class="ini-lista" id="listaCcv"></div></section>
   </div>
 
   <div class="card docs-card no-print">
@@ -5242,25 +5265,6 @@ function redesenhar() { document.body.classList.toggle('com-doc', !!atual()); re
    Contratos (o contrato nasce da proposta, é o mesmo registro). Clicar abre
    já na aba certa. Teste propostas-salvos. */
 const SIT_CLS = { negociacao: '', aprovada: 'aprovada', assinado: 'assinado', perdida: 'perdida' };
-function salvoHTML(d, qual) {
-  const c = qual === 'contrato';
-  const quem = d.cliente && d.cliente.nome || 'sem cliente';
-  const onde = d.obra && d.obra.cidade || d.cliente && d.cliente.cidade || '';
-  const quando = dataBR(c ? d.contrato.data : d.data);
-  const total = c ? totalContrato(d) : totalProposta(d);
-  return '<button type="button" class="salvo" data-abrir="' + esc(d.id) + '" data-qual="' + qual + '">'
-    + '<span class="s-txt"><span class="s-nome">' + esc(quem) + '</span>'
-    + '<span class="s-sub">' + esc([(c ? 'Contrato · proposta ' : (TIPOS[d.tipo] || 'Proposta') + ' ') + numeroRev(d), onde, quando].filter(Boolean).join(' · '))
-    + '<span class="s-sit ' + (SIT_CLS[d.status] || '') + '">' + esc(STATUS[d.status] || '') + '</span>'
-    + (!c && vencida(d) ? '<span class="s-sit perdida">validade vencida em ' + dataBR(vencida(d)) + '</span>' : '') + '</span></span>'
-    + (total ? '<span class="s-val">' + brl(total) + '</span>' : '') + '</button>';
-}
-function salvoCcvHTML(d) {
-  const c = d.ccv, o = c.obj, oque = c.bem === 'veiculo' ? [o.desc, o.placa && String(o.placa).toUpperCase()].filter(x => String(x || '').trim()).join(' · ') : String(o.texto || '').trim().slice(0, 60);
-  return '<button type="button" class="salvo" data-abrir="' + esc(d.id) + '" data-qual="ccv"><span class="s-txt"><span class="s-nome">' + esc(d.cliente.nome || 'sem nome') + '</span>'
-    + '<span class="s-sub">' + esc([(c.lado === 'venda' ? 'A RM vende' : 'A RM compra') + ' · ' + d.numero, oque, dataBR(c.data)].filter(Boolean).join(' · ')) + '</span></span>'
-    + (ccvTotal(d) ? '<span class="s-val">' + brl(ccvTotal(d)) + '</span>' : '') + '</button>';
-}
 /* ACOMPANHAMENTO: proposta em negociação com a validade passada aparece
    como vencida (para cobrar o cliente); filtro por situação; o resumo soma
    o que está em negociação. Teste propostas-revisoes-lixeira. */
@@ -5293,6 +5297,51 @@ function renderLixeira() {
     + '<span class="lixo-a"><button type="button" class="btn btn-ghost btn-sm" data-restaura="' + esc(x.d.id) + '" data-qual="' + x.qual + '">Restaurar</button><button type="button" class="btn btn-ghost btn-sm del" data-apaga="' + esc(x.d.id) + '" data-qual="' + x.qual + '">Excluir de vez</button></span></div>').join('')
     : '<div class="ini-vazio">A lixeira está vazia.</div>';
 }
+/* ---------- SALVOS EM TRÊS TELAS ----------
+   "Está muito desorganizado, cria tela pra cada situação: propostas,
+   contratos, compra e vendas." Antes eram três blocos empilhados na mesma
+   página, cada linha com o texto corrido. Agora cada um é uma tela, escolhida
+   no alto: os números dela (faixa padrão), os filtros dela, o botão de novo
+   dela e a lista em colunas fixas -- cliente, nº, data, situação e valor
+   sempre no mesmo lugar. A tela escolhida fica gravada; fechar um documento
+   volta para a tela dele. Teste propostas-salvos-telas. */
+let telaIni = (() => { try { const t = localStorage.getItem('rm_propostas_tela'); return /^(prop|cont|ccv)$/.test(t) ? t : 'prop'; } catch (e) { return 'prop'; } })();
+let filtroCont = '', filtroCcv = '';
+function mudaTela(t) {
+  if (!/^(prop|cont|ccv)$/.test(t)) return;
+  if (t !== telaIni) { filtroSit = ''; filtroCont = ''; filtroCcv = ''; }
+  telaIni = t; try { localStorage.setItem('rm_propostas_tela', t); } catch (e) { }
+  renderSalvos();
+}
+function quemHTML(nome, sub) {
+  return '<span class="s-quem">' + (window.rmIniciais ? rmIniciais(nome || '?') : '') + '<span class="s-txt"><span class="s-nome">' + esc(nome) + '</span>' + (sub ? '<span class="s-sub">' + esc(sub) + '</span>' : '') + '</span></span>';
+}
+function salvoHTML(d, qual) {
+  const c = qual === 'contrato';
+  const quem = d.cliente && d.cliente.nome || 'sem cliente';
+  const onde = d.obra && d.obra.cidade || d.cliente && d.cliente.cidade || '';
+  const quando = dataBR(c ? d.contrato.data : d.data);
+  const total = c ? totalContrato(d) : totalProposta(d);
+  const tipo = c ? 'da proposta ' + numeroRev(d) : (d.tipo === 'chave' ? 'Chave na mão' : 'Padrão');
+  const sit = '<span class="s-sit ' + (SIT_CLS[d.status] || '') + '">' + esc(STATUS[d.status] || '') + '</span>'
+    + (!c && vencida(d) ? '<span class="s-sit perdida">validade vencida em ' + dataBR(vencida(d)) + '</span>' : '');
+  return '<button type="button" class="salvo" data-abrir="' + esc(d.id) + '" data-qual="' + qual + '">'
+    + quemHTML(quem, onde)
+    + '<span class="s-num">' + esc(c ? (d.numero || '') : numeroRev(d)) + '<small>' + esc(tipo) + '</small></span>'
+    + '<span class="s-data">' + esc(quando) + '</span>'
+    + '<span class="s-sits">' + sit + '</span>'
+    + '<span class="s-val">' + (total ? brl(total) : '—') + '</span></button>';
+}
+function salvoCcvHTML(d) {
+  const c = d.ccv, o = c.obj, oque = c.bem === 'veiculo' ? [o.desc, o.placa && String(o.placa).toUpperCase()].filter(x => String(x || '').trim()).join(' · ') : String(o.texto || '').trim().slice(0, 70);
+  return '<button type="button" class="salvo" data-abrir="' + esc(d.id) + '" data-qual="ccv">'
+    + quemHTML(d.cliente.nome || 'sem nome', oque)
+    + '<span class="s-num">' + esc(d.numero) + '<small>' + (c.lado === 'venda' ? 'A RM vende' : 'A RM compra') + '</small></span>'
+    + '<span class="s-data">' + esc(dataBR(c.data)) + '</span>'
+    + '<span class="s-sits"><span class="s-sit ' + (c.lado === 'venda' ? 'venda' : 'compra') + '">' + (c.lado === 'venda' ? 'Venda' : 'Compra') + '</span></span>'
+    + '<span class="s-val">' + (ccvTotal(d) ? brl(ccvTotal(d)) : '—') + '</span></button>';
+}
+function faixaCel(rot, v, sub, cls) { return '<div class="ini-fx"><div class="k">' + esc(rot) + '</div><div class="v' + (cls ? ' ' + cls : '') + '">' + esc(v) + '</div>' + (sub ? '<div class="s">' + esc(sub) + '</div>' : '') + '</div>'; }
 function renderSalvos() {
   if (!$('inicio')) return;
   limparLixeira();
@@ -5302,19 +5351,34 @@ function renderSalvos() {
   const vivosTodos = Object.values(docs).filter(d => d && !d.lixeira), ccvs = vivosTodos.filter(ehCcv), vivos = vivosTodos.filter(d => !ehCcv(d));
   const naSit = d => !filtroSit || (filtroSit === 'vencida' ? !!vencida(d) : d.status === filtroSit);
   const todos = vivos.filter(naSit).sort((a, b) => (b.alterado || 0) - (a.alterado || 0));
-  const neg = vivos.filter(d => d.status === 'negociacao'), venc = vivos.filter(d => vencida(d));
-  $('iniResumo').innerHTML = '<span><b>' + neg.length + '</b> em negociação · <b>' + brl(neg.reduce((s, d) => s + totalProposta(d), 0)) + '</b></span>'
-    + (venc.length ? '<span class="r-venc"><b>' + venc.length + '</b> com a validade vencida — vale ligar para o cliente</span>' : '');
+  const acha = d => !q || ((d.numero || '') + ' ' + (d.cliente && d.cliente.nome || '') + ' ' + (d.obra && d.obra.cidade || '') + ' ' + (d.cliente && d.cliente.cidade || '')).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().indexOf(q) >= 0;
+  const soma = (l, f) => brl(l.reduce((s, d) => s + f(d), 0));
+  /* as três telas: qual está à mostra, o que o topo oferece */
+  document.querySelectorAll('.ini-telas [data-tela]').forEach(b => { const on = b.dataset.tela === telaIni; b.classList.toggle('on', on); b.setAttribute('aria-selected', on ? 'true' : 'false'); });
+  document.querySelectorAll('#inicio [data-so]').forEach(el => { el.hidden = el.dataset.so.split(' ').indexOf(telaIni) < 0; });
+  /* PROPOSTAS */
+  const neg = vivos.filter(d => d.status === 'negociacao'), venc = vivos.filter(d => vencida(d)), apr = vivos.filter(d => d.status === 'aprovada' || d.status === 'assinado'), perd = vivos.filter(d => d.status === 'perdida');
+  const props = todos.filter(acha);
+  /* CONTRATOS: assinados e os que esperam assinatura */
+  const comC = vivos.filter(d => d.contrato), assin = comC.filter(d => d.status === 'assinado'), aguarda = comC.filter(d => d.status !== 'assinado');
+  const conts = todos.filter(d => d.contrato).filter(acha).filter(d => !filtroCont || (filtroCont === 'assinado' ? d.status === 'assinado' : d.status !== 'assinado'));
+  /* COMPRA E VENDA */
+  const compras = ccvs.filter(d => d.ccv.lado !== 'venda'), vendas = ccvs.filter(d => d.ccv.lado === 'venda');
+  const cvs = ccvs.filter(acha).filter(d => !filtroCcv || (filtroCcv === 'venda') === (d.ccv.lado === 'venda')).sort((a, b) => (b.alterado || 0) - (a.alterado || 0));
+  $('iniResumo').innerHTML = telaIni === 'cont'
+    ? faixaCel('Contratos', String(comC.length), soma(comC, totalContrato)) + faixaCel('Assinados', String(assin.length), soma(assin, totalContrato), assin.length ? 'rm-fx-bom' : '') + faixaCel('Aguardando assinatura', String(aguarda.length), soma(aguarda, totalContrato), aguarda.length ? 'rm-fx-aviso' : '')
+    : telaIni === 'ccv'
+    ? faixaCel('A RM compra', String(compras.length), soma(compras, ccvTotal)) + faixaCel('A RM vende', String(vendas.length), soma(vendas, ccvTotal)) + faixaCel('Contratos de compra e venda', String(ccvs.length), soma(ccvs, ccvTotal))
+    : faixaCel('Em negociação', String(neg.length), soma(neg, totalProposta)) + faixaCel('Validade vencida', String(venc.length), venc.length ? 'vale ligar para o cliente' : '', venc.length ? 'rm-fx-ruim' : '')
+      + faixaCel('Aprovadas e assinadas', String(apr.length), soma(apr, totalProposta), apr.length ? 'rm-fx-bom' : '') + faixaCel('Não fecharam', String(perd.length), soma(perd, totalProposta));
   document.querySelectorAll('.ini-filtro [data-fsit]').forEach(b => b.classList.toggle('on', b.dataset.fsit === filtroSit));
-  const acha = d => !q || ((d.numero || '') + ' ' + (d.cliente && d.cliente.nome || '') + ' ' + (d.obra && d.obra.cidade || '') + ' ' + (d.cliente && d.cliente.cidade || '')).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().indexOf(q) >= 0;
-  const props = todos.filter(acha), conts = todos.filter(d => d.contrato).filter(acha);
+  document.querySelectorAll('.ini-filtro [data-fcont]').forEach(b => b.classList.toggle('on', b.dataset.fcont === filtroCont));
+  document.querySelectorAll('.ini-filtro [data-fccv]').forEach(b => b.classList.toggle('on', b.dataset.fccv === filtroCcv));
   const vazio = (n, txt) => '<div class="ini-vazio">' + (LENDO_NUVEM && !vivos.length ? 'Lendo as propostas da nuvem…' : q && n ? 'Nada encontrado com "' + esc($('salvoBusca').value.trim()) + '".' : txt) + '</div>';
-  $('listaProp').innerHTML = props.length ? props.map(d => salvoHTML(d, 'proposta')).join('') : vazio(todos.length, 'Nenhuma proposta salva ainda. Clique em <b>＋ Nova proposta</b>.');
-  $('listaCont').innerHTML = conts.length ? conts.map(d => salvoHTML(d, 'contrato')).join('') : vazio(todos.filter(d => d.contrato).length, 'Nenhum contrato ainda. Abra uma proposta e clique na aba <b>Contrato</b>.');
-  $('nProp').textContent = props.length; $('nCont').textContent = conts.length;
-  const cvs = ccvs.filter(acha).sort((a, b) => (b.alterado || 0) - (a.alterado || 0));
-  $('listaCcv').innerHTML = cvs.length ? cvs.map(salvoCcvHTML).join('') : '<div class="ini-vazio">' + (q && ccvs.length ? 'Nada encontrado com "' + esc($('salvoBusca').value.trim()) + '".' : 'Nenhum ainda. Clique em <b>＋ Compra e venda</b>.') + '</div>';
-  $('nCcv').textContent = cvs.length;
+  $('listaProp').innerHTML = props.length ? props.map(d => salvoHTML(d, 'proposta')).join('') : vazio(todos.length, filtroSit ? 'Nenhuma proposta nesta situação.' : 'Nenhuma proposta salva ainda. Clique em <b>＋ Nova proposta</b>.');
+  $('listaCont').innerHTML = conts.length ? conts.map(d => salvoHTML(d, 'contrato')).join('') : vazio(todos.filter(d => d.contrato).length, 'Nenhum contrato aqui. O contrato nasce da proposta: abra a proposta e clique na aba <b>Contrato</b>.');
+  $('listaCcv').innerHTML = cvs.length ? cvs.map(salvoCcvHTML).join('') : '<div class="ini-vazio">' + (q && ccvs.length ? 'Nada encontrado com "' + esc($('salvoBusca').value.trim()) + '".' : filtroCcv ? 'Nenhum nesta escolha.' : 'Nenhum ainda. Clique em <b>＋ Compra e venda</b>.') + '</div>';
+  $('nProp').textContent = props.length; $('nCont').textContent = conts.length; $('nCcv').textContent = cvs.length;
 }
 /* proposta nova que ninguém preencheu não vira item salvo */
 function emBranco(d) {
@@ -5331,6 +5395,7 @@ function fecharDoc(salvo) {
     clearTimeout(tSalvar[d.id]); salvarDoc(d.id);
     if (salvo) avisoTopo((ehCcv(d) ? 'Contrato de compra e venda' : d.contrato && aba === 'contrato' ? 'Contrato' : 'Proposta') + ' ' + (d.numero || '') + (ehCcv(d) ? ' salvo.' : ' salva.'));
   }
+  if (d) mudaTela(ehCcv(d) ? 'ccv' : d.contrato && aba === 'contrato' ? 'cont' : 'prop');
   aba = 'proposta'; abrir(null);
 }
 let tFolha = null;
@@ -5501,7 +5566,9 @@ function botaoFechar() { const b = $('btnFechar'), d = atual(); if (!b) return; 
   b.textContent = m ? '✓ Salvar e fechar' : '✕ Fechar'; b.title = m ? 'Guarda agora e volta para a lista de salvos' : 'Volta para a lista de salvos (nada foi alterado)'; }
 function abrir(id, qual) { verRev = null; atualId = id || null; mexeuAberta = false; if (atualId && docs[atualId]) { delete APROV[atualId]; aprovFoto(docs[atualId]); } if (qual) aba = qual; if (atual() && aba === 'contrato' && !atual().contrato) aba = 'proposta'; try { localStorage.setItem(LS_KEY + '_aberto', atualId || ''); } catch (e) { } redesenhar(); }
 $('salvoBusca').addEventListener('input', () => renderSalvos());
-document.querySelector('.ini-filtro').addEventListener('click', e => { const b = e.target.closest('[data-fsit]'); if (!b) return; filtroSit = b.dataset.fsit; renderSalvos(); });
+document.querySelector('.ini-filtro').addEventListener('click', e => { const b = e.target.closest('[data-fsit],[data-fcont],[data-fccv]'); if (!b) return;
+  if (b.dataset.fsit != null) filtroSit = b.dataset.fsit; else if (b.dataset.fcont != null) filtroCont = b.dataset.fcont; else filtroCcv = b.dataset.fccv; renderSalvos(); });
+document.querySelector('.ini-telas').addEventListener('click', e => { const b = e.target.closest('[data-tela]'); if (b) mudaTela(b.dataset.tela); });
 $('btnLixeira').addEventListener('click', () => { vendoLixo = !vendoLixo; renderSalvos(); });
 $('listaLixo').addEventListener('click', e => {
   const r = e.target.closest('[data-restaura]'), a = e.target.closest('[data-apaga]');
@@ -7318,7 +7385,7 @@ if ('serviceWorker' in navigator) {
 })();
 </script>
 <script>/* versão publicada (PADRAO_RM.md §3): sobe a cada publicação, junto com o CACHE do sw.js */
-const APP_VER='v69';
+const APP_VER='v70';
 </script>
 <script id="rmVersaoBloco">
 /* ===== SELO DE VERSÃO — igual em todos os sistemas (PADRAO_RM.md §3) =====
